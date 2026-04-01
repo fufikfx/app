@@ -1,0 +1,43 @@
+name: News Scraper
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scraper.py'
+      - 'requirements.txt'
+      - '.github/workflows/scrape.yml'
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - run: pip install -r requirements.txt
+      - run: python scraper.py
+        env:
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet data/news.json; then
+            git add data/news.json
+            ARTICLE_COUNT=$(python -c "import json; d=json.load(open('data/news.json')); print(d['meta']['total'])")
+            git commit -m "chore: news update — ${ARTICLE_COUNT} articles"
+            git push
+          fi
