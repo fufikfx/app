@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLOOMBERG TERMINAL — PROFESSIONAL SYSTEM</title>
+<!-- v20260321-v14-AIS-enhanced -->
+<!-- Preconnect to key external resources for faster startup -->
+<link rel="preconnect" href="https://api.binance.com" crossorigin>
+<link rel="preconnect" href="https://stream.binance.com" crossorigin>
+<link rel="preconnect" href="https://api.hyperliquid.xyz" crossorigin>
+<link rel="preconnect" href="https://corsproxy.io" crossorigin>
+<link rel="preconnect" href="https://s3.tradingview.com" crossorigin>
+<link rel="preconnect" href="https://api.anthropic.com" crossorigin>
+<link rel="dns-prefetch" href="https://query1.finance.yahoo.com">
+<link rel="dns-prefetch" href="https://api.allorigins.win">
+<link rel="dns-prefetch" href="https://api.open-meteo.com">
+<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+<link rel="dns-prefetch" href="https://unpkg.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css"/>
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="boot-overlay" style="
+  position:fixed;inset:0;z-index:99999;
+  background:#000;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  font-family:'Courier New',Courier,monospace;">
+
+  <div style="width:660px;max-width:96vw;padding:0 16px">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+      <div style="color:#ff6600;font-size:14px;font-weight:700;letter-spacing:5px">&nbsp;</div>
+      <div id="boot-clock" style="color:#887760;font-size:9px;letter-spacing:2px"></div>
+    </div>
+    <div style="color:#887760;font-size:7px;letter-spacing:2px;margin-bottom:20px;border-bottom:1px solid #1a0800;padding-bottom:12px">AUTHENTICATION REQUIRED — ALL DATA FEEDS LOCKED</div>
+
+    <!-- API KEY INPUT BLOCK -->
+    <div style="border:1px solid #3a1800;background:#050200;padding:18px 20px;margin-bottom:16px">
+      <div style="color:#ff6600;font-size:9px;font-weight:700;letter-spacing:2px;margin-bottom:12px">⬡ ANTHROPIC API KEY REQUIRED</div>
+      <div style="color:#998870;font-size:7.5px;margin-bottom:14px;line-height:1.8">
+        All market data feeds are locked until a valid API key is provided.<br>
+        Get your key at <span style="color:#664422">console.anthropic.com</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+        <input id="boot-key-input" type="password" placeholder="sk-ant-api03-..."
+          style="flex:1;background:#000;border:1px solid #ff6600;color:#ff8800;font-family:'Courier New',monospace;font-size:11px;padding:6px 12px;outline:none;letter-spacing:1px"
+          onkeydown="if(event.key==='Enter') _bootVerifyKey()" />
+        <button id="boot-verify-btn" onclick="_bootVerifyKey()"
+          style="background:#ff6600;color:#000;border:none;font-family:'Courier New',monospace;font-size:9px;font-weight:700;padding:7px 20px;cursor:pointer;letter-spacing:2px;white-space:nowrap">
+          VERIFY &amp; CONNECT
+        </button>
+      </div>
+      <!-- Verification status row -->
+      <div id="boot-verify-status" style="display:none;align-items:center;gap:8px;padding:6px 0 2px 0">
+        <span id="boot-verify-icon" style="font-size:11px">⏳</span>
+        <div>
+          <div id="boot-verify-text" style="font-size:8px;letter-spacing:1px;font-weight:700"></div>
+          <div id="boot-verify-detail" style="font-size:7px;color:#998870;margin-top:2px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONNECTION TABLE + NETWORK GRAPH -->
+    <div style="display:flex;gap:10px;align-items:flex-start">
+
+      <!-- Blockchain network canvas -->
+      <div style="flex-shrink:0;border:1px solid #1a0800;background:#000;padding:6px 6px 4px;opacity:0.4;transition:opacity .5s" id="boot-canvas-wrap">
+        <div style="color:#887760;font-size:5.5px;letter-spacing:2px;text-align:center;margin-bottom:3px">DATA NETWORK</div>
+        <canvas id="boot-network-canvas" width="200" height="200" style="display:block"></canvas>
+        <div id="boot-net-count" style="color:#887760;font-size:6px;letter-spacing:1px;text-align:center;margin-top:3px;font-family:'Courier New',monospace">0/18 LIVE</div>
+      </div>
+
+      <!-- Feed table -->
+      <div style="flex:1;border:1px solid #1a0800;overflow:hidden;opacity:0.4;transition:opacity .5s" id="boot-table-wrap">
+        <div style="display:grid;grid-template-columns:130px 55px 60px 1fr;background:#080500;padding:3px 8px;border-bottom:1px solid #1a0800">
+          <div style="color:#887760;font-size:6px;letter-spacing:1px">EXCHANGE / FEED</div>
+          <div style="color:#887760;font-size:6px;letter-spacing:1px">STATUS</div>
+          <div style="color:#887760;font-size:6px;letter-spacing:1px">LATENCY</div>
+          <div style="color:#887760;font-size:6px;letter-spacing:1px">DETAIL</div>
+        </div>
+        <div id="boot-feeds" style="display:flex;flex-direction:column;max-height:210px;overflow:hidden"></div>
+      </div>
+
+    </div>
+
+    <!-- Bottom -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px">
+      <div id="boot-status" style="color:#887760;font-size:7px;letter-spacing:1px">LOCKED — AUTHENTICATION REQUIRED</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="boot-timer" style="color:#1a0e00;font-size:7px">0.0s</div>
+        <div id="boot-pct" style="color:#887760;font-size:10px;font-weight:700;letter-spacing:1px">LOCKED</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div id="TOPBAR">
+  <div class="cmd-nav">
+    <div class="cmd-btn" onclick="_cmdHist(-1)">&lt;</div>
+    <div class="cmd-btn" onclick="_cmdHist(1)">&gt;</div>
+  </div>
+  
+  <div class="cmd-group" id="cmd-sec-wrap" onclick="document.getElementById('cmd-sec-inp').focus()">
+    <input type="text" class="cmd-inp" id="cmd-sec-inp" placeholder="No Security Loaded" style="flex:1" 
+      onkeydown="if(event.key==='Enter'){_handleGlobalCmd();_bbgHideAC();}else if(event.key==='Escape'){_bbgHideAC();}"
+      onblur="if(this.value.trim()) window._updateSecLabel(this.value)"
+      oninput="_bbgShowAC(this.value.trim())"
+      onfocus="this.select();_bbgShowAcForEl(this)">
+    <span class="cmd-arr">▾</span>
+  </div>
+  
+  <div class="cmd-group" id="cmd-fn-wrap" onclick="document.getElementById('cmd-fn-inp').focus()">
+    <input type="text" class="cmd-inp" id="cmd-fn-inp" placeholder="LOGI" style="width:100%" 
+      onkeydown="if(event.key==='Enter'){_handleGlobalCmd();_bbgHideAC();}else if(event.key==='Escape'){_bbgHideAC();}"
+      oninput="_bbgShowAC(this.value.trim())"
+      onfocus="this.select();_bbgShowAcForEl(this)">
+    <span class="cmd-arr">▾</span>
+  </div>
+  
+  <div id="cmd-rel-wrap" onclick="toggleQL(document.querySelector('.ql-tile'))">
+    <span>Related Functions Menu</span>
+    <span class="cmd-arr">▾</span>
+  </div>
+
+  <div class="cmd-icon" style="position:absolute;left:68%;top:0;height:26px;display:flex;align-items:center;gap:4px;cursor:pointer;color:#8890aa;">
+    <svg viewBox="0 0 24 24" style="width:13px;height:13px;fill:currentColor;"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+    <span style="font-size:11px;">Message</span>
+    <span class="cmd-arr">▾</span>
+  </div>
+
+  <div class="cmd-icons">
+    <div class="cmd-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+      <span class="cmd-arr">▾</span>
+    </div>
+    <div class="cmd-icon">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+      <span class="cmd-arr">▾</span>
+    </div>
+    <div class="cmd-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      <span class="cmd-arr">▾</span>
+    </div>
+    <div class="cmd-icon">
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L6.5 8.87c-.11.2-.06.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      <span class="cmd-arr">▾</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- QUICK LAUNCH BAR -->
+<div style="display:flex;flex-shrink:0;background:#000000;width:100%;">
+<div id="QUICKBAR" style="height:20px;background:#080a14;border:1px solid #0C57B3;border-left:3px solid #0C57B3;display:flex;align-items:center;flex-shrink:0;overflow:hidden;z-index:2400;position:relative;box-sizing:border-box;width:100%;max-width:100%;margin-left:0;">
+
+  <!-- ASSET INPUT TAB -->
+  <div id="asset-tab-trigger" style="height:100%;width:8px;flex-shrink:0;background:#1a4aff;"></div>
+  <div id="asset-tab" style="display:flex;align-items:center;flex:1;padding:0 6px;gap:3px;">
+    <span style="color:#6677cc;font-size:11px;line-height:1;flex-shrink:0;">▸</span>
+    <input id="asset-tab-inp" title=""
+      placeholder=""
+      onkeydown="if(event.key==='Enter')_applyAssetFromTab();"
+      oninput="_previewAssetTab(this.value)"
+      onfocus="_onAssetTabFocus()"
+      style="background:transparent;border:none;outline:none;color:#aabbee;font-family:Arial,sans-serif;font-size:11px;width:100%;"
+    />
+  </div>
+
+  <div class="ql-tile" onclick="toggleQL(this)" data-ql="ql-all">
+    <div class="ql-icon">◆ PANELS</div>
+    <div class="ql-sub">Markets · FX · Cmdty · Crypto · Macro</div>
+    <div class="ql-drop" id="ql-all" style="flex-direction:column;min-width:260px;max-height:calc(100% - 120px);overflow-y:auto;">
+
+      <!-- INDICES folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">Equity Indices</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="_openChartForSymbol('SPX');closeAllQL()"><div class="ql-it-desc">S&P 500 Index (SPX)</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('NDX');closeAllQL()"><div class="ql-it-desc">Nasdaq 100 (NDX)</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('DJI');closeAllQL()"><div class="ql-it-desc">Dow Jones (DJI)</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('DAX');closeAllQL()"><div class="ql-it-desc">DAX Germany 40</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('NI225');closeAllQL()"><div class="ql-it-desc">Nikkei 225 Japan</div></div>
+        </div>
+      </div>
+
+      <!-- FX & RATES folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">Foreign Exchange</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="_openChartForSymbol('EURUSD');closeAllQL()"><div class="ql-it-desc">EUR/USD — Binance EURUSDT</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('GBPUSD');closeAllQL()"><div class="ql-it-desc">GBP/USD — Yahoo Finance</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('USDJPY');closeAllQL()"><div class="ql-it-desc">USD/JPY — Yahoo Finance</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('AUDUSD');closeAllQL()"><div class="ql-it-desc">AUD/USD — Yahoo Finance</div></div>
+          <div class="ql-it" onclick="openPanel('FX');closeAllQL()"><div class="ql-it-desc">FX: All Rates Table</div></div>
+        </div>
+      </div>
+
+      <!-- CENTRAL BANKS & FED folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">FED News &amp; Central Banks</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('FED');closeAllQL()"><div class="ql-it-desc">FED · Federal Reserve Watch</div></div>
+          <div class="ql-it" onclick="openPanel('WIRP');closeAllQL()"><div class="ql-it-desc">WIRP · FOMC Rate Odds</div></div>
+          <div class="ql-it" onclick="openPanel('BYFC');closeAllQL()"><div class="ql-it-desc">BYFC · Bond Yield Forecasts</div></div>
+          <div class="ql-it" onclick="openPanel('INTEL');closeAllQL()"><div class="ql-it-desc">Central Bank Intelligence</div></div>
+        </div>
+      </div>
+
+      <!-- COMMODITIES folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">Commodities</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="_openChartForSymbol('GOLD');closeAllQL()"><div class="ql-it-desc">GOLD Spot — Binance XAUUSDT</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('SILVER');closeAllQL()"><div class="ql-it-desc">SILVER Spot — Binance XAGUSDT</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('OIL');closeAllQL()"><div class="ql-it-desc">WTI Crude Oil — Yahoo Finance</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('GAS');closeAllQL()"><div class="ql-it-desc">Natural Gas — Yahoo Finance</div></div>
+          <div class="ql-it" onclick="openPanel('COMDTY');closeAllQL()"><div class="ql-it-desc">COMDTY: All Sectors</div></div>
+        </div>
+      </div>
+
+      <!-- CRYPTO folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">Crypto &amp; Digital Assets</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('CRYEXC');closeAllQL()" style="border-left:2px solid #ff6600"><div class="ql-it-desc" style="color:#ff8800;font-weight:700">⚡ CRYEXC · Live Order Flow &amp; News</div></div>
+          <div class="ql-it" onclick="openPanel('HYPER');closeAllQL()" style="border-left:2px solid #44ffcc"><div class="ql-it-desc" style="color:#44ffcc;font-weight:700">⬡ HYPER · Hyperliquid Live Dashboard</div></div>
+          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('HYPE');closeAllQL()"><div class="ql-it-desc">HYPE · Hyperliquid Token Chart</div></div>
+          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('PEPE');closeAllQL()"><div class="ql-it-desc">PEPE · Pepe Memecoin Chart</div></div>
+          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('WIF');closeAllQL()"><div class="ql-it-desc">WIF · dogwifhat Chart</div></div>
+          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('BONK');closeAllQL()"><div class="ql-it-desc">BONK · Bonk Chart</div></div>
+          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('ONDO');closeAllQL()"><div class="ql-it-desc">ONDO · Ondo Finance Chart</div></div>
+          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('ENA');closeAllQL()"><div class="ql-it-desc">ENA · Ethena Chart</div></div>
+          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('TIA');closeAllQL()"><div class="ql-it-desc">TIA · Celestia Chart</div></div>
+          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('PENDLE');closeAllQL()"><div class="ql-it-desc">PENDLE · Pendle Finance Chart</div></div>
+          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('WLD');closeAllQL()"><div class="ql-it-desc">WLD · Worldcoin Chart</div></div>
+          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('PYTH');closeAllQL()"><div class="ql-it-desc">PYTH · Pyth Network Chart</div></div>
+          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('JTO');closeAllQL()"><div class="ql-it-desc">JTO · Jito Chart</div></div>
+          <div class="ql-it" onclick="openPanel('CRCL');closeAllQL()" style="border-left:2px solid #00ccff"><div class="ql-it-desc" style="color:#00ccff;font-weight:700">◉ CRCL · Circular Market Metrics</div></div>
+          <div class="ql-it" onclick="openPanel('METR');closeAllQL()" style="border-left:2px solid #ffcc00"><div class="ql-it-desc" style="color:#ffcc00;font-weight:700">◆ METR · Cross-Asset Metrics</div></div>
+          <div class="ql-it" onclick="openPanel('MULTIFEED');closeAllQL()" style="border-left:2px solid #ff44aa"><div class="ql-it-desc" style="color:#ff44aa;font-weight:700">⟳ MULTIFEED · Multi-Exchange Live Feed</div></div>
+          <div class="ql-it" onclick="openPanel('CRYPTO');closeAllQL()"><div class="ql-it-desc">Market Cap Ranking</div></div>
+          <div class="ql-it" onclick="openPanel('DOMN');closeAllQL()"><div class="ql-it-desc">BTC / Altcoin Dominance</div></div>
+
+          <div class="ql-it" onclick="openPanel('CHAIN');closeAllQL()"><div class="ql-it-desc">Blockchain Network Stats</div></div>
+          <div class="ql-it" onclick="openPanel('DEFI');closeAllQL()"><div class="ql-it-desc">DeFi TVL &amp; Yields</div></div>
+          
+
+          
+          
+        </div>
+      </div>
+
+      <!-- WORLD ASSETS folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">World Assets &amp; Indices</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('WORLD');closeAllQL()"><div class="ql-it-desc">World Market Dashboard</div></div>
+          <div class="ql-it" onclick="openPanel('WEI');closeAllQL()"><div class="ql-it-desc">World Equity Indices (WEI)</div></div>
+          <div class="ql-it" onclick="openPanel('STOCKS2');closeAllQL()" style="border-left:2px solid #ffcc44"><div class="ql-it-desc" style="color:#ffcc44;font-weight:700">STOCKS2 · Extended Universe — MSTR, SoFi, SQ, COIN+</div></div>
+          <div class="ql-it" onclick="openPanel('MMAP');closeAllQL()"><div class="ql-it-desc">Global Market Heatmap</div></div>
+          <div class="ql-it" onclick="openPanel('WN');closeAllQL()"><div class="ql-it-desc">Breaking World News</div></div>
+        </div>
+      </div>
+
+      <!-- MACRO folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">Macro &amp; Calendar</span>
+        </div>
+        <div class="ql-folder-body">
+
+      <!-- Maritime folder removed from PANELS and moved to its own tile -->
+
+          <div class="ql-it" onclick="openPanel('MACRO');closeAllQL()"><div class="ql-it-desc">Macro Dashboard</div></div>
+          <div class="ql-it" onclick="openPanel('ECON');closeAllQL()"><div class="ql-it-desc">Country Economics</div></div>
+          <div class="ql-it" onclick="openPanel('ECAL');closeAllQL()"><div class="ql-it-desc">Economic Calendar — This Week</div></div>
+          <div class="ql-it" onclick="openPanel('ALERTS');closeAllQL()"><div class="ql-it-desc">Priority Macro &amp; Risk Alerts</div></div>
+          
+        </div>
+      </div>
+
+      <!-- NETWORK folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">Network &amp; Data</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('NETSIT');closeAllQL()"><div class="ql-it-desc">⬡ Network Map — P2P Mesh</div></div>
+        </div>
+      </div>
+
+      <!-- NEWS folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">News &amp; Intelligence</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('WN');closeAllQL()"><div class="ql-it-desc">Live News Feed</div></div>
+          <div class="ql-it" onclick="openPanel('NWS');closeAllQL()"><div class="ql-it-desc">News &amp; Research (NWS)</div></div>
+          <div class="ql-it" onclick="openPanel('INTEL');closeAllQL()"><div class="ql-it-desc">Global Intelligence Feed</div></div>
+          <div class="ql-it" onclick="openPanel('JOURN');closeAllQL()"><div class="ql-it-desc">Journalist &amp; Trader Watchlist</div></div>
+        </div>
+      </div>
+
+      <!-- MARITIME folder (Moved back and consolidated) -->
+      <div class="ql-folder open" id="ql-maritime-folder-main" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd" onclick="this.parentElement.classList.toggle('open')">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">Maritime Intelligence &amp; AIS</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" id="ql-ais-status-item" onclick="toggleAISPanel();closeAllQL()" style="padding-left:22px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="color:#665840;font-size:10px;">○</span>
+              <span style="color:var(--am2);font-weight:700;font-size:9px">LIVE DATA FEED (RIGHT PANEL)</span>
+            </div>
+          </div>
+          <div class="ql-it" onclick="toggleAISPanel();closeAllQL()"><div class="ql-it-desc"><span style="color:#665840;margin-right:8px;">○</span>MARITIME TRACKER &amp; MAP (RIGHT SIDE)</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="flex:1;background:#000000;"></div>
+
+</div>
+</div>
+
+<!-- MAIN -->
+<div id="MAIN">
+
+  
+  <div id="mapgl"></div>
+  <div id="map"></div>
+
+  <!-- PANEL OVERLAY — container for all floating panels -->
+  <div id="map-overlay">
+  
+    <!-- BLOOMBERG EXACT CHART PANEL -->
+    <div class="panel" id="bbg-chart-panel" style="position:absolute; top:40px; left:40px; width:900px; height:600px; display:none; flex-direction:column; z-index:9999; background:#000; border:none !important; box-shadow:none;">
+      <!-- Standard Panel Header -->
+      <div class="panel-hd" onmousedown="window.startDrag(event,'bbg-chart-panel')" style="height:22px; background:#000; display:flex; align-items:center; padding:0 8px; gap:6px; cursor:move; user-select:none; border-bottom:1px solid #000;">
+        <div class="panel-tag">CHART</div>
+        <div class="panel-title" id="bbg-win-title"></div>
+        <div class="panel-btns" style="display:flex; align-items:center; gap:5px; padding:0 6px">
+        </div>
+      </div>
+      <div id="bbg-chart-ribbon" style="flex-shrink:0;">
+          <!-- Row 1: Ticker & Last Price -->
+          <div style="display:flex; align-items:flex-end; gap:16px; padding: 6px 10px 2px; font-family: 'Roboto Mono', monospace; font-size:18px; font-weight:700;">
+             <span style="color:#ffffff; font-size:15px;" id="bbg-chart-title">BTC/USDT</span>
+             <span id="bbg-current-price-container" style="color:#ffffff; font-size:15px;"><span id="bbg-price-arrow" style="font-size:13px;"></span> <span id="bbg-current-price">—</span></span>
+             <span id="bbg-price-change" style="color:#ffffff; font-size:12px; font-weight:400; margin-bottom:1px;">—</span>
+          </div>
+
+          <!-- Row 2: OHLC Data -->
+          <div style="display:flex; gap:16px; padding: 0 16px 6px; font-family: 'Roboto Mono', monospace; font-size:13px; color:#fff;">
+             <span style="color:#ff8800;">At <span style="color:#ffffff;" id="bbg-time">—:—</span></span>
+             <span style="color:#ff8800;">Op <span style="color:#ffffff;" id="bbg-start">—</span></span>
+             <span style="color:#ff8800;">Hi <span style="color:#ffffff;" id="bbg-high">—</span></span>
+             <span style="color:#ff8800;">Lo <span style="color:#ffffff;" id="bbg-low">—</span></span>
+             <span style="color:#ff8800;">Close <span style="color:#ffffff;" id="bbg-close">—</span></span>
+             <span style="color:#ff8800;">Vol <span style="color:#ffffff;" id="bbg-volume">—</span></span>
+          </div>
+
+          <!-- Row 3: Red Toolbar -->
+          <div style="background: #860C1D; display:flex; padding:0; height:20px; align-items:center; font-family: Arial, sans-serif; font-size:11px; font-weight:bold; color:#ffffff; justify-content:space-between; border-top:1px solid #000; border-bottom:1px solid #000; letter-spacing:-0.1px;">
+             <div style="display:flex; height:100%;">
+                <div style="background:#F69F26; color:#000000; padding:0 8px; font-weight:bold; height:calc(100% + 2px); margin-top:-1px; margin-bottom:-1px; display:flex; align-items:center; font-size:11px; border:1px solid #F69F26; box-sizing:border-box; position:relative; z-index:1;" id="bbg-toolbar-title">
+                   <span>BTCUSDT Curncy</span>
+                </div>
+                <div style="padding:0 16px; border-right:1px solid #700a18; line-height:20px; cursor:pointer; color:#D3D3D3 !important; font-weight:bold !important;"><span style="color:#D48A94 !important; opacity:0.95;">94)</span> Suggested Charts ▾</div>
+                <div style="padding:0 16px; border-right:1px solid #700a18; line-height:20px; cursor:pointer; color:#D3D3D3 !important; font-weight:bold !important;"><span style="color:#D48A94 !important; opacity:0.95;">96)</span> Actions ▾</div>
+                <div style="padding:0 16px; line-height:20px; cursor:pointer; color:#D3D3D3 !important; font-weight:bold !important;"><span style="color:#D48A94 !important; opacity:0.95;">97)</span> Edit ▾</div>
+             </div>
+             <div style="display:flex; gap:16px; align-items:center; padding-right:12px;">
+                <span style="font-weight:bold;">Line Chart ⬆ ▾</span>
+                <!-- MacOS Traffic Light Style controls -->
+                <div style="display:flex; gap:8px; align-items:center; position:relative; z-index:100;">
+
+                </div>
+             </div>
+          </div>
+
+          <!-- Row 4: Controls and Timeframes (Bloomberg Style Dense Ribbon) -->
+          <!-- Row 4: Controls and Timeframes (Bloomberg Style Dense Ribbon) -->
+          <div style="font-family: 'Open Sans', Arial, sans-serif; font-size:10px; color:#ccc; border-bottom:1px solid #000; display:flex; flex-direction:column; padding:0;">
+             <!-- Top Tier: Data Indicators -->
+             <div style="background:#000; display:flex; align-items:center; gap:16px; padding:0 16px; height:20px; border-bottom:1px solid #000;">
+                <div style="display:flex; align-items:center; gap:5px;">
+                   <span style="color:#F69F26;">Period</span>
+                   <span style="background:#F69F26; padding:0 4px; color:#362400; font-weight:500; border-radius:1px;" id="bbg-chart-mode-label">15M</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:5px;">
+                   <span style="color:#F69F26;">Range</span>
+                   <span style="background:#F69F26; padding:0 4px; color:#362400; font-weight:500; border-radius:1px;">1D</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px; margin-left:16px;">
+                   <span style="background:#F69F26; padding:0 5px; color:#362400; font-weight:500; border-radius:1px;" id="bbg-chart-time-start">27.00</span>
+                   <span style="color:#F69F26; font-weight:700;">-</span>
+                   <span style="background:#F69F26; padding:0 5px; color:#362400; font-weight:500; border-radius:1px;" id="bbg-chart-time-end">68.30</span>
+                </div>
+                <div style="display:flex; align-items:center; margin-left:16px;">
+                   <span style="background:#F69F26; padding:0 6px; color:#362400; font-weight:500; border-radius:1px;" id="bbg-chart-session-name">3/12/16-17 / 1/24/11</span>
+                </div>
+             </div>
+             
+             <!-- Bottom Tier: Timeframe Selectors & Utilities -->
+             <div style="background:#221D1F; display:flex; align-items:center; padding:4px 10px; height:20px; border-bottom:1px solid #000;">
+                <div style="display:flex; align-items:center; gap:8px;" id="bbg-tf-btns">
+                   <span class="tf-btn" data-interval="1m" style="cursor:pointer; color:#fff; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '1m')">1m</span>
+                   <span class="tf-btn" data-interval="5m" style="cursor:pointer; color:#fff; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '5m')">5m</span>
+                   <span class="tf-btn" data-interval="15m" style="cursor:pointer; color:#fff; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '15m')">15m</span>
+                   <span class="tf-btn" data-interval="30m" style="cursor:pointer; color:#fff; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '30m')">30m</span>
+                   <span class="tf-btn" data-interval="1h" style="cursor:pointer; color:#fff; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '1h')">1H</span>
+                   <span class="tf-btn" data-interval="3d" style="cursor:pointer; color:#fff; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '3d')">3D</span>
+                   <span class="tf-btn" data-interval="1d" style="cursor:pointer; color:#fff; background:#1d4e9e; font-weight:bold; border-radius:2px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '1d')">1D</span>
+                   <span class="tf-btn" data-interval="6m_h" style="cursor:pointer; color:#fff; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '6m_h')">6M</span>
+                   <span class="tf-btn" data-interval="ytd" style="cursor:pointer; color:#fff; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, 'ytd')">YTD</span>
+                   <span class="tf-btn" data-interval="1y" style="cursor:pointer; color:#fff; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '1y')">1Y</span>
+                   <span class="tf-btn" data-interval="5y" style="cursor:pointer; color:#fff; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '5y')">5Y</span>
+                   <span class="tf-btn" data-interval="max" style="cursor:pointer; color:#fff; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, 'max')">Max</span>
+                   <span style="color:#555; margin:0 2px;">│</span>
+                   <span style="cursor:pointer; color:#fff; font-size:10px; position:relative; z-index:20000; pointer-events:auto;">Daily ▾</span>
+                </div>
+
+                <div style="display:flex; gap:14px; align-items:center; color:#fff; margin-left:auto; font-size:11px;">
+                   <div style="cursor:pointer; display:flex; align-items:center; gap:3px; color:#fff; font-size:11px;">
+                      <span style="font-weight:bold;">+</span> Related Data ▾
+                   </div>
+                   <div style="background:#F69F26; color:#362400; padding:0 8px; font-weight:600; border-radius:1px; cursor:pointer; font-size:11px; height:18px; line-height:18px;">
+                      Add Data
+                   </div>
+                   <div style="color:#888; font-size:14px; cursor:pointer; font-weight:700; margin-top:-2px;">«</div>
+                   <div style="cursor:pointer; display:flex; align-items:center; gap:3px; color:#fff; font-size:11px;">
+                      <span>✎</span> Edit Chart
+                   </div>
+                   <div style="cursor:pointer; color:#fff; font-size:14px; margin-left:2px;">⚙</div>
+                </div>
+             </div>
+          </div>
+      </div>
+      
+      <!-- Chart Canvas Container -->
+      <div id="bbg-chart-container" style="flex:1; width:100%; position:relative; background:#000;">
+          <!-- TradingView attribution (hidden) -->
+          <a href="https://www.tradingview.com/" rel="noopener noreferrer" target="_blank"
+             aria-label="Powered by TradingView"
+             style="display:none!important;position:absolute;bottom:4px;left:4px;z-index:1;opacity:0;visibility:hidden;pointer-events:none;text-decoration:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 36 28" fill="none" aria-hidden="true">
+              <path fill="#2962FF" d="M14 28L2 16 0 28h14zM22 0L8 14l14 14V0zM36 14L22 0v28l14-14z"/>
+            </svg>
+            <span style="font-family:Arial,sans-serif;font-size:11px;font-weight:700;color:#2962FF;letter-spacing:.3px;">TradingView</span>
+          </a>
+          
+          <!-- Overlays will be injected by _initBbg() -->
+          <!-- OHLC left panel — exact design from v5-7 -->
+          <div id="ov-left-panel" style="position:absolute; top:20px; left:14px; z-index:9000; background:transparent; padding:4px 8px; font-family:'Roboto Mono',monospace; font-size:10px; color:#888; pointer-events:none;">
+              <div style="display:flex; align-items:center; gap:8px; line-height:1.6;">
+                  <div style="display:flex; align-items:center; position:relative; width:12px; height:16px;">
+                      <div style="position:absolute; left:2px; top:50%; width:1px; height:50%; background:#444;"></div>
+                      <div style="position:absolute; left:2px; top:50%; width:6px; height:1px; background:#444;"></div>
+                      <div style="width:6px; height:6px; background:#bababa; border-radius:0px; margin-left:6px; z-index:1;"></div>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; width:150px;">
+                      <span style="color:#ccc;">Last Price</span>
+                      <span style="color:#fff;" id="ov-start">—</span>
+                  </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; line-height:1.6;">
+                  <div style="display:flex; align-items:center; position:relative; width:12px; height:16px;">
+                      <div style="position:absolute; left:2px; top:0; width:1px; height:100%; background:#444;"></div>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; width:150px;">
+                      <span style="color:#777;" id="ov-date-high">High on --/--/--</span>
+                      <span style="color:#fff;" id="ov-high">—</span>
+                  </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; line-height:1.6;">
+                  <div style="display:flex; align-items:center; position:relative; width:12px; height:16px;">
+                      <div style="position:absolute; left:2px; top:0; width:1px; height:100%; background:#444;"></div>
+                      <div style="position:absolute; left:2px; top:50%; width:6px; height:1px; background:#444;"></div>
+                      <div style="width:7px; height:7px; background:#ff9900; border-radius:0px; margin-left:6px; z-index:1;"></div>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; width:150px;">
+                      <span style="color:#ff9900; font-weight:700;">Open</span>
+                      <span id="ov-open" style="color:#fff;">—</span>
+                  </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; line-height:1.6;">
+                  <div style="display:flex; align-items:center; position:relative; width:12px; height:16px;">
+                      <div style="position:absolute; left:2px; top:0; width:1px; height:50%; background:#444;"></div>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; width:150px;">
+                      <span style="color:#777;">Close</span>
+                      <span id="ov-close" style="color:#fff;">—</span>
+                  </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; line-height:1.6; margin-left:20px;">
+                  <div style="display:flex; justify-content:space-between; width:150px;">
+                      <span style="color:#777;" id="ov-date-low">Low on --/--/--</span>
+                      <span style="color:#fff;" id="ov-low">—</span>
+                  </div>
+              </div>
+          </div>
+          <!-- TradingView-style price scale scroll arrows -->
+          <!-- Datetime overlay — top right, above iframe -->
+          <div id="ov-datetime" style="position:absolute; top:6px; right:20px; z-index:9000; pointer-events:none; font-family:'Roboto Mono',monospace; font-size:10px; color:#554433; letter-spacing:0.5px; white-space:nowrap;">
+            <span id="ov-date">--/--/--</span>&nbsp;&nbsp;<span id="ov-time" style="color:#443322;">--:--:--</span>
+          </div>
+
+          <div id="price-scale-arrows" style="position:absolute; right:0; top:50%; transform:translateY(-50%); z-index:9000; display:flex; flex-direction:column; align-items:center; gap:0; pointer-events:auto; opacity:0.5; transition:opacity .15s;">
+            <div id="ps-arrow-up" style="width:14px; height:14px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#888; font-size:8px; line-height:1; border:1px solid rgba(255,255,255,0.08); border-radius:2px 2px 0 0; background:rgba(30,30,30,0.7); user-select:none;" title="Scroll price up">▲</div>
+            <div id="ps-arrow-down" style="width:14px; height:14px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#888; font-size:8px; line-height:1; border:1px solid rgba(255,255,255,0.08); border-top:none; border-radius:0 0 2px 2px; background:rgba(30,30,30,0.7); user-select:none;" title="Scroll price down">▼</div>
+          </div>
+          
+      </div>
+      </div>
+      </div>
+    </div></div>
+
+  
+  <!-- PANEL CONTAINER (absolute positioned panels inside) -->
+  <!-- AIS PANEL (Right side) -->
+  <div id="ais-panel">
+    <!-- Minimal top bar - just filters + close -->
+    <div style="display:flex;align-items:center;padding:4px 6px;background:#030200;border-bottom:1px solid #0a0800;flex-shrink:0;gap:3px;">
+      <span id="ais-live-indicator" style="width:5px;height:5px;border-radius:50%;background:#333;flex-shrink:0;"></span>
+      <span id="ais-status-text" style="font-size:7px;font-weight:700;padding:1px 5px;background:#0a0800;color:#443322;letter-spacing:.5px;">OFFLINE</span>
+      <button class="ais-filter on" data-f="all" onclick="_aisFilter('all',this)">ALL</button>
+      <button class="ais-filter" data-f="moving" onclick="_aisFilter('moving',this)">MOVING</button>
+      <button class="ais-filter" data-f="tanker" onclick="_aisFilter('tanker',this)">TNK</button>
+      <button class="ais-filter" data-f="cargo" onclick="_aisFilter('cargo',this)">CGO</button>
+      <button class="ais-filter" data-f="passenger" onclick="_aisFilter('passenger',this)">PAX</button>
+      <button class="ais-filter" data-f="anchored" onclick="_aisFilter('anchored',this)">ANCHOR</button>
+      <span style="flex:1"></span>
+      <span id="ais-pkt-counter" style="font-size:6px;color:#221800;font-family:var(--fn-num);">—</span>
+      <span onclick="_aisConnect()" style="font-size:9px;cursor:pointer;color:#332200;padding:0 2px;" onmouseover="this.style.color='#ff8800'" onmouseout="this.style.color='#332200'">↻</span>
+      <span onclick="toggleAISPanel()" style="color:#221800;font-size:8px;cursor:pointer;padding:0 2px;" onmouseover="this.style.color='#ff4400'" onmouseout="this.style.color='#221800'">✕</span>
+    </div>
+
+    <!-- Ship List - takes all space -->
+    <div id="ais-ship-list" class="sbl" style="flex:1;overflow-y:auto;background:transparent;min-height:80px;"></div>
+
+    <!-- Detail removed -->
+
+    <!-- Bottom bar -->
+    <div style="display:flex;padding:3px 8px;background:#020100;border-top:1px solid #060400;flex-shrink:0;align-items:center;">
+      <span style="font-size:5px;color:#332200;font-family:var(--fn);letter-spacing:1px;" id="ais-pkt-rate">—</span>
+    </div>
+  </div>
+
+  <!-- AIS key dialog removed — key hardcoded -->
+
+  <!-- SIDEBAR -->
+  <div id="SB">
+    <!-- TAB BAR -->
+    <div id="sb-tabs" style="display:flex;flex-shrink:0;background:#000;border-bottom:1px solid #1a1000;overflow-x:auto;scrollbar-width:none;">
+      
+      <div class="sbtab on" data-tab="fx"  onclick="sbSwitchTab('fx')">FX</div>
+      <div class="sbtab" data-tab="cmd" onclick="sbSwitchTab('cmd')">CMD</div>
+      <div class="sbtab" data-tab="cry" onclick="sbSwitchTab('cry')">CRYPTO</div>
+      <div class="sbtab" data-tab="stk" onclick="sbSwitchTab('stk')">STOCKS</div>
+      <div class="sbtab" data-tab="etf" onclick="sbSwitchTab('etf')">ETF</div>
+
+    </div>
+
+    <!-- TAB: IDX (World Indices) -->
+    <div id="sbt-idx" class="sb-tab-body" style="display:none!important;">
+      <div class="sb-hd"><span class="sb-ht" id="sb-title">WORLD INDICES</span><span class="sb-time" id="sb-time"></span></div>
+      <div class="sbl" id="mkt-list" style="flex:1;overflow-y:auto;"></div>
+    </div>
+
+    <!-- TAB: FX -->
+    <div id="sbt-fx" class="sb-tab-body" style="flex:1;display:none;flex-direction:column;min-height:0;overflow:hidden;">
+      <div class="sb-hd"><span class="sb-ht">FOREIGN EXCHANGE</span></div>
+      <div class="sbl" id="fx-list-full" style="flex:1;overflow-y:auto;"></div>
+    </div>
+
+    <!-- TAB: CMD (Commodities & Futures) -->
+    <div id="sbt-cmd" class="sb-tab-body" style="flex:1;display:none;flex-direction:column;min-height:0;overflow:hidden;">
+      <div class="sb-hd"><span class="sb-ht">COMMODITIES & FUTURES</span></div>
+      <div class="sbl" id="cmd-list" style="flex:1;overflow-y:auto;"></div>
+    </div>
+
+    <!-- TAB: CRYPTO -->
+    <div id="sbt-cry" class="sb-tab-body" style="flex:1;display:none;flex-direction:column;min-height:0;overflow:hidden;">
+      <div class="sb-hd"><span class="sb-ht">DIGITAL ASSETS</span></div>
+      <div class="sbl" id="cry-list" style="flex:1;overflow-y:auto;"></div>
+    </div>
+
+    <!-- TAB: STOCKS -->
+    <div id="sbt-stk" class="sb-tab-body" style="flex:1;display:none;flex-direction:column;min-height:0;overflow:hidden;">
+      <div class="sb-hd"><span class="sb-ht">US STOCKS</span></div>
+      <div class="sbl" id="stk-list" style="flex:1;overflow-y:auto;"></div>
+    </div>
+
+    <!-- TAB: ETF -->
+    <div id="sbt-etf" class="sb-tab-body" style="flex:1;display:none;flex-direction:column;min-height:0;overflow:hidden;">
+      <div class="sb-hd"><span class="sb-ht">ETFs</span></div>
+      <div class="sbl" id="etf-list" style="flex:1;overflow-y:auto;"></div>
+    </div>
+
+    <!-- TAB: AIS (Maritime Intelligence) -->
+
+    <!-- Detail pane (shared) -->
+    <div id="DT" style="display:none;">
+      <div class="dt-hd"><span class="dt-ht" id="dt-title" style="visibility:hidden">— SELECT MARKET —</span></div>
+      <div class="dt-body" id="dt-body"></div>
+    </div>
+
+    <!-- CALENDAR (bottom, always visible) -->
+    
+    
+    
+
+    <!-- hidden fx-list kept for backward-compat with renderSidebar() -->
+    <div id="fx-list" style="display:none"></div>
+  </div>
+</div>
+
+<!-- STATUS BAR (Stacked: Ticker -> Clocks) -->
+<div id="STAT">
+  <div id="map-ticker"><div id="map-tick-inner"></div></div>
+  <div id="stat-clocks-row">
+
+  <!-- UTC + DATE -->
+  <div class="sb-sec" id="sb-sec-utc">
+    <div id="sb-utc">
+      <div id="sb-utc-time">--:--:--</div>
+      <div id="sb-utc-date">SAT 14 MAR 2026</div>
+      
+    </div>
+    
+  </div>
+
+  <!-- CITY CLOCKS + WEATHER -->
+  <div class="sb-sec" id="sb-sec-cities" style="flex:1;overflow:hidden">
+    <div id="stat-cities" style="display:flex;align-items:stretch;width:100%">
+      <div class="stat-city" id="sc-nyc">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#ff6600"></div><span class="stat-city-name">NEW YORK</span><span class="stat-city-time" id="sc-nyc-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-nyc-wx"></span><span class="stat-city-temp" id="sc-nyc-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-nyc-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-lon">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#ff8800"></div><span class="stat-city-name">LONDON</span><span class="stat-city-time" id="sc-lon-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-lon-wx"></span><span class="stat-city-temp" id="sc-lon-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-lon-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-fra">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#cc5500"></div><span class="stat-city-name">FRANKFURT</span><span class="stat-city-time" id="sc-fra-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-fra-wx"></span><span class="stat-city-temp" id="sc-fra-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-fra-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-dub">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#ff6600"></div><span class="stat-city-name">DUBAI</span><span class="stat-city-time" id="sc-dub-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-dub-wx"></span><span class="stat-city-temp" id="sc-dub-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-dub-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-sin">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#00aa33"></div><span class="stat-city-name">SINGAPORE</span><span class="stat-city-time" id="sc-sin-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-sin-wx"></span><span class="stat-city-temp" id="sc-sin-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-sin-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-tok">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#0099bb"></div><span class="stat-city-name">TOKYO</span><span class="stat-city-time" id="sc-tok-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-tok-wx"></span><span class="stat-city-temp" id="sc-tok-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-tok-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-hkg">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#1166cc"></div><span class="stat-city-name">HONG KONG</span><span class="stat-city-time" id="sc-hkg-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-hkg-wx"></span><span class="stat-city-temp" id="sc-hkg-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-hkg-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-syd" style="border-right:none">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#774488"></div><span class="stat-city-name">SYDNEY</span><span class="stat-city-time" id="sc-syd-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-syd-wx"></span><span class="stat-city-temp" id="sc-syd-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-syd-desc"></span></div>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- DATA FEEDS -->
+  <div class="sb-sec hidden" id="sb-sec-feeds" style="display:none !important">
+    <div id="sb-feeds">
+      <span class="si-badge" id="si-bnb">BNB</span>
+      <span class="si-badge" id="si-cb">CBS</span>
+      <span class="si-badge" id="si-okx">OKX</span>
+      <span class="si-badge" id="si-bybit">BYB</span>
+      <span class="si-badge" id="si-fx">FX</span>
+      <span class="si-badge" id="si-idx">IDX</span>
+      <span class="si-badge" id="si-defi">DFI</span>
+      <span class="si-badge" id="si-cg">CGK</span>
+      <span class="si-badge" id="si-sol">SOL</span>
+      <span class="si-badge" id="si-eth">ETH</span>
+      <span class="si-badge" id="si-hl">HYP</span>
+      <span class="si-badge" id="si-kraken">KRK</span>
+      <span class="si-badge" id="si-kucoin">KCN</span>
+      <span class="si-badge" id="si-gate">GAT</span>
+      <span class="si-badge" id="si-mexc">MXC</span>
+      <span class="si-badge" id="si-htx">HTX</span>
+      <span class="si-badge" id="si-bitget">BGT</span>
+    </div>
+  </div>
+
+  <!-- NETWORK + MAP LAYERS STATUS -->
+  <div class="sb-sec" id="sb-sec-status" style="display:none" style="border-top:1px solid #1a0a00;padding-top:4px;">
+    <div style="color:#887760;font-size:6px;letter-spacing:1px;margin-bottom:3px;padding:0 2px;">NETWORK &amp; LAYERS</div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px;padding:0 2px;">
+      <span class="si-badge" id="si-net" title="Internet connection" style="cursor:default">NET</span>
+      <span class="si-badge" id="si-ai" title="Anthropic AI — click to set key" style="cursor:pointer" onclick="document.getElementById('api-key-banner').style.display='flex'">AI</span>
+      <span class="si-badge" id="si-layer-inst" title="Institutions layer (map)">INST</span>
+      <span class="si-badge" id="si-layer-cb" title="Central Banks layer (map)">CB</span>
+      <span class="si-badge" id="si-layer-macro" title="Macro data layer (map)">MACRO</span>
+      <span class="si-badge" id="si-layer-crypto" title="Crypto layer (map)">CRYP</span>
+      <span class="si-badge" id="si-layer-news" title="News feed">NEWS</span>
+      <span class="si-badge" id="si-layer-yahoo" title="Yahoo Finance equities">YHO</span>
+      <span class="si-badge" id="si-layer-stooq" title="Stooq indices">STQ</span>
+
+    </div>
+  </div>
+
+  <!-- COORD + MSG -->
+  <div id="st-coord" style="color:#887760;font-size:8px;white-space:nowrap;padding:0 10px;flex-shrink:0;display:flex;align-items:center;border-left:1px solid #1a0a00"></div>
+  <div id="st-msg" style="display:none"></div>
+  <div id="st-panels" style="display:none"></div>
+  <div id="st-mode" style="display:none"></div>
+  <div id="st-utc" style="display:none"></div>
+  <span class="si-badge" id="si-kraken" style="display:none"></span>
+  <span class="si-badge" id="si-kucoin" style="display:none"></span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SYSTEM MONITOR — STABILITY & PERSISTENCE ENHANCEMENT v1.0
+     Adds: localStorage cache · connection health monitor · 
+     auto-reconnect with exponential backoff · offline banner ·
+     data freshness indicator · Service Worker support
+═══════════════════════════════════════════════════════════════ -->
+
+<!-- API KEY SETUP BANNER -->
+<!-- ═══════════════════════════════════════════════════
+     API KEY BANNER + LIVE VERIFICATION
+═══════════════════════════════════════════════════ -->
+<div id="api-key-banner" style="display:none;position:fixed;top:26px;left:0;right:0;z-index:9999;background:#0a0500;border-bottom:2px solid #ff6600;padding:8px 16px;font-family:'Courier New',monospace;font-size:11px;color:#ff8800;flex-direction:column;gap:6px;">
+
+  <!-- Row 1: input -->
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="color:#ff4400;font-weight:700;letter-spacing:1px">⚠ AI OFFLINE</span>
+    <span style="color:#998870;font-size:9px">Anthropic API key required for AI features:</span>
+    <input id="api-key-input" type="password" placeholder="sk-ant-api03-..." 
+      style="background:#050300;border:1px solid #ff6600;color:#ff8800;font-family:'Courier New',monospace;font-size:10px;padding:3px 10px;width:300px;outline:none;letter-spacing:1px"
+      onkeydown="if(event.key==='Enter') document.getElementById('api-key-verify-btn').click()" />
+    <button id="api-key-verify-btn" onclick="_verifyAndSetKey()" 
+      style="background:#ff6600;color:#000;border:none;font-family:'Courier New',monospace;font-size:9px;font-weight:700;padding:3px 14px;cursor:pointer;letter-spacing:2px">
+      VERIFY
+    </button>
+    <button onclick="document.getElementById('api-key-banner').style.display='none'" 
+      style="background:transparent;color:#887760;border:1px solid #1a0800;font-family:'Courier New',monospace;font-size:9px;padding:3px 8px;cursor:pointer">
+      DISMISS
+    </button>
+    <span style="color:#887760;margin-left:auto;font-size:8px">console.anthropic.com</span>
+  </div>
+
+  <!-- Row 2: verification status -->
+  <div id="api-key-status" style="display:none;align-items:center;gap:8px;padding:4px 0 2px 0">
+    <span id="api-key-status-icon" style="font-size:10px">⏳</span>
+    <span id="api-key-status-text" style="font-size:8px;letter-spacing:1px;color:#665840"></span>
+    <span id="api-key-status-detail" style="font-size:7.5px;color:#887760"></span>
+  </div>
+
+</div>
+
+<!-- === FIRST LAYER LIVE RECEIVER (HIDDEN DATA MODE) === -->
+<div id="first-layer" style="display:none; position:fixed; top:0; left:0; width:100%; height:60px; background:rgba(0,0,0,0.98); border-bottom:3px solid lime; z-index:10000; align-items:center; justify-content:space-around; font-family:'Courier New', monospace; color:lime; font-size:14px;">
+  <div>
+    <strong>FIRST LAYER LIVE</strong><br>
+    <span id="l1-status">Loading... | 0/8 sources</span>
+  </div>
+
+  <div style="text-align:center;">
+    BTC: $<span id="btc-l1">--</span><br>
+    <small style="color:#00ff88;">Consensus ✓</small>
+  </div>
+
+  <div style="text-align:center;">
+    EURUSD: <span id="eurusd-l1">--</span><br>
+    <small style="color:#00ff88;">Consensus ✓</small>
+  </div>
+
+  <div style="text-align:center;">
+    S&P: <span id="sp-l1">--</span><br>
+    <small style="color:#00ff88;">Consensus ✓</small>
+  </div>
+
+  <div>Uptime: <span id="l1-uptime">0s</span></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CRYEXC BACKEND INTEGRATION v1.0
+     WebSocket bridge → localhost:8086
+     Streams: trades, liquidations, orderbook_stats, cvd, news
+     Injects into: _liveData, LIVE, MKT, terminal panels
+══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     AUTO-CONNECT ENGINE v1.0
+     Automatické propojení všech datových zdrojů:
+       1. Hyperliquid WebSocket — ceny, funding, OI pro HYPE/BERA/MOVE + stock perps
+       2. HL stock perps → STKS (MSTR, COIN, SOFI, TSLA, NVDA, META, AMZN, GOOGL)
+       3. CryExc backend → CRYPTO + _liveData injection (Binance Futures)
+       4. Watchdog — auto-restart všech WS spojení
+       5. Status badges — vizuální indikace stavu připojení
+═══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     GITHUB NEWS INTEGRATION — SECTOR FEED v1.0
+     Paste this 
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TRADINGVIEW LIVE DATA INTEGRATION
+     Pulls live chart data from tv_bridge.js → data/tv_live.json on GitHub
+     Injects into QUOTE panel, price ticker, and news cache as market alerts
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MACRO + BONDS AUTO-LOADER
+     Načítá data/macro.json + data/bonds.json z GitHub každou hodinu
+     Automaticky aktualizuje panely MACRO, WIRP, BNDS, ECAL
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- ═══════════════════════════════════════════════════════════
+  NVIDIA AI FINANCIAL INTELLIGENCE — v5.5
+  Modely: google/gemma-3-27b-it, meta/llama-3.1-8b-instruct
+  API:    https://integrate.api.nvidia.com/v1
+  Panel:  NVAI  (otevři přes PANELS menu nebo napiš NVAI)
+  Vychází z: AI Model Distillation for Financial Data blueprint
+  Klasifikuje zprávy do 13 kategorií + tržní analýza + signály
+═══════════════════════════════════════════════════════════ -->
+
+<script src="app1.js"></script>
+<script src="app2.js"></script>
+<script src="app3.js"></script>
+</body>
+</html>
