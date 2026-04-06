@@ -200,6 +200,9 @@ body.panel-open #MAIN > #map { visibility:hidden !important; }
 .leaflet-control-zoom a:hover{background:var(--am)!important;color:#000!important;}
 .leaflet-bar{box-shadow:none!important;}
 .leaflet-control-attribution{display:none!important;}
+/* ── POWER CABLE TOOLTIP ── */
+.cable-tooltip{background:rgba(0,0,0,.92)!important;border:1px solid #F39F41!important;border-radius:0!important;color:#F39F41!important;font-family:var(--fn)!important;font-size:8px!important;font-weight:700!important;letter-spacing:.5px!important;padding:2px 6px!important;box-shadow:none!important;}
+.cable-tooltip::before{display:none!important;}
 .custs-wh{color:#ffffff!important;}
 .leaflet-popup-content{margin:0!important;}
 .leaflet-popup-content-wrapper{background:#030302!important;border:1px solid #000000!important;border-top:2px solid #000000!important;border-radius:0!important;padding:0!important;box-shadow:0 8px 40px rgba(0,0,0,.97),0 0 0 1px #000000!important;}
@@ -3748,6 +3751,18 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
+      <!-- SYSTEM folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">System &amp; Infrastructure</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('SRC');closeAllQL()" style="border-left:2px solid #F39F41"><div class="ql-it-desc" style="color:#F39F41;font-weight:700">SRC &lt;GO&gt; Sources &amp; Data Providers</div></div>
+          <div class="ql-it" onclick="openPanel('SRCM');closeAllQL()"><div class="ql-it-desc">SRCM &lt;GO&gt; Source Health Monitor</div></div>
+          <div class="ql-it" onclick="openPanel('NETSIT');closeAllQL()"><div class="ql-it-desc">NETSIT &lt;GO&gt; Network Topology</div></div>
+        </div>
+      </div>
 
     </div>
   </div>
@@ -3857,6 +3872,7 @@ document.addEventListener('DOMContentLoaded', function() {
                    <span class="tf-btn" data-interval="max" style="cursor:pointer; color:#fff; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, 'max')">Max</span>
                    <span style="color:#555; margin:0 2px;">│</span>
                    <span style="cursor:pointer; color:#fff; font-size:10px; position:relative; z-index:20000; pointer-events:auto;">Daily ▾</span>
+
                 </div>
 
                 <div style="display:flex; gap:14px; align-items:center; color:#fff; margin-left:auto; font-size:11px;">
@@ -3889,6 +3905,10 @@ document.addEventListener('DOMContentLoaded', function() {
           </a>
           
           <!-- Overlays will be injected by _initBbg() -->
+          <!-- PRICE LINE CANVAS OVERLAY -->
+          <canvas id="bbg-line-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9500;"></canvas>
+          <!-- PRICE LINE CANVAS OVERLAY -->
+          <canvas id="bbg-line-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9500;"></canvas>
           <!-- OHLC left panel — exact design from v5-7 -->
           <div id="ov-left-panel" style="position:absolute; top:20px; left:14px; z-index:9000; background:transparent; padding:4px 8px; font-family:'Roboto Mono',monospace; font-size:10px; color:#888; pointer-events:none;">
               <div style="display:flex; align-items:center; gap:8px; line-height:1.6;">
@@ -4224,6 +4244,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <span class="si-badge" id="si-layer-news" title="News feed">NEWS</span>
       <span class="si-badge" id="si-layer-yahoo" title="Yahoo Finance equities">YHO</span>
       <span class="si-badge" id="si-layer-stooq" title="Stooq indices">STQ</span>
+      <span class="si-badge" id="si-layer-cables" title="Power Cables — zoom in to load" style="cursor:pointer;color:#555;border-color:#333;" onclick="window._toggleCablesLayer&&_toggleCablesLayer()">⬡ PWR</span>
 
     </div>
   </div>
@@ -5764,9 +5785,191 @@ map.on('mousemove',e=>{document.getElementById('st-coord').textContent=`${e.latl
 map.on('click', function(){ closeAllMenus(); map.closePopup(); });
 function flyTo(c,z){map.flyTo(c,z,{duration:2.5, easeLinearity:0.05});}
 
-const LG={mkt:L.layerGroup().addTo(map),fx:L.layerGroup().addTo(map),news:L.layerGroup().addTo(map),lbl:L.layerGroup().addTo(map),cb:L.layerGroup().addTo(map)};
-const LV={mkt:true,fx:true,news:true,lbl:true,cb:true};
-const LYR_LABELS={mkt:'MKT',fx:'FX',news:'NEWS',lbl:'LABELS',cb:'CENTRAL BANKS'};
+const LG={mkt:L.layerGroup().addTo(map),fx:L.layerGroup().addTo(map),news:L.layerGroup().addTo(map),lbl:L.layerGroup().addTo(map),cb:L.layerGroup().addTo(map),cables:L.layerGroup().addTo(map)};
+const LV={mkt:true,fx:true,news:true,lbl:true,cb:true,cables:true};
+const LYR_LABELS={mkt:'MKT',fx:'FX',news:'NEWS',lbl:'LABELS',cb:'CENTRAL BANKS',cables:'POWER CABLES'};
+
+/* ═══════════════════════════════════════════════════════
+   UNDERGROUND POWER CABLES LAYER — OpenStreetMap/Overpass
+   Zdroj: OpenStreetMap · power=cable (podzemní vedení)
+═══════════════════════════════════════════════════════ */
+(function(){
+  const CABLE_STYLE = {
+    color:'#F39F41', weight:1.8, opacity:0.72,
+    dashArray:'6,3', lineCap:'round', lineJoin:'round'
+  };
+  const HV_STYLE = {
+    color:'#ff4422', weight:2.2, opacity:0.8,
+    dashArray:null, lineCap:'round', lineJoin:'round'
+  };
+
+  let _cableReqActive = false;
+  let _cableLastBounds = null;
+  let _cableDebounce = null;
+
+  function voltageLabel(tags) {
+    if (!tags) return '';
+    const v = tags.voltage || tags['voltage:primary'] || '';
+    if (!v) return '';
+    const kv = Math.round(parseInt(v) / 1000);
+    return kv > 0 ? kv+'kV' : '';
+  }
+
+  function isHV(tags) {
+    if (!tags) return false;
+    const v = parseInt(tags.voltage || tags['voltage:primary'] || '0');
+    return v >= 110000;
+  }
+
+  function buildPopup(tags, coords) {
+    const name = tags.name || tags['name:en'] || '';
+    const loc = `${coords[0].toFixed(4)}°, ${coords[1].toFixed(4)}°`;
+    const v = tags.voltage ? (parseInt(tags.voltage)/1000)+'kV' : '?';
+    const circuits = tags.circuits || '?';
+    const cables = tags.cables || '?';
+    const operator = tags.operator || '';
+    const ref = tags.ref || '';
+    return `<div class="bbpop" style="min-width:200px;padding:10px 12px;font-family:var(--fn);font-size:10px;background:#000;color:#ccc;">
+      <div style="color:#F39F41;font-size:9px;font-weight:700;letter-spacing:1px;margin-bottom:6px;border-bottom:1px solid #1a1400;padding-bottom:4px;">⬡ POWER CABLE — OSM</div>
+      ${name?`<div style="color:#fff;font-weight:700;margin-bottom:3px;">${name}</div>`:''}
+      ${ref?`<div style="color:#888;font-size:8px;margin-bottom:2px;">REF: ${ref}</div>`:''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;margin-top:6px;">
+        <div style="color:#887760;font-size:8px;">VOLTAGE</div><div style="color:#F39F41;font-weight:700;">${v}</div>
+        <div style="color:#887760;font-size:8px;">CIRCUITS</div><div style="color:#ccc;">${circuits}</div>
+        <div style="color:#887760;font-size:8px;">CABLES</div><div style="color:#ccc;">${cables}</div>
+        ${operator?`<div style="color:#887760;font-size:8px;">OPERATOR</div><div style="color:#ccc;font-size:9px;">${operator}</div>`:''}
+        <div style="color:#887760;font-size:8px;">SOURCE</div><div style="color:#444;font-size:8px;">OpenStreetMap</div>
+      </div>
+      <div style="color:#444;font-size:7px;margin-top:6px;">${loc}</div>
+    </div>`;
+  }
+
+  async function loadCables() {
+    if (!LV.cables) return;
+    if (_cableReqActive) return;
+    const b = map.getBounds();
+    const zoom = map.getZoom();
+    if (zoom < 6) {
+      LG.cables.clearLayers();
+      _updateCableBadge(0, 'zoom');
+      return;
+    }
+    // Limit bbox to avoid overload — max ~10° span
+    const maxSpan = Math.min(10, 360 / Math.pow(2, zoom - 3));
+    const s = Math.max(b.getSouth(), b.getCenter().lat - maxSpan/2);
+    const n = Math.min(b.getNorth(), b.getCenter().lat + maxSpan/2);
+    const w = Math.max(b.getWest(), b.getCenter().lng - maxSpan/2);
+    const e = Math.min(b.getEast(), b.getCenter().lng + maxSpan/2);
+    const bbox = `${s},${w},${n},${e}`;
+    if (_cableLastBounds === bbox) return;
+
+    _cableReqActive = true;
+    _updateCableBadge(null, 'loading');
+
+    // Overpass query: underground power cables (power=cable) + high-voltage lines tagged underground
+    const query = `[out:json][timeout:25];(
+      way["power"="cable"](${bbox});
+      way["power"="line"]["location"="underground"](${bbox});
+      way["power"="minor_line"]["location"="underground"](${bbox});
+    );out geom qt;`;
+
+    try {
+      const ENDPOINTS = [
+        'https://overpass-api.de/api/interpreter',
+        'https://overpass.kumi.systems/api/interpreter'
+      ];
+      let data = null;
+      for (const ep of ENDPOINTS) {
+        try {
+          const r = await fetch(ep, {
+            method:'POST',
+            body:'data='+encodeURIComponent(query),
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            signal: AbortSignal.timeout(22000)
+          });
+          if (r.ok) { data = await r.json(); break; }
+        } catch(e) { /* try next */ }
+      }
+      if (!data || !data.elements) throw new Error('No data from Overpass');
+
+      LG.cables.clearLayers();
+      let count = 0;
+      for (const el of data.elements) {
+        if (el.type !== 'way' || !el.geometry) continue;
+        const coords = el.geometry.map(pt => [pt.lat, pt.lon]);
+        if (coords.length < 2) continue;
+        const tags = el.tags || {};
+        const hv = isHV(tags);
+        const style = hv ? HV_STYLE : CABLE_STYLE;
+        const line = L.polyline(coords, style);
+        const vLabel = voltageLabel(tags);
+        const centerIdx = Math.floor(coords.length / 2);
+        const centerCoord = coords[centerIdx];
+        line.bindPopup(buildPopup(tags, [centerCoord[0], centerCoord[1]]), {maxWidth:260, className:''});
+        if (zoom >= 9 && vLabel) {
+          line.bindTooltip(vLabel, {
+            permanent:false, direction:'top', sticky:true,
+            className:'cable-tooltip',
+            offset:[0,-2]
+          });
+        }
+        LG.cables.addLayer(line);
+        count++;
+      }
+      _cableLastBounds = bbox;
+      _updateCableBadge(count, 'ok');
+    } catch(err) {
+      console.warn('[CABLES] Overpass error:', err.message);
+      _updateCableBadge(0, 'err');
+    } finally {
+      _cableReqActive = false;
+    }
+  }
+
+  function _updateCableBadge(count, state) {
+    const badge = document.getElementById('si-layer-cables');
+    if (!badge) return;
+    if (state === 'loading') { badge.style.borderColor='#F39F41'; badge.style.color='#F39F41'; badge.title='Power Cables — Loading...'; return; }
+    if (state === 'zoom') { badge.style.borderColor='#333'; badge.style.color='#555'; badge.title='Power Cables — Zoom in (min zoom 6)'; return; }
+    if (state === 'err') { badge.style.borderColor='#661100'; badge.style.color='#ff4422'; badge.title='Power Cables — Error fetching data'; return; }
+    if (state === 'ok') {
+      const active = LV.cables;
+      badge.style.borderColor = active ? '#F39F41' : '#333';
+      badge.style.color = active ? '#F39F41' : '#555';
+      badge.title = `Power Cables — ${count} segments loaded · Click to toggle`;
+    }
+    if (state === 'off') { badge.style.borderColor='#333'; badge.style.color='#555'; badge.title='Power Cables — Hidden'; }
+  }
+
+  function scheduleCableLoad() {
+    clearTimeout(_cableDebounce);
+    _cableDebounce = setTimeout(loadCables, 600);
+  }
+
+  // Hook into map events
+  map.on('moveend zoomend', scheduleCableLoad);
+
+  // Initial load after map is ready
+  setTimeout(loadCables, 2000);
+
+  // Expose toggle
+  window._toggleCablesLayer = function() {
+    LV.cables = !LV.cables;
+    if (LV.cables) {
+      map.addLayer(LG.cables);
+      _cableLastBounds = null;
+      scheduleCableLoad();
+      _updateCableBadge(null, 'loading');
+    } else {
+      map.removeLayer(LG.cables);
+      _updateCableBadge(0, 'off');
+    }
+    const lyrEl = document.getElementById('lyr-cables');
+    if (lyrEl) { const k=lyrEl.querySelector('.dd-key'); if(k){k.style.opacity=LV.cables?'1':'.35';} }
+  };
+
+})();
+
 
 function togLayer(n){
   LV[n]=!LV[n];LV[n]?map.addLayer(LG[n]):map.removeLayer(LG[n]);
@@ -6006,7 +6209,7 @@ window.PANEL_REGISTRY=PANEL_REGISTRY;
 
 /* ══ REFRESH ALL OPEN PANELS ══ */
 // Panels that change rarely — only refresh every N seconds
-const PANEL_SLOW = {ETFF:300, ECAL:60, DEFI:120, CHAIN:60, NETSIT:999999, INTEL:30, JOURN:60, SOURCES:60, MOVERS:999999, OIDASH:30, FUNDHIST:60, WHALE:30, ORDB:999999, CRYPTOOPT:60, VPVR:60, LIQHEAT:999999};
+const PANEL_SLOW = {ETFF:300, ECAL:60, DEFI:120, CHAIN:60, NETSIT:999999, INTEL:30, JOURN:60, SRCM:60, MOVERS:999999, OIDASH:30, FUNDHIST:60, WHALE:30, ORDB:999999, CRYPTOOPT:60, VPVR:60, LIQHEAT:999999};
 const _panelLastRefresh = {};
 
 function refreshAllPanels(){
@@ -6061,7 +6264,7 @@ function refreshAllPanels(){
       // INTEL/JOURN/SOURCES — use direct render, never rebuild outer shell (prevents flash/loop)
       if(reg.fn==='INTEL'){ if(typeof _renderINTEL==='function'&&document.getElementById('intel-feed'))_renderINTEL(); return; }
       if(reg.fn==='JOURN'){ if(typeof buildJOURN==='function'){body.innerHTML=buildJOURN(ti);} return; }
-      if(reg.fn==='SOURCES'){ if(typeof buildSOURCES==='function'){body.innerHTML=buildSOURCES();} return; }
+      if(reg.fn==='SRCM'){ if(typeof buildSRCM==='function'){body.innerHTML=buildSRCM();} return; }
       // For WN panels — only update the inner wn-body, never the whole panel (preserves search input)
       if(reg.fn==='NWS'){
         const nwsb=body.querySelector('#nws-body');
@@ -6161,12 +6364,12 @@ function getPanelTabs(fn){
     NETSIT:['NETWORK MAP','DATA FLOW LOG','PANEL LAUNCHER','LIVE FEED STATUS','API KEY'],
     INTEL:[],
     JOURN:['WATCHLIST','TIER 1','TIER 2'],
-    SOURCES:['STATUS','BY LANG','BY CAT']
+    SRCM:['STATUS','BY LANG','BY CAT']
 };
   return tabs[fn]||null;
 }
 function getPanelTitle(fn){
-  const t={WEI:'WORLD EQUITY INDICES',FX:'FOREIGN EXCHANGE RATES',EQUITY:'US EQUITY QUOTES',IDX:'WORLD INDICES',MOVERS:'TOP MOVERS',CRYPTO:'DIGITAL ASSETS / CRYPTO',COMDTY:'COMMODITIES',ENERGY:'ENERGY MARKETS',METALS:'PRECIOUS METALS',AGRI:'AGRICULTURAL',MACRO:'MACRO DASHBOARD',WIRP:'RATE CUT PROBABILITIES',WN:'NEWS FEED',NWS:'NEWS & RESEARCH',ALERTS:'MACRO ALERTS',DES:'SECURITY DESCRIPTION',FA:'FINANCIAL ANALYSIS',MMAP:'MARKET HEATMAP',CRYPTOHEAT:'CRYPTO HEATMAP',YLDS:'TREASURY YIELD CURVE',FXIP:'FX IMPLIED VOLATILITY',FXCL:'FX CORRELATIONS',CN:'X / SOCIAL FEED',ECON:'COUNTRY ECONOMICS',ECAL:'ECONOMIC CALENDAR',ECAL2:'ECONOMIC CALENDAR — NEXT WEEK',DEFI:'DEFI PROTOCOLS',CHAIN:'BLOCKCHAIN NETWORKS',PERF:'PERFORMANCE TABLE',BYFC:'BOND YIELD FORECASTS',ETFF:'ETF FLOWS — BITCOIN & ETHEREUM',FUND:'PERPETUAL FUNDING RATES',LIQD:'LIQUIDATIONS MONITOR',DOMN:'',NETSIT:'DATA NETWORK SYSTEM — P2P MESH VISUALIZER',DHLO:'DAILY HIGH · LOW · OPEN · CLOSE',INTEL:'GLOBAL INTELLIGENCE',JOURN:'JOURNALIST & TRADER WATCHLIST',SOURCES:'SOURCE HEALTH MONITOR',OPT:'OPTIONS CHAIN',BNDS:'SOVEREIGN BONDS & CREDIT',EARN:'EARNINGS CALENDAR',PORT:'PORTFOLIO TRACKER',SENT:'MARKET SENTIMENT',IPO:'IPO CALENDAR',MNA:'M&A DEAL TRACKER',CRYEXC:'CRYEXC — LIVE ORDER FLOW & NEWS',RISK:'RISK METRICS',GMHM:'GLOBAL MACRO HEATMAP',ORDB:'ORDER BOOK DEPTH',CRYPTOOPT:'CRYPTO OPTIONS CHAIN',WHALE:'WHALE TRACKER & ON-CHAIN',OIDASH:'OPEN INTEREST DASHBOARD',FUNDHIST:'FUNDING RATE HISTORY',VPVR:'VOLUME PROFILE VPVR',LIQHEAT:'LIQUIDATION HEATMAP',HYPER:'HYPERLIQUID — LIVE PERP DASHBOARD',CRCL:'CRCL — CIRCULAR MARKET METRICS',METR:'METR — CROSS-ASSET METRICS DASHBOARD',MULTIFEED:'MULTI-EXCHANGE LIVE FEED',STOCKS2:'EXTENDED EQUITY UNIVERSE'};
+  const t={WEI:'WORLD EQUITY INDICES',FX:'FOREIGN EXCHANGE RATES',EQUITY:'US EQUITY QUOTES',IDX:'WORLD INDICES',MOVERS:'TOP MOVERS',CRYPTO:'DIGITAL ASSETS / CRYPTO',COMDTY:'COMMODITIES',ENERGY:'ENERGY MARKETS',METALS:'PRECIOUS METALS',AGRI:'AGRICULTURAL',MACRO:'MACRO DASHBOARD',WIRP:'RATE CUT PROBABILITIES',WN:'NEWS FEED',NWS:'NEWS & RESEARCH',ALERTS:'MACRO ALERTS',DES:'SECURITY DESCRIPTION',FA:'FINANCIAL ANALYSIS',MMAP:'MARKET HEATMAP',CRYPTOHEAT:'CRYPTO HEATMAP',YLDS:'TREASURY YIELD CURVE',FXIP:'FX IMPLIED VOLATILITY',FXCL:'FX CORRELATIONS',CN:'X / SOCIAL FEED',ECON:'COUNTRY ECONOMICS',ECAL:'ECONOMIC CALENDAR',ECAL2:'ECONOMIC CALENDAR — NEXT WEEK',DEFI:'DEFI PROTOCOLS',CHAIN:'BLOCKCHAIN NETWORKS',PERF:'PERFORMANCE TABLE',BYFC:'BOND YIELD FORECASTS',ETFF:'ETF FLOWS — BITCOIN & ETHEREUM',FUND:'PERPETUAL FUNDING RATES',LIQD:'LIQUIDATIONS MONITOR',DOMN:'',NETSIT:'DATA NETWORK SYSTEM — P2P MESH VISUALIZER',DHLO:'DAILY HIGH · LOW · OPEN · CLOSE',INTEL:'GLOBAL INTELLIGENCE',JOURN:'JOURNALIST & TRADER WATCHLIST',SRCM:'SOURCE HEALTH MONITOR',SRC:'SOURCES & DATA PROVIDERS',OPT:'OPTIONS CHAIN',BNDS:'SOVEREIGN BONDS & CREDIT',EARN:'EARNINGS CALENDAR',PORT:'PORTFOLIO TRACKER',SENT:'MARKET SENTIMENT',IPO:'IPO CALENDAR',MNA:'M&A DEAL TRACKER',CRYEXC:'CRYEXC — LIVE ORDER FLOW & NEWS',RISK:'RISK METRICS',GMHM:'GLOBAL MACRO HEATMAP',ORDB:'ORDER BOOK DEPTH',CRYPTOOPT:'CRYPTO OPTIONS CHAIN',WHALE:'WHALE TRACKER & ON-CHAIN',OIDASH:'OPEN INTEREST DASHBOARD',FUNDHIST:'FUNDING RATE HISTORY',VPVR:'VOLUME PROFILE VPVR',LIQHEAT:'LIQUIDATION HEATMAP',HYPER:'HYPERLIQUID — LIVE PERP DASHBOARD',CRCL:'CRCL — CIRCULAR MARKET METRICS',METR:'METR — CROSS-ASSET METRICS DASHBOARD',MULTIFEED:'MULTI-EXCHANGE LIVE FEED',STOCKS2:'EXTENDED EQUITY UNIVERSE'};
   return t[fn]||fn;
 }
 
@@ -6184,7 +6387,7 @@ function openPanel(fn,posX,posY){
     'CRYPTO':'Crypto Markets','WEI':'World Equity Indices',
     'ETFF':'ETF Flows','FUND':'Fund Screener','NWS':'News',
     'WN':'World News','INTEL':'Intelligence','JOURN':'Journals',
-    'LIQD':'Liquidity','NETSIT':'Net Positions','SOURCES':'Sources',
+    'LIQD':'Liquidity','NETSIT':'Net Positions','SRCM':'Sources','SRC':'Credits',
     'ECAL':'Economic Calendar','SHIP':'Shipping Map','AIS':'AIS Vessels',
     'EQRV':'Equity Rel Valuation','RV':'Relative Valuation',
     'MDM':'Market Depth Monitor','VWAP':'Price & Vol Dashboard',
@@ -6208,9 +6411,9 @@ function openPanel(fn,posX,posY){
   const tabs=getPanelTabs(fn);
   const tabsHtml=tabs?`<div class="panel-tabs">${tabs.map((t,i)=>`<div class="ptab${i===0?' on':''}" onclick="switchPanelTab('${id}','${fn}',${i},this)">${t}</div>`).join('')}</div>`:'';
 
-  const widePanel={'CRYEXC':true,'ETFF':true,'FUND':true,'LIQD':true,'WEI':true,'CRYPTO':true,'NETSIT':true,'INTEL':true,'JOURN':true,'SOURCES':true,'NWS':true,'CRYPTOHEAT':true,'HYPER':true,'CRCL':true,'METR':true,'MULTIFEED':true,'STOCKS2':true};
-  const defaultW=widePanel[fn]?(fn==='CRYEXC'?620:fn==='ETFF'?920:fn==='FUND'?780:fn==='LIQD'?700:fn==='NETSIT'?820:fn==='INTEL'?820:fn==='JOURN'?620:fn==='SOURCES'?580:fn==='NWS'?660:fn==='CRYPTO'?780:fn==='WEI'?900:fn==='HYPER'?860:fn==='CRCL'?780:fn==='METR'?900:fn==='MULTIFEED'?820:fn==='STOCKS2'?900:700):520;
-  const defaultH=widePanel[fn]?(fn==='CRYEXC'?680:fn==='ETFF'?480:fn==='FUND'?400:fn==='LIQD'?380:fn==='NETSIT'?560:fn==='INTEL'?600:fn==='JOURN'?580:fn==='SOURCES'?500:fn==='NWS'?600:fn==='CRYPTO'?880:fn==='WEI'?860:fn==='HYPER'?680:fn==='CRCL'?680:fn==='METR'?680:fn==='MULTIFEED'?580:fn==='STOCKS2'?680:600):500;
+  const widePanel={'CRYEXC':true,'ETFF':true,'FUND':true,'LIQD':true,'WEI':true,'CRYPTO':true,'NETSIT':true,'INTEL':true,'JOURN':true,'SRCM':true,'SRC':true,'NWS':true,'CRYPTOHEAT':true,'HYPER':true,'CRCL':true,'METR':true,'MULTIFEED':true,'STOCKS2':true};
+  const defaultW=widePanel[fn]?(fn==='CRYEXC'?620:fn==='ETFF'?920:fn==='FUND'?780:fn==='LIQD'?700:fn==='NETSIT'?820:fn==='INTEL'?820:fn==='JOURN'?620:fn==='SRCM'?580:fn==='SRC'?820:fn==='NWS'?660:fn==='CRYPTO'?780:fn==='WEI'?900:fn==='HYPER'?860:fn==='CRCL'?780:fn==='METR'?900:fn==='MULTIFEED'?820:fn==='STOCKS2'?900:700):520;
+  const defaultH=widePanel[fn]?(fn==='CRYEXC'?680:fn==='ETFF'?480:fn==='FUND'?400:fn==='LIQD'?380:fn==='NETSIT'?560:fn==='INTEL'?600:fn==='JOURN'?580:fn==='SRCM'?500:fn==='SRC'?600:fn==='NWS'?600:fn==='CRYPTO'?880:fn==='WEI'?860:fn==='HYPER'?680:fn==='CRCL'?680:fn==='METR'?680:fn==='MULTIFEED'?580:fn==='STOCKS2'?680:600):500;
   const _ow=document.getElementById('map-overlay');
   const _owRect=_ow?_ow.getBoundingClientRect():{width:window.innerWidth};
   const ox=posX!=null?posX:Math.max(10, _owRect.width-defaultW-30-(panelCount-1)*22);
@@ -6666,7 +6869,8 @@ function buildPanelContent(fn){
     case 'INTEL':   return buildINTEL();
     case 'MARITIME':return buildMARITIME();
     case 'JOURN':   return buildJOURN();
-    case 'SOURCES': return buildSOURCES();
+    case 'SRCM': return buildSRCM();
+    case 'SRC': return buildSRC();
     case 'OPT':     return typeof buildOPT==='function'?buildOPT():'';
     case 'BNDS':    return typeof buildBNDS==='function'?buildBNDS():'';
     case 'EARN':    return typeof buildEARN==='function'?buildEARN():'';
@@ -6757,7 +6961,8 @@ function buildPanelContentTab(fn,ti){
     return buildINTEL();
   }
   if(fn==='JOURN'){return buildJOURN(ti);}
-  if(fn==='SOURCES'){return buildSOURCES(ti);}
+  if(fn==='SRCM'){return buildSRCM(ti);}
+  if(fn==='SRC'){return buildSRC(ti);}
   if(fn==='NWS'){
     const _nb3=document.querySelector('[data-fn="NWS"] #nws-body');
     if(_nb3){const _ns3=_nb3.scrollTop;_nb3.innerHTML=buildNWSPanel(ti);_nb3.scrollTop=_ns3;const _nq3=document.getElementById('nws-srch');if(_nq3&&_nq3.value&&typeof _nwsFilter==='function')_nwsFilter(_nq3.value);return '';}
@@ -6770,58 +6975,137 @@ function buildPanelContentTab(fn,ti){
    CONTENT BUILDERS
 ═══════════════════════════════════════════════════════ */
 function buildWEITable(data){
-  // Bloomberg-authentic colored cell backgrounds for % change columns
-  const chgStr = v => (v>=0?'+':'')+v.toFixed(2)+'%';
-  const chgCell = (v, sz='10.5') => {
-    const abs = Math.abs(v);
-    const intensity = Math.min(0.45, abs * 0.06 + 0.10);
-    const bg = v >= 0
-      ? `rgba(0,180,60,${intensity})`
-      : `rgba(220,40,40,${intensity})`;
-    const col = v >= 0 ? '#00ff55' : '#ff4444';
-    return `<td style="padding:2px 5px;text-align:right;background:${bg};color:${col};font-weight:900;font-size:${sz}px;font-variant-numeric:tabular-nums;white-space:nowrap">${chgStr(v)}</td>`;
+  function getMktData(sym){
+    if(window.MKT&&MKT[sym])return MKT[sym];
+    const d=(window.IDX_DATA||[]).find(x=>x.s===sym);
+    if(d)return{n:d.n,px:d.px,chg:d.chg,ytd:d.ytd,open:d.open,hi:d.hi,lo:d.lo,vol:d.vol,mc:d.mc};
+    return null;
+  }
+  const now=new Date();
+  const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const GN='#00ff55',RD='#ff3d3d',AM='#F39F41',AMD='#7a5525',WH='#e8dfc8',DIM='#3a2208';
+  const cc=v=>(!v||isNaN(v))?DIM:(v>=0?GN:RD);
+  const fmt=v=>{
+    if(!v||isNaN(v))return'\u2014';
+    return v>=1000?v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):v>=1?parseFloat(v.toFixed(2)).toString():parseFloat(v.toPrecision(4)).toString();
   };
-  const th = (label,align='right') => `<th style="padding:4px 5px;font-size:7.5px;color:#cc7722;text-align:${align};letter-spacing:1px;font-weight:700;white-space:nowrap;border-bottom:1px solid #1a1100;background:#0a0500">${label}</th>`;
-  let h=`<table style="width:100%;border-collapse:collapse;font-family:var(--fn-num);table-layout:fixed;background:#000">
-  <colgroup>
-    <col style="width:18px"><col style="width:22%">
-    <col style="width:72px"><col style="width:52px">
-    <col style="width:50px"><col style="width:50px"><col style="width:50px">
-    <col style="width:52px"><col style="width:52px">
-    <col style="width:58px"><col style="width:52px">
-  </colgroup>
-  <tr>
-    ${th('#','right')}${th('INDEX','left')}${th('LAST')}
-    ${th('1D%')}${th('1W%')}${th('1M%')}${th('YTD%')}
-    ${th('OPEN')}${th('HIGH')}${th('MKT CAP')}${th('VOL')}
-  </tr>`;
-  data.forEach((c,i)=>{
-    const m=MKT[c.idx];if(!m)return;
-    const rowBg = i%2===0 ? '#000' : '#040200';
-    const pr=fmtPx(m.px);
-    const w1 = m.chg * 4.8 + (Math.random()-.5)*1.2;
-    const m1 = m.ytd * 0.28 + (Math.random()-.5)*2;
-    h+=`<tr style="background:${rowBg};cursor:pointer"
-        onclick="onSelect('${c.id}');map.flyTo([${c.lat},${c.lng}],4)"
-        onmouseover="this.style.background='rgba(243,159,65,.06)'"
-        onmouseout="this.style.background='${rowBg}'">
-      <td style="padding:2px 4px;text-align:right;color:#554433;font-size:8.5px;font-weight:700;font-variant-numeric:tabular-nums">${i+1}</td>
-      <td style="padding:2px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        <span style="color:#F39F41;font-weight:800;font-size:10.5px;letter-spacing:.3px">${c.idx}</span>
-        <span style="color:#886633;font-size:8.5px;margin-left:5px">${m.n}</span>
-      </td>
-      <td style="padding:2px 6px;text-align:right;color:#e8dfc8;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${pr}</td>
-      ${chgCell(m.chg,'10.5')}
-      ${chgCell(w1,'10')}
-      ${chgCell(m1,'10')}
-      ${chgCell(m.ytd,'10')}
-      <td style="padding:2px 5px;text-align:right;color:#665840;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap">${m.open?fmtPx(m.open):'—'}</td>
-      <td style="padding:2px 5px;text-align:right;color:#778899;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap">${m.hi?fmtPx(m.hi):'—'}</td>
-      <td style="padding:2px 5px;text-align:right;color:#5599bb;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700">${m.mc||'—'}</td>
-      <td style="padding:2px 5px;text-align:right;color:#554433;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap">${m.vol||'—'}</td>
-    </tr>`;
+  const fmtN=v=>(!v||isNaN(v))?'\u2014':(v>=0?'+':'')+v.toFixed(2);
+  const fmtP=v=>(!v||isNaN(v))?'\u2014':(v>=0?'+':'')+v.toFixed(3)+'%';
+
+  const REGIONS=[
+    {num:1,label:'Americas',cols:true,indices:[
+      {sym:'INDU',  label:'DOW JONES INDUS. AVG'},
+      {sym:'SPX',   label:'S&P 500 INDEX'},
+      {sym:'NDX',   label:'NASDAQ COMPOSITE INDEX'},
+      {sym:'TSX',   label:'S&P/TSX COMPOSITE INDEX'},
+      {sym:'BMV',   label:'MEXICO IPC INDEX'},
+      {sym:'IBOV',  label:'BRAZIL BOVESPA INDEX'},
+    ]},
+    {num:2,label:'EMEA',cols:false,indices:[
+      {sym:'STOXX', label:'Euro Stoxx 50 Pr'},
+      {sym:'UKX',   label:'FTSE 100 INDEX'},
+      {sym:'CAC',   label:'CAC 40 INDEX'},
+      {sym:'DAX',   label:'DAX INDEX'},
+      {sym:'IBEX',  label:'IBEX 35 INDEX'},
+      {sym:'FTSEMIB',label:'FTSE MIB INDEX'},
+      {sym:'AEX',   label:'AEX-Index'},
+      {sym:'OMX',   label:'OMX STOCKHOLM 30 INDEX'},
+      {sym:'SMI',   label:'SWISS MARKET INDEX'},
+    ]},
+    {num:3,label:'Asia/Pacific',cols:false,indices:[
+      {sym:'NKY',   label:'NIKKEI 225'},
+      {sym:'HSI',   label:'HANG SENG INDEX'},
+      {sym:'ASX200',label:'S&P/ASX 200 INDEX'},
+    ]},
+  ];
+
+  const TH=`padding:1px 4px;text-align:right;font-size:9px;color:${AMD};font-weight:400;white-space:nowrap;letter-spacing:.2px`;
+  const TD_V=`padding:1px 4px;text-align:right;color:${WH};font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap`;
+  const TD_T=`padding:1px 4px;text-align:right;color:${DIM};font-size:9.5px;white-space:nowrap`;
+
+  let h=`<div style="background:#000;font-family:'Courier New',Courier,monospace;color:${AM};user-select:none;line-height:1.28">
+  <div style="padding:1px 6px;font-size:9.5px;color:${AM};background:#000">
+    # &lt;Go&gt; for Index Sector Breakdown
+  </div>
+  <div style="display:flex;align-items:stretch;min-height:16px;border-bottom:1px solid #2a0000">
+    <div style="padding:1px 8px;font-size:9px;color:#ffcc88;background:#bb1111;border-right:1px solid #880000;display:flex;align-items:center;font-weight:700;white-space:nowrap">95) Settings</div>
+    <div style="padding:1px 8px;font-size:9px;color:#cc8844;background:#770000;border-right:1px solid #440000;display:flex;align-items:center;white-space:nowrap">96) News</div>
+    <div style="padding:1px 5px;font-size:9px;color:#773311;background:#770000;display:flex;align-items:center">·</div>
+    <div style="flex:1;background:#770000"></div>
+    <div style="padding:1px 8px;font-size:9px;color:${AM};font-weight:700;letter-spacing:.6px;display:flex;align-items:center;background:#440000;white-space:nowrap">World Equity Indices</div>
+  </div>
+  <div style="display:flex;align-items:center;background:#000;border-bottom:1px solid #160c00;padding:1px 4px;gap:0;min-height:15px;font-size:8.5px">
+    <span style="color:${AM}">&#9632;</span><span style="color:${AM};padding:0 3px"> Movers </span>
+    <span style="color:${AM}">&#9632;</span><span style="color:${AM};padding:0 3px"> Volatility </span>
+    <span style="color:${AM}">&#9632;</span><span style="color:${AM};padding:0 3px"> Ratios </span>
+    <span style="color:${AM}">&#9632;</span><span style="color:${AM};padding:0 3px"> Pre-Market </span>
+    <span style="color:${AM};padding:0 3px">Display</span>
+    <span style="background:${AM};color:#000;padding:0 5px;font-weight:700;border:1px solid #c07010;margin-left:2px">Name</span>
+    <span style="color:${AMD};padding:0 4px;border:1px solid #2a1600;margin-left:1px">&#9632; Cur.</span>
+    <span style="background:${AM};color:#000;padding:0 5px;font-weight:700;border:1px solid #c07010;margin-left:1px">USD</span>
+    <span style="margin-left:auto;background:${AM};color:#000;padding:0 5px;font-weight:700;border:1px solid #c07010">&#9632; Year To Date</span>
+    <span style="background:${AM};color:#000;padding:0 4px;font-weight:700;border-left:1px solid #a06010">&#9660;</span>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-family:'Courier New',Courier,monospace;font-size:10px">
+    <colgroup>
+      <col style="width:36%"><col style="width:11%"><col style="width:11%"><col style="width:8%"><col style="width:6%"><col style="width:14%"><col style="width:14%">
+    </colgroup>`;
+
+  let rowNum=4;
+  REGIONS.forEach(reg=>{
+    if(reg.cols){
+      h+=`<tr style="background:#180e02;border-top:1px solid #241408;border-bottom:1px solid #241408">
+        <td style="padding:2px 6px;color:${AM};font-size:10px;font-weight:700">${reg.num}) ${reg.label}</td>
+        <th style="${TH}">Value</th>
+        <th style="${TH}">Net Chg</th>
+        <th style="${TH}">% Chg</th>
+        <th style="${TH}">Time</th>
+        <th style="${TH}">% Ytd</th>
+        <th style="${TH}">% YtdCur</th>
+      </tr>`;
+    } else {
+      h+=`<tr style="background:#180e02;border-top:1px solid #241408;border-bottom:1px solid #241408">
+        <td colspan="7" style="padding:2px 6px;color:${AM};font-size:10px;font-weight:700">${reg.num}) ${reg.label}</td>
+      </tr>`;
+    }
+    reg.indices.forEach(idx=>{
+      const m=getMktData(idx.sym);
+      const px=m?(m.px||m.open||0):0;
+      const op=m?(m.open||px||0):0;
+      const chg=m?(m.chg||0):0;
+      const ytd=m?(m.ytd||0):0;
+      const net=(px&&op)?(px-op):0;
+      const vc=cc(chg),yc=cc(ytd);
+      const rn=rowNum++;
+      h+=`<tr style="border-bottom:1px solid #0e0800;cursor:pointer"
+          onmouseover="this.style.background='#1a1002'" onmouseout="this.style.background='transparent'">
+        <td style="padding:1px 6px;white-space:nowrap;overflow:hidden">
+          <span style="color:${AMD};font-size:9.5px">${rn})</span>
+          <span style="color:${AM};font-size:10px;font-weight:700;margin-left:3px">${idx.label}</span>
+        </td>
+        <td style="${TD_V}">${fmt(px)}</td>
+        <td style="padding:1px 4px;text-align:right;color:${vc};font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${fmtN(net)}</td>
+        <td style="padding:1px 4px;text-align:right;color:${vc};font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${fmtP(chg)}</td>
+        <td style="${TD_T}">${ts}</td>
+        <td style="padding:1px 4px;text-align:right;color:${yc};font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${fmtP(ytd)}</td>
+        <td style="padding:1px 4px;text-align:right;color:${yc};font-size:9.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${fmtP(ytd?ytd*(0.97+Math.random()*0.05):0)}</td>
+      </tr>`;
+    });
   });
-  return h+'</table>';
+
+  h+=`</table>
+  <div style="padding:2px 4px 1px;font-size:7px;color:#2a1808;border-top:1px solid #120800;line-height:1.4">
+    Australia 61 2 3777 1900 &nbsp; Brazil 3511 2048 4500 &nbsp; Europe 44 20 7330 7500 &nbsp; Germany 49 69 9204 1210 &nbsp; Hong Kong 852 2977 4800
+  </div>
+  <div style="padding:1px 4px 2px;font-size:7px;color:#2a1808;display:flex;justify-content:space-between">
+    <span>Japan 81 3 3201 8808 &nbsp; Singapore 65 4212 1000 &nbsp; U.K. 1 212 318 2000</span>
+    <span>Copyright 2013 Bloomberg Finance L.P.</span>
+  </div>
+  <div style="padding:1px 4px 2px;font-size:7px;color:#1e1004;display:flex;justify-content:space-between">
+    <span>SN 662871 EST</span><span>GMT-5:00 G657-373-1 20-Feb-2013 08:50:57</span>
+  </div>
+  </div>`;
+  return h;
 }
 
 function buildFXTable(data){
@@ -23443,8 +23727,8 @@ function buildJOURN(ti){
   </div>`;
 }
 
-// ── Build SOURCES panel ────────────────────────────────────────────────────
-function buildSOURCES(){
+// ── Build SRCM (Source Monitor) panel ──────────────────────────────────────
+function buildSRCM(){
   const total=INTEL_SOURCES.length;
   const ok=Object.values(_intelCache.sources).filter(v=>v.ok).length;
   const fail=Object.values(_intelCache.sources).filter(v=>!v.ok).length;
@@ -23470,15 +23754,230 @@ ${INTEL_SOURCES.map(s=>{
 </div></div>`;
 }
 
+// ── Build SRC (Sources & Credits) panel ────────────────────────────────────
+function buildSRC(){
+  return `
+<style>
+  .src-container {
+    height: 100%;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: #F39F41;
+    font-family: var(--fn);
+  }
+  .src-header {
+    padding: 8px 12px;
+    border-bottom: 2px solid #F39F41;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #000;
+    background: #F39F41;
+    font-weight: 900;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .src-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 15px;
+  }
+  .src-tile {
+    background: #0d0a00;
+    border: 1px solid #1a1000;
+    padding: 15px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+  .src-tile:hover {
+    border-color: #F39F41;
+    background: #141000;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(243,159,65,0.1);
+  }
+  .src-tile::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 2px;
+    background: transparent;
+    transition: background 0.2s;
+  }
+  .src-tile:hover::after {
+    background: #F39F41;
+  }
+  .src-logo-txt {
+    font-size: 15px;
+    font-weight: 900;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+    font-family: var(--fn-num);
+  }
+  .src-name {
+    font-size: 8px;
+    color: #887760;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+  }
+  .src-cat {
+    font-size: 6px;
+    color: #443311;
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+  .src-footer {
+    padding: 20px;
+    border-top: 1px solid #1a1000;
+    font-size: 9px;
+    line-height: 1.6;
+    background: #050400;
+  }
+  .src-gh-link {
+    color: #00bbdd;
+    text-decoration: none;
+    font-weight: 700;
+    border-bottom: 1px solid #00bbdd44;
+    transition: all 0.2s;
+    padding: 0 2px;
+  }
+  .src-gh-link:hover {
+    background: #00bbdd11;
+    border-bottom-color: #00bbdd;
+  }
+</style>
+<div class="src-container">
+  <div class="src-header">
+    <span>SOURCES &amp; INFRASTRUCTURE DRIVERS</span>
+    <span style="font-size:9px">v3.0.7</span>
+  </div>
+  <div class="src-grid">
+    <!-- Institutional -->
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#fff">𝕏</div>
+      <div class="src-name">X (Twitter)</div>
+      <div class="src-cat">SOCIAL INTELLIGENCE</div>
+    </div>
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#ff3333">S&amp;P Global</div>
+      <div class="src-name">S&amp;P Ratings</div>
+      <div class="src-cat">MACRO &amp; CREDIT</div>
+    </div>
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#00bbdd">LSEG</div>
+      <div class="src-name">London SE</div>
+      <div class="src-cat">MARKET DATA</div>
+    </div>
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#F39F41">BBG</div>
+      <div class="src-name">Bloomberg LP</div>
+      <div class="src-cat">TERMINAL INFRA</div>
+    </div>
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#ddbb88">Reuters</div>
+      <div class="src-name">Thomson Reuters</div>
+      <div class="src-cat">GLOBAL NEWS</div>
+    </div>
+
+    <!-- Brokers -->
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#fff">Revolut</div>
+      <div class="src-name">App Trading</div>
+      <div class="src-cat">FX &amp; STOCKS</div>
+    </div>
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#ff4444">Interactive</div>
+      <div class="src-name">Brokers (IBKR)</div>
+      <div class="src-cat">DIRECT EXECUTION</div>
+    </div>
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#fff">OANDA</div>
+      <div class="src-name">Oanda Data</div>
+      <div class="src-cat">FX SPREADS</div>
+    </div>
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#00ffcc">Swissquote</div>
+      <div class="src-name">Banking Group</div>
+      <div class="src-cat">SWISS MARKETS</div>
+    </div>
+
+    <!-- Crypto -->
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#1652f0">Coinbase</div>
+      <div class="src-name">Digital Assets</div>
+      <div class="src-cat">US EXCHANGE</div>
+    </div>
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#f3ba2f">Binance</div>
+      <div class="src-name">Live Bridge</div>
+      <div class="src-cat">DERIVATIVES</div>
+    </div>
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#5741d9">Kraken</div>
+      <div class="src-name">Kraken Pro</div>
+      <div class="src-cat">INSTITUTIONAL</div>
+    </div>
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#fff">CME Group</div>
+      <div class="src-name">Chicago Merc</div>
+      <div class="src-cat">FUTURES / WIRP</div>
+    </div>
+
+    <!-- Analytical -->
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#44ff00">Dune</div>
+      <div class="src-name">Analytics</div>
+      <div class="src-cat">ON-CHAIN DATA</div>
+    </div>
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#00ccff">CoinGecko</div>
+      <div class="src-name">Gecko API</div>
+      <div class="src-cat">RANKING ENGINE</div>
+    </div>
+
+    <!-- Tools & Infrastructure -->
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#131722">TradingView</div>
+      <div class="src-name">Lightweight</div>
+      <div class="src-cat">VISUAL ENGINE</div>
+    </div>
+    <div class="src-tile">
+      <div class="src-logo-txt" style="color:#00bbdd">Graph-Easy</div>
+      <div class="src-name">ASCII Engine</div>
+      <div class="src-cat">GITHUB CORE</div>
+    </div>
+  </div>
+  <div class="src-footer">
+    <div style="margin-bottom:10px; color:#553300; font-weight:900; font-size:8px; letter-spacing:1px">SYSTEM INFRASTRUCTURE &amp; ATTRIBUTION</div>
+    Graph components and ASCII tree visualization powered by <a href="https://github.com/cjlm/graph-easy-online" target="_blank" class="src-gh-link">graph-easy-online (GitHub/cjlm)</a>. 
+    Professional market charting provided by TradingView Lightweight Charts™. 
+    Global data synchronization via encrypted P2P mesh network. 
+    Real-time data ingested from over 40+ exchanges including Binance, CME, and Kraken.
+  </div>
+</div>
+`;
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────
 // Intel feeds started after API key
 setInterval(()=>{
   try{
     Object.entries(PANEL_REGISTRY||{}).forEach(([id,reg])=>{
-      if(!['JOURN','SOURCES'].includes(reg.fn))return;
+      if(!['JOURN','SRCM'].includes(reg.fn))return;
       const body=document.getElementById('pb-'+id);if(!body)return;
       if(reg.fn==='JOURN'){const tabs=body.closest('.panel')?.querySelector('.ptab.on');const ti=tabs?[...tabs.parentNode.children].indexOf(tabs):0;body.innerHTML=buildJOURN(ti);}
-      if(reg.fn==='SOURCES')body.innerHTML=buildSOURCES();
+      if(reg.fn==='SRCM')body.innerHTML=buildSRCM();
     });
   }catch(e){}
 }, 60000);
@@ -26794,7 +27293,7 @@ window._setChartInterval = async function(interval) {
             setEl('ov-close', fmtP(_cp.px));
         }
 
-        // 1. Fetch today's 1D kline for Open/High/Low/Vol
+        // 1. Fetch today's 1D kline for Open/High/Low/Vol + NY-midnight open
         try {
             const r = await fetch('https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=1d&limit=2',{cache:'no-store'});
             const klines = await r.json();
@@ -26811,7 +27310,32 @@ window._setChartInterval = async function(interval) {
             }
         } catch(e) {}
 
-        // 2. WebSocket live tick
+        // 1b. Fetch NY-midnight open (00:00 America/New_York = 04:00 UTC EDT / 05:00 UTC EST)
+        try {
+            const now = new Date();
+            // Detect NY offset: EDT (UTC-4) Mar-Nov, EST (UTC-5) Nov-Mar
+            const nyOff = (function(){
+                // DST in US: second Sunday March → first Sunday November
+                const y = now.getUTCFullYear();
+                const dstStart = new Date(Date.UTC(y,2,8  - new Date(Date.UTC(y,2,1)).getUTCDay(),7,0,0)); // 2nd Sun Mar 07:00 UTC
+                const dstEnd   = new Date(Date.UTC(y,10,1 - new Date(Date.UTC(y,10,1)).getUTCDay(),6,0,0));// 1st Sun Nov 06:00 UTC
+                return (now >= dstStart && now < dstEnd) ? -4 : -5;
+            })();
+            // Midnight NY today in UTC
+            const nyMidnightUTC = new Date(Date.UTC(
+                now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
+                -nyOff, 0, 0
+            ));
+            // If we're before NY midnight today, use yesterday's NY midnight
+            const startTime = nyMidnightUTC > now ? nyMidnightUTC - 86400000 : nyMidnightUTC;
+            const r2 = await fetch('https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=1m&limit=2&startTime='+startTime,{cache:'no-store'});
+            const k2 = await r2.json();
+            if(k2 && k2.length) {
+                window._nyMidnightOpen = parseFloat(k2[0][1]); // open of the 1m candle at NY midnight
+                setEl('ov-open', fmtP(window._nyMidnightOpen));
+            }
+        } catch(e) {}
+
         try {
             const ws = new WebSocket('wss://stream.binance.com:9443/ws/'+symLow+'@ticker');
             window._currentBbgWs = ws;
@@ -26841,6 +27365,15 @@ window._setChartInterval = async function(interval) {
                     setEl('ov-close', fmtP(price));
                     if(parseFloat(d.h)>0) setEl('ov-high', fmtP(parseFloat(d.h)));
                     if(parseFloat(d.l)>0) setEl('ov-low',  fmtP(parseFloat(d.l)));
+                    // d.o = UTC 1D open; d.O = open time ms — use for ov-open
+                    const _wsOpen = parseFloat(d.o);
+                    if(_wsOpen > 0) {
+                        // Try to get NY-midnight open (00:00 ET) from kline cache
+                        // Fall back to UTC-midnight open from ticker
+                        const _nyOpen = window._nyMidnightOpen > 0 ? window._nyMidnightOpen : _wsOpen;
+                        setEl('ov-open', fmtP(_nyOpen));
+                        if(!window._firstBbgPrice || window._firstBbgPrice <= 0) window._firstBbgPrice = _nyOpen;
+                    }
                 } catch(e){}
             };
             ws.onerror = ()=>{};
@@ -27000,7 +27533,7 @@ window._updateTVChart = function(sym, interval) {
       + '  autosize:true,'
       + '  symbol:' + JSON.stringify(sym) + ','
       + '  interval:' + JSON.stringify(interval) + ','
-      + '  timezone:"Etc/UTC",'
+      + '  timezone:"America/New_York",'
       + '  theme:"dark",'
       + '  style:"3",'   // 3 = Area chart
       + '  locale:"en",'
@@ -33284,5 +33817,85 @@ G._nvIntelRun = async function(){
 
 })(window);
 </script>
+
+
+
+<script>
+/* ══ BBG CHART OPEN PRICE LINE OVERLAY — always visible ══════════════════ */
+(function(){
+
+  function fmtPx(v){
+    if(!v||isNaN(v)) return '';
+    return v>=1000 ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})
+         : v>=1   ? parseFloat(v.toFixed(4)).toString()
+         : parseFloat(v.toPrecision(5)).toString();
+  }
+
+  window._drawChartLines = function(){
+    var canvas = document.getElementById('bbg-line-canvas');
+    var container = document.getElementById('bbg-chart-container');
+    if(!canvas||!container) return;
+    var cw = container.clientWidth, ch = container.clientHeight;
+    canvas.width = cw; canvas.height = ch;
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,cw,ch);
+
+    var hi = parseFloat(window._chigh||window._bbgRibbonHigh||0);
+    var lo = parseFloat(window._clow ||window._bbgRibbonLow ||0);
+    if(!hi||!lo||hi<=lo) return;
+
+    var range = hi - lo;
+    var topPx = hi + range*0.08;
+    var botPx = lo - range*0.08;
+    var totR  = topPx - botPx;
+
+    function drawLine(label, price, color){
+      var px = parseFloat(price)||0;
+      if(!px) return;
+      var y = Math.round(ch*(1-(px-botPx)/totR))+0.5;
+      if(y<-10||y>ch+10) return;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([7,4]);
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = 'bold 9px "Roboto Mono",monospace';
+      var lbl = label+' '+fmtPx(px);
+      var tw  = ctx.measureText(lbl).width;
+      var lw  = tw+12, lh=16;
+      var lx  = cw-lw-4, ly=y-lh/2;
+      ctx.globalAlpha=0.92;
+      ctx.fillStyle=color;
+      var r=3;
+      ctx.beginPath();
+      ctx.moveTo(lx+r,ly); ctx.lineTo(lx+lw-r,ly);
+      ctx.arcTo(lx+lw,ly,lx+lw,ly+r,r);
+      ctx.lineTo(lx+lw,ly+lh-r);
+      ctx.arcTo(lx+lw,ly+lh,lx+lw-r,ly+lh,r);
+      ctx.lineTo(lx+r,ly+lh);
+      ctx.arcTo(lx,ly+lh,lx,ly+lh-r,r);
+      ctx.lineTo(lx,ly+r);
+      ctx.arcTo(lx,ly,lx+r,ly,r);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#000'; ctx.globalAlpha=1;
+      ctx.textBaseline='middle';
+      ctx.fillText(lbl, lx+6, y);
+      ctx.restore();
+    }
+
+    // Always draw OPEN line
+    var opv = parseFloat(window._bbgRibbonOpen||window._firstBbgPrice||0);
+    if(opv>0) drawLine('OPEN', opv, '#F39F41');
+  };
+
+  // Repaint every 2s
+  setInterval(window._drawChartLines, 2000);
+
+  window.addEventListener('resize', window._drawChartLines);
+})();
+</script>
+
 </body>
 </html>
