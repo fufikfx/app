@@ -3890,6 +3890,130 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
              </div>
           </div>
+          <!-- Row 5: MMT Market Data API Controls — panel hidden, JS still active -->
+          <div id="mmt-ctrl-row" style="background:#0a0600;display:none;align-items:center;padding:0 8px;height:26px;gap:6px;border-bottom:1px solid #1a1000;flex-shrink:0;overflow:hidden;">
+            <!-- MMT badge -->
+            <div style="flex-shrink:0;background:#F39F41;color:#000;font-weight:700;font-size:8px;letter-spacing:.8px;padding:1px 5px;border-radius:1px;">MMT</div>
+            <!-- API Key -->
+            <input id="mmt-api-key" type="password" placeholder="API KEY" autocomplete="off" spellcheck="false"
+              style="width:100px;background:#111;border:1px solid #2a1800;color:#F39F41;font-family:'Roboto Mono',monospace;font-size:9px;padding:1px 5px;outline:none;height:18px;border-radius:1px;"
+              title="MMT API Key (eu-central-1.mmt.gg)"
+              oninput="try{localStorage.setItem('mmt_api_key',this.value);}catch(e){}" />
+            <div style="width:1px;height:14px;background:#2a1800;flex-shrink:0;"></div>
+            <!-- Chart Quick-Switch -->
+            <div id="mmt-chart-switcher" style="display:flex;align-items:center;gap:2px;flex-shrink:0;">
+              <span style="color:#444;font-size:8px;font-family:'Roboto Mono',monospace;letter-spacing:.3px;margin-right:2px;">CHART▸</span>
+              <button onclick="window._mmtSwitchChart('BTC')" title="Switch to BTC chart" style="background:#1a1000;border:1px solid #3a2800;color:#F39F41;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:16px;cursor:pointer;border-radius:1px;letter-spacing:.3px;">BTC</button>
+              <button onclick="window._mmtSwitchChart('ETH')" title="Switch to ETH chart" style="background:#1a1000;border:1px solid #3a2800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:16px;cursor:pointer;border-radius:1px;letter-spacing:.3px;">ETH</button>
+              <button onclick="window._mmtSwitchChart('SOL')" title="Switch to SOL chart" style="background:#1a1000;border:1px solid #3a2800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:16px;cursor:pointer;border-radius:1px;letter-spacing:.3px;">SOL</button>
+              <button onclick="window._mmtSwitchChart('BNB')" title="Switch to BNB chart" style="background:#1a1000;border:1px solid #3a2800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:16px;cursor:pointer;border-radius:1px;letter-spacing:.3px;">BNB</button>
+              <button onclick="window._mmtSwitchChart('XRP')" title="Switch to XRP chart" style="background:#1a1000;border:1px solid #3a2800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:16px;cursor:pointer;border-radius:1px;letter-spacing:.3px;">XRP</button>
+              <button onclick="window._mmtSwitchChart('HYPE')" title="Switch to HYPE chart" style="background:#1a1000;border:1px solid #3a2800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:16px;cursor:pointer;border-radius:1px;letter-spacing:.3px;">HYPE</button>
+            </div>
+            <div style="width:1px;height:14px;background:#2a1800;flex-shrink:0;"></div>
+            <!-- Exchange -->
+            <select id="mmt-exchange" title="Exchange"
+              style="background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:0 3px;height:18px;outline:none;border-radius:1px;cursor:pointer;">
+              <option value="binancef">binancef</option>
+              <option value="bybitf">bybitf</option>
+              <option value="okxf">okxf</option>
+              <option value="hyperliquid">hyperliquid</option>
+              <option value="hyperliquid-xyz">hyperliquid-xyz</option>
+              <option value="deribitf">deribitf</option>
+              <option value="bitmexf">bitmexf</option>
+              <option value="bitfinexf">bitfinexf</option>
+              <option value="bybitf-inverse">bybitf-inverse</option>
+              <option value="binance">binance (spot)</option>
+              <option value="bybit">bybit (spot)</option>
+              <option value="coinbase">coinbase (spot)</option>
+              <option value="binancef:bybitf">binancef:bybitf (agg)</option>
+              <option value="binancef:bybitf:okxf">binancef:bybitf:okxf (agg)</option>
+            </select>
+            <!-- Symbol -->
+            <input id="mmt-symbol" type="text" value="btc/usd" placeholder="btc/usd" spellcheck="false"
+              style="width:65px;background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:1px 5px;outline:none;height:18px;border-radius:1px;text-transform:lowercase;"
+              title="Unified symbol (e.g. btc/usd, eth/usd)" />
+            <!-- Endpoint -->
+            <select id="mmt-endpoint" title="Data endpoint" onchange="window._mmtEndpointChanged()"
+              style="background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:0 3px;height:18px;outline:none;border-radius:1px;cursor:pointer;">
+              <option value="candles">/candles — OHLCVT</option>
+              <option value="stats">/stats — market stats</option>
+              <option value="oi">/oi — open interest</option>
+              <option value="vd">/vd — volume delta</option>
+              <option value="volumes">/volumes — vol profile</option>
+              <option value="flat_heatmap_sd">/flat_heatmap_sd</option>
+              <option value="flat_heatmap_hd">/flat_heatmap_hd</option>
+              <option value="heatmap_sd">/heatmap_sd</option>
+              <option value="heatmap_hd">/heatmap_hd</option>
+              <option value="stop_heatmap">/stop_heatmap (HL)</option>
+              <option value="tp_heatmap">/tp_heatmap (HL)</option>
+              <option value="liquidation_heatmap">/liq_heatmap (HL)</option>
+              <option value="orderbook">/orderbook (snapshot)</option>
+            </select>
+            <!-- Timeframe -->
+            <select id="mmt-tf" title="Timeframe"
+              style="background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:0 3px;height:18px;outline:none;border-radius:1px;cursor:pointer;">
+              <option value="1m">1m</option>
+              <option value="5m" selected>5m</option>
+              <option value="15m">15m</option>
+              <option value="30m">30m</option>
+              <option value="1h">1h</option>
+              <option value="4h">4h</option>
+              <option value="12h">12h</option>
+              <option value="1d">1d</option>
+              <option value="1w">1w</option>
+            </select>
+            <!-- Range -->
+            <select id="mmt-range" title="Lookback range"
+              style="background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:0 3px;height:18px;outline:none;border-radius:1px;cursor:pointer;">
+              <option value="3600">1h</option>
+              <option value="14400">4h</option>
+              <option value="86400" selected>1D</option>
+              <option value="259200">3D</option>
+              <option value="604800">1W</option>
+              <option value="2592000">30D</option>
+              <option value="7776000">90D</option>
+              <option value="31536000">1Y</option>
+            </select>
+            <!-- VD bucket (hidden unless /vd) -->
+            <select id="mmt-bucket" title="Volume delta bucket" style="display:none;background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:0 3px;height:18px;outline:none;border-radius:1px;cursor:pointer;">
+              <option value="1">all trades</option>
+              <option value="2">$1–1K</option>
+              <option value="3">$1K–10K</option>
+              <option value="4">$10K–25K</option>
+              <option value="5">$25K–50K</option>
+              <option value="6">$50K–100K</option>
+              <option value="7">$100K–250K</option>
+              <option value="8">$250K–500K</option>
+              <option value="9">$500K–1M</option>
+              <option value="10">$1M–5M</option>
+              <option value="11">$5M+</option>
+            </select>
+            <!-- Orderbook levels (hidden unless /orderbook) -->
+            <select id="mmt-ob-levels" title="Orderbook levels" style="display:none;background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:0 3px;height:18px;outline:none;border-radius:1px;cursor:pointer;">
+              <option value="100">100 levels</option>
+              <option value="1000" selected>1000 levels</option>
+              <option value="5000">5000 levels</option>
+              <option value="full">full book</option>
+            </select>
+            <!-- FETCH button -->
+            <button id="mmt-fetch-btn" onclick="window._mmtFetch()" title="Fetch MMT data"
+              style="flex-shrink:0;background:#F39F41;border:none;color:#000;font-weight:700;font-family:'Roboto Mono',monospace;font-size:9px;letter-spacing:.5px;padding:0 8px;height:18px;cursor:pointer;border-radius:1px;">
+              FETCH
+            </button>
+            <!-- Status / result preview -->
+            <div id="mmt-status" style="flex:1;font-family:'Roboto Mono',monospace;font-size:9px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;padding-left:2px;"></div>
+            <!-- Copy URL button -->
+            <button id="mmt-copy-url" onclick="window._mmtCopyUrl()" title="Copy API request URL"
+              style="flex-shrink:0;background:transparent;border:1px solid #2a1800;color:#666;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:18px;cursor:pointer;border-radius:1px;">
+              URL
+            </button>
+          </div>
+          <!-- MMT Results Panel (collapsible) -->
+          <div id="mmt-results-panel" style="display:none;background:#060400;border-bottom:1px solid #1a1000;max-height:320px;overflow-y:auto;padding:6px 10px;font-family:'Roboto Mono',monospace;font-size:9px;color:#aaa;position:relative;">
+            <div style="position:absolute;top:4px;right:8px;cursor:pointer;color:#555;font-size:10px;" onclick="document.getElementById('mmt-results-panel').style.display='none'">✕</div>
+            <div id="mmt-results-content"></div>
+          </div>
       </div>
       
       <!-- Chart Canvas Container -->
@@ -15089,7 +15213,7 @@ async function fetchFundingRates(){ _boot.update('FUNDING','pending','FETCHING..
     'OPUSDT','ARBUSDT','INJUSDT','JUPUSDT','RAYUSDT','LDOUSDT','MKRUSDT',
     'CRVUSDT','GMXUSDT','FTMUSDT','ALGOUSDT','VETUSDT','BCHUSDT','FETUSDT',
     'IMXUSDT','STRKUSDT','SEIUSDT','GRTUSDT','PENDLEUSDT','ETCUSDT',
-    'HYPEUSDT','KASUSDT','XLMUSDT','JTOUSDT','PYTHUSDT',
+    'KASUSDT','XLMUSDT','JTOUSDT','PYTHUSDT',
     'ENAUSDT','ONDOUSDT','WLDUSDT','TIAUSDT','BERAUSDT','MOVEUSDT','VIRTUALUSDT','TONUSDT'
   ];
   const map={
@@ -15630,7 +15754,7 @@ function _startAllFeeds() {
       _loadValidFuturesSyms().then(function(){
         ['BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','BNBUSDT','ADAUSDT','TRXUSDT',
          'LINKUSDT','AVAXUSDT','SUIUSDT','DOTUSDT','UNIUSDT','ARBUSDT','INJUSDT',
-         'OPUSDT','NEARUSDT','AAVEUSDT','APTUSDT','HYPEUSDT',
+         'OPUSDT','NEARUSDT','AAVEUSDT','APTUSDT',
      'GRTUSDT','ENAUSDT','ONDOUSDT','SEIUSDT','JUPUSDT',
      'FTMUSDT','ALGOUSDT','VETUSDT','LDOUSDT','PENDLEUSDT',
      'INJUSDT','ARBUSDT','ATOMUSDT','SUIUSDT','XLMUSDT'].forEach(function(s){
@@ -26376,7 +26500,7 @@ function _renderOIDash(){
 function _renderFundingHistTab(){
   setTimeout(_renderFundingHist, 3000);
   if(!window._fundHistInterval){ window._fundHistInterval = setInterval(()=>{
-      var _s = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'TRXUSDT', 'HYPEUSDT', 'LINKUSDT', 'AVAXUSDT', 'SUIUSDT', 'XLMUSDT', 'LTCUSDT', 'DOTUSDT', 'UNIUSDT', 'NEARUSDT', 'AAVEUSDT', 'ICPUSDT', 'KASUSDT'];
+      var _s = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'TRXUSDT', 'LINKUSDT', 'AVAXUSDT', 'SUIUSDT', 'XLMUSDT', 'LTCUSDT', 'DOTUSDT', 'UNIUSDT', 'NEARUSDT', 'AAVEUSDT', 'ICPUSDT', 'KASUSDT'];
       _s.forEach(function(s){ try{fetchFundingHistory(s);}catch(e){} });
       setTimeout(_renderFundingHist,3000);
     }, 60000); }
@@ -26443,7 +26567,7 @@ setTimeout(()=>{
   _loadValidFuturesSyms().catch(function(e){ console.warn('_loadValidFuturesSyms failed, continuing anyway',e); }).then(function(){
   console.log('%c FUNDING FETCH START ', 'background:#ff8800;color:#000;font-weight:bold');
   (function _fetchAllFunding(){
-    var syms = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'TRXUSDT', 'HYPEUSDT', 'LINKUSDT', 'AVAXUSDT', 'SUIUSDT', 'XLMUSDT', 'LTCUSDT', 'DOTUSDT', 'UNIUSDT', 'NEARUSDT', 'AAVEUSDT', 'ICPUSDT', 'KASUSDT', 'APTUSDT', 'RENDERUSDT', 'ATOMUSDT', 'FILUSDT', 'OPUSDT', 'ARBUSDT', 'INJUSDT', 'JUPUSDT', 'RAYUSDT', 'JTOUSDT', 'PYTHUSDT', 'LDOUSDT', 'MKRUSDT', 'CRVUSDT', 'GMXUSDT', 'FTMUSDT', 'ALGOUSDT', 'VETUSDT', 'XMRUSDT', 'BCHUSDT', 'FETUSDT', 'IMXUSDT', 'STRKUSDT', 'SEIUSDT', 'TONUSDT', 'OMUSDT', 'VIRTUALUSDT', 'BERAUSDT', 'MOVEUSDT', 'ETCUSDT', 'ZECUSDT', 'GRTUSDT', 'PENDLEUSDT', 'ICPUSDT', 'DOMUSDT'];
+    var syms = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'TRXUSDT', 'LINKUSDT', 'AVAXUSDT', 'SUIUSDT', 'XLMUSDT', 'LTCUSDT', 'DOTUSDT', 'UNIUSDT', 'NEARUSDT', 'AAVEUSDT', 'ICPUSDT', 'KASUSDT', 'APTUSDT', 'RENDERUSDT', 'ATOMUSDT', 'FILUSDT', 'OPUSDT', 'ARBUSDT', 'INJUSDT', 'JUPUSDT', 'RAYUSDT', 'JTOUSDT', 'PYTHUSDT', 'LDOUSDT', 'MKRUSDT', 'CRVUSDT', 'GMXUSDT', 'FTMUSDT', 'ALGOUSDT', 'VETUSDT', 'XMRUSDT', 'BCHUSDT', 'FETUSDT', 'IMXUSDT', 'STRKUSDT', 'SEIUSDT', 'TONUSDT', 'OMUSDT', 'VIRTUALUSDT', 'BERAUSDT', 'MOVEUSDT', 'ETCUSDT', 'ZECUSDT', 'GRTUSDT', 'PENDLEUSDT', 'ICPUSDT', 'DOMUSDT'];
     var i = 0;
     function _next(){
       var batch = syms.slice(i, i+5);
@@ -26463,7 +26587,7 @@ setTimeout(()=>{
   // Refresh funding every 2 min (staggered)
   setInterval(function(){
     _loadValidFuturesSyms(); // re-validate periodically
-    var syms = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'TRXUSDT', 'HYPEUSDT', 'LINKUSDT', 'AVAXUSDT', 'SUIUSDT', 'XLMUSDT', 'LTCUSDT', 'DOTUSDT', 'UNIUSDT', 'NEARUSDT', 'AAVEUSDT', 'ICPUSDT', 'KASUSDT', 'APTUSDT', 'RENDERUSDT', 'ATOMUSDT', 'FILUSDT', 'OPUSDT', 'ARBUSDT', 'INJUSDT', 'JUPUSDT', 'RAYUSDT', 'JTOUSDT', 'PYTHUSDT', 'LDOUSDT', 'MKRUSDT', 'CRVUSDT', 'GMXUSDT', 'FTMUSDT', 'ALGOUSDT', 'VETUSDT', 'XMRUSDT', 'BCHUSDT', 'FETUSDT', 'IMXUSDT', 'STRKUSDT', 'SEIUSDT', 'TONUSDT', 'OMUSDT', 'VIRTUALUSDT', 'BERAUSDT', 'MOVEUSDT', 'ETCUSDT', 'ZECUSDT', 'GRTUSDT', 'PENDLEUSDT', 'ICPUSDT', 'DOMUSDT'];
+    var syms = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'TRXUSDT', 'LINKUSDT', 'AVAXUSDT', 'SUIUSDT', 'XLMUSDT', 'LTCUSDT', 'DOTUSDT', 'UNIUSDT', 'NEARUSDT', 'AAVEUSDT', 'ICPUSDT', 'KASUSDT', 'APTUSDT', 'RENDERUSDT', 'ATOMUSDT', 'FILUSDT', 'OPUSDT', 'ARBUSDT', 'INJUSDT', 'JUPUSDT', 'RAYUSDT', 'JTOUSDT', 'PYTHUSDT', 'LDOUSDT', 'MKRUSDT', 'CRVUSDT', 'GMXUSDT', 'FTMUSDT', 'ALGOUSDT', 'VETUSDT', 'XMRUSDT', 'BCHUSDT', 'FETUSDT', 'IMXUSDT', 'STRKUSDT', 'SEIUSDT', 'TONUSDT', 'OMUSDT', 'VIRTUALUSDT', 'BERAUSDT', 'MOVEUSDT', 'ETCUSDT', 'ZECUSDT', 'GRTUSDT', 'PENDLEUSDT', 'ICPUSDT', 'DOMUSDT'];
     var i = 0;
     function _next(){ var b=syms.slice(i,i+5); b.forEach(function(s){try{fetchFundingHistory(s);}catch(e){}});i+=5;if(i<syms.length)setTimeout(_next,400);else setTimeout(_patchCryptoFundingCells,1000); }
     _next();
@@ -26973,7 +27097,7 @@ window._setChartInterval = async function(interval) {
         // ── Bitcoin ecosystem ────────────────────────────────────────────────
         'ORDI':'ORDIUSDT','STX':'STXUSDT',
         // ── Other notable ────────────────────────────────────────────────────
-        'XLM':'XLMUSDT','TON':'TONUSDT','NOT':'NOTUSDT','HYPE':'HYPEUSDT',
+        'XLM':'XLMUSDT','TON':'TONUSDT','NOT':'NOTUSDT',
         'BERA':'BERAUSDT','OM':'OMUSDT','VIRTUAL':'VIRTUALUSDT','MOVE':'MOVEUSDT',
         'KAS':'KASUSDT','ZRO':'ZROUSDT','W':'WUSDT','ONDO':'ONDOUSDT',
         'DRIFT':'DRIFTUSDT','OSMO':'OSMOUSDT',
@@ -27131,7 +27255,7 @@ window._setChartInterval = async function(interval) {
         'WIF':'BINANCE:WIFUSDT','BONK':'BINANCE:BONKUSDT','WLD':'BINANCE:WLDUSDT',
         'JUP':'BINANCE:JUPUSDT','JTO':'BINANCE:JTOUSDT','TIA':'BINANCE:TIAUSDT',
         'ENA':'BINANCE:ENAUSDT','PENDLE':'BINANCE:PENDLEUSDT','OM':'BINANCE:OMUSDT',
-        'KAS':'BINANCE:KASUSDT','HYPE':'BINANCE:HYPEUSDT','NOT':'BINANCE:NOTUSDT',
+        'KAS':'BINANCE:KASUSDT','HYPE':'BYBIT:HYPEUSDT.P','NOT':'BINANCE:NOTUSDT',
         'ORDI':'BINANCE:ORDIUSDT','STX':'BINANCE:STXUSDT','TAO':'BINANCE:TAOUSDT',
         'VIRTUAL':'BINANCE:VIRTUALUSDT','BERA':'BINANCE:BERAUSDT',
         // ── Mega Cap Tech ─────────────────────────────────────────────────────
@@ -27270,115 +27394,199 @@ window._setChartInterval = async function(interval) {
     };
     const setEl = (id,val) => { const e=document.getElementById(id); if(e) e.innerText=val; };
 
-    if (useBinance) {
-        // ── CRYPTO: Binance REST pro OHLC + WebSocket pro live tick ──
-        const sym = binanceSym;
-        const symLow = sym.toLowerCase();
+    // ── CRYPTO: Shared Ribbon Prefill & Helper ──
+    const _cPreload = (typeof CRYPTO !== 'undefined') && CRYPTO.find(c => c.s === rawSym);
+    if (_cPreload && _cPreload.px) {
+        const _cp = _cPreload;
+        setEl('bbg-current-price', fmtP(_cp.px));
+        setEl('bbg-close', fmtP(_cp.px));
+        const _cup = (_cp.chg || 0) >= 0;
+        const _ccol = _cup ? '#00cc44' : '#ff3d3d';
+        const chgEl = document.getElementById('bbg-price-change');
+        if (chgEl) { chgEl.innerText = (_cup?'+':'') + (_cp.chg||0).toFixed(2) + '%'; chgEl.style.color = _ccol; }
+        const arrEl = document.getElementById('bbg-price-arrow');
+        if (arrEl) { arrEl.innerText = _cup ? '↑' : '↓'; arrEl.style.color = _ccol; }
+        const ctnr = document.getElementById('bbg-current-price-container');
+        if (ctnr) ctnr.style.color = _ccol;
+        setEl('ov-start', fmtP(_cp.px));
+        setEl('ov-close', fmtP(_cp.px));
+    }
 
-        // Pre-fill ribbon instantly from CRYPTO static cache
-        const _cPreload = (typeof CRYPTO !== 'undefined') && CRYPTO.find(c => c.s === rawSym);
-        if (_cPreload && _cPreload.px) {
-            const _cp = _cPreload;
-            setEl('bbg-current-price', fmtP(_cp.px));
-            setEl('bbg-close', fmtP(_cp.px));
-            const _cup = (_cp.chg || 0) >= 0;
-            const _ccol = _cup ? '#00cc44' : '#ff3d3d';
-            const chgEl = document.getElementById('bbg-price-change');
-            if (chgEl) { chgEl.innerText = (_cup?'+':'') + (_cp.chg||0).toFixed(2) + '%'; chgEl.style.color = _ccol; }
-            const arrEl = document.getElementById('bbg-price-arrow');
-            if (arrEl) { arrEl.innerText = _cup ? '↑' : '↓'; arrEl.style.color = _ccol; }
-            const ctnr = document.getElementById('bbg-current-price-container');
-            if (ctnr) ctnr.style.color = _ccol;
-            setEl('ov-start', fmtP(_cp.px));
-            setEl('ov-close', fmtP(_cp.px));
+    const _applyTick = (price, chgPct, hi, lo, vol, openPx) => {
+        if(!price || isNaN(price)) return;
+        const up  = chgPct >= 0;
+        const col = up ? '#00cc44' : '#ff3d3d';
+        const now = new Date();
+        setEl('bbg-time',  String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
+        setEl('bbg-current-price', fmtP(price));
+        setEl('bbg-close', fmtP(price));
+        if(hi>0) setEl('bbg-high',   fmtP(hi));
+        if(lo>0) setEl('bbg-low',    fmtP(lo));
+        if(vol>0) setEl('bbg-volume', fmtV(vol));
+        if(openPx>0) {
+            const _nyOpen = window._nyMidnightOpen > 0 ? window._nyMidnightOpen : openPx;
+            setEl('ov-open', fmtP(_nyOpen));
+            if(!window._firstBbgPrice || window._firstBbgPrice <= 0) window._firstBbgPrice = _nyOpen;
+        }
+        const chgEl = document.getElementById('bbg-price-change');
+        if(chgEl){chgEl.innerText=(up?'+':'')+chgPct.toFixed(2)+'%';chgEl.style.color=col;}
+        const arrEl = document.getElementById('bbg-price-arrow');
+        if(arrEl){arrEl.innerText=up?'↑':'↓';arrEl.style.color=col;}
+        const ctnr = document.getElementById('bbg-current-price-container');
+        if(ctnr) ctnr.style.color=col;
+        setEl('ov-start', fmtP(price));
+        setEl('ov-close', fmtP(price));
+        if(hi>0) setEl('ov-high', fmtP(hi));
+        if(lo>0) setEl('ov-low',  fmtP(lo));
+    };
+
+    const _HYPE_ONLY = ['HYPE','PURR','FRIEND','POINTS'];
+    const isHL = _HYPE_ONLY.includes(rawSym);
+
+    if (useBinance || isHL) {
+        const sym = binanceSym;
+        const symLow = sym ? sym.toLowerCase() : '';
+
+        // 1. Binance REST (only if sym exists)
+        if (sym) {
+            try {
+                const r = await fetch('https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=1d&limit=2',{cache:'no-store'});
+                const klines = await r.json();
+                if(klines && klines.length) {
+                    const tk = klines[klines.length-1];
+                    window._firstBbgPrice = parseFloat(tk[1]);
+                    window._chigh         = parseFloat(tk[2]);
+                    window._clow          = parseFloat(tk[3]);
+                    window._cvol          = parseFloat(tk[5]);
+                    setEl('bbg-start', fmtP(window._firstBbgPrice));
+                    setEl('bbg-high',  fmtP(window._chigh));
+                    setEl('bbg-low',   fmtP(window._clow));
+                    setEl('bbg-volume',fmtV(window._cvol));
+                }
+            } catch(e) {}
+
+            try {
+                const now = new Date();
+                const nyOff = (function(){
+                    const y = now.getUTCFullYear();
+                    const dstStart = new Date(Date.UTC(y,2,8  - new Date(Date.UTC(y,2,1)).getUTCDay(),7,0,0));
+                    const dstEnd   = new Date(Date.UTC(y,10,1 - new Date(Date.UTC(y,10,1)).getUTCDay(),6,0,0));
+                    return (now >= dstStart && now < dstEnd) ? -4 : -5;
+                })();
+                const nyMidnightUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), -nyOff, 0, 0));
+                const startTime = nyMidnightUTC > now ? nyMidnightUTC - 86400000 : nyMidnightUTC;
+                const r2 = await fetch('https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=1m&limit=2&startTime='+startTime,{cache:'no-store'});
+                const k2 = await r2.json();
+                if(k2 && k2.length) {
+                    window._nyMidnightOpen = parseFloat(k2[0][1]);
+                    setEl('ov-open', fmtP(window._nyMidnightOpen));
+                }
+            } catch(e) {}
+        }
+        
+        // 1c. Hyperliquid Direct Fallback (if no Binance sym)
+        if (!sym && isHL) {
+            try {
+                const rhl = await fetch('https://api.hyperliquid.xyz/info', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({type: 'metaAndAssetCtxs'})
+                });
+                const dhl = await rhl.json();
+                const meta = dhl[0].universe;
+                const ctxs = dhl[1];
+                const idx = meta.findIndex(a => a.name === rawSym);
+                if (idx !== -1) {
+                    const ctx = ctxs[idx];
+                    const px = parseFloat(ctx.midPrice || ctx.markPrice);
+                    // Use a simple 24h change estimate if O/H/L not directly available in simple way
+                    _applyTick(px, 0, parseFloat(ctx.dayHigh || 0), parseFloat(ctx.dayLow || 0), 0, px);
+                }
+            } catch(e) {}
         }
 
-        // 1. Fetch today's 1D kline for Open/High/Low/Vol + NY-midnight open
-        try {
-            const r = await fetch('https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=1d&limit=2',{cache:'no-store'});
-            const klines = await r.json();
-            if(klines && klines.length) {
-                const tk = klines[klines.length-1];
-                window._firstBbgPrice = parseFloat(tk[1]);
-                window._chigh         = parseFloat(tk[2]);
-                window._clow          = parseFloat(tk[3]);
-                window._cvol          = parseFloat(tk[5]);
-                setEl('bbg-start', fmtP(window._firstBbgPrice));
-                setEl('bbg-high',  fmtP(window._chigh));
-                setEl('bbg-low',   fmtP(window._clow));
-                setEl('bbg-volume',fmtV(window._cvol));
-            }
-        } catch(e) {}
+        // 2. MMT API polling
+        const _mmtExchange = isHL ? 'hyperliquid' : (window._mmtPreferExchange || 'binancef');
+        const _mmtSymbol   = rawSym.toLowerCase() + '/usd';
+        const _mmtKey      = (() => { try { return localStorage.getItem('mmt_api_key') || ''; } catch(e){ return ''; } })();
+        const MMT_BASE_URL = 'https://eu-central-1.mmt.gg/api/v1';
 
-        // 1b. Fetch NY-midnight open (00:00 America/New_York = 04:00 UTC EDT / 05:00 UTC EST)
-        try {
-            const now = new Date();
-            // Detect NY offset: EDT (UTC-4) Mar-Nov, EST (UTC-5) Nov-Mar
-            const nyOff = (function(){
-                // DST in US: second Sunday March → first Sunday November
-                const y = now.getUTCFullYear();
-                const dstStart = new Date(Date.UTC(y,2,8  - new Date(Date.UTC(y,2,1)).getUTCDay(),7,0,0)); // 2nd Sun Mar 07:00 UTC
-                const dstEnd   = new Date(Date.UTC(y,10,1 - new Date(Date.UTC(y,10,1)).getUTCDay(),6,0,0));// 1st Sun Nov 06:00 UTC
-                return (now >= dstStart && now < dstEnd) ? -4 : -5;
-            })();
-            // Midnight NY today in UTC
-            const nyMidnightUTC = new Date(Date.UTC(
-                now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
-                -nyOff, 0, 0
-            ));
-            // If we're before NY midnight today, use yesterday's NY midnight
-            const startTime = nyMidnightUTC > now ? nyMidnightUTC - 86400000 : nyMidnightUTC;
-            const r2 = await fetch('https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=1m&limit=2&startTime='+startTime,{cache:'no-store'});
-            const k2 = await r2.json();
-            if(k2 && k2.length) {
-                window._nyMidnightOpen = parseFloat(k2[0][1]); // open of the 1m candle at NY midnight
-                setEl('ov-open', fmtP(window._nyMidnightOpen));
-            }
-        } catch(e) {}
-
-        try {
-            const ws = new WebSocket('wss://stream.binance.com:9443/ws/'+symLow+'@ticker');
-            window._currentBbgWs = ws;
-            ws.onmessage = ev => {
-                try {
-                    const d = JSON.parse(ev.data);
-                    const price = parseFloat(d.c);
-                    if(!price) return;
-                    const chg   = parseFloat(d.P);
-                    const up    = chg >= 0;
-                    const col   = up ? '#00cc44' : '#ff3d3d';
-                    const now   = new Date();
-                    setEl('bbg-time',  String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
-                    setEl('bbg-current-price', fmtP(price));
-                    setEl('bbg-close', fmtP(price));
-                    if(parseFloat(d.h)>0) setEl('bbg-high',  fmtP(parseFloat(d.h)));
-                    if(parseFloat(d.l)>0) setEl('bbg-low',   fmtP(parseFloat(d.l)));
-                    if(parseFloat(d.q)>0) setEl('bbg-volume',fmtV(parseFloat(d.q)));
-                    const chgEl = document.getElementById('bbg-price-change');
-                    if(chgEl){chgEl.innerText=(up?'+':'')+chg.toFixed(2)+'%';chgEl.style.color=col;}
-                    const arrEl = document.getElementById('bbg-price-arrow');
-                    if(arrEl){arrEl.innerText=up?'↑':'↓';arrEl.style.color=col;}
-                    const ctnr = document.getElementById('bbg-current-price-container');
-                    if(ctnr) ctnr.style.color=col;
-                    // Update ov-left-panel
-                    setEl('ov-start', fmtP(price));
-                    setEl('ov-close', fmtP(price));
-                    if(parseFloat(d.h)>0) setEl('ov-high', fmtP(parseFloat(d.h)));
-                    if(parseFloat(d.l)>0) setEl('ov-low',  fmtP(parseFloat(d.l)));
-                    // d.o = UTC 1D open; d.O = open time ms — use for ov-open
-                    const _wsOpen = parseFloat(d.o);
-                    if(_wsOpen > 0) {
-                        // Try to get NY-midnight open (00:00 ET) from kline cache
-                        // Fall back to UTC-midnight open from ticker
-                        const _nyOpen = window._nyMidnightOpen > 0 ? window._nyMidnightOpen : _wsOpen;
-                        setEl('ov-open', fmtP(_nyOpen));
-                        if(!window._firstBbgPrice || window._firstBbgPrice <= 0) window._firstBbgPrice = _nyOpen;
+        let _mmtPollActive = false;
+        const _mmtPoll = async () => {
+            if(_mmtPollActive) return;
+            _mmtPollActive = true;
+            try {
+                const to   = Math.floor(Date.now() / 1000);
+                const from = to - 86400;
+                const url  = `${MMT_BASE_URL}/candles?exchange=${_mmtExchange}&symbol=${encodeURIComponent(_mmtSymbol)}&tf=${binanceInterval}&from=${from}&to=${to}`;
+                const r = await fetch(url, {
+                    headers: _mmtKey ? { 'X-API-Key': _mmtKey, 'Accept': 'application/json' } : { 'Accept': 'application/json' },
+                    signal: AbortSignal.timeout(6000), cache: 'no-store'
+                });
+                if(r.ok) {
+                    const data = await r.json();
+                    const pts = data.data;
+                    if(pts && pts.length) {
+                        const last = pts[pts.length - 1];
+                        const first = pts[0];
+                        const price = parseFloat(last.c || last[4] || 0);
+                        const open  = parseFloat(first.o || first[1] || 0);
+                        const hi    = Math.max(...pts.map(p => parseFloat(p.h || p[2] || 0)));
+                        const lo    = Math.min(...pts.filter(p => parseFloat(p.l||p[3])>0).map(p => parseFloat(p.l || p[3] || 0)));
+                        const vol   = pts.reduce((s,p) => s + parseFloat(p.v || p[5] || 0), 0);
+                        const chgPct = open > 0 ? ((price - open) / open * 100) : 0;
+                        _applyTick(price, chgPct, hi, lo, vol, open);
                     }
-                } catch(e){}
-            };
-            ws.onerror = ()=>{};
-            ws.onclose = ()=>{ window._currentBbgWs=null; };
-        } catch(e){}
+                }
+            } catch(e) {}
+            _mmtPollActive = false;
+        };
+
+        const _mmtStatsPoll = async () => {
+            if(!_mmtKey) return;
+            try {
+                const url = `${MMT_BASE_URL}/stats?exchange=${_mmtExchange}&symbol=${encodeURIComponent(_mmtSymbol)}&tf=1m&from=${Math.floor(Date.now()/1000)-300}&to=${Math.floor(Date.now()/1000)}`;
+                const r = await fetch(url, { headers:{'X-API-Key':_mmtKey,'Accept':'application/json'}, signal:AbortSignal.timeout(5000), cache:'no-store' });
+                if(r.ok) {
+                    const data = await r.json();
+                    const pts = data.data;
+                    if(pts && pts.length) {
+                        const mark = parseFloat(pts[pts.length-1].mark_price || pts[pts.length-1].mp || 0);
+                        if(mark > 0) {
+                            setEl('bbg-current-price', fmtP(mark));
+                            setEl('bbg-close', fmtP(mark));
+                        }
+                    }
+                }
+            } catch(e) {}
+        };
+
+        _mmtPoll(); _mmtStatsPoll();
+        const _mmtTimer = setInterval(() => { _mmtPoll(); _mmtStatsPoll(); }, 5000);
+
+        // 3. Binance WS (only if sym exists)
+        if (symLow) {
+            try {
+                const ws = new WebSocket('wss://stream.binance.com:9443/ws/'+symLow+'@ticker');
+                window._currentBbgWs = ws;
+                ws.onmessage = ev => {
+                    try {
+                        const d = JSON.parse(ev.data);
+                        const price = parseFloat(d.c);
+                        if(!price) return;
+                        _applyTick(price, parseFloat(d.P), parseFloat(d.h)||0, parseFloat(d.l)||0, parseFloat(d.q)||0, parseFloat(d.o)||0);
+                    } catch(e){}
+                };
+                const _origClose = ws.close.bind(ws);
+                window._currentBbgWs = {
+                    close: () => { clearInterval(_mmtTimer); try { _origClose(); } catch(e) {} }
+                };
+            } catch(e){
+                window._currentBbgWs = { close: () => clearInterval(_mmtTimer) };
+            }
+        } else {
+            window._currentBbgWs = { close: () => clearInterval(_mmtTimer) };
+        }
 
     } else if (useYahoo) {
         // ── EQUITY / INDEX / FOREX / COMDTY: Yahoo Finance poll každých 15s ──
@@ -27906,9 +28114,9 @@ window._openChartForSymbol = function(sym) {
         'PYTH':'PYTHUSDT',  'FET':'FETUSDT',    'IMX':'IMXUSDT',    'STRK':'STRKUSDT',
         'OM':'OMUSDT',      'VIRTUAL':'VIRTUALUSDT','MOVE':'MOVEUSDT','ETC':'ETCUSDT',
         'ZEC':'ZECUSDT',    'BCH':'BCHUSDT',    'FIL':'FILUSDT',    'KAS':'KASUSDT',
-        'HYPE':'HYPEUSDT',  'BERA':'BERAUSDT',
+        'HYPE':'HYPEUSDT.P',  'BERA':'BERAUSDT',
         // ── HYPERLIQUID perp (for HL-only) ────────────────────────────────────
-        'HYPE-PERP':'HYPEUSDT', 'BERA-PERP':'BERAUSDT',
+        'HYPE-PERP':'HYPEUSDT.P', 'BERA-PERP':'BERAUSDT',
         // ── US EQUITIES (Yahoo Finance chart) ──────────────────────────────────
         'MSTR':'MSTR','COIN':'COIN','SOFI':'SOFI','HOOD':'HOOD','PLTR':'PLTR',
         'UPST':'UPST','AFRM':'AFRM','SQ':'SQ','PYPL':'PYPL','IBIT':'IBIT',
@@ -28605,7 +28813,7 @@ window.addEventListener('storage', (e) => {
     'PENDLEUSDT','INJUSDT','GRTUSDT','OMUSDT',
     // Other top coins
     'LTCUSDT','BCHUSDT','ETCUSDT','XMRUSDT','ZECUSDT',
-    'LINKUSDT','FILUSDT','FTMUSDT','HYPEUSDT','BERASUDT','DOGEUSDT','SHIBUSDT',
+    'LINKUSDT','FILUSDT','FTMUSDT','BERASUDT','DOGEUSDT','SHIBUSDT',
   ];
   const CE_EXCHANGE  = 'binancef';
   const CE_EXCHANGE2 = 'hyperliquid';
@@ -28977,7 +29185,7 @@ window.addEventListener('storage', (e) => {
       'BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT',
       'DOGEUSDT','ADAUSDT','AVAXUSDT','LINKUSDT','SUIUSDT',
       'DOTUSDT','UNIUSDT','NEARUSDT','AAVEUSDT','INJUSDT',
-      'ARBUSDT','OPUSDT','TONUSDT','HYPEUSDT','ATOMUSDT',
+      'ARBUSDT','OPUSDT','TONUSDT','ATOMUSDT',
       'LTCUSDT','LDOUSDT','JUPUSDT','RENDERUSDT','SEIUSDT',
     ];
     TRADE_SYMS.forEach(sym => {
@@ -29426,7 +29634,7 @@ function _startMultiExchangeWS() {
   // ── BYBIT WS ─────────────────────────────────────────────────────────────
   const bybitSyms = ['BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','BNBUSDT',
     'ADAUSDT','LINKUSDT','AVAXUSDT','DOGEUSDT','SUIUSDT',
-    'HYPEUSDT','INJUSDT','ARBUSDT','OPUSDT','NEARUSDT',
+    'INJUSDT','ARBUSDT','OPUSDT','NEARUSDT',
     'AAVEUSDT','TONUSDT','BERAUSDT','MOVEUSDT','VIRTUALUSDT'];
   try {
     const bws = new WebSocket('wss://stream.bybit.com/v5/public/linear');
@@ -33894,6 +34102,613 @@ G._nvIntelRun = async function(){
   setInterval(window._drawChartLines, 2000);
 
   window.addEventListener('resize', window._drawChartLines);
+})();
+
+/* ══════════════════════════════════════════════════════
+   MMT MARKET DATA API — Chart Controls
+   ══════════════════════════════════════════════════════ */
+(function(){
+  const BASE = 'https://eu-central-1.mmt.gg/api/v1';
+
+  // Show/hide conditional controls based on selected endpoint
+  window._mmtEndpointChanged = function(){
+    const ep = (document.getElementById('mmt-endpoint')||{}).value || '';
+    const bucket  = document.getElementById('mmt-bucket');
+    const obLvl   = document.getElementById('mmt-ob-levels');
+    const tfSel   = document.getElementById('mmt-tf');
+    const rangeSel= document.getElementById('mmt-range');
+
+    const noTF = ['orderbook'].includes(ep);
+    if(tfSel)    tfSel.style.display    = noTF ? 'none' : '';
+    if(rangeSel) rangeSel.style.display = noTF ? 'none' : '';
+    if(bucket)   bucket.style.display   = (ep === 'vd') ? '' : 'none';
+    if(obLvl)    obLvl.style.display    = (ep === 'orderbook') ? '' : 'none';
+  };
+
+  // Build the API URL from current control values
+  window._mmtBuildUrl = function(){
+    const key      = (document.getElementById('mmt-api-key')||{}).value || '';
+    const exchange = (document.getElementById('mmt-exchange')||{}).value || 'binancef';
+    const symbol   = ((document.getElementById('mmt-symbol')||{}).value || 'btc/usd').toLowerCase();
+    const ep       = (document.getElementById('mmt-endpoint')||{}).value || 'candles';
+    const tf       = (document.getElementById('mmt-tf')||{}).value || '1m';
+    const range    = parseInt((document.getElementById('mmt-range')||{}).value || '86400', 10);
+    const bucket   = (document.getElementById('mmt-bucket')||{}).value || '1';
+    const obLvl    = (document.getElementById('mmt-ob-levels')||{}).value || 'full';
+
+    const to   = Math.floor(Date.now() / 1000);
+    const from = to - range;
+
+    let url = `${BASE}/${ep}?exchange=${encodeURIComponent(exchange)}&symbol=${encodeURIComponent(symbol)}`;
+
+    if(ep === 'orderbook'){
+      url += `&levels=${obLvl}`;
+    } else {
+      url += `&tf=${tf}&from=${from}&to=${to}`;
+      if(ep === 'vd') url += `&bucket=${bucket}`;
+    }
+
+    return { url, key, ep, exchange, symbol, tf, from, to };
+  };
+
+  // Copy the request URL to clipboard
+  window._mmtCopyUrl = function(){
+    const { url } = window._mmtBuildUrl();
+    const full = url; // key not included in URL for REST (header auth)
+    try {
+      navigator.clipboard.writeText(full).then(()=>{
+        const btn = document.getElementById('mmt-copy-url');
+        if(btn){ const old=btn.textContent; btn.textContent='✓ Copied'; setTimeout(()=>btn.textContent=old, 1200); }
+      });
+    } catch(e) {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = full; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      const btn = document.getElementById('mmt-copy-url');
+      if(btn){ const old=btn.textContent; btn.textContent='✓'; setTimeout(()=>btn.textContent=old, 1200); }
+    }
+  };
+
+  // Status helper
+  function setStatus(msg, color){
+    const el = document.getElementById('mmt-status');
+    if(el){ el.textContent = msg; el.style.color = color || '#888'; }
+  }
+
+  // ── TABLE STYLES (injected once) ──────────────────────────────────────────
+  (function _injectMMTTableStyles(){
+    if(document.getElementById('mmt-tbl-style')) return;
+    const s = document.createElement('style');
+    s.id = 'mmt-tbl-style';
+    s.textContent = `
+      #mmt-results-panel { font-family:'Roboto Mono',monospace; font-size:9px; }
+      .mmt-tbl { border-collapse:collapse; width:100%; }
+      .mmt-tbl th {
+        color:#555; font-weight:700; font-size:8px; letter-spacing:.4px;
+        border-bottom:1px solid #1a1200; padding:2px 8px 3px 8px;
+        text-align:right; white-space:nowrap; position:sticky; top:0;
+        background:#060400; z-index:1;
+      }
+      .mmt-tbl th:first-child { text-align:left; }
+      .mmt-tbl td {
+        padding:2px 8px; border-bottom:1px solid #0e0900;
+        text-align:right; white-space:nowrap; color:#999;
+      }
+      .mmt-tbl td:first-child { text-align:left; color:#555; }
+      .mmt-tbl tr:hover td { background:rgba(243,159,65,.04); }
+      .mmt-tbl .col-am  { color:#F39F41; }
+      .mmt-tbl .col-gn  { color:#00cc44; }
+      .mmt-tbl .col-rd  { color:#ff4444; }
+      .mmt-tbl .col-cy  { color:#00ccff; }
+      .mmt-tbl .col-wh  { color:#ccc; }
+      .mmt-tbl .col-dim { color:#555; }
+      /* orderbook side-by-side */
+      .mmt-ob-wrap { display:flex; gap:12px; }
+      .mmt-ob-side { flex:1; }
+      .mmt-ob-side .mmt-tbl th { color:#333; }
+      .mmt-ob-hdr-bid { color:#00cc44 !important; }
+      .mmt-ob-hdr-ask { color:#ff4444 !important; }
+      /* summary bar */
+      .mmt-sum { display:flex; gap:16px; flex-wrap:wrap; align-items:center;
+        padding:4px 0 5px 0; border-bottom:1px solid #1a1200; margin-bottom:4px; }
+      .mmt-sum-lbl { color:#444; }
+      .mmt-sum-val { color:#ccc; margin-left:3px; }
+    `;
+    document.head.appendChild(s);
+  })();
+
+  // ── HELPERS ────────────────────────────────────────────────────────────────
+  function _fmtPx(v){
+    if(v==null||isNaN(v)) return '—';
+    return v>=1000 ? v.toLocaleString('en-US',{maximumFractionDigits:2})
+         : v>=1   ? parseFloat(v.toFixed(4)).toString()
+         : parseFloat(v.toPrecision(5)).toString();
+  }
+  function _fmtVol(v){
+    if(v==null||isNaN(v)) return '—';
+    if(v>=1e9) return (v/1e9).toFixed(3)+'B';
+    if(v>=1e6) return (v/1e6).toFixed(3)+'M';
+    if(v>=1e3) return (v/1e3).toFixed(2)+'K';
+    return v.toFixed(2);
+  }
+  function _fmtTs(t){ return t ? new Date(t*1000).toISOString().slice(0,16).replace('T',' ') : '—'; }
+  function _pctClass(v){ return v>0?'col-gn':v<0?'col-rd':'col-dim'; }
+
+  // ── RENDER CANDLES TABLE ───────────────────────────────────────────────────
+  function _renderCandles(pts){
+    const fmt = _fmtPx, fmtV = _fmtVol, fmtT = _fmtTs;
+    const rows = pts.slice(-50).reverse(); // show last 50, newest first
+    let r = '<thead><tr>';
+    r += '<th>TIME</th><th>OPEN</th><th>HIGH</th><th>LOW</th><th>CLOSE</th><th>VOL BASE</th><th>VOL USD</th><th>TRADES</th>';
+    r += '</tr></thead><tbody>';
+    for(const c of rows){
+      const chg = c.o>0 ? ((c.c-c.o)/c.o*100) : 0;
+      const cc  = chg>0?'col-gn':chg<0?'col-rd':'col-wh';
+      r += `<tr>
+        <td>${fmtT(c.t)}</td>
+        <td class="col-wh">${fmt(c.o)}</td>
+        <td class="col-gn">${fmt(c.h)}</td>
+        <td class="col-rd">${fmt(c.l)}</td>
+        <td class="${cc}">${fmt(c.c)}</td>
+        <td>${fmtV(c.vb)}</td>
+        <td>${fmtV(c.vq)}</td>
+        <td class="col-dim">${c.tr!=null?c.tr.toLocaleString():'—'}</td>
+      </tr>`;
+    }
+    r += '</tbody>';
+    return r;
+  }
+
+  // ── RENDER STATS TABLE ─────────────────────────────────────────────────────
+  function _renderStats(pts){
+    const fmt = _fmtPx, fmtV = _fmtVol, fmtT = _fmtTs;
+    const rows = pts.slice(-50).reverse();
+    let r = '<thead><tr>';
+    r += '<th>TIME</th><th>MARK</th><th>INDEX</th><th>FR%</th><th>OI</th><th>LIQ↑</th><th>LIQ↓</th><th>VOL24H</th>';
+    r += '</tr></thead><tbody>';
+    for(const s of rows){
+      const frPct = s.fr!=null ? (s.fr*100).toFixed(4) : '—';
+      const frCls = s.fr>0?'col-gn':s.fr<0?'col-rd':'col-wh';
+      r += `<tr>
+        <td>${fmtT(s.t)}</td>
+        <td class="col-am">${fmt(s.mp)}</td>
+        <td class="col-wh">${fmt(s.ip)}</td>
+        <td class="${frCls}">${frPct!=='—'?frPct+'%':'—'}</td>
+        <td>${fmtV(s.oi)}</td>
+        <td class="col-gn">${s.lb!=null?fmtV(s.lb):'—'}</td>
+        <td class="col-rd">${s.ls!=null?fmtV(s.ls):'—'}</td>
+        <td>${fmtV(s.v24)}</td>
+      </tr>`;
+    }
+    r += '</tbody>';
+    return r;
+  }
+
+  // ── RENDER OI TABLE ────────────────────────────────────────────────────────
+  function _renderOI(pts){
+    const fmt = _fmtPx, fmtV = _fmtVol, fmtT = _fmtTs;
+    const rows = pts.slice(-50).reverse();
+    let r = '<thead><tr>';
+    r += '<th>TIME</th><th>CLOSE</th><th>OPEN</th><th>HIGH</th><th>LOW</th><th>CHG</th>';
+    r += '</tr></thead><tbody>';
+    for(const o of rows){
+      const chg = o.o>0 ? ((o.c-o.o)/o.o*100).toFixed(3) : '—';
+      const cc  = parseFloat(chg)>0?'col-gn':parseFloat(chg)<0?'col-rd':'col-wh';
+      r += `<tr>
+        <td>${fmtT(o.t)}</td>
+        <td class="col-am">${fmtV(o.c)}</td>
+        <td class="col-wh">${fmtV(o.o)}</td>
+        <td class="col-gn">${fmtV(o.h)}</td>
+        <td class="col-rd">${fmtV(o.l)}</td>
+        <td class="${cc}">${chg!=='—'?chg+'%':chg}</td>
+      </tr>`;
+    }
+    r += '</tbody>';
+    return r;
+  }
+
+  // ── RENDER VOLUME DELTA TABLE ──────────────────────────────────────────────
+  function _renderVD(pts){
+    const fmtV = _fmtVol, fmtT = _fmtTs;
+    const rows = pts.slice(-50).reverse();
+    let r = '<thead><tr>';
+    r += '<th>TIME</th><th>CLOSE Δ</th><th>OPEN Δ</th><th>HIGH Δ</th><th>LOW Δ</th><th>BUY VOL</th><th>SELL VOL</th>';
+    r += '</tr></thead><tbody>';
+    for(const v of rows){
+      const cc = v.c>0?'col-gn':v.c<0?'col-rd':'col-wh';
+      r += `<tr>
+        <td>${fmtT(v.t)}</td>
+        <td class="${cc}">${fmtV(v.c)}</td>
+        <td class="col-wh">${fmtV(v.o)}</td>
+        <td class="col-gn">${fmtV(v.h)}</td>
+        <td class="col-rd">${fmtV(v.l)}</td>
+        <td class="col-gn">${fmtV(v.bv)}</td>
+        <td class="col-rd">${fmtV(v.sv)}</td>
+      </tr>`;
+    }
+    r += '</tbody>';
+    return r;
+  }
+
+  // ── RENDER VOLUMES (vol profile) TABLE ────────────────────────────────────
+  function _renderVolumes(pts){
+    const fmtP = _fmtPx, fmtV = _fmtVol, fmtT = _fmtTs;
+    const rows = pts.slice(-50).reverse();
+    let r = '<thead><tr>';
+    r += '<th>TIME</th><th>PRICE</th><th>BUY</th><th>SELL</th><th>TOTAL</th><th>DELTA</th>';
+    r += '</tr></thead><tbody>';
+    for(const v of rows){
+      const tot = (v.bv||0)+(v.sv||0);
+      const delta = (v.bv||0)-(v.sv||0);
+      const dc = delta>0?'col-gn':delta<0?'col-rd':'col-wh';
+      r += `<tr>
+        <td>${fmtT(v.t)}</td>
+        <td class="col-am">${fmtP(v.p)}</td>
+        <td class="col-gn">${fmtV(v.bv)}</td>
+        <td class="col-rd">${fmtV(v.sv)}</td>
+        <td class="col-wh">${fmtV(tot)}</td>
+        <td class="${dc}">${fmtV(Math.abs(delta))}</td>
+      </tr>`;
+    }
+    r += '</tbody>';
+    return r;
+  }
+
+  // ── RENDER ORDERBOOK TABLE ─────────────────────────────────────────────────
+  function _renderOrderbook(data){
+    const fmtP = _fmtPx, fmtV = _fmtVol;
+    const bids = (data.b||[]).slice(0,30);
+    const asks = (data.a||[]).slice(0,30);
+    const lp = data.lp || '—';
+    const bestBid = bids[0]?bids[0][0]:'—';
+    const bestAsk = asks[0]?asks[0][0]:'—';
+    const spread = (bestBid!=='—'&&bestAsk!=='—') ? (_fmtPx(bestAsk - bestBid)) : '—';
+    const len = Math.max(bids.length, asks.length);
+
+    let r = `<div class="mmt-sum">
+      <span><span class="mmt-sum-lbl">LAST</span><span class="mmt-sum-val col-am">${fmtP(lp)}</span></span>
+      <span><span class="mmt-sum-lbl">BID</span><span class="mmt-sum-val col-gn">${fmtP(bestBid)}</span></span>
+      <span><span class="mmt-sum-lbl">ASK</span><span class="mmt-sum-val col-rd">${fmtP(bestAsk)}</span></span>
+      <span><span class="mmt-sum-lbl">SPREAD</span><span class="mmt-sum-val col-wh">${spread}</span></span>
+      <span><span class="mmt-sum-lbl">BIDS</span><span class="mmt-sum-val col-gn">${bids.length}</span></span>
+      <span><span class="mmt-sum-lbl">ASKS</span><span class="mmt-sum-val col-rd">${asks.length}</span></span>
+    </div>
+    <div class="mmt-ob-wrap">
+      <div class="mmt-ob-side">
+        <table class="mmt-tbl">
+          <thead><tr><th class="mmt-ob-hdr-bid">BIDS</th><th class="mmt-ob-hdr-bid">PRICE</th><th class="mmt-ob-hdr-bid">SIZE</th><th class="mmt-ob-hdr-bid">TOTAL</th></tr></thead>
+          <tbody>`;
+    let cumBid = 0;
+    for(let i=0;i<bids.length;i++){
+      const [p,s] = bids[i];
+      cumBid += parseFloat(s)||0;
+      r += `<tr><td class="col-dim">${i+1}</td><td class="col-gn">${fmtP(p)}</td><td class="col-wh">${fmtV(s)}</td><td class="col-dim">${fmtV(cumBid)}</td></tr>`;
+    }
+    r += `</tbody></table></div>
+      <div class="mmt-ob-side">
+        <table class="mmt-tbl">
+          <thead><tr><th class="mmt-ob-hdr-ask">ASKS</th><th class="mmt-ob-hdr-ask">PRICE</th><th class="mmt-ob-hdr-ask">SIZE</th><th class="mmt-ob-hdr-ask">TOTAL</th></tr></thead>
+          <tbody>`;
+    let cumAsk = 0;
+    for(let i=0;i<asks.length;i++){
+      const [p,s] = asks[i];
+      cumAsk += parseFloat(s)||0;
+      r += `<tr><td class="col-dim">${i+1}</td><td class="col-rd">${fmtP(p)}</td><td class="col-wh">${fmtV(s)}</td><td class="col-dim">${fmtV(cumAsk)}</td></tr>`;
+    }
+    r += `</tbody></table></div></div>`;
+    return r;
+  }
+
+  // ── RENDER HEATMAP (generic flat array) TABLE ──────────────────────────────
+  function _renderHeatmapGeneric(pts, ep){
+    if(!pts||!pts.length) return '<span style="color:#555">No data</span>';
+    const keys = Object.keys(pts[0]).filter(k=>k!=='t');
+    const rows = pts.slice(-40).reverse();
+    let r = '<thead><tr><th>TIME</th>';
+    for(const k of keys) r += `<th>${k.toUpperCase()}</th>`;
+    r += '</tr></thead><tbody>';
+    for(const row of rows){
+      r += `<td>${_fmtTs(row.t)}</td>`;
+      for(const k of keys){
+        const v = row[k];
+        const fmted = typeof v==='number' ? (Math.abs(v)>=1e3?_fmtVol(v):_fmtPx(v)) : (v??'—');
+        r += `<td class="col-wh">${fmted}</td>`;
+      }
+      r += '</tr>';
+    }
+    r += '</tbody>';
+    return r;
+  }
+
+  // ── SUMMARY BAR for time-series data ─────────────────────────────────────
+  function _makeSummaryBar(pts, count, ep){
+    const first = pts[0], last = pts[pts.length-1];
+    const from_d = _fmtTs(first&&first.t);
+    const to_d   = _fmtTs(last&&last.t);
+    return `<div class="mmt-sum">
+      <span class="col-gn" style="font-weight:700">${count} pts</span>
+      <span class="mmt-sum-lbl">${from_d}</span>
+      <span class="col-dim">→</span>
+      <span class="mmt-sum-lbl">${to_d}</span>
+    </div>`;
+  }
+
+  // ── HEATMAP CHART RENDERER ─────────────────────────────────────────────────
+  function _renderHeatmapChart(pts, ep){
+    if(!pts||!pts.length) return '<span style="color:#555">No data</span>';
+
+    // Determine which numeric field to visualize as the "heat" value
+    const heatFieldMap = {
+      candles: { label:'CLOSE', fn: r => r.c },
+      oi:      { label:'OI',    fn: r => r.oi||r.v },
+      vd:      { label:'DELTA', fn: r => r.d||r.delta },
+      volumes: { label:'DELTA', fn: r => (r.bv||0)-(r.sv||0) },
+      stats:   { label:'PRICE', fn: r => r.p||r.price },
+    };
+    const hf = heatFieldMap[ep] || { label:'VALUE', fn: r => { const k=Object.keys(r).find(k=>k!=='t'&&typeof r[k]==='number'); return k?r[k]:0; } };
+
+    const rows = pts.slice(-60).reverse(); // newest last = right side of chart
+    const vals = rows.map(r => hf.fn(r) ?? 0);
+    const times = rows.map(r => _fmtTs(r.t));
+
+    const minV = Math.min(...vals);
+    const maxV = Math.max(...vals);
+    const range = maxV - minV || 1;
+
+    // Color scale: dark blue → green → yellow → orange → red
+    function heatColor(v, min, max){
+      const t = (v - min) / (max - min); // 0..1
+      if(ep === 'vd' || ep === 'volumes'){
+        // Diverging: negative=red, zero=black, positive=green
+        if(t < 0.5){
+          const s = (0.5 - t) * 2;
+          return `rgb(${Math.round(200*s)},${Math.round(30*s)},${Math.round(30*s)})`;
+        } else {
+          const s = (t - 0.5) * 2;
+          return `rgb(${Math.round(20*s)},${Math.round(200*s)},${Math.round(60*s)})`;
+        }
+      }
+      // Sequential: dark→amber→green
+      if(t < 0.33) return `rgb(${Math.round(20+80*t*3)},${Math.round(10+40*t*3)},${Math.round(40-30*t*3)})`;
+      if(t < 0.66) { const s=(t-0.33)*3; return `rgb(${Math.round(100+143*s)},${Math.round(50+109*s)},${Math.round(10+5*s)})`; }
+      const s=(t-0.66)*3; return `rgb(${Math.round(243-43*s)},${Math.round(159+96*s)},${Math.round(65-65*s)})`;
+    }
+
+    const cellW = Math.max(8, Math.min(22, Math.floor(560 / rows.length)));
+    const cellH = 32;
+    const rows2 = 6; // number of stacked heatmap rows (intensity bands)
+    const canvasH = cellH * rows2 + 60; // +labels
+
+    // Build SVG heatmap
+    let svgCells = '';
+    for(let i=0; i<rows.length; i++){
+      const v = vals[i];
+      const t = (v - minV) / range;
+      const color = heatColor(v, minV, maxV);
+      // Each column = 6 cells stacked, opacity varies by band
+      for(let band=0; band<rows2; band++){
+        const opacity = 0.3 + 0.7*(1 - Math.abs(band/rows2 - t));
+        svgCells += `<rect x="${i*cellW}" y="${band*cellH}" width="${cellW-1}" height="${cellH-1}" fill="${color}" opacity="${opacity.toFixed(2)}" rx="1"/>`;
+      }
+      // Bottom label every N cols
+      if(rows.length <= 20 || i % Math.ceil(rows.length/10) === 0){
+        const lbl = times[i] ? times[i].slice(-5) : '';
+        svgCells += `<text x="${i*cellW + cellW/2}" y="${rows2*cellH+14}" text-anchor="middle" font-size="7" fill="#888" font-family="Courier New">${lbl}</text>`;
+      }
+      // Value tooltip title
+      svgCells += `<title>${times[i]}: ${typeof v==='number'?v.toFixed(2):v}</title>`;
+    }
+
+    // Color scale legend
+    let legendCells = '';
+    const steps = 20;
+    for(let i=0;i<steps;i++){
+      const t2 = i/steps;
+      const v2 = minV + t2*range;
+      const lc = heatColor(v2, minV, maxV);
+      legendCells += `<rect x="${i*(200/steps)}" y="0" width="${200/steps}" height="10" fill="${lc}"/>`;
+    }
+
+    const totalW = rows.length * cellW;
+    const svgW = Math.max(400, totalW + 2);
+
+    return `
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+  <span style="color:#F39F41;font-size:9px;font-weight:700;letter-spacing:1px">HEATMAP · ${hf.label}</span>
+  <span style="color:#666;font-size:8px">${rows.length} bars · min <span style="color:#ff4444">${_fmtPx(minV)}</span> max <span style="color:#00cc44">${_fmtPx(maxV)}</span></span>
+</div>
+<div style="overflow-x:auto;overflow-y:hidden;max-width:100%;">
+<svg width="${svgW}" height="${canvasH}" style="display:block;background:#050300;border:1px solid #2a2000;">
+  ${svgCells}
+  <!-- Y-axis labels -->
+  <text x="${totalW+1}" y="${cellH*0.5}" font-size="7" fill="#555" font-family="Courier New">HIGH</text>
+  <text x="${totalW+1}" y="${cellH*3}" font-size="7" fill="#555" font-family="Courier New">MID</text>
+  <text x="${totalW+1}" y="${cellH*5.5}" font-size="7" fill="#555" font-family="Courier New">LOW</text>
+</svg>
+</div>
+<div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+  <span style="color:#555;font-size:8px">${_fmtPx(minV)}</span>
+  <svg width="200" height="10" style="display:inline-block">${legendCells}</svg>
+  <span style="color:#555;font-size:8px">${_fmtPx(maxV)}</span>
+  <span style="color:#444;font-size:8px;margin-left:8px">← starší · novější →</span>
+</div>`;
+  }
+
+  // ── VIEW MODE STATE ────────────────────────────────────────────────────────
+  window._mmtViewMode = 'table'; // 'table' | 'heatmap'
+
+  function _buildViewToggle(){
+    return `<div style="display:flex;gap:4px;margin-bottom:6px;align-items:center;">
+      <span style="color:#555;font-size:8px;letter-spacing:1px;margin-right:4px">VIEW:</span>
+      <button onclick="window._mmtSetView('table')" id="mmt-btn-table"
+        style="font-family:'Courier New',monospace;font-size:8px;padding:2px 8px;border:1px solid #3a2800;background:${window._mmtViewMode==='table'?'#F39F41':'#1a1000'};color:${window._mmtViewMode==='table'?'#000':'#aaa'};cursor:pointer;letter-spacing:1px;">
+        ▤ TABLE
+      </button>
+      <button onclick="window._mmtSetView('heatmap')" id="mmt-btn-heatmap"
+        style="font-family:'Courier New',monospace;font-size:8px;padding:2px 8px;border:1px solid #3a2800;background:${window._mmtViewMode==='heatmap'?'#F39F41':'#1a1000'};color:${window._mmtViewMode==='heatmap'?'#000':'#aaa'};cursor:pointer;letter-spacing:1px;">
+        ▦ HEATMAP
+      </button>
+    </div>`;
+  }
+
+  window._mmtSetView = function(mode){
+    window._mmtViewMode = mode;
+    // Re-render with last data
+    if(window._mmtLastResult && window._mmtLastEp){
+      renderResults(window._mmtLastEp, window._mmtLastResult);
+    }
+  };
+
+  // ── MAIN RENDER DISPATCHER ─────────────────────────────────────────────────
+  function renderResults(ep, data){
+    const panel   = document.getElementById('mmt-results-panel');
+    const content = document.getElementById('mmt-results-content');
+    if(!panel || !content) return;
+
+    const am = '#F39F41'; const gn = '#00cc44'; const rd = '#ff4444';
+    let html = '';
+
+    if(data && data.error){
+      html = `<div style="color:${rd};padding:4px 0;">⚠ ${data.error.code}: ${data.error.message}</div>`;
+
+    } else if(ep === 'orderbook' && data){
+      html = _renderOrderbook(data);
+
+    } else if(data && data.data && Array.isArray(data.data)){
+      const pts = data.data;
+      const count = pts.length;
+      const summary = _makeSummaryBar(pts, count, ep);
+      const toggle = _buildViewToggle();
+
+      if(window._mmtViewMode === 'heatmap'){
+        html = toggle + summary + _renderHeatmapChart(pts, ep);
+      } else {
+        let tableRows = '';
+        if(ep === 'candles')        tableRows = _renderCandles(pts);
+        else if(ep === 'stats')     tableRows = _renderStats(pts);
+        else if(ep === 'oi')        tableRows = _renderOI(pts);
+        else if(ep === 'vd')        tableRows = _renderVD(pts);
+        else if(ep === 'volumes')   tableRows = _renderVolumes(pts);
+        else                        tableRows = _renderHeatmapGeneric(pts, ep);
+        html = toggle + summary + `<table class="mmt-tbl">${tableRows}</table>`;
+      }
+
+    } else {
+      html = `<span style="color:#666;">Response: ${JSON.stringify(data).slice(0, 300)}</span>`;
+    }
+
+    content.innerHTML = html;
+    panel.style.display = 'block';
+  }
+
+  // Main fetch function
+  window._mmtFetch = async function(){
+    const { url, key, ep } = window._mmtBuildUrl();
+
+    if(!key){
+      setStatus('⚠ No API key — enter key above', '#ff8800');
+      return;
+    }
+
+    const btn = document.getElementById('mmt-fetch-btn');
+    if(btn){ btn.textContent = '…'; btn.style.background = '#555'; btn.disabled = true; }
+    setStatus('Fetching…', '#888');
+
+    try {
+      const res = await fetch(url, {
+        headers: { 'X-API-Key': key, 'Accept': 'application/json' }
+      });
+
+      const data = await res.json();
+
+      if(btn){ btn.textContent = 'FETCH'; btn.style.background = '#F39F41'; btn.disabled = false; }
+
+      if(!res.ok || data.error){
+        const code = data.error ? data.error.code : res.status;
+        const msg  = data.error ? data.error.message : 'HTTP ' + res.status;
+        setStatus(`✗ ${code}: ${msg}`, '#ff4444');
+        renderResults(ep, data);
+        return;
+      }
+
+      // Success
+      const pts = data.data ? data.data.length : (data.b ? data.b.length : 0);
+      const ptsLabel = data.data ? `${data.data.length} pts` : 'snapshot';
+      setStatus(`✓ ${ptsLabel}  ·  ${data.exchange || ''}  ${data.symbol || ''}  ${data.tf || ''}`, '#00cc44');
+      renderResults(ep, data);
+
+      // Store for external access
+      window._mmtLastResult = data;
+      window._mmtLastEp     = ep;
+
+    } catch(err) {
+      if(btn){ btn.textContent = 'FETCH'; btn.style.background = '#F39F41'; btn.disabled = false; }
+      setStatus('✗ Network error: ' + (err.message||err), '#ff4444');
+    }
+  };
+
+  // ── AUTO-RESTORE MMT API KEY FROM localStorage ──────────────────────────────
+  (function _mmtRestoreKey(){
+    try {
+      const saved = localStorage.getItem('mmt_api_key');
+      if(saved){
+        const el = document.getElementById('mmt-api-key');
+        if(el){ el.value = saved; }
+      }
+    } catch(e){}
+  })();
+  // Also restore after DOM ready (belt + suspenders)
+  document.addEventListener('DOMContentLoaded', function(){
+    try {
+      const saved = localStorage.getItem('mmt_api_key');
+      if(saved){ const el = document.getElementById('mmt-api-key'); if(el) el.value = saved; }
+    } catch(e){}
+  });
+
+  // ── CHART QUICK-SWITCH: přepne chart + aktualizuje MMT symbol ──────────────
+  window._mmtSwitchChart = function(sym){
+    // 1. Přepne chart v terminálu
+    if(window._openChartForSymbol) window._openChartForSymbol(sym);
+    // 2. Highlight aktivní tlačítko
+    document.querySelectorAll('#mmt-chart-switcher button').forEach(function(btn){
+      const isCurrent = btn.textContent.trim() === sym;
+      btn.style.background = isCurrent ? '#3a2000' : '#1a1000';
+      btn.style.borderColor = isCurrent ? '#F39F41' : '#3a2800';
+      btn.style.color = isCurrent ? '#F39F41' : '#ccc';
+      btn.style.fontWeight = isCurrent ? '700' : '400';
+    });
+  };
+
+  // Sync symbol from active chart symbol when chart symbol changes
+  const _origOpenChart = window._openChartForSymbol;
+  window._openChartForSymbol = function(sym){
+    if(_origOpenChart) _origOpenChart.apply(this, arguments);
+    // Auto-suggest symbol in MMT control — map common symbols to mmt/usd format
+    const mmt = document.getElementById('mmt-symbol');
+    if(mmt && sym){
+      const s = sym.toUpperCase().replace('USDT','').replace('USD','').replace('/','');
+      const usd = s.toLowerCase() + '/usd';
+      // Only set for crypto-like symbols (no dots, slashes, etc in known crypto set)
+      const cryptoSet = ['BTC','ETH','SOL','BNB','XRP','ADA','DOGE','AVAX','LINK','DOT',
+        'ARB','OP','UNI','AAVE','LDO','CRV','GMX','PENDLE','ENA','TIA','JTO','HYPE',
+        'ONDO','WLD','PYTH','ATOM','ICP','FIL','MATIC','POL','FET','TAO','RENDER',
+        'LTC','BCH','ETC','DYDX','PEPE','WIF','BONK'];
+      if(cryptoSet.includes(s)){
+        mmt.value = usd;
+        // Highlight active chart button
+        document.querySelectorAll('#mmt-chart-switcher button').forEach(function(btn){
+          const isCurrent = btn.textContent.trim() === s;
+          btn.style.background = isCurrent ? '#3a2000' : '#1a1000';
+          btn.style.borderColor = isCurrent ? '#F39F41' : '#3a2800';
+          btn.style.color = isCurrent ? '#F39F41' : '#ccc';
+          btn.style.fontWeight = isCurrent ? '700' : '400';
+        });
+      }
+    }
+  };
+
+  // Initialize endpoint-dependent visibility
+  window._mmtEndpointChanged();
 })();
 </script>
 
