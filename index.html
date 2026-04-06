@@ -26403,6 +26403,7 @@ function _renderWhalePanel(){
       <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #080500">
         <span style="color:#887760;font-size:7.5px;letter-spacing:.5px">${k}</span>
         <span style="color:${c};font-size:8.5px;font-family:'Roboto Mono',monospace">${v}</span>
+
       </div>`).join('');
   }
 }
@@ -27278,171 +27279,80 @@ window._setChartInterval = async function(interval) {
     };
     const tvSymMap = {
         // ── Global Indices ────────────────────────────────────────────────────
-        'SPX':'BYBIT:SPXUSD.P','NDX':'BYBIT:NDXUSD.P','DJI':'BYBIT:DJIUSD.P',
-        'RUT':'TVC:RUT','MID':'TVC:MID',
-        'DAX':'XETR:DAX','NI225':'TVC:NI225','NIKKEI':'TVC:NI225',
-        'FTSE':'TVC:UKX','CAC':'TVC:CAC40','SENSEX':'BSE:SENSEX',
-        'NIFTY':'NSE:NIFTY','HSI':'TVC:HSI','SHCOMP':'SSE:000001',
-        'KOSPI':'KRX:KOSPI','ASX200':'ASX:XJO','IBOV':'BMFBOVESPA:IBOV',
-        'TSX':'TSX:OSPTX','AEX':'EURONEXT:AEX','SMI':'SIX:SMI',
-        'IBEX':'BME:IBC','MIB':'MIL:FTSEMIB','ATX':'WBAG:ATX',
-        'PRAGUE':'XPRA:PX','NKY':'TVC:NI225','LONDON':'TVC:UKX',
-        'VIX':'TVC:VIX','VVIX':'CBOE:VVIX',
-        // ── US Futures ────────────────────────────────────────────────────────
+        'SPX':'CBOE:SPX','NDX':'NASDAQ:NDX','DJI':'DJ:DJI','RUT':'TVC:RUT',
+        'VIX':'TVC:VIX','VVIX':'CBOE:VVIX','DAX':'XETR:DAX','NI225':'TVC:NI225',
+        'FTSE':'TVC:UKX','CAC':'TVC:CAC40','HSI':'TVC:HSI','NIFTY':'NSE:NIFTY',
         'ES1':'CME_MINI:ES1!','NQ1':'CME_MINI:NQ1!','YM1':'CME_MINI:YM1!',
-        'ES':'CME_MINI:ES1!','NQ':'CME_MINI:NQ1!','YM':'CME_MINI:YM1!',
-        'RTY1':'CME_MINI:RTY1!','CL1':'NYMEX:CL1!','GC1':'COMEX:GC1!',
         // ── Commodities ───────────────────────────────────────────────────────
-        'GOLD':'BINANCE:XAUUSDT','SILVER':'BINANCE:XAGUSDT','COPPER':'TVC:COPPER',
-        'XAUUSD':'TVC:GOLD','XAGUSD':'TVC:SILVER',
-        'OIL':'BINANCE:CLUSDT','WTI':'BINANCE:CLUSDT','BRENT':'BYBIT:BRENTUSDT.P',
-        'GAS':'TVC:NATURALGAS','NATGAS':'TVC:NATURALGAS',
-        'WHEAT':'CBOT:ZW1!','CORN':'CBOT:ZC1!','SOYBEAN':'CBOT:ZS1!',
-        'COFFEE':'ICEUS:KC1!','COCOA':'ICEUS:CC1!','SUGAR':'ICEUS:SB1!',
-        'COTTON':'ICEUS:CT1!','LUMBER':'CME:LBR1!',
-        'PLATINUM':'TVC:PLATINUM','PALLADIUM':'TVC:PALLADIUM',
-        // ── Bonds / Rates ─────────────────────────────────────────────────────
-        'US10Y':'TVC:US10Y','US2Y':'TVC:US02Y','US30Y':'TVC:US30Y','US5Y':'TVC:US05Y',
-        'DE10Y':'TVC:DE10Y','GB10Y':'TVC:GB10Y','JP10Y':'TVC:JP10Y',
-        // ── Forex ─────────────────────────────────────────────────────────────
-        'EURUSD':'FX:EURUSD','GBPUSD':'FX:GBPUSD','USDJPY':'FX:USDJPY',
-        'AUDUSD':'FX:AUDUSD','USDCAD':'FX:USDCAD','USDCHF':'FX:USDCHF',
-        'NZDUSD':'FX:NZDUSD','EURGBP':'FX:EURGBP','EURJPY':'FX:EURJPY',
-        'GBPJPY':'FX:GBPJPY','USDMXN':'FX:USDMXN','USDBRL':'FX:USDBRL',
-        'USDZAR':'FX:USDZAR','USDTRY':'FX:USDTRY','USDINR':'FX:USDINR',
-        'USDCNY':'FX:USDCNY','USDKRW':'FX:USDKRW','USDSEK':'FX:USDSEK',
-        'USDNOK':'FX:USDNOK','USDPLN':'FX:USDPLN','USDCZK':'FX:USDCZK',
+        'GOLD':'TVC:GOLD','SILVER':'TVC:SILVER','OIL':'TVC:USOIL','WTI':'TVC:USOIL',
+        'BRENT':'TVC:UKOIL','NATGAS':'TVC:NATGAS','GAS':'TVC:NATGAS',
+        'COPPER':'TVC:COPPER','WHEAT':'CBOT:ZW1!','CORN':'CBOT:ZC1!',
         // ── Crypto (Binance) ──────────────────────────────────────────────────
         'BTC':'BINANCE:BTCUSDT','ETH':'BINANCE:ETHUSDT','SOL':'BINANCE:SOLUSDT',
         'BNB':'BINANCE:BNBUSDT','XRP':'BINANCE:XRPUSDT','ADA':'BINANCE:ADAUSDT',
         'DOGE':'BINANCE:DOGEUSDT','AVAX':'BINANCE:AVAXUSDT','LINK':'BINANCE:LINKUSDT',
         'DOT':'BINANCE:DOTUSDT','TRX':'BINANCE:TRXUSDT','LTC':'BINANCE:LTCUSDT',
         'BCH':'BINANCE:BCHUSDT','UNI':'BINANCE:UNIUSDT','AAVE':'BINANCE:AAVEUSDT',
-        'MATIC':'BINANCE:MATICUSDT','ARB':'BINANCE:ARBUSDT','OP':'BINANCE:OPUSDT',
-        'SHIB':'BINANCE:SHIBUSDT','PEPE':'BINANCE:PEPEUSDT','TON':'BINANCE:TONUSDT',
-        'INJ':'BINANCE:INJUSDT','APT':'BINANCE:APTUSDT','SUI':'BINANCE:SUIUSDT',
-        'MKR':'BINANCE:MKRUSDT','CRV':'BINANCE:CRVUSDT','SNX':'BINANCE:SNXUSDT',
-        'ATOM':'BINANCE:ATOMUSDT','NEAR':'BINANCE:NEARUSDT','FTM':'BINANCE:FTMUSDT',
-        'HBAR':'BINANCE:HBARUSDT','ICP':'BINANCE:ICPUSDT','FIL':'BINANCE:FILUSDT',
-        'GRT':'BINANCE:GRTUSDT','SAND':'BINANCE:SANDUSDT','MANA':'BINANCE:MANAUSDT',
-        'AXS':'BINANCE:AXSUSDT','GALA':'BINANCE:GALAUSDT','ENJ':'BINANCE:ENJUSDT',
-        'ALGO':'BINANCE:ALGOUSDT','VET':'BINANCE:VETUSDT','XLM':'BINANCE:XLMUSDT',
-        'ETC':'BINANCE:ETCUSDT','ZEC':'BINANCE:ZECUSDT','DASH':'BINANCE:DASHUSDT',
-        'FET':'BINANCE:FETUSDT','RENDER':'BINANCE:RENDERUSDT','RNDR':'BINANCE:RNDRUSDT',
-        'WIF':'BINANCE:WIFUSDT','BONK':'BINANCE:BONKUSDT','WLD':'BINANCE:WLDUSDT',
-        'JUP':'BINANCE:JUPUSDT','JTO':'BINANCE:JTOUSDT','TIA':'BINANCE:TIAUSDT',
-        'ENA':'BINANCE:ENAUSDT','PENDLE':'BINANCE:PENDLEUSDT','OM':'BINANCE:OMUSDT',
-        'KAS':'BINANCE:KASUSDT','HYPE':'BYBIT:HYPEUSDT.P','NOT':'BINANCE:NOTUSDT',
-        'ORDI':'BINANCE:ORDIUSDT','STX':'BINANCE:STXUSDT','TAO':'BINANCE:TAOUSDT',
-        'VIRTUAL':'BINANCE:VIRTUALUSDT','BERA':'BINANCE:BERAUSDT',
-        // ── Mega Cap Tech ─────────────────────────────────────────────────────
+        'PEPE':'BINANCE:PEPEUSDT','TON':'BINANCE:TONUSDT','HYPE':'BYBIT:HYPEUSDT.P',
+        // ── Equities (Chart Sources) ──────────────────────────────────────────
         'AAPL':'NASDAQ:AAPL','NVDA':'NASDAQ:NVDA','MSFT':'NASDAQ:MSFT',
-        'GOOGL':'NASDAQ:GOOGL','GOOG':'NASDAQ:GOOG','META':'NASDAQ:META',
-        'AMZN':'NASDAQ:AMZN','TSLA':'NASDAQ:TSLA','NFLX':'NASDAQ:NFLX',
-        'AMD':'NASDAQ:AMD','INTC':'NASDAQ:INTC','CRM':'NYSE:CRM',
-        'ORCL':'NYSE:ORCL','ADBE':'NASDAQ:ADBE','QCOM':'NASDAQ:QCOM',
-        'AVGO':'NASDAQ:AVGO','MU':'NASDAQ:MU','AMAT':'NASDAQ:AMAT',
-        'TXN':'NASDAQ:TXN','ARM':'NASDAQ:ARM','SMCI':'NASDAQ:SMCI',
-        'DELL':'NYSE:DELL','IBM':'NYSE:IBM','CSCO':'NASDAQ:CSCO',
-        'NOW':'NYSE:NOW','TEAM':'NASDAQ:TEAM','WDAY':'NASDAQ:WDAY',
-        'ZM':'NASDAQ:ZM','HPQ':'NYSE:HPQ','HPE':'NYSE:HPE',
-        // ── Fintech & Finance ─────────────────────────────────────────────────
-        'JPM':'NYSE:JPM','GS':'NYSE:GS','BAC':'NYSE:BAC','WFC':'NYSE:WFC',
-        'MS':'NYSE:MS','C':'NYSE:C','BLK':'NYSE:BLK','AXP':'NYSE:AXP',
-        'V':'NYSE:V','MA':'NYSE:MA','PYPL':'NASDAQ:PYPL','SQ':'NYSE:SQ',
-        'AFRM':'NASDAQ:AFRM','UPST':'NASDAQ:UPST','SOFI':'NASDAQ:SOFI',
-        'HOOD':'NASDAQ:HOOD','COIN':'BINANCE:COINUSDT','MSTR':'BINANCE:MSTRUSDT',
-        'SCHW':'NYSE:SCHW','CME':'NASDAQ:CME','CBOE':'CBOE:CBOE',
-        'BRK':'NYSE:BRK.B',
-        // ── Healthcare / Pharma ────────────────────────────────────────────────
-        'JNJ':'NYSE:JNJ','UNH':'NYSE:UNH','LLY':'NYSE:LLY','ABBV':'NYSE:ABBV',
-        'MRK':'NYSE:MRK','PFE':'NYSE:PFE','AMGN':'NASDAQ:AMGN','GILD':'NASDAQ:GILD',
-        'REGN':'NASDAQ:REGN','VRTX':'NASDAQ:VRTX','MRNA':'NASDAQ:MRNA',
-        'BNTX':'NASDAQ:BNTX','BMY':'NYSE:BMY','ABT':'NYSE:ABT','MDT':'NYSE:MDT',
-        'ISRG':'NASDAQ:ISRG',
-        // ── Consumer / Retail ─────────────────────────────────────────────────
-        'WMT':'NYSE:WMT','COST':'NASDAQ:COST','TGT':'NYSE:TGT',
-        'HD':'NYSE:HD','LOW':'NYSE:LOW','NKE':'NYSE:NKE','SBUX':'NASDAQ:SBUX',
-        'MCD':'NYSE:MCD','KO':'NYSE:KO','PEP':'NASDAQ:PEP','PG':'NYSE:PG',
-        'PM':'NYSE:PM','MO':'NYSE:MO','LULU':'NASDAQ:LULU','ULTA':'NASDAQ:ULTA',
-        // ── Energy ────────────────────────────────────────────────────────────
-        'XOM':'NYSE:XOM','CVX':'NYSE:CVX','COP':'NYSE:COP','SLB':'NYSE:SLB',
-        'EOG':'NYSE:EOG','OXY':'NYSE:OXY','HAL':'NYSE:HAL','DVN':'NYSE:DVN',
-        // ── Industrials / Defense ─────────────────────────────────────────────
-        'LMT':'NYSE:LMT','RTX':'NYSE:RTX','NOC':'NYSE:NOC','GD':'NYSE:GD',
-        'BA':'NYSE:BA','GE':'NYSE:GE','HON':'NASDAQ:HON','CAT':'NYSE:CAT',
-        'DE':'NYSE:DE','UNP':'NYSE:UNP','FDX':'NYSE:FDX','UPS':'NYSE:UPS',
-        'DAL':'NYSE:DAL','UAL':'NASDAQ:UAL','AAL':'NASDAQ:AAL',
-        // ── Growth / SaaS ─────────────────────────────────────────────────────
-        'PLTR':'NYSE:PLTR','CRWD':'NASDAQ:CRWD','DDOG':'NASDAQ:DDOG',
-        'NET':'NYSE:NET','ZS':'NASDAQ:ZS','SNOW':'NYSE:SNOW','OKTA':'NASDAQ:OKTA',
-        'MNDY':'NASDAQ:MNDY','RBLX':'NYSE:RBLX','ABNB':'NASDAQ:ABNB',
-        'UBER':'NYSE:UBER','LYFT':'NASDAQ:LYFT','SNAP':'NYSE:SNAP',
-        'PINS':'NYSE:PINS','SPOT':'NYSE:SPOT','SHOP':'NYSE:SHOP',
-        // ── EV / Clean Energy ─────────────────────────────────────────────────
-        'RIVN':'NASDAQ:RIVN','LCID':'NASDAQ:LCID','NIO':'NYSE:NIO',
-        'XPEV':'NYSE:XPEV','LI':'NASDAQ:LI','ENPH':'NASDAQ:ENPH',
-        'FSLR':'NASDAQ:FSLR','SEDG':'NASDAQ:SEDG',
-        // ── Crypto ETFs ───────────────────────────────────────────────────────
-        'IBIT':'NASDAQ:IBIT','FBTC':'NASDAQ:FBTC','BITB':'NYSE:BITB',
-        'ARKB':'NYSE:ARKB','ETHA':'NASDAQ:ETHA',
-        'SOFI':'BINANCE:SOFIUSDT','MSTR':'BINANCE:MSTRUSDT','COIN':'BINANCE:COINUSDT',
-        'TSLA':'BINANCE:TSLAUSDT','NVDA':'BINANCE:NVDAUSDT','AAPL':'BINANCE:AAPLUSDT',
-        'AMZN':'BINANCE:AMZNUSDT','GOOGL':'BINANCE:GOOGLUSDT','MSFT':'BINANCE:MSFTUSDT',
-        'META':'BINANCE:METAUSDT','NFLX':'BINANCE:NFLXUSDT','AMD':'BINANCE:AMDUSDT',
-        'INTC':'BINANCE:INTCUSDT','AAPL':'BINANCE:AAPLUSDT',
+        'GOOGL':'NASDAQ:GOOGL','META':'NASDAQ:META','AMZN':'NASDAQ:AMZN',
+        'TSLA':'NASDAQ:TSLA','NFLX':'NASDAQ:NFLX','AMD':'NASDAQ:AMD',
+        'INTC':'NASDAQ:INTC','PLTR':'NYSE:PLTR','CRM':'NYSE:CRM',
+        'SOFI':'NASDAQ:SOFI','MSTR':'NASDAQ:MSTR','COIN':'NASDAQ:COIN',
+        'HOOD':'NASDAQ:HOOD','PYPL':'NASDAQ:PYPL','SQ':'NYSE:SQ',
+        'UBER':'NYSE:UBER','SPOT':'NYSE:SPOT','SHOP':'NYSE:SHOP',
+        'DIS':'NYSE:DIS','BA':'NYSE:BA','LMT':'NYSE:LMT',
+        'V':'NYSE:V','MA':'NYSE:MA','JPM':'NYSE:JPM','GS':'NYSE:GS',
         // ── ETFs ──────────────────────────────────────────────────────────────
         'SPY':'AMEX:SPY','QQQ':'NASDAQ:QQQ','IWM':'AMEX:IWM','DIA':'AMEX:DIA',
-        'GLD':'AMEX:GLD','SLV':'AMEX:SLV','USO':'AMEX:USO',
-        'TLT':'NASDAQ:TLT','IEF':'NASDAQ:IEF','HYG':'AMEX:HYG','LQD':'AMEX:LQD',
-        'XLK':'AMEX:XLK','XLF':'AMEX:XLF','XLE':'AMEX:XLE','XLV':'AMEX:XLV',
-        'XLI':'AMEX:XLI','XLC':'AMEX:XLC','XLY':'AMEX:XLY','XLP':'AMEX:XLP',
-        'XLU':'AMEX:XLU','XLRE':'AMEX:XLRE','XLB':'AMEX:XLB',
-        'ARKK':'AMEX:ARKK','EEM':'AMEX:EEM','VTI':'AMEX:VTI','VOO':'AMEX:VOO',
-        'TQQQ':'NASDAQ:TQQQ','SQQQ':'NASDAQ:SQQQ','SPXL':'AMEX:SPXL',
-        'UVXY':'AMEX:UVXY','VXX':'AMEX:VXX',
-        'MSTU':'NYSE:MSTU','NVDL':'AMEX:NVDL',
+        'GLD':'AMEX:GLD','SLV':'AMEX:SLV','USO':'AMEX:USO','TLT':'NASDAQ:TLT',
     };
 
     // ── SMART DATA RESOLVER ──
     const _resolveBestDataSource = (sym) => {
+        // High-speed WebSocket sources for Ribbon data
         const binanceMap = {
-            'GOLD':'XAUUSDT', 'SILVER':'XAGUSDT', 'OIL':'CLUSDT', 'WTI':'CLUSDT'
+            'GOLD':'XAUUSDT', 'SILVER':'XAGUSDT', 'OIL':'OILUSDT', 'WTI':'OILUSDT',
+            'BTC':'BTCUSDT', 'ETH':'ETHUSDT', 'SOL':'SOLUSDT', 'BNB':'BNBUSDT'
         };
         const bybitMap = {
             'SPX':'SPXUSD', 'NDX':'NDXUSD', 'DJI':'DJIUSD', 'VIX':'VIXUSD',
-            'BRENT':'BRENTUSDT',
             'MSTR':'MSTRUSDT', 'COIN':'COINUSDT', 'SOFI':'SOFIUSDT',
             'TSLA':'TSLAUSDT', 'NVDA':'NVDAUSDT', 'AAPL':'AAPLUSDT',
-            'META':'METAUSDT', 'AMZN':'AMZNUSDT', 'GOOGL':'GOOGLUSDT', 
-            'MSFT':'MSFTUSDT', 'NFLX':'NFLXUSDT', 'AMD':'AMDUSDT', 'INTC':'INTCUSDT',
-            'HOOD':'HOODUSDT', 'PLTR':'PLTRUSDT'
+            'HYPE':'HYPEUSDT'
         };
         
         if (binanceMap[sym]) return { provider: 'BINANCE', ticker: binanceMap[sym], type: 'WS' };
-        if (bybitMap[sym]) return { provider: 'BYBIT', ticker: bybitMap[sym], type: 'WS' };
+        if (bybitMap[sym])   return { provider: 'BYBIT',   ticker: bybitMap[sym],   type: 'WS' };
+        if (cryptoMap[sym])  return { provider: 'BINANCE', ticker: cryptoMap[sym],  type: 'WS' };
         
-        if (cryptoMap[sym]) return { provider: 'BINANCE', ticker: cryptoMap[sym], type: 'WS' };
         return { provider: 'YAHOO', ticker: (yahooMap[sym] || sym), type: 'POLL' };
     };
 
     const resolved = _resolveBestDataSource(rawSym);
 
-    const binanceSym  = (resolved.provider === 'BINANCE' ? resolved.ticker : null) || cryptoMap[rawSym] || (rawSym.endsWith('USDT') ? rawSym : null);
-    const yahooTicker = resolved.provider === 'YAHOO' ? resolved.ticker : null;
-    const useYahoo    = (resolved.provider === 'YAHOO' || (yahooMap[rawSym] && !binanceSym));
-
     // ── Smart Chart Routing: Decouple Data Stream from Chart Display ──
-    let tvSym = tvSymMap[rawSym] || ((resolved.type === 'WS' && resolved.provider === 'BINANCE') ? ('BINANCE:' + resolved.ticker) : rawSym);
+    let tvSym = tvSymMap[rawSym];
     
-    const _nonEquityPrefix = ['BINANCE:','FX:','TVC:','FOREXCOM:','XETR:','CME_MINI:',
+    if (!tvSym) {
+        // Build interactive TV symbol based on provider
+        if (resolved.type === 'WS') {
+            tvSym = resolved.provider + ':' + (resolved.provider === 'BYBIT' ? resolved.ticker + '.P' : resolved.ticker);
+        } else {
+            // Fallback to CryptoMap or raw symbol with NASDAQ/NYSE prefix if possible
+            const isKnownEquity = !!yahooMap[rawSym] && !cryptoMap[rawSym];
+            tvSym = (isKnownEquity ? 'NASDAQ:' : '') + (yahooMap[rawSym] || rawSym);
+        }
+    }
+
+    const _nonEquityPrefix = ['BINANCE:','BYBIT:','FX:','TVC:','FOREXCOM:','XETR:','CME_MINI:',
         'NYMEX:','COMEX:','CBOT:','ICEUS:','BSE:','NSE:','KRX:','ASX:','SSE:',
         'BMFBOVESPA:','TSX:','EURONEXT:','SIX:','BME:','MIL:','WBAG:','XPRA:',
-        'CBOE:','AMEX:','NYSE:','NASDAQ:','BYBIT:'];
+        'CBOE:','AMEX:','NYSE:','NASDAQ:','DJ:','ICE:'];
     const _hasNonEqPrefix = _nonEquityPrefix.some(p => tvSym.startsWith(p));
-    if (!_hasNonEqPrefix && (useYahoo || yahooMap[rawSym])) tvSym = (yahooMap[rawSym] ? 'NASDAQ:' : '') + rawSym;
-
-    window._tvActiveSym     = tvSym;
+    
+    window._tvActiveSym      = tvSym;
     window._tvActiveInterval = tvInterval;
     window._updateTVChart(tvSym, tvInterval);
     console.log("[BBG-SMART-DATA] Routing:", { symbol: rawSym, resolved, tv: tvSym, interval: tvInterval });
