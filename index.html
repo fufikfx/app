@@ -27417,6 +27417,8 @@ window._setChartInterval = async function(interval) {
         const up  = chgPct >= 0;
         const col = up ? '#00cc44' : '#ff3d3d';
         const now = new Date();
+        
+        // Update Ribbon elements
         setEl('bbg-time',  String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
         setEl('bbg-current-price', fmtP(price));
         setEl('bbg-close', fmtP(price));
@@ -27434,10 +27436,19 @@ window._setChartInterval = async function(interval) {
         if(arrEl){arrEl.innerText=up?'↑':'↓';arrEl.style.color=col;}
         const ctnr = document.getElementById('bbg-current-price-container');
         if(ctnr) ctnr.style.color=col;
+        
+        // Update Overall stats
         setEl('ov-start', fmtP(price));
         setEl('ov-close', fmtP(price));
         if(hi>0) setEl('ov-high', fmtP(hi));
         if(lo>0) setEl('ov-low',  fmtP(lo));
+
+        // CRITICAL SYNC: Update the global CRYPTO state (sidebar) so it matches 1:1
+        const coinId = (typeof HL_MAP !== 'undefined') ? HL_MAP[rawSym] : null;
+        if (coinId && typeof updateCoin === 'function') {
+            updateCoin(coinId, {px: price, chg: chgPct, hi: hi, lo: lo, vol: vol}, 'tv_sync', 0);
+            renderSidebar(); 
+        }
     };
 
     const _HYPE_ONLY = ['HYPE','PURR','FRIEND','POINTS'];
@@ -27628,30 +27639,63 @@ window._setChartInterval = async function(interval) {
         _mmtPoll(); _mmtStatsPoll();
         const _mmtTimer = setInterval(() => { _mmtPoll(); _mmtStatsPoll(); }, 5000);
 
-        // 3. Binance WS (only if symBin exists)
-        if (symBin) {
-            const symLowBin = symBin.toLowerCase();
-            try {
-                const ws = new WebSocket('wss://stream.binance.com:9443/ws/'+symLowBin+'@ticker');
-                window._currentBbgWs = ws;
-                ws.onmessage = ev => {
-                    try {
-                        const d = JSON.parse(ev.data);
-                        const price = parseFloat(d.c);
-                        if(!price) return;
-                        _applyTick(price, parseFloat(d.P), parseFloat(d.h)||0, parseFloat(d.l)||0, parseFloat(d.q)||0, parseFloat(d.o)||0);
-                    } catch(e){}
+        // 3. Universal WebSocket Sync (Live Streaming)
+        const _openUniversalWS = () => {
+            let wsUrl = '';
+            let onMsg = null;
+            let subMsg = null;
+
+            // Normalize symbol for WS
+            const cleanTk = tvTk.split('.')[0].replace('USDT', ''); 
+            
+            if (tvEx === 'BINANCE' || (!tvEx && symBin)) {
+                const s = (tvTk || symBin).toLowerCase();
+                wsUrl = 'wss://stream.binance.com:9443/ws/' + s + '@ticker';
+                onMsg = d => {
+                    const price = parseFloat(d.c);
+                    if(price) _applyTick(price, parseFloat(d.P), parseFloat(d.h), parseFloat(d.l), parseFloat(d.q), parseFloat(d.o));
                 };
-                const _origClose = ws.close.bind(ws);
-                window._currentBbgWs = {
-                    close: () => { clearInterval(_mmtTimer); try { _origClose(); } catch(e) {} }
+            } else if (tvEx === 'BYBIT') {
+                wsUrl = 'wss://stream.bybit.com/v5/public/linear';
+                subMsg = JSON.stringify({op: "subscribe", args: ["tickers." + symBybit]});
+                onMsg = d => {
+                    if (d.topic && d.topic.startsWith("tickers") && d.data) {
+                        const t = d.data;
+                        const px = parseFloat(t.lastPrice);
+                        if(px) _applyTick(px, parseFloat(t.price24hPcnt)*100, parseFloat(t.highPrice24h), parseFloat(t.lowPrice24h), parseFloat(t.volume24h), parseFloat(t.prevPrice24h));
+                    }
                 };
-            } catch(e){
+            } else if (tvEx === 'OKX') {
+                wsUrl = 'wss://ws.okx.com:8443/ws/v5/public';
+                subMsg = JSON.stringify({op: "subscribe", args: [{channel: "tickers", instId: symOKX}]});
+                onMsg = d => {
+                    if (d.data && d.data[0]) {
+                        const t = d.data[0];
+                        const px = parseFloat(t.last);
+                        const op = parseFloat(t.open24h);
+                        const chg = op > 0 ? ((px - op)/op*100) : 0;
+                        if(px) _applyTick(px, chg, parseFloat(t.high24h), parseFloat(t.low24h), parseFloat(t.vol24h), op);
+                    }
+                };
+            }
+
+            if (wsUrl) {
+                try {
+                    const ws = new WebSocket(wsUrl);
+                    ws.onopen = () => { if(subMsg) ws.send(subMsg); };
+                    ws.onmessage = ev => { try { onMsg(JSON.parse(ev.data)); } catch(e){} };
+                    const _origClose = ws.close.bind(ws);
+                    window._currentBbgWs = { 
+                        close: () => { clearInterval(_mmtTimer); try { _origClose(); } catch(e){} } 
+                    };
+                } catch(e) {
+                    window._currentBbgWs = { close: () => clearInterval(_mmtTimer) };
+                }
+            } else {
                 window._currentBbgWs = { close: () => clearInterval(_mmtTimer) };
             }
-        } else {
-            window._currentBbgWs = { close: () => clearInterval(_mmtTimer) };
-        }
+        };
+        _openUniversalWS();
 
     } else if (useYahoo) {
         // ── EQUITY / INDEX / FOREX / COMDTY: Yahoo Finance poll každých 15s ──
