@@ -1767,11 +1767,21 @@ const _bbgSecurities = [
 ];
 // ── EQUITIES ─────────────────────────────────────────────────────────────────
 const _bbgEquities = [
-  {sym:'MSTR Equity',   name:'MicroStrategy'},
-  {sym:'COIN Equity',   name:'Coinbase Global'},
-  {sym:'SOFI Equity',   name:'SoFi Technologies'},
-  {sym:'HOOD Equity',   name:'Robinhood Markets'},
-  {sym:'PLTR Equity',   name:'Palantir Technologies'},
+  {sym:'MSTR Equity',   name:'MicroStrategy (Binance Perp)'},
+  {sym:'COIN Equity',   name:'Coinbase Global (Binance Perp)'},
+  {sym:'SOFI Equity',   name:'SoFi Technologies (Binance Perp)'},
+  {sym:'HOOD Equity',   name:'Robinhood Markets (Binance Perp)'},
+  {sym:'PLTR Equity',   name:'Palantir Technologies (Binance Perp)'},
+  {sym:'TSLA Equity',   name:'Tesla Inc (Binance Perp)'},
+  {sym:'NVDA Equity',   name:'NVIDIA Corp (Binance Perp)'},
+  {sym:'AAPL Equity',   name:'Apple Inc (Binance Perp)'},
+  {sym:'AMZN Equity',   name:'Amazon.com (Binance Perp)'},
+  {sym:'MSFT Equity',   name:'Microsoft (Binance Perp)'},
+  {sym:'META Equity',   name:'Meta Platforms (Binance Perp)'},
+  {sym:'GOOGL Equity',  name:'Alphabet Inc (Binance Perp)'},
+  {sym:'NFLX Equity',   name:'Netflix Inc (Binance Perp)'},
+  {sym:'AMD Equity',    name:'AMD (Binance Perp)'},
+  {sym:'INTC Equity',   name:'Intel (Binance Perp)'},
   {sym:'UPST Equity',   name:'Upstart Holdings'},
   {sym:'AFRM Equity',   name:'Affirm Holdings'},
   {sym:'SNOW Equity',   name:'Snowflake'},
@@ -1800,9 +1810,11 @@ const _bbgETFs = [
   {sym:'ARKK Equity',   name:'ARK Innovation ETF (NYSE Arca)'},
 ];
 const _bbgIndices = [
-  {sym:'SPX Index',     name:'S&P 500 Index (FOREXCOM:SPXUSD)'},
+  {sym:'SPX Index',     name:'S&P 500 (Bybit Perp)'},
+  {sym:'NDX Index',     name:'Nasdaq 100 (Bybit Perp)'},
+  {sym:'DJI Index',     name:'Dow Jones (Bybit Perp)'},
   {sym:'ES1! Futures',  name:'S&P 500 E-mini Futures (CME)'},
-  {sym:'NDX Index',     name:'Nasdaq 100 Index'},
+  {sym:'NDX Index (Y)', name:'Nasdaq 100 Index (Yahoo)'},
   {sym:'NQ1! Futures',  name:'Nasdaq 100 E-mini Futures (CME)'},
   {sym:'DJI Index',     name:'Dow Jones Industrial (TVC)'},
   {sym:'YM1! Futures',  name:'Dow Jones E-mini Futures (CME)'},
@@ -1814,9 +1826,10 @@ const _bbgIndices = [
   {sym:'FTSE Index',    name:'FTSE 100 UK'},
 ];
 const _bbgCommodities = [
-  {sym:'GOLD Comdty',   name:'GOLD Spot (XAU)'},
-  {sym:'SILVER Comdty', name:'SILVER Spot (XAG)'},
-  {sym:'OIL Comdty',    name:'WTI Crude Oil'},
+  {sym:'GOLD Comdty',   name:'GOLD Spot (Binance)'},
+  {sym:'SILVER Comdty', name:'SILVER Spot (Binance)'},
+  {sym:'OIL Comdty',    name:'Crude Oil WTI (Binance)'},
+  {sym:'BRENT Comdty',  name:'Crude Oil BRENT (Bybit)'},
   {sym:'GAS Comdty',    name:'Natural Gas'},
   {sym:'COPPER Comdty', name:'Copper LME'},
 ];
@@ -27265,7 +27278,7 @@ window._setChartInterval = async function(interval) {
     };
     const tvSymMap = {
         // ── Global Indices ────────────────────────────────────────────────────
-        'SPX':'TVC:SPX','NDX':'TVC:NDX','DJI':'TVC:DJI',
+        'SPX':'BYBIT:SPXUSD.P','NDX':'BYBIT:NDXUSD.P','DJI':'BYBIT:DJIUSD.P',
         'RUT':'TVC:RUT','MID':'TVC:MID',
         'DAX':'XETR:DAX','NI225':'TVC:NI225','NIKKEI':'TVC:NI225',
         'FTSE':'TVC:UKX','CAC':'TVC:CAC40','SENSEX':'BSE:SENSEX',
@@ -27280,9 +27293,9 @@ window._setChartInterval = async function(interval) {
         'ES':'CME_MINI:ES1!','NQ':'CME_MINI:NQ1!','YM':'CME_MINI:YM1!',
         'RTY1':'CME_MINI:RTY1!','CL1':'NYMEX:CL1!','GC1':'COMEX:GC1!',
         // ── Commodities ───────────────────────────────────────────────────────
-        'GOLD':'TVC:GOLD','SILVER':'TVC:SILVER','COPPER':'TVC:COPPER',
+        'GOLD':'BINANCE:XAUUSDT','SILVER':'BINANCE:XAGUSDT','COPPER':'TVC:COPPER',
         'XAUUSD':'TVC:GOLD','XAGUSD':'TVC:SILVER',
-        'OIL':'TVC:USOIL','WTI':'TVC:USOIL','BRENT':'TVC:UKOIL',
+        'OIL':'BINANCE:CLUSDT','WTI':'BINANCE:CLUSDT','BRENT':'BYBIT:BRENTUSDT.P',
         'GAS':'TVC:NATURALGAS','NATGAS':'TVC:NATURALGAS',
         'WHEAT':'CBOT:ZW1!','CORN':'CBOT:ZC1!','SOYBEAN':'CBOT:ZS1!',
         'COFFEE':'ICEUS:KC1!','COCOA':'ICEUS:CC1!','SUGAR':'ICEUS:SB1!',
@@ -27372,7 +27385,12 @@ window._setChartInterval = async function(interval) {
         'FSLR':'NASDAQ:FSLR','SEDG':'NASDAQ:SEDG',
         // ── Crypto ETFs ───────────────────────────────────────────────────────
         'IBIT':'NASDAQ:IBIT','FBTC':'NASDAQ:FBTC','BITB':'NYSE:BITB',
-        'ARKB':'NYSE:ARKB','ETHA':'NASDAQ:ETHA','SOFI':'BINANCE:SOFIUSDT',
+        'ARKB':'NYSE:ARKB','ETHA':'NASDAQ:ETHA',
+        'SOFI':'BINANCE:SOFIUSDT','MSTR':'BINANCE:MSTRUSDT','COIN':'BINANCE:COINUSDT',
+        'TSLA':'BINANCE:TSLAUSDT','NVDA':'BINANCE:NVDAUSDT','AAPL':'BINANCE:AAPLUSDT',
+        'AMZN':'BINANCE:AMZNUSDT','GOOGL':'BINANCE:GOOGLUSDT','MSFT':'BINANCE:MSFTUSDT',
+        'META':'BINANCE:METAUSDT','NFLX':'BINANCE:NFLXUSDT','AMD':'BINANCE:AMDUSDT',
+        'INTC':'BINANCE:INTCUSDT','AAPL':'BINANCE:AAPLUSDT',
         // ── ETFs ──────────────────────────────────────────────────────────────
         'SPY':'AMEX:SPY','QQQ':'NASDAQ:QQQ','IWM':'AMEX:IWM','DIA':'AMEX:DIA',
         'GLD':'AMEX:GLD','SLV':'AMEX:SLV','USO':'AMEX:USO',
@@ -27388,19 +27406,22 @@ window._setChartInterval = async function(interval) {
 
     // ── SMART DATA RESOLVER ──
     const _resolveBestDataSource = (sym) => {
-        const highSpeedMap = {
-            'SPX':'SPXUSD', 'NDX':'NDXUSD', 'DJI':'DJIUSD',
-            'GOLD':'XAUUSDT', 'SILVER':'XAGUSDT', 'OIL':'WTIUSDT',
+        const binanceMap = {
+            'GOLD':'XAUUSDT', 'SILVER':'XAGUSDT', 'OIL':'CLUSDT', 'WTI':'CLUSDT'
+        };
+        const bybitMap = {
+            'SPX':'SPXUSD', 'NDX':'NDXUSD', 'DJI':'DJIUSD', 'VIX':'VIXUSD',
+            'BRENT':'BRENTUSDT',
             'MSTR':'MSTRUSDT', 'COIN':'COINUSDT', 'SOFI':'SOFIUSDT',
             'TSLA':'TSLAUSDT', 'NVDA':'NVDAUSDT', 'AAPL':'AAPLUSDT',
             'META':'METAUSDT', 'AMZN':'AMZNUSDT', 'GOOGL':'GOOGLUSDT', 
-            'MSFT':'MSFTUSDT', 'NFLX':'NFLXUSDT', 'AMD':'AMDUSDT', 'INTC':'INTCUSDT'
+            'MSFT':'MSFTUSDT', 'NFLX':'NFLXUSDT', 'AMD':'AMDUSDT', 'INTC':'INTCUSDT',
+            'HOOD':'HOODUSDT', 'PLTR':'PLTRUSDT'
         };
-        const override = highSpeedMap[sym];
-        if (override) {
-            // Priority: Bybit for Indices/Commodities/Stocks
-            return { provider: 'BYBIT', ticker: override, type: 'WS' };
-        }
+        
+        if (binanceMap[sym]) return { provider: 'BINANCE', ticker: binanceMap[sym], type: 'WS' };
+        if (bybitMap[sym]) return { provider: 'BYBIT', ticker: bybitMap[sym], type: 'WS' };
+        
         if (cryptoMap[sym]) return { provider: 'BINANCE', ticker: cryptoMap[sym], type: 'WS' };
         return { provider: 'YAHOO', ticker: (yahooMap[sym] || sym), type: 'POLL' };
     };
@@ -28290,7 +28311,12 @@ window._openChartForSymbol = function(sym) {
         'HYPE':'HYPEUSDT.P',  'BERA':'BERAUSDT',
         // ── HYPERLIQUID perp (for HL-only) ────────────────────────────────────
         'HYPE-PERP':'HYPEUSDT.P', 'BERA-PERP':'BERAUSDT',
-        // ── US EQUITIES (Yahoo Finance chart) ──────────────────────────────────
+        // ── US EQUITIES (Binance/Bybit Perp optimized) ──
+        'MSTR':'MSTRUSDT','COIN':'COINUSDT','SOFI':'SOFIUSDT','HOOD':'HOODUSDT',
+        'TSLA':'TSLAUSDT','NVDA':'NVDAUSDT','AAPL':'AAPLUSDT','AMZN':'AMZNUSDT',
+        'MSFT':'MSFTUSDT','META':'METAUSDT','GOOGL':'GOOGLUSDT','NFLX':'NFLXUSDT',
+        'AMD':'AMDUSDT','INTC':'INTCUSDT','AAPL':'AAPLUSDT',
+        // ── Others (Yahoo/Standard) ──
         'MSTR':'NASDAQ:MSTR','COIN':'NASDAQ:COIN','SOFI':'NASDAQ:SOFI','HOOD':'HOOD',
         'PLTR':'NYSE:PLTR','UPST':'NASDAQ:UPST','AFRM':'NASDAQ:AFRM','SQ':'NYSE:SQ',
         'PYPL':'NASDAQ:PYPL','IBIT':'NASDAQ:IBIT','SNOW':'NYSE:SNOW','DDOG':'NASDAQ:DDOG',
@@ -28343,6 +28369,8 @@ window._openChartForSymbol = function(sym) {
         'EURUSD':'Curncy', 'GBPUSD':'Curncy', 'USDJPY':'Curncy', 'AUDUSD':'Curncy', 'USDCAD':'Curncy',
         // US Equities
         'MSTR':'Equity','COIN':'Equity','SOFI':'Equity','HOOD':'Equity','PLTR':'Equity',
+        'TSLA':'Equity','NVDA':'Equity','AAPL':'Equity','AMZN':'Equity','MSFT':'Equity',
+        'META':'Equity','GOOGL':'Equity','NFLX':'Equity','AMD':'Equity','INTC':'Equity',
         'UPST':'Equity','AFRM':'Equity','SQ':'Equity','PYPL':'Equity','IBIT':'Equity',
         'SNOW':'Equity','DDOG':'Equity','NET':'Equity','CRWD':'Equity','ZS':'Equity',
         'OKTA':'Equity','MNDY':'Equity','RBLX':'Equity','RIVN':'Equity','LCID':'Equity',
