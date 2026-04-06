@@ -11593,7 +11593,7 @@ async function _fetchRace(url, ms=8000) {
     const tid = setTimeout(() => { ctrl.abort(); rej(new Error('timeout')); }, ms);
     fetch(proxyUrl, { 
       signal: ctrl.signal,
-      headers: { 'Accept': 'application/json' }
+      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
     })
       .then(r => { 
         clearTimeout(tid); 
@@ -11602,7 +11602,6 @@ async function _fetchRace(url, ms=8000) {
       })
       .catch(e => { clearTimeout(tid); rej(e); });
   });
-  // Promise.any — vrací jakmile první proxy uspěje (vyžaduje ES2021)
   try { return await Promise.any(proxies.map(wrap)); } catch(_) { return null; }
 }
 
@@ -11615,9 +11614,9 @@ async function _fetchRaceJSON(url, ms=8000) {
     if (!text || text.length < 2) return null;
     let j;
     try { j = JSON.parse(text); } catch(e) { return null; }
-    // allorigins /get wraps in {"contents":"..."}
+    // Allorigins wrapper
     if (j && typeof j.contents === 'string' && j.contents.length > 2) {
-      try { return JSON.parse(j.contents); } catch(e) { return null; }
+      try { return JSON.parse(j.contents); } catch(e) { return j; } // Fallback to j if inner JSON fails
     }
     return j;
   } catch(_) { return null; }
@@ -11745,39 +11744,57 @@ let _yahooIdx=0;
 
 async function fetchYahooQuotes(){
   const batch=YAHOO_BATCHES[_yahooIdx%YAHOO_BATCHES.length]; _yahooIdx++;
-  try{
-    const syms=batch.join(',');
-    const fields='regularMarketPrice,regularMarketChangePercent,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,marketCap';
-    const url7=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=${fields}`;
-    const url2=`https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=${fields}`;
-    
-    // Zkus query1, pak query2 pokud query1 selže úplně
-    let d = await _fetchRaceJSON(url7, 8000);
+  const syms=batch.join(',');
+  const fields='regularMarketPrice,regularMarketChangePercent,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,marketCap';
+  const u1=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=${fields}`;
+  const u2=`https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=${fields}`;
+  
+  try {
+    let d = await _fetchRaceJSON(u1, 5000);
     if(!d?.quoteResponse?.result?.length) {
-       d = await _fetchRaceJSON(url2, 8000);
+       d = await _fetchRaceJSON(u2, 5000);
     }
     
-    if(!d?.quoteResponse?.result?.length) return;
+    if(!d?.quoteResponse?.result?.length) {
+      window._layerStatus.yahoo={ok:false,ts:Date.now(),err:'Empty/Timeout'};
+      return;
+    }
+
     let n=0;
     d.quoteResponse.result.forEach(q=>{
-      const sym=YAHOO_SYM_MAP[q.symbol]||q.symbol.replace('-B','').replace('^','');
-      const px=q.regularMarketPrice; if(!px||px<=0) return;
+      const rawSym = q.symbol;
+      const sym=YAHOO_SYM_MAP[rawSym]||rawSym.replace('-B','').replace('^','');
+      const px=q.regularMarketPrice; 
+      if(!px||px<=0) return;
+      
       _eqUpdate(sym,px,'yahoo');
+      
       const chg=q.regularMarketChangePercent;
-      if(MKT[sym]){ MKT[sym].px=px; if(chg!=null)MKT[sym].chg=chg; if(q.regularMarketOpen)MKT[sym].open=q.regularMarketOpen; }
-      if(STKS[sym]){ if(chg!=null)STKS[sym].chg=chg; if(q.regularMarketOpen)STKS[sym].open=q.regularMarketOpen; if(q.marketCap)STKS[sym].mc='$'+_fmtBig(q.marketCap); }
-      if(STOOQ_ETF_SET&&STOOQ_ETF_SET.has(sym)){ if(!window._etfPx)window._etfPx={}; if(!window._etfPx[sym])window._etfPx[sym]={}; Object.assign(window._etfPx[sym],{px,chg,ts:Date.now()}); }
+      if(MKT[sym]){ 
+        MKT[sym].px=px; 
+        if(chg!=null)MKT[sym].chg=chg; 
+        if(q.regularMarketOpen)MKT[sym].open=q.regularMarketOpen; 
+      }
+      if(STKS[sym]){ 
+        if(chg!=null)STKS[sym].chg=chg; 
+        if(q.regularMarketOpen)STKS[sym].open=q.regularMarketOpen; 
+        if(q.marketCap)STKS[sym].mc='$'+_fmtBig(q.marketCap); 
+      }
+      if(STOOQ_ETF_SET&&STOOQ_ETF_SET.has(sym)){ 
+        if(!window._etfPx)window._etfPx={}; 
+        if(!window._etfPx[sym])window._etfPx[sym]={}; 
+        Object.assign(window._etfPx[sym],{px,chg,ts:Date.now()}); 
+      }
       n++;
     });
+
     if(n>0){ 
       window._layerStatus.yahoo={ok:true,ts:Date.now(),count:n}; 
       buildTicker(); 
       refreshAllPanels(); 
-      setStat('YAHOO — '+n+' quotes  |  '+new Date().toLocaleTimeString('en-GB')); 
-    } else { 
-      window._layerStatus.yahoo={ok:false,ts:Date.now(),err:'Empty Result'}; 
+      setStat('YAHOO — '+n+' quotes  |  '+new Date().toLocaleTimeString('en-GB'));
     }
-  }catch(e){
+  } catch(e) {
     window._layerStatus.yahoo={ok:false,ts:Date.now(),err:e.message};
   }
 }
