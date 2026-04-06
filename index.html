@@ -4193,7 +4193,21 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Ship List - takes all space -->
     <div id="ais-ship-list" class="sbl" style="flex:1;overflow-y:auto;background:transparent;min-height:80px;"></div>
 
-    <!-- Detail removed -->
+    <!-- Vessel Detail Pane -->
+    <div id="ais-detail-pane" style="display:none;background:#050400;border-top:1px solid #1a1000;padding:8px 10px;flex-shrink:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span id="ais-det-name" style="color:#F39F41;font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;">VESSEL NAME</span>
+        <span onclick="document.getElementById('ais-detail-pane').style.display='none'" style="cursor:pointer;color:#444;font-size:10px;padding:2px 4px;" onmouseover="this.style.color='#f22'" onmouseout="this.style.color='#444'">✕</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:4px 10px;">
+        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">MMSI</div><div id="ais-det-mmsi" style="color:#c8c8c8;font-size:8px;font-family:var(--fn-num);">—</div></div>
+        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">FLAG</div><div id="ais-det-flag" style="color:#c8c8c8;font-size:9px;">—</div></div>
+        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">TYPE</div><div id="ais-det-type" style="color:#c8c8c8;font-size:8px;">—</div></div>
+        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">SPEED</div><div id="ais-det-speed" style="color:#00ddff;font-size:9px;font-weight:700;font-family:var(--fn-num);">0.0 KN</div></div>
+        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">STATUS</div><div id="ais-det-status" style="color:#998870;font-size:7px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div></div>
+        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">DESTINATION</div><div id="ais-det-dest" style="color:#998870;font-size:7px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div></div>
+      </div>
+    </div>
 
     <!-- Bottom bar -->
     <div style="display:flex;padding:3px 8px;background:#020100;border-top:1px solid #060400;flex-shrink:0;align-items:center;">
@@ -5620,7 +5634,26 @@ function _getSatLayer(){
   }, 1000);
 
   // Show vessel details in sidebar
-  window._aisShowDetail = function(p){ /* disabled */ };
+  window._aisShowDetail = function(p){
+    const d = document.getElementById('ais-detail-pane');
+    if(!d) return;
+    d.style.display = 'block';
+    
+    const nm = (p.name || 'MMSI:' + p.mmsi).toUpperCase();
+    const flag = _mmsiFlag(p.mmsi);
+    const typ = p.tanker ? 'TANKER' : p.cargo ? 'CARGO' : p.passenger ? 'PASSENGER' : 'OTHER';
+    const nst = (p.navStatus || 'UNDER WAY').toUpperCase();
+    const dst = (p.destination || '—').toUpperCase();
+    const spd = (p.speed || 0).toFixed(1) + ' KN';
+    
+    document.getElementById('ais-det-name').textContent = nm;
+    document.getElementById('ais-det-mmsi').textContent = p.mmsi;
+    document.getElementById('ais-det-flag').textContent = flag + ' ' + (p.mmsi.toString().substring(0,3));
+    document.getElementById('ais-det-type').textContent = typ;
+    document.getElementById('ais-det-speed').textContent = spd;
+    document.getElementById('ais-det-status').textContent = nst;
+    document.getElementById('ais-det-dest').textContent = dst;
+  };
   
   window.toggleAISPanel = function() {
     const p = document.getElementById('ais-panel');
@@ -26859,26 +26892,16 @@ window._bbgChart = null;
 // ── Kill TradingView attribution in Lightweight Charts ──────────────────
 (function() {
   function killTVLogo() {
-    // Remove all <a> links pointing to tradingview.com anywhere on page
     document.querySelectorAll('a[href*="tradingview"],a[href*="TradingView"]').forEach(el => {
-      el.style.cssText = 'display:none!important;width:0!important;height:0!important;overflow:hidden!important;opacity:0!important;';
-      el.setAttribute('aria-hidden','true');
-      try { el.parentNode && el.parentNode.removeChild(el); } catch(e) {}
-    });
-    // Also hide any .tv-lightweight-charts anchor
-    document.querySelectorAll('.tv-lightweight-charts a').forEach(el => {
       el.style.cssText = 'display:none!important;width:0!important;height:0!important;';
       try { el.parentNode && el.parentNode.removeChild(el); } catch(e) {}
     });
-    // Ensure cover div is on top
     const cover = document.getElementById('tv-logo-cover');
     if (cover) cover.style.zIndex = '99999';
   }
-  // Run immediately and on DOM changes
   killTVLogo();
   const obs = new MutationObserver(killTVLogo);
   obs.observe(document.body, { childList: true, subtree: true });
-  // Also run after delays in case chart loads late
   [200, 500, 1000, 2000, 4000].forEach(t => setTimeout(killTVLogo, t));
 })();
 window._currentBbgSeries = null;
@@ -27628,6 +27651,46 @@ window._setChartInterval = async function(interval) {
         _mmtPoll(); _mmtStatsPoll();
         const _mmtTimer = setInterval(() => { _mmtPoll(); _mmtStatsPoll(); }, 5000);
 
+        // ── VOLUME PROFILE REAL-TIME COMPONENT ──
+        window._renderVolumeProfile = function(pts) {
+            const container = document.getElementById('bbg-chart-container');
+            if(!container) return;
+            let vp = document.getElementById('bbg-vol-profile');
+            if(!vp) {
+                vp = document.createElement('div');
+                vp.id = 'bbg-vol-profile';
+                vp.style.cssText = 'position:absolute;top:0;right:0;bottom:0;width:120px;pointer-events:none;z-index:9980;display:flex;flex-direction:column;justify-content:center;opacity:0.6;';
+                container.appendChild(vp);
+            }
+            
+            // Calculate Profile
+            const prices = pts.map(p => parseFloat(p.c || p[4]));
+            const min = Math.min(...prices);
+            const max = Math.max(...prices);
+            const range = max - min;
+            if(range <= 0) return;
+            
+            const buckets = 40;
+            const step = range / buckets;
+            const profile = new Array(buckets).fill(0);
+            
+            pts.forEach(p => {
+                const px = parseFloat(p.c || p[4]);
+                const vol = parseFloat(p.v || p[5] || 0);
+                const bIdx = Math.min(buckets - 1, Math.floor((px - min) / step));
+                profile[bIdx] += vol;
+            });
+            
+            const maxVol = Math.max(...profile);
+            let html = '';
+            for(let i = buckets - 1; i >= 0; i--) {
+                const w = (profile[i] / maxVol) * 100;
+                const col = i > buckets/2 ? 'rgba(0,221,255,0.4)' : 'rgba(243,159,65,0.4)';
+                html += `<div style="height:${100/buckets}%;width:${w}%;background:${col};margin-bottom:1px;align-self:flex-end;"></div>`;
+            }
+            vp.innerHTML = html;
+        };
+
         // 3. Universal WebSocket Sync (Live Streaming)
         const _openUniversalWS = () => {
             let wsUrl = '';
@@ -27835,7 +27898,9 @@ window._updateTVChart = function(sym, interval) {
       + '.tv-watermark{display:none!important;}'
       + 'a[href*="tradingview"]{display:none!important;}'
       + '#header-toolbar-logo{display:none!important;}'
-      + '[data-name="logo"]{display:none!important;}'      + '[class*="dialog"]{display:none!important;}'      + '[class*="Dialog"]{display:none!important;}'      + '[class*="notification"]{display:none!important;}'      + '[class*="Notification"]{display:none!important;}'      + '[class*="modal"]{display:none!important;}'      + '[class*="Modal"]{display:none!important;}'      + '[class*="popup"]{display:none!important;}'      + '[class*="Popup"]{display:none!important;}'      + '[class*="toast"]{display:none!important;}'      + '[class*="Toast"]{display:none!important;}'      + '[class*="overlay"]{display:none!important;}'      + '[role="dialog"]{display:none!important;}'      + '[class*="alert-dialog"]{display:none!important;}'      + '</style>'
+      + '[data-name="logo"]{display:none!important;}'      + '[class*="dialog"]{display:none!important;}'      + '[class*="Dialog"]{display:none!important;}'      + '[class*="notification"]{display:none!important;}'      + '[class*="Notification"]{display:none!important;}'      + '[class*="modal"]{display:none!important;}'      + '[class*="Modal"]{display:none!important;}'      + '[class*="popup"]{display:none!important;}'      + '[class*="Popup"]{display:none!important;}'      + '[class*="toast"]{display:none!important;}'      + '[class*="Toast"]{display:none!important;}'      + '[class*="overlay"]{display:none!important;}'      + '[role="dialog"]{display:none!important;}'      + '[class*="alert-dialog"]{display:none!important;}'
+      + '.pane-legend,[class*="pane-legend"],[class*="legend-"],[class*="seriesTitle"],[class*="studyTitle"],[class*="legendMainSourceWrapper"],[data-name="legend"]{display:none!important;opacity:0!important;visibility:hidden!important;height:0!important;pointer-events:none!important;}'
+      + '</style>'
       + '<script>'      + '(function(){'      + 'var _origOpen=XMLHttpRequest.prototype.open;'      + 'function killDialogs(){'      + '  var sel=['      + '    "[class*=dialog]","[class*=Dialog]","[class*=notification]","[class*=Notification]",'      + '    "[class*=modal]","[class*=Modal]","[role=dialog]","[role=alertdialog]",'      + '    "[class*=popup]","[class*=Popup]","[class*=overlay]","[class*=Overlay]",'      + '    ".tv-dialog",".js-dialog",".tv-notification"'      + '  ];'      + '  sel.forEach(function(s){document.querySelectorAll(s).forEach(function(e){e.style.cssText="display:none!important;pointer-events:none!important;";});});'      + '}'      + 'new MutationObserver(killDialogs).observe(document.documentElement,{childList:true,subtree:true,attributes:true});'      + 'window.addEventListener("message",function(e){try{var d=JSON.parse(e.data||e);if(d&&(d.name==="notification"||d.name==="alert"||d.type==="notification"))e.stopImmediatePropagation();}catch(ex){}},{capture:true});'      + '})();'      + '<\/script>'      + '<script src="https://s3.tradingview.com/tv.js"><\/script>'
       + '</head><body>'
       + '<div id="tv_chart"></div>'
@@ -27851,14 +27916,22 @@ window._updateTVChart = function(sym, interval) {
       + '  locale:"en",'
       + '  toolbar_bg:"#000000",'
       + '  enable_publishing:false,'
-      + '  hide_top_toolbar:false,'
-      + '  hide_legend:false,'
+      + '  hide_top_toolbar:true,'
+      + '  hide_legend:true,'
       + '  hide_side_toolbar:false,'
       + '  allow_symbol_change:true,'
       + '  save_image:false,'
       + '  backgroundColor:"rgba(0,0,0,1)",'
       + '  gridColor:"#000000",'
       + '  overrides:{'
+      // ─── Legend Suppression ─────────────────────────────────────
+      + '    "paneProperties.legendProperties.showStudyArguments":false,'
+      + '    "paneProperties.legendProperties.showStudyTitles":false,'
+      + '    "paneProperties.legendProperties.showStudyValues":false,'
+      + '    "paneProperties.legendProperties.showSeriesTitle":false,'
+      + '    "paneProperties.legendProperties.showSeriesOHLC":false,'
+      + '    "paneProperties.legendProperties.showBarChange":false,'
+      + '    "paneProperties.legendProperties.showLegend":false,'
       // ─── Area series ───────────────────────────────────────────
       + '    "mainSeriesProperties.style":3,'
       + '    "mainSeriesProperties.areaStyle.color1":"rgba(180,180,180,0.2)",'
@@ -27888,23 +27961,57 @@ window._updateTVChart = function(sym, interval) {
       + '    "scalesProperties.lineColor":"#000000",'
       + '    "scalesProperties.axisHighlightColor":"#000000",'
       + '    "scalesProperties.showStudyLastValue":false,'
+      // ─── Legend Properties ─────────────────────────────────────
+      + '    "paneProperties.legendProperties.showLegend":false,'
+      + '    "paneProperties.legendProperties.showStudyArguments":false,'
+      + '    "paneProperties.legendProperties.showStudyTitles":false,'
+      + '    "paneProperties.legendProperties.showStudyValues":false,'
+      + '    "paneProperties.legendProperties.showSeriesTitle":false,'
+      + '    "paneProperties.legendProperties.showSeriesOHLC":false,'
       // ─── Price line (last price horizontal) ────────────────────
       + '    "mainSeriesProperties.priceLineColor":"#F39F41",'
       + '    "mainSeriesProperties.priceLineWidth":1'
       + '  },'
-      + '  studies_overrides:{},'
+      + '  studies_overrides:{'
+      + '    "volume.showLegend":false,'
+      + '    "cmo.showLegend":false,'
+      + '    "rsi.showLegend":false'
+      + '  },'
       + '  disabled_features:['
       + '    "left_toolbar","header_widget","header_symbol_search",'
       + '    "header_resolutions","header_chart_type","header_settings",'
-      + '    "header_compare","header_undo_redo","header_screenshot",'
-      + '    "header_fullscreen_button","border_around_the_chart",'
+      + '    "header_indicators","header_compare","header_undo_redo","header_screenshot",'
+      + '    "legend_widget","edit_buttons_in_legend","header_fullscreen_button","border_around_the_chart",'
       + '    "remove_library_container_border","chart_crosshair_menu",'
       + '    "display_market_status","show_logo_on_all_charts","create_volume_indicator_by_default",'
-      + '    "show_missing_notifications_icon",'
+      + '    "show_missing_notifications_icon","study_buttons_in_legend",'
+      + '    "study_backtesting_buttons","pane_context_menu","legend_context_menu",'
+      + '    "main_series_scale_menu","property_pages","pane_legend_render_options",'
+      + '    "source_selection_markers","chart_property_page_legend",'
       + '  ],'
       + '  enabled_features:["hide_left_toolbar_by_default"]'
       + '});'
-      + '(function(){var s=".tv-watermark,[data-name=logo],#header-toolbar-logo,.pane-legend,[class*=pane-legend],[class*=legendMainSourceWrapper],[class*=legendSources],[data-name=legend],[class*=tv-logo],[class*=logo-wrapped],a[href*=tradingview],.tv-circle-logo,[class*=dialog],[class*=Dialog],[class*=notification],[class*=Notification],[class*=popup],[class*=Popup],[class*=modal],[class*=Modal],[class*=toast],[class*=Toast],[class*=alert],[class*=Alert]";function k(){document.querySelectorAll(s).forEach(function(e){e.style.cssText="display:none!important;opacity:0!important;visibility:hidden!important;";});}k();new MutationObserver(k).observe(document.documentElement,{childList:true,subtree:true});[500,1000,2000,3000,5000].forEach(function(t){setTimeout(k,t);});})();'
+      + '(function(){'
+      + '  var s=".tv-watermark,[data-name=logo],#header-toolbar-logo,.pane-legend,[class*=pane-legend],[class*=legendMainSourceWrapper],[class*=legendSources],[data-name=legend],[class*=tv-logo],[class*=logo-wrapped],a[href*=tradingview],.tv-circle-logo,[class*=dialog],[class*=Dialog],[class*=notification],[class*=Notification],[class*=popup],[class*=Popup],[class*=modal],[class*=Modal],[class*=toast],[class*=Toast],[class*=alert],[class*=Alert],.legend-item,.legend-text,[class*=mainSourceWrapper],[class*=seriesTitle],[class*=studyTitle],[class*=legend-],[class*=source-],[class*=item-],[class*=title-],[id*=legend]";'
+      + '  function k(){'
+      + '    document.querySelectorAll(s).forEach(function(e){'
+      + '      e.style.cssText="display:none!important;opacity:0!important;visibility:hidden!important;height:0!important;width:0!important;pointer-events:none!important;";'
+      + '    });'
+      + '    var tags=document.querySelectorAll("div,span,button,a,i,strong,p,h1,h2,h3,header,section");'
+      + '    for(var i=0;i<tags.length;i++){'
+      + '      var t=(tags[i].innerText||tags[i].textContent||"").trim();'
+      + '      if(t && (t.includes("Indicators") || t.includes("Last Price") || t.includes("High on") || t.includes("Volume") || t.includes("Low on") || t.includes("M.") || t.includes("Open") || t.includes("High") || t.includes("Low") || t.includes("Close"))){'
+      + '        tags[i].style.cssText="display:none!important;opacity:0!important;visibility:hidden!important;height:0!important;width:0!important;pointer-events:none!important;";'
+      + '        if(tags[i].parentElement) tags[i].parentElement.style.cssText="display:none!important;height:0!important;";'
+      + '        if(tags[i].parentElement && tags[i].parentElement.parentElement) tags[i].parentElement.parentElement.style.cssText="display:none!important;height:0!important;";'
+      + '      }'
+      + '    }'
+      + '  }'
+      + '  k();'
+      + '  var OBS = new MutationObserver(k);'
+      + '  OBS.observe(document.documentElement,{childList:true,subtree:true,attributes:true,characterData:true});'
+      + '  [100,250,500,750,1000,2000,3000,5000].forEach(function(t){setTimeout(k,t);});'
+      + '})();'
       + '<\/script>'
       + '</body></html>';
     iframe.srcdoc = srcdoc;
@@ -32534,10 +32641,7 @@ function _buildTVLiveHTML(data) {
       <div style="color:#665500;font-family:'Roboto Mono',monospace;font-size:10px">${q.volume?(q.volume/1e6).toFixed(1)+'M':'—'}</div>
     </div>
   </div>
-  <div style="padding:4px 12px;border-bottom:1px solid #0d0800">
-    <span style="color:#553300;font-size:7.5px;letter-spacing:1.5px">INDICATORS: </span>
-    <span style="color:#664400;font-size:8.5px">${(chart.studies||[]).slice(0,8).join(' · ')||'—'}</span>
-  </div>
+  <!-- Indicators section removed as per request -->
   ${levels.length ? `
   <div style="color:#553300;font-size:7.5px;letter-spacing:1.5px;padding:6px 12px 2px">PRICE LEVELS (${levels.length})</div>
   <table style="width:100%;border-collapse:collapse">
@@ -34150,6 +34254,21 @@ G._nvIntelRun = async function(){
 
 
 <script>
+/* ── CHART PANEL BORDERS — black overlay to hide TV iframe borders ── */
+#bbg-chart-container { overflow: hidden !important; position: relative !important; }
+#bbg-chart-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  box-shadow:
+    inset 0  4px 0 4px #060400,
+    inset 0 -4px 0 4px #060400,
+    inset  4px 0 0 4px #060400,
+    inset -4px 0 0 4px #060400;
+}
+
 /* ══ BBG CHART OPEN PRICE LINE OVERLAY — always visible ══════════════════ */
 (function(){
 
