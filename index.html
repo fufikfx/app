@@ -27918,8 +27918,8 @@ window._updateTVChart = function(sym, interval) {
       + '  enable_publishing:false,'
       + '  hide_top_toolbar:true,'
       + '  hide_legend:true,'
-      + '  hide_side_toolbar:false,'
-      + '  allow_symbol_change:true,'
+      + '  hide_side_toolbar:true,'
+      + '  allow_symbol_change:false,'
       + '  save_image:false,'
       + '  backgroundColor:"rgba(0,0,0,1)",'
       + '  gridColor:"#000000",'
@@ -34254,21 +34254,6 @@ G._nvIntelRun = async function(){
 
 
 <script>
-/* ── CHART PANEL BORDERS — black overlay to hide TV iframe borders ── */
-#bbg-chart-container { overflow: hidden !important; position: relative !important; }
-#bbg-chart-container::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9998;
-  box-shadow:
-    inset 0  4px 0 4px #060400,
-    inset 0 -4px 0 4px #060400,
-    inset  4px 0 0 4px #060400,
-    inset -4px 0 0 4px #060400;
-}
-
 /* ══ BBG CHART OPEN PRICE LINE OVERLAY — always visible ══════════════════ */
 (function(){
 
