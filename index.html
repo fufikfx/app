@@ -27442,15 +27442,22 @@ window._setChartInterval = async function(interval) {
 
     const _HYPE_ONLY = ['HYPE','PURR','FRIEND','POINTS'];
     const isHL = _HYPE_ONLY.includes(rawSym);
+    const tvParts = (window._tvActiveSym || '').split(':');
+    const tvEx = tvParts[0] || '';
+    const tvTk = tvParts[1] || '';
 
-    if (useBinance || isHL) {
-        const sym = binanceSym;
-        const symLow = sym ? sym.toLowerCase() : '';
+    const cryptoExList = ['BINANCE','BYBIT','OKX','GATEIO','MEXC','KUCOIN'];
+    const useCryptoSync = cryptoExList.includes(tvEx) || isHL || useBinance;
 
-        // 1. Binance REST (only if sym exists)
-        if (sym) {
+    if (useCryptoSync) {
+        const symBin = tvEx === 'BINANCE' ? tvTk : (useBinance ? binanceSym : null);
+        const symBybit = tvEx === 'BYBIT' ? tvTk : (isHL ? (rawSym + 'USDT') : null);
+        const symOKX = tvEx === 'OKX' ? tvTk.replace('USDT', '-USDT') : null;
+
+        // 1. Binance REST (only if symBin exists)
+        if (symBin) {
             try {
-                const r = await fetch('https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=1d&limit=2',{cache:'no-store'});
+                const r = await fetch('https://api.binance.com/api/v3/klines?symbol='+symBin+'&interval=1d&limit=2',{cache:'no-store'});
                 const klines = await r.json();
                 if(klines && klines.length) {
                     const tk = klines[klines.length-1];
@@ -27475,7 +27482,7 @@ window._setChartInterval = async function(interval) {
                 })();
                 const nyMidnightUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), -nyOff, 0, 0));
                 const startTime = nyMidnightUTC > now ? nyMidnightUTC - 86400000 : nyMidnightUTC;
-                const r2 = await fetch('https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=1m&limit=2&startTime='+startTime,{cache:'no-store'});
+                const r2 = await fetch('https://api.binance.com/api/v3/klines?symbol='+symBin+'&interval=1m&limit=2&startTime='+startTime,{cache:'no-store'});
                 const k2 = await r2.json();
                 if(k2 && k2.length) {
                     window._nyMidnightOpen = parseFloat(k2[0][1]);
@@ -27484,8 +27491,52 @@ window._setChartInterval = async function(interval) {
             } catch(e) {}
         }
         
-        // 1c. Hyperliquid Direct Fallback (if no Binance sym)
-        if (!sym && isHL) {
+        // 1b. Bybit REST (if charting Bybit)
+        if (symBybit && tvEx === 'BYBIT') {
+            try {
+                const r3 = await fetch('https://api.bybit.com/v5/market/tickers?category=linear&symbol='+symBybit, {cache:'no-store'});
+                const d3 = await r3.json();
+                if (d3.retCode === 0 && d3.result.list && d3.result.list[0]) {
+                    const tk = d3.result.list[0];
+                    const px = parseFloat(tk.lastPrice);
+                    const hi = parseFloat(tk.highPrice24h);
+                    const lo = parseFloat(tk.lowPrice24h);
+                    const vol = parseFloat(tk.volume24h);
+                    const chg = parseFloat(tk.price24hPcnt) * 100;
+                    const prevPx = parseFloat(tk.prevPrice24h);
+                    _applyTick(px, chg, hi, lo, vol, prevPx);
+                    setEl('bbg-start', fmtP(prevPx));
+                    setEl('bbg-high',  fmtP(hi));
+                    setEl('bbg-low',   fmtP(lo));
+                    setEl('bbg-volume',fmtV(vol));
+                }
+            } catch(e) {}
+        }
+
+        // 1c. OKX REST (if charting OKX)
+        if (symOKX && tvEx === 'OKX') {
+            try {
+                const rOK = await fetch('https://www.okx.com/api/v5/market/ticker?instId='+symOKX, {cache:'no-store'});
+                const dOK = await rOK.json();
+                if (dOK.code === "0" && dOK.data && dOK.data[0]) {
+                    const tk = dOK.data[0];
+                    const px = parseFloat(tk.last);
+                    const hi = parseFloat(tk.high24h);
+                    const lo = parseFloat(tk.low24h);
+                    const vol = parseFloat(tk.vol24h);
+                    const op = parseFloat(tk.open24h);
+                    const chg = op > 0 ? ((px - op) / op * 100) : 0;
+                    _applyTick(px, chg, hi, lo, vol, op);
+                    setEl('bbg-start', fmtP(op));
+                    setEl('bbg-high',  fmtP(hi));
+                    setEl('bbg-low',   fmtP(lo));
+                    setEl('bbg-volume',fmtV(vol));
+                }
+            } catch(e) {}
+        }
+
+        // 1d. Hyperliquid Direct Fallback (only if no CEX source is charting)
+        if (!symBin && tvEx !== 'BYBIT' && tvEx !== 'OKX' && isHL) {
             try {
                 const rhl = await fetch('https://api.hyperliquid.xyz/info', {
                     method: 'POST',
@@ -27499,14 +27550,13 @@ window._setChartInterval = async function(interval) {
                 if (idx !== -1) {
                     const ctx = ctxs[idx];
                     const px = parseFloat(ctx.midPrice || ctx.markPrice);
-                    // Use a simple 24h change estimate if O/H/L not directly available in simple way
                     _applyTick(px, 0, parseFloat(ctx.dayHigh || 0), parseFloat(ctx.dayLow || 0), 0, px);
                 }
             } catch(e) {}
         }
 
-        // 2. MMT API polling
-        const _mmtExchange = isHL ? 'hyperliquid' : (window._mmtPreferExchange || 'binancef');
+        // 2. MMT API polling - Sync exchange with chart
+        const _mmtExchange = tvEx === 'BYBIT' ? 'bybitf' : (tvEx === 'OKX' ? 'okxf' : (isHL ? 'hyperliquid' : (window._mmtPreferExchange || 'binancef')));
         const _mmtSymbol   = rawSym.toLowerCase() + '/usd';
         const _mmtKey      = (() => { try { return localStorage.getItem('mmt_api_key') || ''; } catch(e){ return ''; } })();
         const MMT_BASE_URL = 'https://eu-central-1.mmt.gg/api/v1';
@@ -27564,10 +27614,11 @@ window._setChartInterval = async function(interval) {
         _mmtPoll(); _mmtStatsPoll();
         const _mmtTimer = setInterval(() => { _mmtPoll(); _mmtStatsPoll(); }, 5000);
 
-        // 3. Binance WS (only if sym exists)
-        if (symLow) {
+        // 3. Binance WS (only if symBin exists)
+        if (symBin) {
+            const symLowBin = symBin.toLowerCase();
             try {
-                const ws = new WebSocket('wss://stream.binance.com:9443/ws/'+symLow+'@ticker');
+                const ws = new WebSocket('wss://stream.binance.com:9443/ws/'+symLowBin+'@ticker');
                 window._currentBbgWs = ws;
                 ws.onmessage = ev => {
                     try {
