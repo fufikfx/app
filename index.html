@@ -27073,35 +27073,6 @@ window._setChartInterval = async function(interval) {
 
     let rawSym = ((window._bbgActiveSym || 'BTC').toUpperCase()).replace('/', '');
 
-    // ── SMART DATA RESOLVER ──
-    const _resolveBestDataSource = (sym) => {
-        // Manual High-Speed Whitelist
-        const highSpeedMap = {
-            'SPX':'SPXUSD', 'NDX':'NDXUSD', 'DJI':'DJIUSD',
-            'GOLD':'XAUUSDT', 'SILVER':'XAGUSDT', 'OIL':'WTIUSDT',
-            'MSTR':'MSTRUSDT', 'COIN':'COINUSDT', 'SOFI':'SOFIUSDT',
-            'TSLA':'TSLAUSDT', 'NVDA':'NVDAUSDT', 'AAPL':'AAPLUSDT'
-        };
-        
-        const override = highSpeedMap[sym];
-        if (override) {
-            // Priority: Bybit for Indices/Commodities, Binance for Stocks
-            if (['SPXUSD','NDXUSD','DJIUSD','XAUUSDT','XAGUSDT','WTIUSDT'].includes(override)) {
-                return { provider: 'BYBIT', ticker: override, type: 'WS' };
-            }
-            return { provider: 'BINANCE', ticker: override, type: 'WS' };
-        }
-        
-        // Crypto Discovery (Binance)
-        if (cryptoMap[sym]) return { provider: 'BINANCE', ticker: cryptoMap[sym], type: 'WS' };
-        
-        // MMT Discovery (Primary for most Stocks/Indices)
-        // Note: We use a lightweight check or just attempt connection
-        return { provider: 'YAHOO', ticker: yahooMap[sym] || sym, type: 'POLL' };
-    };
-
-    const resolved = _resolveBestDataSource(rawSym);
-
     // ── Symbol routing maps ──
     const cryptoMap = {
         // ── Layer 1 / Major ──────────────────────────────────────────────────
@@ -27370,6 +27341,26 @@ window._setChartInterval = async function(interval) {
         'UVXY':'AMEX:UVXY','VXX':'AMEX:VXX',
         'MSTU':'NYSE:MSTU','NVDL':'AMEX:NVDL',
     };
+
+    // ── SMART DATA RESOLVER ──
+    const _resolveBestDataSource = (sym) => {
+        const highSpeedMap = {
+            'SPX':'SPXUSD', 'NDX':'NDXUSD', 'DJI':'DJIUSD',
+            'GOLD':'XAUUSDT', 'SILVER':'XAGUSDT', 'OIL':'WTIUSDT',
+            'MSTR':'MSTRUSDT', 'COIN':'COINUSDT', 'SOFI':'SOFIUSDT',
+            'TSLA':'TSLAUSDT', 'NVDA':'NVDAUSDT', 'AAPL':'AAPLUSDT',
+            'META':'METAUSDT', 'AMZN':'AMZNUSDT'
+        };
+        const override = highSpeedMap[sym];
+        if (override) {
+            if (['SPXUSD','NDXUSD','DJIUSD','XAUUSDT','XAGUSDT','WTIUSDT'].includes(override)) return { provider: 'BYBIT', ticker: override, type: 'WS' };
+            return { provider: 'BINANCE', ticker: override, type: 'WS' };
+        }
+        if (cryptoMap[sym]) return { provider: 'BINANCE', ticker: cryptoMap[sym], type: 'WS' };
+        return { provider: 'YAHOO', ticker: (yahooMap[sym] || sym), type: 'POLL' };
+    };
+
+    const resolved = _resolveBestDataSource(rawSym);
 
     const binanceSym  = (resolved.provider === 'BINANCE' ? resolved.ticker : null) || cryptoMap[rawSym] || (rawSym.endsWith('USDT') ? rawSym : null);
     const yahooTicker = resolved.provider === 'YAHOO' ? resolved.ticker : null;
