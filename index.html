@@ -27073,6 +27073,35 @@ window._setChartInterval = async function(interval) {
 
     let rawSym = ((window._bbgActiveSym || 'BTC').toUpperCase()).replace('/', '');
 
+    // ── SMART DATA RESOLVER ──
+    const _resolveBestDataSource = (sym) => {
+        // Manual High-Speed Whitelist
+        const highSpeedMap = {
+            'SPX':'SPXUSD', 'NDX':'NDXUSD', 'DJI':'DJIUSD',
+            'GOLD':'XAUUSDT', 'SILVER':'XAGUSDT', 'OIL':'WTIUSDT',
+            'MSTR':'MSTRUSDT', 'COIN':'COINUSDT', 'SOFI':'SOFIUSDT',
+            'TSLA':'TSLAUSDT', 'NVDA':'NVDAUSDT', 'AAPL':'AAPLUSDT'
+        };
+        
+        const override = highSpeedMap[sym];
+        if (override) {
+            // Priority: Bybit for Indices/Commodities, Binance for Stocks
+            if (['SPXUSD','NDXUSD','DJIUSD','XAUUSDT','XAGUSDT','WTIUSDT'].includes(override)) {
+                return { provider: 'BYBIT', ticker: override, type: 'WS' };
+            }
+            return { provider: 'BINANCE', ticker: override, type: 'WS' };
+        }
+        
+        // Crypto Discovery (Binance)
+        if (cryptoMap[sym]) return { provider: 'BINANCE', ticker: cryptoMap[sym], type: 'WS' };
+        
+        // MMT Discovery (Primary for most Stocks/Indices)
+        // Note: We use a lightweight check or just attempt connection
+        return { provider: 'YAHOO', ticker: yahooMap[sym] || sym, type: 'POLL' };
+    };
+
+    const resolved = _resolveBestDataSource(rawSym);
+
     // ── Symbol routing maps ──
     const cryptoMap = {
         // ── Layer 1 / Major ──────────────────────────────────────────────────
@@ -27342,55 +27371,19 @@ window._setChartInterval = async function(interval) {
         'MSTU':'NYSE:MSTU','NVDL':'AMEX:NVDL',
     };
 
-    const binanceSym  = cryptoMap[rawSym] || (rawSym.endsWith('USDT') ? rawSym : null);
-    const yahooTicker = !binanceSym ? (yahooMap[rawSym] || null) : null;
-    const useBinance  = !!binanceSym;
-    const useYahoo    = !!yahooTicker;
+    const binanceSym  = (resolved.provider === 'BINANCE' ? resolved.ticker : null) || cryptoMap[rawSym] || (rawSym.endsWith('USDT') ? rawSym : null);
+    const yahooTicker = resolved.provider === 'YAHOO' ? resolved.ticker : null;
+    const useYahoo    = (resolved.provider === 'YAHOO' || (yahooMap[rawSym] && !binanceSym));
 
-    // ── TradingView iframe symbol ──
-    let tvSym;
-    if (tvSymMap[rawSym])                       tvSym = tvSymMap[rawSym];
-    else if (yahooMap[rawSym] && !binanceSym)   tvSym = 'NASDAQ:' + rawSym;  // equity fallback
-    else if (binanceSym)                        tvSym = 'BINANCE:' + binanceSym;
-    else                                        tvSym = 'NASDAQ:' + rawSym;
-
-    // Fix equity TV sym — all non-equity prefixes that must NOT get NASDAQ fallback
-    const indexTVMap = {
-        // Futures
-        'CME_MINI:ES1!':1,'CME_MINI:NQ1!':1,'CME_MINI:YM1!':1,'CME_MINI:RTY1!':1,
-        'EUREX:FDAX1!':1,'OSE:NK1!':1,'NYMEX:CL1!':1,'COMEX:GC1!':1,
-        // Indices
-        'FOREXCOM:SPXUSD':1,'CBOE:SPX':1,'NASDAQ:NDX':1,'TVC:DJI':1,'TVC:RUT':1,'TVC:MID':1,
-        'XETR:DAX':1,'TVC:NI225':1,'TVC:UKX':1,'TVC:CAC40':1,'TVC:VIX':1,'CBOE:VVIX':1,
-        'BSE:SENSEX':1,'NSE:NIFTY':1,'TVC:HSI':1,'SSE:000001':1,'KRX:KOSPI':1,
-        'ASX:XJO':1,'BMFBOVESPA:IBOV':1,'TSX:OSPTX':1,'EURONEXT:AEX':1,
-        'SIX:SMI':1,'BME:IBC':1,'MIL:FTSEMIB':1,'WBAG:ATX':1,'XPRA:PX':1,
-        // Commodities
-        'TVC:USOIL':1,'TVC:UKOIL':1,'TVC:GOLD':1,'TVC:SILVER':1,
-        'TVC:NATURALGAS':1,'TVC:COPPER':1,'TVC:PLATINUM':1,'TVC:PALLADIUM':1,
-        'CBOT:ZW1!':1,'CBOT:ZC1!':1,'CBOT:ZS1!':1,
-        'ICEUS:KC1!':1,'ICEUS:CC1!':1,'ICEUS:SB1!':1,'ICEUS:CT1!':1,
-        // Bonds
-        'TVC:US10Y':1,'TVC:US02Y':1,'TVC:US30Y':1,'TVC:US05Y':1,
-        'TVC:DE10Y':1,'TVC:GB10Y':1,'TVC:JP10Y':1,
-        // Forex
-        'FX:EURUSD':1,'FX:GBPUSD':1,'FX:USDJPY':1,'FX:AUDUSD':1,'FX:USDCAD':1,
-        'FX:USDCHF':1,'FX:NZDUSD':1,'FX:EURGBP':1,'FX:EURJPY':1,'FX:GBPJPY':1,
-        'FX:USDMXN':1,'FX:USDBRL':1,'FX:USDZAR':1,'FX:USDTRY':1,'FX:USDINR':1,
-        'FX:USDCNY':1,'FX:USDKRW':1,'FX:USDSEK':1,'FX:USDNOK':1,
-        'FX:USDPLN':1,'FX:USDCZK':1,
-        // Crypto (Binance prefix)
-        'BINANCE:BTCUSDT':1,'BINANCE:ETHUSDT':1,'BINANCE:SOLUSDT':1,
-        'BINANCE:BNBUSDT':1,'BINANCE:XRPUSDT':1,'BINANCE:ADAUSDT':1,
-    };
-    // Only apply NASDAQ fallback for equities not already in tvSymMap
-    // Also skip fallback for BINANCE: crypto and other known non-equity prefixes
+    // ── Smart Chart Routing ──
+    let tvSym = resolved.type === 'WS' ? (resolved.provider + ':' + resolved.ticker) : (tvSymMap[rawSym] || rawSym);
+    
     const _nonEquityPrefix = ['BINANCE:','FX:','TVC:','FOREXCOM:','XETR:','CME_MINI:',
         'NYMEX:','COMEX:','CBOT:','ICEUS:','BSE:','NSE:','KRX:','ASX:','SSE:',
         'BMFBOVESPA:','TSX:','EURONEXT:','SIX:','BME:','MIL:','WBAG:','XPRA:',
-        'CBOE:','AMEX:','NYSE:','NASDAQ:'];
+        'CBOE:','AMEX:','NYSE:','NASDAQ:','BYBIT:'];
     const _hasNonEqPrefix = _nonEquityPrefix.some(p => tvSym.startsWith(p));
-    if (!indexTVMap[tvSym] && !_hasNonEqPrefix && useYahoo && !tvSymMap[rawSym]) tvSym = 'NASDAQ:' + rawSym;
+    if (!_hasNonEqPrefix && (useYahoo || yahooMap[rawSym])) tvSym = (yahooMap[rawSym] ? 'NASDAQ:' : '') + rawSym;
 
     window._tvActiveSym     = tvSym;
     window._tvActiveInterval = tvInterval;
@@ -27486,11 +27479,11 @@ window._setChartInterval = async function(interval) {
     const tvTk = tvParts[1] || '';
 
     const cryptoExList = ['BINANCE','BYBIT','OKX','GATEIO','MEXC','KUCOIN'];
-    const useCryptoSync = cryptoExList.includes(tvEx) || isHL || useBinance;
+    const useCryptoSync = resolved.type === 'WS' || cryptoExList.includes(tvEx) || isHL;
 
     if (useCryptoSync) {
-        const symBin = tvEx === 'BINANCE' ? tvTk : (useBinance ? binanceSym : null);
-        const symBybit = tvEx === 'BYBIT' ? tvTk.split('.')[0] : (isHL ? (rawSym + 'USDT') : null);
+        const symBin = resolved.provider === 'BINANCE' ? resolved.ticker : (tvEx === 'BINANCE' ? tvTk : null);
+        const symBybit = resolved.provider === 'BYBIT' ? resolved.ticker : (tvEx === 'BYBIT' ? tvTk.split('.')[0] : (isHL ? (rawSym + 'USDT') : null));
         const symOKX = tvEx === 'OKX' ? tvTk.split('.')[0].replace('USDT', '-USDT') : null;
 
         // 1. Binance REST (only if symBin exists)
@@ -27609,8 +27602,8 @@ window._setChartInterval = async function(interval) {
         }
 
         // 2. MMT API polling - Sync exchange with chart
-        const _mmtExchange = tvEx === 'BYBIT' ? 'bybitf' : (tvEx === 'OKX' ? 'okxf' : (isHL ? 'hyperliquid' : (window._mmtPreferExchange || 'binancef')));
-        const _mmtSymbol   = rawSym.toLowerCase() + '/usd';
+        const _mmtExchange = resolved.provider === 'BYBIT' ? 'bybitf' : (tvEx === 'BYBIT' ? 'bybitf' : (tvEx === 'OKX' ? 'okxf' : (isHL ? 'hyperliquid' : (window._mmtPreferExchange || 'binancef'))));
+        const _mmtSymbol   = (resolved.provider === 'MMT' ? resolved.ticker : rawSym.toLowerCase() + '/usd');
         const _mmtKey      = (() => { try { return localStorage.getItem('mmt_api_key') || ''; } catch(e){ return ''; } })();
         const MMT_BASE_URL = 'https://eu-central-1.mmt.gg/api/v1';
 
@@ -27674,35 +27667,24 @@ window._setChartInterval = async function(interval) {
             let subMsg = null;
 
             // Normalize symbol for WS
-            const cleanTk = tvTk.split('.')[0].replace('USDT', ''); 
+            const cleanTk = resolved.ticker || tvTk.split('.')[0].replace('USDT', ''); 
             
-            if (symBin) {
-                const s = symBin.toLowerCase();
+            if (resolved.provider === 'BINANCE' || (!resolved.provider && symBin)) {
+                const s = (resolved.ticker || symBin).toLowerCase();
                 wsUrl = 'wss://stream.binance.com:9443/ws/' + s + '@ticker';
                 onMsg = d => {
                     const price = parseFloat(d.c);
                     if(price) _applyTick(price, parseFloat(d.P), parseFloat(d.h), parseFloat(d.l), parseFloat(d.q), parseFloat(d.o));
                 };
-            } else if (tvEx === 'BYBIT') {
+            } else if (resolved.provider === 'BYBIT' || (!resolved.provider && tvEx === 'BYBIT')) {
+                const s = resolved.ticker || symBybit;
                 wsUrl = 'wss://stream.bybit.com/v5/public/linear';
-                subMsg = JSON.stringify({op: "subscribe", args: ["tickers." + symBybit]});
+                subMsg = JSON.stringify({op: "subscribe", args: ["tickers." + s]});
                 onMsg = d => {
                     if (d.topic && d.topic.startsWith("tickers") && d.data) {
                         const t = d.data;
                         const px = parseFloat(t.lastPrice);
                         if(px) _applyTick(px, parseFloat(t.price24hPcnt)*100, parseFloat(t.highPrice24h), parseFloat(t.lowPrice24h), parseFloat(t.volume24h), parseFloat(t.prevPrice24h));
-                    }
-                };
-            } else if (tvEx === 'OKX') {
-                wsUrl = 'wss://ws.okx.com:8443/ws/v5/public';
-                subMsg = JSON.stringify({op: "subscribe", args: [{channel: "tickers", instId: symOKX}]});
-                onMsg = d => {
-                    if (d.data && d.data[0]) {
-                        const t = d.data[0];
-                        const px = parseFloat(t.last);
-                        const op = parseFloat(t.open24h);
-                        const chg = op > 0 ? ((px - op)/op*100) : 0;
-                        if(px) _applyTick(px, chg, parseFloat(t.high24h), parseFloat(t.low24h), parseFloat(t.vol24h), op);
                     }
                 };
             }
