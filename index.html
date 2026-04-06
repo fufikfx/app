@@ -11329,7 +11329,9 @@ const HL_MAP = {
   ONDO:'ondo-finance', W:'wormhole', ENA:'ethena', GRT:'the-graph', WIF:'dogwifcoin',
   PEPE:'pepe', BONK:'bonk', FLOKI:'floki', WLD:'worldcoin-wld', TIA:'celestia',
   JTO:'jito', PYTH:'pyth-network', DYDX:'dydx', BLUR:'blur',
-  SUI:'sui'
+  SUI:'sui',
+  MSTR:'microstrategy', COIN:'coinbase', SOFI:'sofi',
+  GOLD:'gold', SILVER:'silver', OIL:'crude-oil'
 };
 
 async function fetchHyperliquid() {
@@ -27779,17 +27781,14 @@ window._setChartInterval = async function(interval) {
                 setEl('ov-high',  fmtP(high));
                 setEl('ov-low',   fmtP(low));
                 setEl('ov-close', fmtP(prevClose));
-                const chgEl = document.getElementById('bbg-price-change');
-                if(chgEl){chgEl.innerText=(up?'+':'')+pct.toFixed(2)+'%';chgEl.style.color=col;}
-                const arrEl = document.getElementById('bbg-price-arrow');
-                if(arrEl){arrEl.innerText=up?'↑':'↓';arrEl.style.color=col;}
-                const ctnr = document.getElementById('bbg-current-price-container');
-                if(ctnr) ctnr.style.color=col;
+                // Final sync via _applyTick for 1:1 parity with chart & sidebar
+                _applyTick(price, pct, high, low, vol, open);
+                
                 console.log('[YF]', rawSym, fmtP(price), (up?'+':'')+pct.toFixed(2)+'%');
             } catch(e){ console.warn('[YF] error:', e.message); }
         };
         doFetch();
-        window._ovRefreshTimer = setInterval(doFetch, 15000);
+        window._ovRefreshTimer = setInterval(doFetch, 2500);
         // Set fake WS object so close() works
         window._currentBbgWs = { close: ()=>{ clearInterval(window._ovRefreshTimer); window._ovRefreshTimer=null; } };
     }
