@@ -1143,6 +1143,18 @@ body {
 </script>
 </head>
 <body>
+<div id="bbg-debug-panel" style="position:fixed; top:0; left:0; width:100%; height:22px; background:#400; color:#f66; font-family:monospace; font-size:11px; z-index:999999; display:none; align-items:center; padding:0 12px; border-bottom:1px solid #d00; pointer-events:none;">
+    [SYSTEM ERROR] <span id="bbg-debug-msg" style="margin-left:8px;"></span>
+</div>
+<script>
+    window.onerror = function(msg, url, line, col, error) {
+        var p = document.getElementById('bbg-debug-panel');
+        var m = document.getElementById('bbg-debug-msg');
+        if(p && m) { p.style.display = 'flex'; m.innerText = msg + " @ " + line + ":" + col; }
+        console.error("BBG_ERR:", msg, url, line);
+        return false;
+    };
+</script>
 <style>
   #bbg-chart-container .tv-lightweight-charts table tr td:nth-child(2),
   #bbg-chart-container .tv-lightweight-charts table tr td:nth-child(2) * { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><line x1="10" y1="0" x2="10" y2="20" stroke="rgba(255,255,255,0.6)" stroke-width="1"/><line x1="0" y1="10" x2="20" y2="10" stroke="rgba(255,255,255,0.6)" stroke-width="1"/></svg>') 10 10, crosshair !important; }
@@ -27282,7 +27294,7 @@ window._setChartInterval = async function(interval) {
         'MS':'NYSE:MS','C':'NYSE:C','BLK':'NYSE:BLK','AXP':'NYSE:AXP',
         'V':'NYSE:V','MA':'NYSE:MA','PYPL':'NASDAQ:PYPL','SQ':'NYSE:SQ',
         'AFRM':'NASDAQ:AFRM','UPST':'NASDAQ:UPST','SOFI':'NASDAQ:SOFI',
-        'HOOD':'NASDAQ:HOOD','COIN':'NASDAQ:COIN','MSTR':'NASDAQ:MSTR',
+        'HOOD':'NASDAQ:HOOD','COIN':'BINANCE:COINUSDT','MSTR':'BINANCE:MSTRUSDT',
         'SCHW':'NYSE:SCHW','CME':'NASDAQ:CME','CBOE':'CBOE:CBOE',
         'BRK':'NYSE:BRK.B',
         // ── Healthcare / Pharma ────────────────────────────────────────────────
@@ -27316,7 +27328,7 @@ window._setChartInterval = async function(interval) {
         'FSLR':'NASDAQ:FSLR','SEDG':'NASDAQ:SEDG',
         // ── Crypto ETFs ───────────────────────────────────────────────────────
         'IBIT':'NASDAQ:IBIT','FBTC':'NASDAQ:FBTC','BITB':'NYSE:BITB',
-        'ARKB':'NYSE:ARKB','ETHA':'NASDAQ:ETHA',
+        'ARKB':'NYSE:ARKB','ETHA':'NASDAQ:ETHA','SOFI':'BINANCE:SOFIUSDT',
         // ── ETFs ──────────────────────────────────────────────────────────────
         'SPY':'AMEX:SPY','QQQ':'NASDAQ:QQQ','IWM':'AMEX:IWM','DIA':'AMEX:DIA',
         'GLD':'AMEX:GLD','SLV':'AMEX:SLV','USO':'AMEX:USO',
@@ -27400,7 +27412,12 @@ window._setChartInterval = async function(interval) {
         if(!v||isNaN(v)) return '—';
         return v>=1e9?(v/1e9).toFixed(2)+'B':v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?(v/1e3).toFixed(1)+'K':v.toFixed(0);
     };
-    const setEl = (id,val) => { const e=document.getElementById(id); if(e) e.innerText=val; };
+    const setEl = (id,val) => { 
+        try {
+            const e = document.getElementById(id); 
+            if(e) e.innerText = val; 
+        } catch(e){}
+    };
 
     // ── CRYPTO: Shared Ribbon Prefill & Helper ──
     const _cPreload = (typeof CRYPTO !== 'undefined') && CRYPTO.find(c => c.s === rawSym);
@@ -27421,42 +27438,45 @@ window._setChartInterval = async function(interval) {
     }
 
     const _applyTick = (price, chgPct, hi, lo, vol, openPx) => {
-        if(!price || isNaN(price)) return;
-        const up  = chgPct >= 0;
-        const col = up ? '#00cc44' : '#ff3d3d';
-        const now = new Date();
-        
-        // Update Ribbon elements
-        setEl('bbg-time',  String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
-        setEl('bbg-current-price', fmtP(price));
-        setEl('bbg-close', fmtP(price));
-        if(hi>0) setEl('bbg-high',   fmtP(hi));
-        if(lo>0) setEl('bbg-low',    fmtP(lo));
-        if(vol>0) setEl('bbg-volume', fmtV(vol));
-        if(openPx>0) {
-            const _nyOpen = window._nyMidnightOpen > 0 ? window._nyMidnightOpen : openPx;
-            setEl('ov-open', fmtP(_nyOpen));
-            if(!window._firstBbgPrice || window._firstBbgPrice <= 0) window._firstBbgPrice = _nyOpen;
-        }
-        const chgEl = document.getElementById('bbg-price-change');
-        if(chgEl){chgEl.innerText=(up?'+':'')+chgPct.toFixed(2)+'%';chgEl.style.color=col;}
-        const arrEl = document.getElementById('bbg-price-arrow');
-        if(arrEl){arrEl.innerText=up?'↑':'↓';arrEl.style.color=col;}
-        const ctnr = document.getElementById('bbg-current-price-container');
-        if(ctnr) ctnr.style.color=col;
-        
-        // Update Overall stats
-        setEl('ov-start', fmtP(price));
-        setEl('ov-close', fmtP(price));
-        if(hi>0) setEl('ov-high', fmtP(hi));
-        if(lo>0) setEl('ov-low',  fmtP(lo));
+        try {
+            if(!price || isNaN(price)) return;
+            const up  = chgPct >= 0;
+            const col = up ? '#00cc44' : '#ff3d3d';
+            const now = new Date();
+            const currentSym = (window._bbgActiveSym || 'BTC').toUpperCase().replace('/','');
+            
+            // Update Ribbon elements
+            setEl('bbg-time',  String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
+            setEl('bbg-current-price', fmtP(price));
+            setEl('bbg-close', fmtP(price));
+            if(hi>0) setEl('bbg-high',   fmtP(hi));
+            if(lo>0) setEl('bbg-low',    fmtP(lo));
+            if(vol>0) setEl('bbg-volume', fmtV(vol));
+            if(openPx>0) {
+                const _nyOpen = window._nyMidnightOpen > 0 ? window._nyMidnightOpen : openPx;
+                setEl('ov-open', fmtP(_nyOpen));
+                if(!window._firstBbgPrice || window._firstBbgPrice <= 0) window._firstBbgPrice = _nyOpen;
+            }
+            const chgEl = document.getElementById('bbg-price-change');
+            if(chgEl){chgEl.innerText=(up?'+':'')+chgPct.toFixed(2)+'%';chgEl.style.color=col;}
+            const arrEl = document.getElementById('bbg-price-arrow');
+            if(arrEl){arrEl.innerText=up?'↑':'↓';arrEl.style.color=col;}
+            const ctnr = document.getElementById('bbg-current-price-container');
+            if(ctnr) ctnr.style.color=col;
+            
+            // Update Overall stats
+            setEl('ov-start', fmtP(price));
+            setEl('ov-close', fmtP(price));
+            if(hi>0) setEl('ov-high', fmtP(hi));
+            if(lo>0) setEl('ov-low',  fmtP(lo));
 
-        // CRITICAL SYNC: Update the global CRYPTO state (sidebar) so it matches 1:1
-        const coinId = (typeof HL_MAP !== 'undefined') ? HL_MAP[rawSym] : null;
-        if (coinId && typeof updateCoin === 'function') {
-            updateCoin(coinId, {px: price, chg: chgPct, hi: hi, lo: lo, vol: vol}, 'tv_sync', 0);
-            renderSidebar(); 
-        }
+            // CRITICAL SYNC: Update the global CRYPTO state (sidebar) so it matches 1:1
+            const coinId = (typeof HL_MAP !== 'undefined') ? HL_MAP[currentSym] : null;
+            if (coinId && typeof updateCoin === 'function') {
+                updateCoin(coinId, {px: price, chg: chgPct, hi: hi, lo: lo, vol: vol}, 'tv_sync', 0);
+                if(typeof renderSidebar === 'function') renderSidebar(); 
+            }
+        } catch(e){ console.error("ApplyTick Failure:", e); }
     };
 
     const _HYPE_ONLY = ['HYPE','PURR','FRIEND','POINTS'];
@@ -27656,8 +27676,8 @@ window._setChartInterval = async function(interval) {
             // Normalize symbol for WS
             const cleanTk = tvTk.split('.')[0].replace('USDT', ''); 
             
-            if (tvEx === 'BINANCE' || (!tvEx && symBin)) {
-                const s = (tvTk || symBin).toLowerCase();
+            if (symBin) {
+                const s = symBin.toLowerCase();
                 wsUrl = 'wss://stream.binance.com:9443/ws/' + s + '@ticker';
                 onMsg = d => {
                     const price = parseFloat(d.c);
@@ -27828,13 +27848,13 @@ window._setChartInterval = async function(interval) {
                 setEl('ov-close', fmtP(prevClose));
                 
                 // Master Sync Hook
-                _applyTick(price, pct, high, low, vol, open);
+                if(typeof _applyTick === 'function') _applyTick(price, pct, high, low, vol, open);
                 
             } catch(e){ console.warn('[Bloomberg High-Speed Engine] Error:', e.message); }
         };
         doFetch();
         // Increased polling frequency to 1.1s for near real-time stock/commodity movement
-        window._ovRefreshTimer = setInterval(doFetch, 1100);
+        window._ovRefreshTimer = setInterval(() => { try { doFetch(); } catch(e){} }, 1100);
         // Set fake WS object so close() works
         window._currentBbgWs = { close: ()=>{ clearInterval(window._ovRefreshTimer); window._ovRefreshTimer=null; } };
     }
