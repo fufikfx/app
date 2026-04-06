@@ -11583,18 +11583,26 @@ const STOOQ_ETF_SET=new Set(['SPY','QQQ','IWM','DIA','VTI','GLD','SLV','TLT','HY
 async function _fetchRace(url, ms=8000) {
   const proxies = [
     url,
-    `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
     `https://thingproxy.freeboard.io/fetch/${url}`
   ];
   const wrap = (proxyUrl) => new Promise((res, rej) => {
     const ctrl = new AbortController();
     const tid = setTimeout(() => { ctrl.abort(); rej(new Error('timeout')); }, ms);
-    fetch(proxyUrl, { signal: ctrl.signal })
-      .then(r => { clearTimeout(tid); if (r && r.ok) res(r); else rej(new Error('bad status '+r?.status)); })
+    fetch(proxyUrl, { 
+      signal: ctrl.signal,
+      headers: { 'Accept': 'application/json' }
+    })
+      .then(r => { 
+        clearTimeout(tid); 
+        if (r && r.ok) res(r); 
+        else rej(new Error('bad status ' + (r ? r.status : 'no_resp'))); 
+      })
       .catch(e => { clearTimeout(tid); rej(e); });
   });
-  // Promise.any — returns as soon as first proxy succeeds
+  // Promise.any — vrací jakmile první proxy uspěje (vyžaduje ES2021)
   try { return await Promise.any(proxies.map(wrap)); } catch(_) { return null; }
 }
 
@@ -11604,9 +11612,13 @@ async function _fetchRaceJSON(url, ms=8000) {
   if (!r) return null;
   try {
     const text = await r.text();
-    const j = JSON.parse(text);
+    if (!text || text.length < 2) return null;
+    let j;
+    try { j = JSON.parse(text); } catch(e) { return null; }
     // allorigins /get wraps in {"contents":"..."}
-    if (j && typeof j.contents === 'string') return JSON.parse(j.contents);
+    if (j && typeof j.contents === 'string' && j.contents.length > 2) {
+      try { return JSON.parse(j.contents); } catch(e) { return null; }
+    }
     return j;
   } catch(_) { return null; }
 }
@@ -11737,8 +11749,14 @@ async function fetchYahooQuotes(){
     const syms=batch.join(',');
     const fields='regularMarketPrice,regularMarketChangePercent,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,marketCap';
     const url7=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=${fields}`;
-    // Všechny proxy současně — bere první která odpoví
-    const d = await _fetchRaceJSON(url7, 8000);
+    const url2=`https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=${fields}`;
+    
+    // Zkus query1, pak query2 pokud query1 selže úplně
+    let d = await _fetchRaceJSON(url7, 8000);
+    if(!d?.quoteResponse?.result?.length) {
+       d = await _fetchRaceJSON(url2, 8000);
+    }
+    
     if(!d?.quoteResponse?.result?.length) return;
     let n=0;
     d.quoteResponse.result.forEach(q=>{
@@ -11751,8 +11769,17 @@ async function fetchYahooQuotes(){
       if(STOOQ_ETF_SET&&STOOQ_ETF_SET.has(sym)){ if(!window._etfPx)window._etfPx={}; if(!window._etfPx[sym])window._etfPx[sym]={}; Object.assign(window._etfPx[sym],{px,chg,ts:Date.now()}); }
       n++;
     });
-    if(n>0){ window._layerStatus.yahoo={ok:true,ts:Date.now(),count:n}; buildTicker(); refreshAllPanels(); setStat('YAHOO — '+n+' quotes  |  '+new Date().toLocaleTimeString('en-GB')); } else { window._layerStatus.yahoo={ok:false,ts:Date.now()}; }
-  }catch(_){}
+    if(n>0){ 
+      window._layerStatus.yahoo={ok:true,ts:Date.now(),count:n}; 
+      buildTicker(); 
+      refreshAllPanels(); 
+      setStat('YAHOO — '+n+' quotes  |  '+new Date().toLocaleTimeString('en-GB')); 
+    } else { 
+      window._layerStatus.yahoo={ok:false,ts:Date.now(),err:'Empty Result'}; 
+    }
+  }catch(e){
+    window._layerStatus.yahoo={ok:false,ts:Date.now(),err:e.message};
+  }
 }
 
 // ── Twelve Data — free 55 req/min, rotates batches ───────────────────────
@@ -27221,7 +27248,7 @@ window._setChartInterval = async function(interval) {
     };
     const tvSymMap = {
         // ── Global Indices ────────────────────────────────────────────────────
-        'SPX':'FOREXCOM:SPXUSD','NDX':'NASDAQ:NDX','DJI':'TVC:DJI',
+        'SPX':'TVC:SPX','NDX':'TVC:NDX','DJI':'TVC:DJI',
         'RUT':'TVC:RUT','MID':'TVC:MID',
         'DAX':'XETR:DAX','NI225':'TVC:NI225','NIKKEI':'TVC:NI225',
         'FTSE':'TVC:UKX','CAC':'TVC:CAC40','SENSEX':'BSE:SENSEX',
@@ -27349,12 +27376,13 @@ window._setChartInterval = async function(interval) {
             'GOLD':'XAUUSDT', 'SILVER':'XAGUSDT', 'OIL':'WTIUSDT',
             'MSTR':'MSTRUSDT', 'COIN':'COINUSDT', 'SOFI':'SOFIUSDT',
             'TSLA':'TSLAUSDT', 'NVDA':'NVDAUSDT', 'AAPL':'AAPLUSDT',
-            'META':'METAUSDT', 'AMZN':'AMZNUSDT'
+            'META':'METAUSDT', 'AMZN':'AMZNUSDT', 'GOOGL':'GOOGLUSDT', 
+            'MSFT':'MSFTUSDT', 'NFLX':'NFLXUSDT', 'AMD':'AMDUSDT', 'INTC':'INTCUSDT'
         };
         const override = highSpeedMap[sym];
         if (override) {
-            if (['SPXUSD','NDXUSD','DJIUSD','XAUUSDT','XAGUSDT','WTIUSDT'].includes(override)) return { provider: 'BYBIT', ticker: override, type: 'WS' };
-            return { provider: 'BINANCE', ticker: override, type: 'WS' };
+            // Priority: Bybit for Indices/Commodities/Stocks
+            return { provider: 'BYBIT', ticker: override, type: 'WS' };
         }
         if (cryptoMap[sym]) return { provider: 'BINANCE', ticker: cryptoMap[sym], type: 'WS' };
         return { provider: 'YAHOO', ticker: (yahooMap[sym] || sym), type: 'POLL' };
@@ -27366,8 +27394,8 @@ window._setChartInterval = async function(interval) {
     const yahooTicker = resolved.provider === 'YAHOO' ? resolved.ticker : null;
     const useYahoo    = (resolved.provider === 'YAHOO' || (yahooMap[rawSym] && !binanceSym));
 
-    // ── Smart Chart Routing ──
-    let tvSym = resolved.type === 'WS' ? (resolved.provider + ':' + resolved.ticker) : (tvSymMap[rawSym] || rawSym);
+    // ── Smart Chart Routing: Decouple Data Stream from Chart Display ──
+    let tvSym = tvSymMap[rawSym] || ((resolved.type === 'WS' && resolved.provider === 'BINANCE') ? ('BINANCE:' + resolved.ticker) : rawSym);
     
     const _nonEquityPrefix = ['BINANCE:','FX:','TVC:','FOREXCOM:','XETR:','CME_MINI:',
         'NYMEX:','COMEX:','CBOT:','ICEUS:','BSE:','NSE:','KRX:','ASX:','SSE:',
@@ -27379,6 +27407,7 @@ window._setChartInterval = async function(interval) {
     window._tvActiveSym     = tvSym;
     window._tvActiveInterval = tvInterval;
     window._updateTVChart(tvSym, tvInterval);
+    console.log("[BBG-SMART-DATA] Routing:", { symbol: rawSym, resolved, tv: tvSym, interval: tvInterval });
 
     // ── Close old feeds ──
     if (window._currentBbgWs) { try{window._currentBbgWs.close();}catch(e){} window._currentBbgWs=null; }
@@ -27856,16 +27885,7 @@ window._updateTVChart = function(sym, interval) {
       + 'html,body{height:100%;width:100%;overflow:hidden;background:#000;}'
       + '#tv_chart{width:100%;height:100%;}'
       + '.tv-watermark{display:none!important;}'
-      + '.pane-legend{display:none!important;}'
-      + '[class*="pane-legend"]{display:none!important;}'
-      + '[class*="tv-logo"]{display:none!important;}'
-      + '[class*="logo"]{display:none!important;}'
       + 'a[href*="tradingview"]{display:none!important;}'
-      + '[data-name="logo"]{display:none!important;}'
-      + '[class*="legendMainSourceWrapper"]{display:none!important;}'
-      + '[class*="legendSources"]{display:none!important;}'
-      + '[class*="tv-chart-view__legend"]{display:none!important;}'
-      + '[data-name="legend"]{display:none!important;}'
       + '#header-toolbar-logo{display:none!important;}'
       + '[data-name="logo"]{display:none!important;}'      + '[class*="dialog"]{display:none!important;}'      + '[class*="Dialog"]{display:none!important;}'      + '[class*="notification"]{display:none!important;}'      + '[class*="Notification"]{display:none!important;}'      + '[class*="modal"]{display:none!important;}'      + '[class*="Modal"]{display:none!important;}'      + '[class*="popup"]{display:none!important;}'      + '[class*="Popup"]{display:none!important;}'      + '[class*="toast"]{display:none!important;}'      + '[class*="Toast"]{display:none!important;}'      + '[class*="overlay"]{display:none!important;}'      + '[role="dialog"]{display:none!important;}'      + '[class*="alert-dialog"]{display:none!important;}'      + '</style>'
       + '<script>'      + '(function(){'      + 'var _origOpen=XMLHttpRequest.prototype.open;'      + 'function killDialogs(){'      + '  var sel=['      + '    "[class*=dialog]","[class*=Dialog]","[class*=notification]","[class*=Notification]",'      + '    "[class*=modal]","[class*=Modal]","[role=dialog]","[role=alertdialog]",'      + '    "[class*=popup]","[class*=Popup]","[class*=overlay]","[class*=Overlay]",'      + '    ".tv-dialog",".js-dialog",".tv-notification"'      + '  ];'      + '  sel.forEach(function(s){document.querySelectorAll(s).forEach(function(e){e.style.cssText="display:none!important;pointer-events:none!important;";});});'      + '}'      + 'new MutationObserver(killDialogs).observe(document.documentElement,{childList:true,subtree:true,attributes:true});'      + 'window.addEventListener("message",function(e){try{var d=JSON.parse(e.data||e);if(d&&(d.name==="notification"||d.name==="alert"||d.type==="notification"))e.stopImmediatePropagation();}catch(ex){}},{capture:true});'      + '})();'      + '<\/script>'      + '<script src="https://s3.tradingview.com/tv.js"><\/script>'
@@ -27883,10 +27903,10 @@ window._updateTVChart = function(sym, interval) {
       + '  locale:"en",'
       + '  toolbar_bg:"#000000",'
       + '  enable_publishing:false,'
-      + '  hide_top_toolbar:true,'
-      + '  hide_legend:true,'
-      + '  hide_side_toolbar:true,'
-      + '  allow_symbol_change:false,'
+      + '  hide_top_toolbar:false,'
+      + '  hide_legend:false,'
+      + '  hide_side_toolbar:false,'
+      + '  allow_symbol_change:true,'
       + '  save_image:false,'
       + '  backgroundColor:"rgba(0,0,0,1)",'
       + '  gridColor:"#000000",'
@@ -28254,23 +28274,24 @@ window._openChartForSymbol = function(sym) {
         // ── HYPERLIQUID perp (for HL-only) ────────────────────────────────────
         'HYPE-PERP':'HYPEUSDT.P', 'BERA-PERP':'BERAUSDT',
         // ── US EQUITIES (Yahoo Finance chart) ──────────────────────────────────
-        'MSTR':'MSTR','COIN':'COIN','SOFI':'SOFI','HOOD':'HOOD','PLTR':'PLTR',
-        'UPST':'UPST','AFRM':'AFRM','SQ':'SQ','PYPL':'PYPL','IBIT':'IBIT',
-        'SNOW':'SNOW','DDOG':'DDOG','NET':'NET','CRWD':'CRWD','ZS':'ZS',
-        'OKTA':'OKTA','MNDY':'MNDY','RBLX':'RBLX','RIVN':'RIVN','LCID':'LCID',
-        'NIO':'NIO','XPEV':'XPEV','ENPH':'ENPH','FSLR':'FSLR',
-        'LMT':'LMT','RTX':'RTX','NOC':'NOC','GD':'GD','BA':'BA',
-        'MRNA':'MRNA','BNTX':'BNTX','REGN':'REGN','VRTX':'VRTX','AMGN':'AMGN',
-        'DIS':'DIS','PARA':'PARA','WBD':'WBD','SPOT':'SPOT','TGT':'TGT',
-        'NEM':'NEM','FCX':'FCX','QCOM':'QCOM','AVGO':'AVGO',
-        'MU':'MU','AMAT':'AMAT','TXN':'TXN','SPY':'SPY','QQQ':'QQQ','GLD':'GLD',
-        'AAPL':'AAPL','NVDA':'NVDA','MSFT':'MSFT','GOOGL':'GOOGL','META':'META',
-        'AMZN':'AMZN','TSLA':'TSLA','JPM':'JPM','V':'V','MA':'MA',
-        'NFLX':'NFLX','AMD':'AMD','INTC':'INTC','CRM':'CRM','ORCL':'ORCL',
-        'ADBE':'ADBE','UBER':'UBER','XOM':'XOM','CVX':'CVX','WMT':'WMT',
-        'COST':'COST','KO':'KO','HD':'HD','BRK':'BRK-B','GS':'GS',
-        'BAC':'BAC','WFC':'WFC','MS':'MS','UNH':'UNH','LLY':'LLY',
-        'JNJ':'JNJ','ABBV':'ABBV','PFE':'PFE','MRK':'MRK',
+        'MSTR':'NASDAQ:MSTR','COIN':'NASDAQ:COIN','SOFI':'NASDAQ:SOFI','HOOD':'HOOD',
+        'PLTR':'NYSE:PLTR','UPST':'NASDAQ:UPST','AFRM':'NASDAQ:AFRM','SQ':'NYSE:SQ',
+        'PYPL':'NASDAQ:PYPL','IBIT':'NASDAQ:IBIT','SNOW':'NYSE:SNOW','DDOG':'NASDAQ:DDOG',
+        'NET':'NYSE:NET','CRWD':'NASDAQ:CRWD','ZS':'NASDAQ:ZS','OKTA':'NASDAQ:OKTA',
+        'MNDY':'NASDAQ:MNDY','RBLX':'NYSE:RBLX','RIVN':'NASDAQ:RIVN','LCID':'NASDAQ:LCID',
+        'NIO':'NYSE:NIO','XPEV':'NYSE:XPEV','ENPH':'NASDAQ:ENPH','FSLR':'NASDAQ:FSLR',
+        'LMT':'NYSE:LMT','RTX':'NYSE:RTX','NOC':'NYSE:NOC','GD':'NYSE:GD','BA':'NYSE:BA',
+        'MRNA':'NASDAQ:MRNA','BNTX':'NASDAQ:BNTX','REGN':'NASDAQ:REGN','VRTX':'NASDAQ:VRTX','AMGN':'NASDAQ:AMGN',
+        'DIS':'NYSE:DIS','PARA':'NASDAQ:PARA','WBD':'NASDAQ:WBD','SPOT':'NYSE:SPOT','TGT':'NYSE:TGT',
+        'NEM':'NYSE:NEM','FCX':'NYSE:FCX','QCOM':'NASDAQ:QCOM','AVGO':'NASDAQ:AVGO',
+        'MU':'NASDAQ:MU','AMAT':'NASDAQ:AMAT','TXN':'NASDAQ:TXN','SPY':'AMEX:SPY','QQQ':'NASDAQ:QQQ','GLD':'AMEX:GLD',
+        'AAPL':'NASDAQ:AAPL','NVDA':'NASDAQ:NVDA','MSFT':'NASDAQ:MSFT','GOOGL':'NASDAQ:GOOGL','META':'NASDAQ:META',
+        'AMZN':'NASDAQ:AMZN','TSLA':'NASDAQ:TSLA','JPM':'NYSE:JPM','V':'NYSE:V','MA':'NYSE:MA',
+        'NFLX':'NASDAQ:NFLX','AMD':'NASDAQ:AMD','INTC':'NASDAQ:INTC','CRM':'NYSE:CRM','ORCL':'NYSE:ORCL',
+        'ADBE':'NASDAQ:ADBE','UBER':'NYSE:UBER','XOM':'NYSE:XOM','CVX':'NYSE:CVX','WMT':'NYSE:WMT',
+        'COST':'NASDAQ:COST','KO':'NYSE:KO','HD':'NYSE:HD','BRK':'NYSE:BRK.B','GS':'NYSE:GS',
+        'BAC':'NYSE:BAC','WFC':'NYSE:WFC','MS':'NYSE:MS','UNH':'NYSE:UNH','LLY':'NYSE:LLY',
+        'JNJ':'NYSE:JNJ','ABBV':'NYSE:ABBV','PFE':'NYSE:PFE','MRK':'NYSE:MRK',
         // ── INDICES ────────────────────────────────────────────────────────────
         'SPX':'SPX', 'NDX':'NDX', 'DJI':'DJI', 'RUT':'RUT', 'VIX':'VIX',
         'DAX':'DAX', 'NI225':'NI225', 'NIKKEI':'NI225', 'FTSE':'FTSE', 'CAC':'CAC',
@@ -33380,6 +33401,15 @@ function _panelState(fn){
   var srcMap={CRYPTO:['BINANCE','COINGECKO'],WEI:['STOOQ','YAHOO'],FX:['FX'],IDX:['STOOQ','YAHOO'],EQUITY:['YAHOO','STOOQ','FINNHUB'],COMDTY:['STOOQ'],WORLD:['STOOQ','YAHOO'],MOVERS:['BINANCE','YAHOO'],STOCKS2:['YAHOO','STOOQ']};
   var srcs=srcMap[fn]||['BINANCE'];
   var minAge=Math.min.apply(null,srcs.map(function(s){return _srcAge(s);}));
+  
+  // Check for recent explicit errors
+  if(window._layerStatus){
+    if(srcs.includes('YAHOO') && window._layerStatus.yahoo && window._layerStatus.yahoo.err) 
+      return {state:'fail', label:'YAHOO ERR: '+window._layerStatus.yahoo.err.substring(0,12), ageMs:minAge};
+    if(srcs.includes('STOOQ') && window._layerStatus.stooq && window._layerStatus.stooq.err)
+      return {state:'fail', label:'STOOQ ERR', ageMs:minAge};
+  }
+
   if(minAge===Infinity)return{state:'stale',label:'FALLBACK DATA',ageMs:null};
   if(minAge<20000)return{state:'live',label:'LIVE',ageMs:minAge};
   if(minAge<60000)return{state:'live',label:'RECENT',ageMs:minAge};
