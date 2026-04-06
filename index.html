@@ -27720,10 +27720,7 @@ window._setChartInterval = async function(interval) {
             window._firstBbgPrice = _opn;
         }
 
-        let _yfPollActive = false;
         const doFetch = async () => {
-            if (_yfPollActive) return;
-            _yfPollActive = true;
             try {
                 const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1m&range=1d';
                 // Race all proxies in parallel — first valid response wins
@@ -27734,7 +27731,7 @@ window._setChartInterval = async function(interval) {
                     'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(yahooUrl),
                 ];
                 const tryProxy = async (purl) => {
-                    const r = await fetch(purl, {cache:'no-store', signal: AbortSignal.timeout(3500)});
+                    const r = await fetch(purl, {cache:'no-store', signal: AbortSignal.timeout(6000)});
                     if (!r.ok) throw new Error('bad status');
                     const raw = await r.text();
                     const parsed = JSON.parse(raw.startsWith('{"contents"') ? JSON.parse(raw).contents : raw);
@@ -27742,9 +27739,9 @@ window._setChartInterval = async function(interval) {
                     return parsed;
                 };
                 try { j = await Promise.any(proxies.map(tryProxy)); } catch(e) {}
-                if (!j) { _yfPollActive = false; return; }
+                if (!j) return;
                 const res  = j?.chart?.result?.[0];
-                if(!res) { _yfPollActive = false; return; }
+                if(!res) return;
                 const meta = res.meta || {};
                 const q    = res.indicators?.quote?.[0] || {};
                 // Najdi poslední validní close (1m data)
@@ -27755,7 +27752,7 @@ window._setChartInterval = async function(interval) {
                         if (closes[i] && !isNaN(closes[i]) && closes[i] > 0) { price = closes[i]; break; }
                     }
                 }
-                if(!price||isNaN(price)) { _yfPollActive = false; return; }
+                if(!price||isNaN(price)) return;
                 const prevClose = meta.chartPreviousClose || meta.previousClose || price;
                 const open      = meta.regularMarketOpen || meta.open || prevClose;
                 const high      = meta.regularMarketDayHigh || Math.max(...closes.filter(v=>v>0).slice(-390), price);
@@ -27789,14 +27786,11 @@ window._setChartInterval = async function(interval) {
                 
                 console.log('[YF]', rawSym, fmtP(price), (up?'+':'')+pct.toFixed(2)+'%');
             } catch(e){ console.warn('[YF] error:', e.message); }
-            finally { _yfPollActive = false; }
         };
         doFetch();
-        window._ovRefreshTimer = setInterval(doFetch, 4000);
+        window._ovRefreshTimer = setInterval(doFetch, 2500);
         // Set fake WS object so close() works
         window._currentBbgWs = { close: ()=>{ clearInterval(window._ovRefreshTimer); window._ovRefreshTimer=null; } };
-    }
-};
     }
 };
 
