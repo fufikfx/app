@@ -1880,47 +1880,42 @@ const _bbgMenuCategories = [
     label: null,
     items: [
       { num:1,  run:true,  cmd:'CRYPTO',  desc:'Crypto Markets Dashboard' },
-      { num:2,  run:true,  cmd:'MMAP',    desc:'Market Heatmap' },
-      { num:3,  run:true,  cmd:'WEI',     desc:'World Equity Indices' },
-      { num:4,  run:true,  cmd:'FX',      desc:'FX Spot Rates' },
-      { num:5,  run:true,  cmd:'WORLD',   desc:'World Assets' },
+      { num:2,  run:true,  cmd:'WEI',     desc:'World Equity Indices' },
+      { num:3,  run:true,  cmd:'FX',      desc:'FX Spot Rates' },
+      { num:4,  run:true,  cmd:'WORLD',   desc:'World Assets' },
     ]
   },
   { label: 'Stocks & Equities', isLink: true, items: [] },
   {
     label: null,
     items: [
-      { num:6,  run:true,  cmd:'STOCKS2', desc:'Stocks Dashboard — All Sectors' },
-      { num:7,  run:true,  cmd:'EARN',    desc:'Earnings Calendar' },
-      { num:8,  run:true,  cmd:'IPO',     desc:'IPO Calendar' },
+      { num:5,  run:true,  cmd:'IPO',     desc:'IPO Calendar' },
     ]
   },
   { label: 'Commodities', isLink: true, items: [] },
   {
     label: null,
     items: [
-      { num:9,  run:true,  cmd:'COMDTY',  desc:'Commodities Dashboard' },
-      { num:10, run:true,  cmd:'ENERGY',  desc:'Energy — WTI · Brent · Gas' },
-      { num:11, run:true,  cmd:'METALS',  desc:'Precious Metals — Gold · Silver' },
-      { num:12, run:true,  cmd:'AGRI',    desc:'Agricultural — Wheat · Corn · Soy' },
+      { num:6,  run:true,  cmd:'COMDTY',  desc:'Commodities Dashboard' },
+      { num:7, run:true,  cmd:'ENERGY',  desc:'Energy — WTI · Brent · Gas' },
+      { num:8, run:true,  cmd:'METALS',  desc:'Precious Metals — Gold · Silver' },
+      { num:9, run:true,  cmd:'AGRI',    desc:'Agricultural — Wheat · Corn · Soy' },
     ]
   },
   { label: 'Price Discovery', isLink: true, items: [] },
   {
     label: null,
     items: [
-      { num:13, run:true,  cmd:'DOMN',    desc:'BTC / Altcoin Dominance' },
-      { num:14, run:true,  cmd:'ETFF',    desc:'ETF Flows — BTC & ETH' },
-      { num:15, run:true,  cmd:'PERF',    desc:'Performance Table' },
+      { num:10, run:true,  cmd:'DOMN',    desc:'BTC / Altcoin Dominance' },
+      { num:11, run:true,  cmd:'ETFF',    desc:'ETF Flows — BTC & ETH' },
     ]
   },
   { label: 'Analytics & Idea Generation', isLink: true, items: [] },
   {
     label: null,
     items: [
-      { num:16, run:true,  cmd:'MACRO',   desc:'Macro Indicators — CPI·NFP' },
-      { num:17, run:true,  cmd:'ECAL',    desc:'Economic Calendar' },
-      { num:18, run:true,  cmd:'BNDS',    desc:'Bonds Dashboard' },
+      { num:12, run:true,  cmd:'MACRO',   desc:'Macro Indicators — CPI·NFP' },
+      { num:13, run:true,  cmd:'ECAL',    desc:'Economic Calendar' },
     ]
   }
 ];
@@ -1951,10 +1946,7 @@ const _bbgMenuCategoriesR = [
   {
     label: null,
     items: [
-      { num:17, run:true,  cmd:'EQUITY',  desc:'Equity Dashboard' },
-      { num:18, run:true,  cmd:'ALERTS',  desc:'Price Alerts' },
-      { num:19, run:true,  cmd:'FA',      desc:'Financial Analysis' },
-      { num:20, run:true,  cmd:'EARN',    desc:'Earnings Calendar' },
+      { num:14, run:true,  cmd:'EQUITY',  desc:'Equity Dashboard' },
     ]
   },
   { label: 'FX Electronic Trading', isLink: true, items: [] },
@@ -3685,8 +3677,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="ql-folder-body">
           <div class="ql-it" onclick="openPanel('WORLD');closeAllQL()"><div class="ql-it-desc">World Market Dashboard</div></div>
           <div class="ql-it" onclick="openPanel('WEI');closeAllQL()"><div class="ql-it-desc">World Equity Indices (WEI)</div></div>
-          <div class="ql-it" onclick="openPanel('STOCKS2');closeAllQL()" style="border-left:2px solid #ffcc44"><div class="ql-it-desc" style="color:#ffcc44;font-weight:700">STOCKS2 · Extended Universe — MSTR, SoFi, SQ, COIN+</div></div>
-          <div class="ql-it" onclick="openPanel('MMAP');closeAllQL()"><div class="ql-it-desc">Global Market Heatmap</div></div>
           <div class="ql-it" onclick="openPanel('WN');closeAllQL()"><div class="ql-it-desc">Breaking World News</div></div>
         </div>
       </div>
@@ -3704,7 +3694,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ql-it" onclick="openPanel('MACRO');closeAllQL()"><div class="ql-it-desc">Macro Dashboard</div></div>
           <div class="ql-it" onclick="openPanel('ECON');closeAllQL()"><div class="ql-it-desc">Country Economics</div></div>
           <div class="ql-it" onclick="openPanel('ECAL');closeAllQL()"><div class="ql-it-desc">Economic Calendar — This Week</div></div>
-          <div class="ql-it" onclick="openPanel('ALERTS');closeAllQL()"><div class="ql-it-desc">Priority Macro &amp; Risk Alerts</div></div>
           
         </div>
       </div>
