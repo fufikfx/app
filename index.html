@@ -27451,8 +27451,8 @@ window._setChartInterval = async function(interval) {
 
     if (useCryptoSync) {
         const symBin = tvEx === 'BINANCE' ? tvTk : (useBinance ? binanceSym : null);
-        const symBybit = tvEx === 'BYBIT' ? tvTk : (isHL ? (rawSym + 'USDT') : null);
-        const symOKX = tvEx === 'OKX' ? tvTk.replace('USDT', '-USDT') : null;
+        const symBybit = tvEx === 'BYBIT' ? tvTk.split('.')[0] : (isHL ? (rawSym + 'USDT') : null);
+        const symOKX = tvEx === 'OKX' ? tvTk.split('.')[0].replace('USDT', '-USDT') : null;
 
         // 1. Binance REST (only if symBin exists)
         if (symBin) {
@@ -27493,46 +27493,60 @@ window._setChartInterval = async function(interval) {
         
         // 1b. Bybit REST (if charting Bybit)
         if (symBybit && tvEx === 'BYBIT') {
-            try {
-                const r3 = await fetch('https://api.bybit.com/v5/market/tickers?category=linear&symbol='+symBybit, {cache:'no-store'});
-                const d3 = await r3.json();
-                if (d3.retCode === 0 && d3.result.list && d3.result.list[0]) {
-                    const tk = d3.result.list[0];
-                    const px = parseFloat(tk.lastPrice);
-                    const hi = parseFloat(tk.highPrice24h);
-                    const lo = parseFloat(tk.lowPrice24h);
-                    const vol = parseFloat(tk.volume24h);
-                    const chg = parseFloat(tk.price24hPcnt) * 100;
-                    const prevPx = parseFloat(tk.prevPrice24h);
-                    _applyTick(px, chg, hi, lo, vol, prevPx);
-                    setEl('bbg-start', fmtP(prevPx));
-                    setEl('bbg-high',  fmtP(hi));
-                    setEl('bbg-low',   fmtP(lo));
-                    setEl('bbg-volume',fmtV(vol));
-                }
-            } catch(e) {}
+            const fetchBybit = async () => {
+                const url = 'https://api.bybit.com/v5/market/tickers?category=linear&symbol='+symBybit;
+                try {
+                    const r = await Promise.any([
+                        fetch('https://corsproxy.io/?' + encodeURIComponent(url), {cache:'no-store'}),
+                        fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url), {cache:'no-store'})
+                    ]);
+                    const d = await r.json();
+                    if (d.retCode === 0 && d.result.list && d.result.list[0]) {
+                        const tk = d.result.list[0];
+                        const px = parseFloat(tk.lastPrice);
+                        const hi = parseFloat(tk.highPrice24h);
+                        const lo = parseFloat(tk.lowPrice24h);
+                        const vol = parseFloat(tk.volume24h);
+                        const chg = parseFloat(tk.price24hPcnt) * 100;
+                        const prevPx = parseFloat(tk.prevPrice24h);
+                        _applyTick(px, chg, hi, lo, vol, prevPx);
+                        setEl('bbg-start', fmtP(prevPx));
+                        setEl('bbg-high',  fmtP(hi));
+                        setEl('bbg-low',   fmtP(lo));
+                        setEl('bbg-volume',fmtV(vol));
+                    }
+                } catch(e) {}
+            };
+            fetchBybit();
         }
 
         // 1c. OKX REST (if charting OKX)
         if (symOKX && tvEx === 'OKX') {
-            try {
-                const rOK = await fetch('https://www.okx.com/api/v5/market/ticker?instId='+symOKX, {cache:'no-store'});
-                const dOK = await rOK.json();
-                if (dOK.code === "0" && dOK.data && dOK.data[0]) {
-                    const tk = dOK.data[0];
-                    const px = parseFloat(tk.last);
-                    const hi = parseFloat(tk.high24h);
-                    const lo = parseFloat(tk.low24h);
-                    const vol = parseFloat(tk.vol24h);
-                    const op = parseFloat(tk.open24h);
-                    const chg = op > 0 ? ((px - op) / op * 100) : 0;
-                    _applyTick(px, chg, hi, lo, vol, op);
-                    setEl('bbg-start', fmtP(op));
-                    setEl('bbg-high',  fmtP(hi));
-                    setEl('bbg-low',   fmtP(lo));
-                    setEl('bbg-volume',fmtV(vol));
-                }
-            } catch(e) {}
+            const fetchOKX = async () => {
+                const url = 'https://www.okx.com/api/v5/market/ticker?instId='+symOKX;
+                try {
+                    const r = await Promise.any([
+                        fetch('https://corsproxy.io/?' + encodeURIComponent(url), {cache:'no-store'}),
+                        fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url), {cache:'no-store'})
+                    ]);
+                    const d = await r.json();
+                    if (d.code === "0" && d.data && d.data[0]) {
+                        const tk = d.data[0];
+                        const px = parseFloat(tk.last);
+                        const hi = parseFloat(tk.high24h);
+                        const lo = parseFloat(tk.low24h);
+                        const vol = parseFloat(tk.vol24h);
+                        const op = parseFloat(tk.open24h);
+                        const chg = op > 0 ? ((px - op) / op * 100) : 0;
+                        _applyTick(px, chg, hi, lo, vol, op);
+                        setEl('bbg-start', fmtP(op));
+                        setEl('bbg-high',  fmtP(hi));
+                        setEl('bbg-low',   fmtP(lo));
+                        setEl('bbg-volume',fmtV(vol));
+                    }
+                } catch(e) {}
+            };
+            fetchOKX();
         }
 
         // 1d. Hyperliquid Direct Fallback (only if no CEX source is charting)
