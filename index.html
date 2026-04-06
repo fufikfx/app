@@ -10352,7 +10352,17 @@ const REGIONS=[
   {n:'ASIA PACIFIC',ids:['tok','sha','hkg','sin','mum','seo','tai','ban','syd']}
 ];
 
-function renderSidebar(){
+let _sidebarRenderPending = false;
+function renderSidebar() {
+  if (_sidebarRenderPending) return;
+  _sidebarRenderPending = true;
+  requestAnimationFrame(() => {
+    _renderSidebarInternal();
+    _sidebarRenderPending = false;
+  });
+}
+
+function _renderSidebarInternal(){
   let h='';
   REGIONS.forEach(r=>{
     h+=`<div class="rh">${r.n}</div>`;
@@ -10369,15 +10379,20 @@ function renderSidebar(){
       </div>`;
     });
   });
-  document.getElementById('mkt-list').innerHTML=h;
+  const mktList = document.getElementById('mkt-list');
+  if(mktList) mktList.innerHTML=h;
 
   let fh='';
   FXP.slice(0,10).forEach(f=>{
     const up=f.c>=0;const mid=(f.b+f.a)/2;const dp=mid>10?4:mid>1?5:6;
     fh+=`<div class="mk"><span class="mk-s">${f.p.split('/')[0]}</span><span class="mk-n">${f.p}</span><span class="mk-p">${mid.toFixed(dp)}</span><span class="mk-c ${up?'up':'dn'}">${up?'+':'-'}${Math.abs(f.c).toFixed(3)}%</span></div>`;
   });
-  document.getElementById('fx-list').innerHTML=fh;
-  document.getElementById('sb-time').textContent=new Date().toLocaleTimeString('en-GB',{hour12:false});
+  const fxList = document.getElementById('fx-list');
+  if(fxList) fxList.innerHTML=fh;
+
+  const sbTime = document.getElementById('sb-time');
+  if(sbTime) sbTime.textContent=new Date().toLocaleTimeString('en-GB',{hour12:false});
+  
   // also refresh active tab
   const at=window._sbTab||'idx';
   if(at==='fx') sbRenderFX();
@@ -27722,52 +27737,50 @@ window._setChartInterval = async function(interval) {
 
         const doFetch = async () => {
             try {
-                const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1m&range=1d';
-                // Race all proxies in parallel — first valid response wins
+                // v7/finance/quote is significantly faster and uses less bandwidth (no historical candles)
+                const yahooUrl = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + encodeURIComponent(ticker);
+                
+                // Advanced Proxy Race with 'fail-fast' timeout of 2.0s
                 let j = null;
                 const proxies = [
                     'https://corsproxy.io/?' + encodeURIComponent(yahooUrl),
                     'https://api.allorigins.win/raw?url=' + encodeURIComponent(yahooUrl),
                     'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(yahooUrl),
+                    'https://thingproxy.freeboard.io/fetch/' + yahooUrl
                 ];
+                
                 const tryProxy = async (purl) => {
-                    const r = await fetch(purl, {cache:'no-store', signal: AbortSignal.timeout(6000)});
+                    const r = await fetch(purl, { cache: 'no-store', signal: AbortSignal.timeout(2000) });
                     if (!r.ok) throw new Error('bad status');
                     const raw = await r.text();
+                    // Handle AllOrigins extra wrapping if present
                     const parsed = JSON.parse(raw.startsWith('{"contents"') ? JSON.parse(raw).contents : raw);
-                    if (!parsed?.chart?.result) throw new Error('no result');
+                    if (!parsed?.quoteResponse?.result?.[0]) throw new Error('no result');
                     return parsed;
                 };
+
                 try { j = await Promise.any(proxies.map(tryProxy)); } catch(e) {}
                 if (!j) return;
-                const res  = j?.chart?.result?.[0];
-                if(!res) return;
-                const meta = res.meta || {};
-                const q    = res.indicators?.quote?.[0] || {};
-                // Najdi poslední validní close (1m data)
-                const closes = q.close || [];
-                let price = meta.regularMarketPrice;
-                if (!price) {
-                    for (let i = closes.length-1; i >= 0; i--) {
-                        if (closes[i] && !isNaN(closes[i]) && closes[i] > 0) { price = closes[i]; break; }
-                    }
-                }
-                if(!price||isNaN(price)) return;
-                const prevClose = meta.chartPreviousClose || meta.previousClose || price;
-                const open      = meta.regularMarketOpen || meta.open || prevClose;
-                const high      = meta.regularMarketDayHigh || Math.max(...closes.filter(v=>v>0).slice(-390), price);
-                const low       = meta.regularMarketDayLow  || Math.min(...closes.filter(v=>v>0).slice(-390), price);
-                const vol       = meta.regularMarketVolume  || q.volume?.reduce((a,b)=>a+(b||0),0) || 0;
+                
+                const data = j.quoteResponse.result[0];
+                const price = data.regularMarketPrice;
+                if (!price || isNaN(price)) return;
 
-                const pct = prevClose ? ((price-prevClose)/prevClose*100) : 0;
+                const prevClose = data.regularMarketPreviousClose || price;
+                const open      = data.regularMarketOpen || prevClose;
+                const high      = data.regularMarketDayHigh || price;
+                const low       = data.regularMarketDayLow || price;
+                const vol       = data.regularMarketVolume || 0;
+                const pct       = data.regularMarketChangePercent || 0;
+
                 const up  = pct >= 0;
-                const col = up ? '#00cc44' : '#ff3d3d';
                 const now = new Date();
 
-                // Set firstBbgPrice from open so _updateBbgHeader chg calculation works
-                if(!window._firstBbgPrice || window._firstBbgPrice<=0) window._firstBbgPrice = open;
+                // Stable retention for high-speed updates
+                if(!window._firstBbgPrice || window._firstBbgPrice <= 0) window._firstBbgPrice = open;
                 window._chigh = high; window._clow = low; window._cvol = vol;
 
+                // Fast Ribbon Update
                 setEl('bbg-current-price', fmtP(price));
                 setEl('bbg-start',  fmtP(open));
                 setEl('bbg-high',   fmtP(high));
@@ -27775,20 +27788,22 @@ window._setChartInterval = async function(interval) {
                 setEl('bbg-close',  fmtP(prevClose));
                 setEl('bbg-volume', fmtV(vol));
                 setEl('bbg-time',   String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
-                // ov-left-panel
+                
+                // Detailed Terminal sync
                 setEl('ov-start', fmtP(price));
                 setEl('ov-open',  fmtP(open));
                 setEl('ov-high',  fmtP(high));
                 setEl('ov-low',   fmtP(low));
                 setEl('ov-close', fmtP(prevClose));
-                // Final sync via _applyTick for 1:1 parity with chart & sidebar
+                
+                // Master Sync Hook
                 _applyTick(price, pct, high, low, vol, open);
                 
-                console.log('[YF]', rawSym, fmtP(price), (up?'+':'')+pct.toFixed(2)+'%');
-            } catch(e){ console.warn('[YF] error:', e.message); }
+            } catch(e){ console.warn('[Bloomberg High-Speed Engine] Error:', e.message); }
         };
         doFetch();
-        window._ovRefreshTimer = setInterval(doFetch, 2500);
+        // Increased polling frequency to 1.1s for near real-time stock/commodity movement
+        window._ovRefreshTimer = setInterval(doFetch, 1100);
         // Set fake WS object so close() works
         window._currentBbgWs = { close: ()=>{ clearInterval(window._ovRefreshTimer); window._ovRefreshTimer=null; } };
     }
