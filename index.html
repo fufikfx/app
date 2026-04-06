@@ -27107,6 +27107,8 @@ window._setChartInterval = async function(interval) {
         'BERA':'BERAUSDT','OM':'OMUSDT','VIRTUAL':'VIRTUALUSDT','MOVE':'MOVEUSDT',
         'KAS':'KASUSDT','ZRO':'ZROUSDT','W':'WUSDT','ONDO':'ONDOUSDT',
         'DRIFT':'DRIFTUSDT','OSMO':'OSMOUSDT',
+        // ── 'Hybrid' Equities (Use Binance Perpetuals for High-Speed) ────────
+        'MSTR':'MSTRUSDT','COIN':'COINUSDT','SOFI':'SOFIUSDT',
         // NOTE: GOLD, SILVER, EURUSD intentionally NOT here — they route via Yahoo
     };
     const yahooMap = {
@@ -27760,7 +27762,36 @@ window._setChartInterval = async function(interval) {
                 };
 
                 try { j = await Promise.any(proxies.map(tryProxy)); } catch(e) {}
-                if (!j) return;
+                
+                // --- ROBUST FALLBACK: If v7/quote failed or returned nothing, try v8/chart ---
+                if (!j || !j.quoteResponse?.result?.[0]) {
+                    try {
+                        const fallbackUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1m&range=1d';
+                        const fallbackProxies = proxies.map(p => p.replace(encodeURIComponent(yahooUrl), encodeURIComponent(fallbackUrl)));
+                        const r2 = await Promise.any(fallbackProxies.map(p => fetch(p, { signal: AbortSignal.timeout(3000) })));
+                        const raw2 = await r2.text();
+                        const parsed2 = JSON.parse(raw2.startsWith('{"contents"') ? JSON.parse(raw2).contents : raw2);
+                        const result = parsed2.chart?.result?.[0];
+                        if (result) {
+                            const meta = result.meta;
+                            const price = meta.regularMarketPrice;
+                            const prev  = meta.previousClose || price;
+                            const chg   = price - prev;
+                            const pct   = (chg / prev) * 100;
+                            j = { quoteResponse: { result: [{
+                                regularMarketPrice: price,
+                                regularMarketPreviousClose: prev,
+                                regularMarketChangePercent: pct,
+                                regularMarketOpen: meta.chartPreviousClose || prev,
+                                regularMarketDayHigh: price,
+                                regularMarketDayLow: price,
+                                regularMarketVolume: 0
+                            }] } };
+                        }
+                    } catch(e2) { console.warn('[Yahoo Fallback] Failed:', e2.message); }
+                }
+                
+                if (!j || !j.quoteResponse?.result?.[0]) return;
                 
                 const data = j.quoteResponse.result[0];
                 const price = data.regularMarketPrice;
