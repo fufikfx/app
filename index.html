@@ -1163,6 +1163,18 @@ body {
   #bbg-chart-container .tv-lightweight-charts table tr td:nth-child(3).ps-dragging,
   #bbg-chart-container .tv-lightweight-charts table tr td:nth-child(3).ps-dragging * { cursor: ns-resize !important; }
   #price-scale-arrows, #price-scale-arrows * { cursor: pointer !important; }
+
+/* ══ IVOL EDIT CHART SIDEBAR ══ */
+.ivol-ec-btn{
+  font-family:'Courier New',monospace;font-size:7px;letter-spacing:.8px;
+  padding:3px 4px;border:1px solid #2a1840;background:#0d0818;color:#666;
+  cursor:pointer;transition:all .12s;text-align:center;line-height:1.2;
+}
+.ivol-ec-btn:hover{border-color:#cc66ff55;color:#ccc;}
+.ivol-ec-btn.active{border-color:#cc66ff;background:#1a0830;color:#cc66ff;font-weight:700;}
+#ivol-edit-panel::-webkit-scrollbar{width:3px;}
+#ivol-edit-panel::-webkit-scrollbar-track{background:#000;}
+#ivol-edit-panel::-webkit-scrollbar-thumb{background:#2a1840;}
 </style>
 
 <div id="boot-overlay" style="
@@ -35492,30 +35504,63 @@ G._nvIntelRun = async function(){
     const el = document.getElementById(containerId);
     if(!el || !window.Plotly) return;
 
+    const es = window._ivolEditState || {};
     const { rows, spot } = data;
     if(!rows || rows.length < 5){
       el.innerHTML='<div style="padding:20px;color:#555;font-size:9px">Insufficient option data from Binance</div>';
       return;
     }
 
-    const gridX = Array.from({length:N_GRID}, (_,i) => -MAX_LM + i*(2*MAX_LM/(N_GRID-1)));
-    const maxD  = Math.min(MAX_DAYS, Math.max(...rows.map(r=>r.daysTE)));
+    // Apply IV source override
+    const ivSrc = es.ivSrc || 'mark';
+    const mappedRows = rows.map(r => {
+      let iv = r.markIV;
+      if(ivSrc==='mid')  iv = (r.bidIV  + r.askIV)  / 2 || r.markIV;
+      if(ivSrc==='bid')  iv = r.bidIV  || r.markIV;
+      if(ivSrc==='ask')  iv = r.askIV  || r.markIV;
+      return {...r, markIV: iv};
+    });
+
+    // Moneyness / max days from state
+    const curMaxLM   = es.moneyness != null ? es.moneyness : MAX_LM;
+    const curMaxDays = es.maxDays   != null ? es.maxDays   : MAX_DAYS;
+    const filteredRows = mappedRows.filter(r => Math.abs(r.logMon) <= curMaxLM && r.daysTE <= curMaxDays);
+
+    if(filteredRows.length < 5){
+      el.innerHTML='<div style="padding:20px;color:#555;font-size:9px">No data in selected range</div>';
+      return;
+    }
+
+    const gridX = Array.from({length:N_GRID}, (_,i) => -curMaxLM + i*(2*curMaxLM/(N_GRID-1)));
+    const maxD  = Math.min(curMaxDays, Math.max(...filteredRows.map(r=>r.daysTE)));
     const gridY = Array.from({length:N_GRID}, (_,i) => MIN_DAYS + i*(maxD-MIN_DAYS)/(N_GRID-1));
 
     let Z;
     if(method === 'svi'){
-      Z = _buildSVISurface(rows, gridX, gridY);
+      Z = _buildSVISurface(filteredRows, gridX, gridY);
       if(!Z){ el.innerHTML='<div style="padding:20px;color:#555;font-size:9px">SVI fit failed — insufficient slices</div>'; return; }
     } else {
-      Z = _kernelSmooth(rows, gridX, gridY, hx, hy);
+      Z = _kernelSmooth(filteredRows, gridX, gridY, hx, hy);
     }
 
     // Clamp & convert to %
     const zPct = Z.map(row => Array.from(row).map(v => isNaN(v)?null : Math.min(Math.max(v*100, 1), 800)));
 
-    const colorMap = underlying==='BTCUSDT'
-      ? [[0,'#1a0800'],[0.25,'#7a3300'],[0.5,'#F39F41'],[0.75,'#ffe0a0'],[1,'#ffffff']]
-      : [[0,'#00050a'],[0.25,'#003355'],[0.5,'#00B7EB'],[0.75,'#aaeeff'],[1,'#ffffff']];
+    // Color scheme
+    const colorScheme = es.color || 'default';
+    const colorMaps   = window._ivolColorMaps || {};
+    let colorMap;
+    if(colorScheme !== 'default' && colorMaps[colorScheme]){
+      colorMap = colorMaps[colorScheme];
+    } else {
+      colorMap = underlying==='BTCUSDT'
+        ? [[0,'#1a0800'],[0.25,'#7a3300'],[0.5,'#F39F41'],[0.75,'#ffe0a0'],[1,'#ffffff']]
+        : [[0,'#00050a'],[0.25,'#003355'],[0.5,'#00B7EB'],[0.75,'#aaeeff'],[1,'#ffffff']];
+    }
+
+    // Opacity + contours
+    const opacity  = es.opacity  != null ? es.opacity  : 0.92;
+    const showCont = es.contours != null ? es.contours : true;
 
     const traces = [{
       type: 'surface',
@@ -35523,37 +35568,43 @@ G._nvIntelRun = async function(){
       y: gridY,
       z: zPct,
       colorscale: colorMap,
-      opacity: 0.92,
-      contours: { z: { show:true, usecolormap:true, highlightcolor:'#fff', project:{z:false} } },
+      opacity: opacity,
+      contours: { z: { show: showCont, usecolormap:true, highlightcolor:'#fff', project:{z:false} } },
       showscale: true,
       colorbar: { title:{text:'IV %',side:'right'}, tickformat:'.0f', thickness:8, len:0.7, x:1.01,
                   tickfont:{color:'#888',size:7,family:'Courier New'}, titlefont:{color:'#888',size:7} },
       hovertemplate: 'Log-Moneyness: %{x:.3f}<br>Days to Expiry: %{y:.0f}<br>IV: %{z:.1f}%<extra></extra>',
     }];
 
-    // Scatter dots — present in data but invisible (opacity:0)
-    const calls = rows.filter(r=>r.side==='CALL');
-    const puts  = rows.filter(r=>r.side==='PUT');
-    for(const [grp,color] of [[calls,'#00CC96'],[puts,'#EF553B']]){
+    // Scatter dots — controlled by dots state
+    const dotsMode = es.dots || 'none';
+    const calls = filteredRows.filter(r=>r.side==='CALL');
+    const puts  = filteredRows.filter(r=>r.side==='PUT');
+    for(const [grp,color,side] of [[calls,'#00CC96','calls'],[puts,'#EF553B','puts']]){
+      const dotOpacity = (dotsMode==='both' || dotsMode===side) ? 0.8 : 0;
       traces.push({
         type:'scatter3d', mode:'markers',
         x: grp.map(r=>r.logMon),
         y: grp.map(r=>r.daysTE),
         z: grp.map(r=>r.markIV*100),
-        marker:{ size:3, color, opacity:0 },   // ← invisible
-        showlegend:false, hoverinfo:'none',
+        marker:{ size:3, color, opacity: dotOpacity },
+        showlegend:false, hoverinfo: dotOpacity>0 ? 'all' : 'none',
       });
     }
+
+    // Camera
+    const cameras = window._ivolCameras || {};
+    const camPreset = (es.camera && cameras[es.camera]) ? cameras[es.camera] : {x:1.6,y:-1.6,z:0.9};
 
     Plotly.react(el, traces, {
       paper_bgcolor:'#000', plot_bgcolor:'#000',
       margin:{l:0,r:30,t:10,b:0},
       scene:{
         bgcolor:'#000',
-        xaxis:{ title:{text:'Log Moneyness',font:{color:'#555',size:8}}, color:'#444', gridcolor:'#1a1200', showspikes:false, range:[-MAX_LM,MAX_LM] },
+        xaxis:{ title:{text:'Log Moneyness',font:{color:'#555',size:8}}, color:'#444', gridcolor:'#1a1200', showspikes:false, range:[-curMaxLM,curMaxLM] },
         yaxis:{ title:{text:'Days to Expiry',font:{color:'#555',size:8}}, color:'#444', gridcolor:'#1a1200', showspikes:false },
         zaxis:{ title:{text:'IV (%)',font:{color:'#555',size:8}}, color:'#444', gridcolor:'#1a1200', showspikes:false },
-        camera:{ eye:{x:1.6,y:-1.6,z:0.9} },
+        camera:{ eye: camPreset },
       },
       font:{color:'#888',family:'Courier New',size:8},
     }, { responsive:true, displayModeBar:false });
@@ -35625,9 +35676,15 @@ G._nvIntelRun = async function(){
         style="font-family:'Courier New',monospace;font-size:7px;padding:1px 7px;border:1px solid #cc66ff;background:#cc66ff;color:#000;cursor:pointer;letter-spacing:1px">KERNEL</button>
       <button id="ivol-btn-svi" onclick="window._ivolSetMethod('svi')"
         style="font-family:'Courier New',monospace;font-size:7px;padding:1px 7px;border:1px solid #3a2800;background:#0a0500;color:#666;cursor:pointer;letter-spacing:1px">SVI</button>
+      <span style="color:#2a1600;font-size:9px">│</span>
       <!-- Manual refresh -->
       <button onclick="window._ivolForceRefresh()"
         style="font-family:'Courier New',monospace;font-size:7px;padding:1px 9px;border:1px solid #cc66ff44;background:transparent;color:#cc66ff;cursor:pointer;letter-spacing:1px">↺ REFRESH</button>
+      <!-- Edit Chart -->
+      <button id="ivol-edit-btn" onclick="window._ivolToggleEditChart()"
+        style="font-family:'Courier New',monospace;font-size:7px;padding:1px 9px;border:1px solid #444;background:#111;color:#aaa;cursor:pointer;letter-spacing:1px;display:flex;align-items:center;gap:4px">
+        <span style="font-size:9px">✎</span> Edit Chart <span style="font-size:8px;margin-left:2px">⚙</span>
+      </button>
     </div>
   </div>
 
@@ -35644,16 +35701,193 @@ G._nvIntelRun = async function(){
     <span style="color:#2a1600;font-size:7px;margin-left:12px">↑ smoothness controls for kernel method</span>
   </div>
 
-  <!-- Charts -->
-  <div style="flex:1;display:flex;gap:0;overflow:hidden;min-height:0">
-    <div style="flex:1;min-width:0;border-right:1px solid #0d0800;position:relative">
-      <div style="position:absolute;top:6px;left:10px;color:#F39F41;font-size:8px;font-weight:700;letter-spacing:2px;z-index:10;pointer-events:none">₿ BTC</div>
-      <div id="ivol-chart-BTCUSDT" style="width:100%;height:100%"></div>
+  <!-- Charts + Edit Chart Sidebar wrapper -->
+  <div style="flex:1;display:flex;overflow:hidden;min-height:0;position:relative">
+
+    <!-- Charts area -->
+    <div id="ivol-charts-area" style="flex:1;display:flex;gap:0;overflow:hidden;min-height:0;transition:all .2s">
+      <div id="ivol-pane-BTC" style="flex:1;min-width:0;border-right:1px solid #0d0800;position:relative">
+        <div style="position:absolute;top:6px;left:10px;color:#F39F41;font-size:8px;font-weight:700;letter-spacing:2px;z-index:10;pointer-events:none">₿ BTC</div>
+        <div id="ivol-chart-BTCUSDT" style="width:100%;height:100%"></div>
+      </div>
+      <div id="ivol-pane-ETH" style="flex:1;min-width:0;position:relative">
+        <div style="position:absolute;top:6px;left:10px;color:#00B7EB;font-size:8px;font-weight:700;letter-spacing:2px;z-index:10;pointer-events:none">Ξ ETH</div>
+        <div id="ivol-chart-ETHUSDT" style="width:100%;height:100%"></div>
+      </div>
     </div>
-    <div style="flex:1;min-width:0;position:relative">
-      <div style="position:absolute;top:6px;left:10px;color:#00B7EB;font-size:8px;font-weight:700;letter-spacing:2px;z-index:10;pointer-events:none">Ξ ETH</div>
-      <div id="ivol-chart-ETHUSDT" style="width:100%;height:100%"></div>
+
+    <!-- ═══ EDIT CHART SIDEBAR ═══ -->
+    <div id="ivol-edit-panel" style="
+      width:0;overflow:hidden;flex-shrink:0;
+      background:#06040a;border-left:1px solid #1a0e2a;
+      display:flex;flex-direction:column;
+      transition:width .2s ease;font-family:'Courier New',monospace;
+    ">
+      <div style="width:220px;padding:0;display:flex;flex-direction:column;height:100%;overflow-y:auto;overflow-x:hidden;">
+
+        <!-- Panel title -->
+        <div style="background:#0d0818;border-bottom:1px solid #1a0e2a;padding:6px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+          <span style="color:#cc66ff;font-size:8px;font-weight:700;letter-spacing:2px">✎ EDIT CHART</span>
+          <span onclick="window._ivolToggleEditChart()" style="color:#555;font-size:11px;cursor:pointer;padding:0 3px;line-height:1;">✕</span>
+        </div>
+
+        <!-- ── SURFACE DATA folder ── -->
+        <div class="ivol-folder" id="ivol-folder-surfdata">
+          <div onclick="window._ivolToggleFolder('surfdata')" style="
+            background:#0d0818;border-bottom:1px solid #14082a;padding:5px 10px;
+            display:flex;align-items:center;justify-content:space-between;cursor:pointer;flex-shrink:0;">
+            <span style="color:#cc66ff;font-size:7px;font-weight:700;letter-spacing:1.5px">▼ SURFACE DATA</span>
+          </div>
+          <div id="ivol-folder-surfdata-body" style="padding:8px 10px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid #0d0818;">
+
+            <!-- Asset view -->
+            <div>
+              <div style="color:#555;font-size:7px;letter-spacing:1px;margin-bottom:4px;">ASSET VIEW</div>
+              <div style="display:flex;gap:3px;">
+                <button class="ivol-ec-btn ivol-asset-btn active" data-val="both" onclick="window._ivolSetAsset('both')" style="flex:1">BOTH</button>
+                <button class="ivol-ec-btn ivol-asset-btn" data-val="btc" onclick="window._ivolSetAsset('btc')" style="flex:1">BTC</button>
+                <button class="ivol-ec-btn ivol-asset-btn" data-val="eth" onclick="window._ivolSetAsset('eth')" style="flex:1">ETH</button>
+              </div>
+            </div>
+
+            <!-- Layout -->
+            <div>
+              <div style="color:#555;font-size:7px;letter-spacing:1px;margin-bottom:4px;">LAYOUT</div>
+              <div style="display:flex;gap:3px;">
+                <button class="ivol-ec-btn ivol-layout-btn active" data-val="side" onclick="window._ivolSetLayout('side')" style="flex:1;font-size:6px;">SIDE×2</button>
+                <button class="ivol-ec-btn ivol-layout-btn" data-val="stack" onclick="window._ivolSetLayout('stack')" style="flex:1;font-size:6px;">STACKED</button>
+              </div>
+            </div>
+
+            <!-- IV Display -->
+            <div>
+              <div style="color:#555;font-size:7px;letter-spacing:1px;margin-bottom:4px;">IV DATA SOURCE</div>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <button class="ivol-ec-btn ivol-ivsrc-btn active" data-val="mark" onclick="window._ivolSetIVSrc('mark')" style="text-align:left;padding-left:6px;">● MARK IV &nbsp;<span style="color:#555;font-size:6px;">(default)</span></button>
+                <button class="ivol-ec-btn ivol-ivsrc-btn" data-val="mid" onclick="window._ivolSetIVSrc('mid')" style="text-align:left;padding-left:6px;">● MID IV &nbsp;<span style="color:#555;font-size:6px;">(bid+ask)/2</span></button>
+                <button class="ivol-ec-btn ivol-ivsrc-btn" data-val="bid" onclick="window._ivolSetIVSrc('bid')" style="text-align:left;padding-left:6px;">● BID IV</button>
+                <button class="ivol-ec-btn ivol-ivsrc-btn" data-val="ask" onclick="window._ivolSetIVSrc('ask')" style="text-align:left;padding-left:6px;">● ASK IV</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── DISPLAY folder ── -->
+        <div class="ivol-folder" id="ivol-folder-display">
+          <div onclick="window._ivolToggleFolder('display')" style="
+            background:#0d0818;border-bottom:1px solid #14082a;padding:5px 10px;
+            display:flex;align-items:center;justify-content:space-between;cursor:pointer;flex-shrink:0;">
+            <span style="color:#cc66ff;font-size:7px;font-weight:700;letter-spacing:1.5px">▼ DISPLAY</span>
+          </div>
+          <div id="ivol-folder-display-body" style="padding:8px 10px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid #0d0818;">
+
+            <!-- Color scheme -->
+            <div>
+              <div style="color:#555;font-size:7px;letter-spacing:1px;margin-bottom:4px;">COLOR SCHEME</div>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <button class="ivol-ec-btn ivol-color-btn active" data-val="default" onclick="window._ivolSetColor('default')" style="text-align:left;padding-left:6px;">
+                  <span style="background:linear-gradient(90deg,#1a0800,#F39F41,#fff);display:inline-block;width:40px;height:6px;vertical-align:middle;margin-right:4px;border-radius:1px;"></span>DEFAULT
+                </button>
+                <button class="ivol-ec-btn ivol-color-btn" data-val="plasma" onclick="window._ivolSetColor('plasma')" style="text-align:left;padding-left:6px;">
+                  <span style="background:linear-gradient(90deg,#0d0221,#7209b7,#f72585,#ffd60a);display:inline-block;width:40px;height:6px;vertical-align:middle;margin-right:4px;border-radius:1px;"></span>PLASMA
+                </button>
+                <button class="ivol-ec-btn ivol-color-btn" data-val="viridis" onclick="window._ivolSetColor('viridis')" style="text-align:left;padding-left:6px;">
+                  <span style="background:linear-gradient(90deg,#440154,#31688e,#35b779,#fde725);display:inline-block;width:40px;height:6px;vertical-align:middle;margin-right:4px;border-radius:1px;"></span>VIRIDIS
+                </button>
+                <button class="ivol-ec-btn ivol-color-btn" data-val="thermal" onclick="window._ivolSetColor('thermal')" style="text-align:left;padding-left:6px;">
+                  <span style="background:linear-gradient(90deg,#000,#1a0000,#8b0000,#ff4500,#ffd700,#fff);display:inline-block;width:40px;height:6px;vertical-align:middle;margin-right:4px;border-radius:1px;"></span>THERMAL
+                </button>
+                <button class="ivol-ec-btn ivol-color-btn" data-val="ice" onclick="window._ivolSetColor('ice')" style="text-align:left;padding-left:6px;">
+                  <span style="background:linear-gradient(90deg,#001428,#005fa3,#00cfff,#eefaff);display:inline-block;width:40px;height:6px;vertical-align:middle;margin-right:4px;border-radius:1px;"></span>ICE
+                </button>
+              </div>
+            </div>
+
+            <!-- Market dots -->
+            <div>
+              <div style="color:#555;font-size:7px;letter-spacing:1px;margin-bottom:4px;">MARKET POINTS</div>
+              <div style="display:flex;gap:3px;">
+                <button class="ivol-ec-btn ivol-dots-btn active" data-val="none" onclick="window._ivolSetDots('none')" style="flex:1;font-size:6px;">NONE</button>
+                <button class="ivol-ec-btn ivol-dots-btn" data-val="calls" onclick="window._ivolSetDots('calls')" style="flex:1;font-size:6px;color:#00CC96;">CALLS</button>
+                <button class="ivol-ec-btn ivol-dots-btn" data-val="puts" onclick="window._ivolSetDots('puts')" style="flex:1;font-size:6px;color:#EF553B;">PUTS</button>
+                <button class="ivol-ec-btn ivol-dots-btn" data-val="both" onclick="window._ivolSetDots('both')" style="flex:1;font-size:6px;">BOTH</button>
+              </div>
+            </div>
+
+            <!-- Opacity -->
+            <div>
+              <div style="color:#555;font-size:7px;letter-spacing:1px;margin-bottom:4px;">SURFACE OPACITY &nbsp;<span id="ivol-opacity-val" style="color:#cc66ff">92%</span></div>
+              <input type="range" min="30" max="100" value="92" step="2"
+                style="width:100%;accent-color:#cc66ff"
+                oninput="document.getElementById('ivol-opacity-val').textContent=this.value+'%';window._ivolSetOpacity(this.value/100)">
+            </div>
+
+            <!-- Contours -->
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="color:#555;font-size:7px;letter-spacing:1px;">SHOW CONTOURS</span>
+              <div id="ivol-contours-toggle" onclick="window._ivolToggleContours()" style="
+                width:32px;height:14px;background:#cc66ff;border-radius:7px;cursor:pointer;
+                display:flex;align-items:center;padding:2px;transition:background .2s;position:relative;">
+                <div style="width:10px;height:10px;background:#fff;border-radius:50%;margin-left:auto;transition:margin .2s;"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── AXES / CAMERA folder ── -->
+        <div class="ivol-folder" id="ivol-folder-axes">
+          <div onclick="window._ivolToggleFolder('axes')" style="
+            background:#0d0818;border-bottom:1px solid #14082a;padding:5px 10px;
+            display:flex;align-items:center;justify-content:space-between;cursor:pointer;flex-shrink:0;">
+            <span style="color:#cc66ff;font-size:7px;font-weight:700;letter-spacing:1.5px">▼ AXES &amp; CAMERA</span>
+          </div>
+          <div id="ivol-folder-axes-body" style="padding:8px 10px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid #0d0818;">
+
+            <!-- Camera preset -->
+            <div>
+              <div style="color:#555;font-size:7px;letter-spacing:1px;margin-bottom:4px;">CAMERA PRESET</div>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <button class="ivol-ec-btn ivol-cam-btn active" data-val="default" onclick="window._ivolSetCamera('default')" style="text-align:left;padding-left:6px;">↗ DEFAULT (3/4 view)</button>
+                <button class="ivol-ec-btn ivol-cam-btn" data-val="top" onclick="window._ivolSetCamera('top')" style="text-align:left;padding-left:6px;">⬆ TOP-DOWN</button>
+                <button class="ivol-ec-btn ivol-cam-btn" data-val="front" onclick="window._ivolSetCamera('front')" style="text-align:left;padding-left:6px;">➡ SMILE CROSS-SECTION</button>
+                <button class="ivol-ec-btn ivol-cam-btn" data-val="side" onclick="window._ivolSetCamera('side')" style="text-align:left;padding-left:6px;">↕ TERM-STRUCTURE SIDE</button>
+              </div>
+            </div>
+
+            <!-- Expiry range -->
+            <div>
+              <div style="color:#555;font-size:7px;letter-spacing:1px;margin-bottom:4px;">MAX EXPIRY (days) &nbsp;<span id="ivol-maxd-val" style="color:#cc66ff">180</span></div>
+              <input type="range" min="30" max="365" value="180" step="10"
+                style="width:100%;accent-color:#cc66ff"
+                oninput="document.getElementById('ivol-maxd-val').textContent=this.value;window._ivolSetMaxDays(parseInt(this.value))">
+            </div>
+
+            <!-- Moneyness range -->
+            <div>
+              <div style="color:#555;font-size:7px;letter-spacing:1px;margin-bottom:4px;">MONEYNESS RANGE &nbsp;<span id="ivol-mon-val" style="color:#cc66ff">±20%</span></div>
+              <input type="range" min="5" max="30" value="20" step="1"
+                style="width:100%;accent-color:#cc66ff"
+                oninput="document.getElementById('ivol-mon-val').textContent='±'+this.value+'%';window._ivolSetMoneyness(parseInt(this.value)/100)">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Reset button -->
+        <div style="padding:8px 10px;margin-top:auto;flex-shrink:0;">
+          <button onclick="window._ivolResetChart()" style="
+            width:100%;font-family:'Courier New',monospace;font-size:7px;letter-spacing:1px;
+            padding:4px;border:1px solid #2a1840;background:#0d0818;color:#666;cursor:pointer;">
+            ↺ RESET ALL TO DEFAULTS
+          </button>
+        </div>
+
+      </div>
     </div>
+    <!-- ═══ END EDIT CHART SIDEBAR ═══ -->
+
   </div>
 
   <!-- Footer stats -->
@@ -35676,6 +35910,205 @@ G._nvIntelRun = async function(){
   };
 
   function _ivolInit(){
+
+    // ── EDIT CHART STATE ────────────────────────────────────────────────
+    window._ivolEditState = {
+      open: false,
+      asset: 'both',       // 'both' | 'btc' | 'eth'
+      layout: 'side',      // 'side' | 'stack'
+      ivSrc: 'mark',       // 'mark' | 'mid' | 'bid' | 'ask'
+      color: 'default',    // 'default' | 'plasma' | 'viridis' | 'thermal' | 'ice'
+      dots: 'none',        // 'none' | 'calls' | 'puts' | 'both'
+      opacity: 0.92,
+      contours: true,
+      camera: 'default',   // 'default' | 'top' | 'front' | 'side'
+      maxDays: 180,
+      moneyness: 0.20,
+    };
+
+    // ── TOGGLE SIDEBAR ──────────────────────────────────────────────────
+    window._ivolToggleEditChart = function(){
+      const es = window._ivolEditState;
+      es.open = !es.open;
+      const panel = document.getElementById('ivol-edit-panel');
+      const btn   = document.getElementById('ivol-edit-btn');
+      if(panel) panel.style.width = es.open ? '220px' : '0';
+      if(btn){
+        btn.style.borderColor = es.open ? '#cc66ff' : '#444';
+        btn.style.color       = es.open ? '#cc66ff' : '#aaa';
+        btn.style.background  = es.open ? '#1a0830' : '#111';
+      }
+    };
+
+    // ── FOLDER TOGGLE ───────────────────────────────────────────────────
+    window._ivolToggleFolder = function(name){
+      const body = document.getElementById('ivol-folder-'+name+'-body');
+      const hdr  = document.querySelector('#ivol-folder-'+name+' > div > span');
+      if(!body) return;
+      const open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'flex';
+      if(hdr) hdr.textContent = (open?'▶ ':'▼ ') + hdr.textContent.slice(2);
+    };
+
+    // ── BUTTON GROUP HELPER ──────────────────────────────────────────────
+    function _setActive(cls, val){
+      document.querySelectorAll('.'+cls).forEach(b=>{
+        b.classList.toggle('active', b.dataset.val===val);
+      });
+    }
+
+    // ── ASSET VIEW ───────────────────────────────────────────────────────
+    window._ivolSetAsset = function(val){
+      window._ivolEditState.asset = val;
+      _setActive('ivol-asset-btn', val);
+      const btcPane = document.getElementById('ivol-pane-BTC');
+      const ethPane = document.getElementById('ivol-pane-ETH');
+      const area    = document.getElementById('ivol-charts-area');
+      if(btcPane) btcPane.style.display = (val==='eth') ? 'none' : 'flex';
+      if(ethPane) ethPane.style.display = (val==='btc') ? 'none' : 'flex';
+      if(area && val!=='both'){
+        const shown = val==='btc' ? btcPane : ethPane;
+        if(shown) shown.style.flex = '1';
+      }
+      // Trigger resize so Plotly re-fits
+      setTimeout(()=>{ window.dispatchEvent(new Event('resize')); }, 250);
+    };
+
+    // ── LAYOUT ──────────────────────────────────────────────────────────
+    window._ivolSetLayout = function(val){
+      window._ivolEditState.layout = val;
+      _setActive('ivol-layout-btn', val);
+      const area = document.getElementById('ivol-charts-area');
+      if(!area) return;
+      if(val==='stack'){
+        area.style.flexDirection = 'column';
+        const btcPane = document.getElementById('ivol-pane-BTC');
+        const ethPane = document.getElementById('ivol-pane-ETH');
+        if(btcPane){ btcPane.style.borderRight='none'; btcPane.style.borderBottom='1px solid #0d0800'; }
+      } else {
+        area.style.flexDirection = 'row';
+        const btcPane = document.getElementById('ivol-pane-BTC');
+        const ethPane = document.getElementById('ivol-pane-ETH');
+        if(btcPane){ btcPane.style.borderRight='1px solid #0d0800'; btcPane.style.borderBottom='none'; }
+      }
+      setTimeout(()=>{ window.dispatchEvent(new Event('resize')); }, 250);
+    };
+
+    // ── IV SOURCE ───────────────────────────────────────────────────────
+    window._ivolSetIVSrc = function(val){
+      window._ivolEditState.ivSrc = val;
+      _setActive('ivol-ivsrc-btn', val);
+      _ivolRenderAll();
+    };
+
+    // ── COLOR SCHEME ─────────────────────────────────────────────────────
+    const COLOR_MAPS = {
+      default: null, // use per-asset default
+      plasma:  [[0,'#0d0221'],[0.33,'#7209b7'],[0.66,'#f72585'],[1,'#ffd60a']],
+      viridis: [[0,'#440154'],[0.33,'#31688e'],[0.66,'#35b779'],[1,'#fde725']],
+      thermal: [[0,'#000000'],[0.2,'#1a0000'],[0.5,'#8b0000'],[0.75,'#ff4500'],[0.9,'#ffd700'],[1,'#ffffff']],
+      ice:     [[0,'#001428'],[0.33,'#005fa3'],[0.66,'#00cfff'],[1,'#eefaff']],
+    };
+    window._ivolSetColor = function(val){
+      window._ivolEditState.color = val;
+      _setActive('ivol-color-btn', val);
+      _ivolRenderAll();
+    };
+
+    // ── SCATTER DOTS ──────────────────────────────────────────────────────
+    window._ivolSetDots = function(val){
+      window._ivolEditState.dots = val;
+      _setActive('ivol-dots-btn', val);
+      _ivolRenderAll();
+    };
+
+    // ── OPACITY ───────────────────────────────────────────────────────────
+    window._ivolSetOpacity = function(val){
+      window._ivolEditState.opacity = val;
+      _ivolRenderAll();
+    };
+
+    // ── CONTOURS ──────────────────────────────────────────────────────────
+    window._ivolToggleContours = function(){
+      const es = window._ivolEditState;
+      es.contours = !es.contours;
+      const tog = document.getElementById('ivol-contours-toggle');
+      if(tog){
+        tog.style.background = es.contours ? '#cc66ff' : '#333';
+        const dot = tog.querySelector('div');
+        if(dot) dot.style.marginLeft = es.contours ? 'auto' : '0';
+      }
+      _ivolRenderAll();
+    };
+
+    // ── CAMERA PRESETS ────────────────────────────────────────────────────
+    const CAMERAS = {
+      default: {x:1.6, y:-1.6, z:0.9},
+      top:     {x:0,   y:0,    z:2.5},
+      front:   {x:0,   y:-2.5, z:0.3},
+      side:    {x:2.5, y:0,    z:0.3},
+    };
+    window._ivolSetCamera = function(val){
+      window._ivolEditState.camera = val;
+      _setActive('ivol-cam-btn', val);
+      _ivolRenderAll();
+    };
+
+    // ── MAX DAYS ──────────────────────────────────────────────────────────
+    window._ivolSetMaxDays = function(val){
+      window._ivolEditState.maxDays = val;
+      _ivolRenderAll();
+    };
+
+    // ── MONEYNESS RANGE ───────────────────────────────────────────────────
+    window._ivolSetMoneyness = function(val){
+      window._ivolEditState.moneyness = val;
+      _ivolRenderAll();
+    };
+
+    // ── RESET ALL ─────────────────────────────────────────────────────────
+    window._ivolResetChart = function(){
+      const es = window._ivolEditState;
+      // Reset state
+      es.asset='both'; es.layout='side'; es.ivSrc='mark'; es.color='default';
+      es.dots='none'; es.opacity=0.92; es.contours=true; es.camera='default';
+      es.maxDays=180; es.moneyness=0.20;
+      // Reset UI
+      _setActive('ivol-asset-btn','both');
+      _setActive('ivol-layout-btn','side');
+      _setActive('ivol-ivsrc-btn','mark');
+      _setActive('ivol-color-btn','default');
+      _setActive('ivol-dots-btn','none');
+      _setActive('ivol-cam-btn','default');
+      // Restore panes
+      const btcPane=document.getElementById('ivol-pane-BTC');
+      const ethPane=document.getElementById('ivol-pane-ETH');
+      const area=document.getElementById('ivol-charts-area');
+      if(btcPane){btcPane.style.display='';btcPane.style.borderRight='1px solid #0d0800';btcPane.style.borderBottom='none';}
+      if(ethPane) ethPane.style.display='';
+      if(area) area.style.flexDirection='row';
+      // Restore sliders & toggles
+      const opSlider=document.querySelector('input[oninput*="ivol-opacity-val"]');
+      if(opSlider) opSlider.value=92;
+      const opVal=document.getElementById('ivol-opacity-val');
+      if(opVal) opVal.textContent='92%';
+      const maxdSlider=document.querySelector('input[oninput*="ivol-maxd-val"]');
+      if(maxdSlider) maxdSlider.value=180;
+      const maxdVal=document.getElementById('ivol-maxd-val');
+      if(maxdVal) maxdVal.textContent='180';
+      const monSlider=document.querySelector('input[oninput*="ivol-mon-val"]');
+      if(monSlider) monSlider.value=20;
+      const monVal=document.getElementById('ivol-mon-val');
+      if(monVal) monVal.textContent='±20%';
+      const tog=document.getElementById('ivol-contours-toggle');
+      if(tog){tog.style.background='#cc66ff';const dot=tog.querySelector('div');if(dot)dot.style.marginLeft='auto';}
+      setTimeout(()=>{ window.dispatchEvent(new Event('resize')); }, 250);
+      _ivolRenderAll();
+    };
+
+    // Expose COLOR_MAPS and CAMERAS for render
+    window._ivolColorMaps = COLOR_MAPS;
+    window._ivolCameras   = CAMERAS;
     // Method toggle helpers
     window._ivolSetMethod = function(m){
       _ivolMethod = m;
