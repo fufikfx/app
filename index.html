@@ -4727,6 +4727,8 @@ const STKS={
   TQQQ:{n:'ProShares UltraPro QQQ',px:null,open:48.40,hi:50.20,lo:44.40,vol:'48.4M',pe:0,  mc:'$14B',  div:0,   beta:3.24,eps:0,    sec:'ETF',        ytd:-24.4},
   SQQQ:{n:'ProShares Short QQQ', px:null,open:8.40,  hi:9.20,  lo:8.00,  vol:'48.4M',pe:0,  mc:'$2.4B', div:0,   beta:-3.24,eps:0,   sec:'ETF',        ytd:+24.4},
 };
+// ── Fallback: seed px from static open price if live data not yet available ──
+Object.keys(STKS).forEach(function(k){if(STKS[k].px===null&&STKS[k].open){STKS[k].px=STKS[k].open;STKS[k].chg=0;}});
 const CRYPTO=[
   {id:'bitcoin',     s:'BTC',  n:'Bitcoin',       px:null,    chg:0,      chg7:0,    mc:1400000000000, vol:51590000000,  rank:1,  ath:108786, dom:'58.39%'},
   {id:'ethereum',    s:'ETH',  n:'Ethereum',      px:null,    chg:+1.21, chg7:-6.4,  mc:258000000000,  vol:16400000000,  rank:2,  ath:4891,   dom:'10.4%'},
