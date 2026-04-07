@@ -3665,6 +3665,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <span class="ql-folder-name">Crypto &amp; Digital Assets</span>
         </div>
         <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('IVOL');closeAllQL()" style="border-left:2px solid #bb44ff"><div class="ql-it-desc" style="color:#cc66ff;font-weight:700">◈ IVOL · Implied Volatility Surface</div></div>
           <div class="ql-it" onclick="openPanel('CRYEXC');closeAllQL()" style="border-left:2px solid #ff6600"><div class="ql-it-desc" style="color:#ff8800;font-weight:700">⚡ CRYEXC · Live Order Flow &amp; News</div></div>
           <div class="ql-it" onclick="openPanel('HYPER');closeAllQL()" style="border-left:2px solid #44ffcc"><div class="ql-it-desc" style="color:#44ffcc;font-weight:700">⬡ HYPER · Hyperliquid Live Dashboard</div></div>
           <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('HYPE');closeAllQL()"><div class="ql-it-desc">HYPE · Hyperliquid Token Chart</div></div>
@@ -7067,6 +7068,7 @@ function buildPanelContent(fn){
     case 'METR':    return buildMETR();
     case 'MULTIFEED': return buildMULTIFEED();
     case 'STOCKS2': return buildSTOCKS2();
+    case 'IVOL':    return buildIVOL();
     default:       return `<div style="padding:8px;color:var(--gr);font-size:9px">Function <span style="color:var(--am)">"${fn}"</span> — enter ticker in search or open from menu</div>`;
   }
 }
@@ -28224,6 +28226,7 @@ window._initBbg = function() {
   var iframe = document.createElement('iframe');
   iframe.id = 'bbg-tv-iframe';
   iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:none;background:#000;display:block;';
+  iframe.setAttribute('loading', 'eager');
   iframe.setAttribute('allowfullscreen', '');
   iframe.setAttribute('scrolling', 'no');
   iframe.setAttribute('frameborder', '0');
@@ -28453,6 +28456,143 @@ window._initBbg = function() {
   }, 500);
 };
 
+/* ══════════════════════════════════════════════════════════════════
+   INSTANT PRICE PRE-FILL — fills header fields immediately from cache
+   so panel shows live data before async API calls complete
+   ══════════════════════════════════════════════════════════════════ */
+(function _installTvPriceSync(){
+  // Listen for TradingView widget postMessage price events
+  window.addEventListener('message', function(ev){
+    try {
+      var d = ev.data;
+      if (!d || typeof d !== 'object') return;
+      // TradingView Advanced Chart emits these event types
+      var type = d.name || d.type || d.event || '';
+      if (type === 'quoteUpdate' || type === 'quote-update' || (d.quote && d.quote.lp)) {
+        var q = d.quote || d;
+        var lp = parseFloat(q.lp || q.last_price || q.close || 0);
+        var hi = parseFloat(q.high_price || q.high || q.hi || 0);
+        var lo = parseFloat(q.low_price  || q.low  || q.lo || 0);
+        var op = parseFloat(q.open_price  || q.open || q.op || 0);
+        var chg = parseFloat(q.ch || q.chp || q.change_percent || 0);
+        var vol = parseFloat(q.volume || q.vol || 0);
+        if (lp > 0) {
+          var _fmtP = window._bbgFmtP || function(v){ return v >= 1000 ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : v >= 1 ? parseFloat(v.toFixed(4)).toString() : parseFloat(v.toPrecision(5)).toString(); };
+          var _fmtV = window._bbgFmtV || function(v){ return v >= 1e9 ? (v/1e9).toFixed(2)+'B' : v >= 1e6 ? (v/1e6).toFixed(2)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'K' : v.toFixed(2); };
+          var _s = function(id,val){ var e=document.getElementById(id); if(e) e.innerText=val; };
+          _s('bbg-close',  _fmtP(lp));
+          if (hi > 0) _s('bbg-high', _fmtP(hi));
+          if (lo > 0) _s('bbg-low',  _fmtP(lo));
+          if (op > 0) _s('bbg-start',_fmtP(op));
+          if (vol> 0) _s('bbg-volume',_fmtV(vol));
+          // Update large current-price display
+          var px = document.getElementById('bbg-current-price');
+          if (px) px.innerText = _fmtP(lp);
+          // Update % change
+          var chgEl = document.getElementById('bbg-price-change');
+          if (chgEl && chg !== 0) {
+            chgEl.innerText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+            chgEl.style.color = chg >= 0 ? '#4caf50' : '#f44336';
+          }
+        }
+      }
+    } catch(e){}
+  });
+})();
+
+/* ── Instant header fill from global price caches ── */
+window._bbgInstantFill = function(sym) {
+  if (!sym) return;
+
+  var fmtP = function(v) {
+    if (!v || isNaN(v) || v <= 0) return null;
+    return v >= 1000 ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})
+         : v >= 1    ? parseFloat(v.toFixed(4)).toString()
+         : parseFloat(v.toPrecision(5)).toString();
+  };
+  var fmtV = function(v) {
+    if (!v || isNaN(v) || v <= 0) return null;
+    return v >= 1e9 ? (v/1e9).toFixed(2)+'B' : v >= 1e6 ? (v/1e6).toFixed(2)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'K' : v.toFixed(2);
+  };
+  var s = function(id, val) { if (!val) return; var e = document.getElementById(id); if (e) e.innerText = val; };
+
+  // Reset to loading indicator
+  ['bbg-close','bbg-high','bbg-low','bbg-volume','bbg-start'].forEach(function(id){
+    var e = document.getElementById(id); if (e) e.innerText = '—';
+  });
+
+  // 1) Try CRYPTO array (live Binance WS prices — fastest, most accurate)
+  var crypto = null;
+  if (typeof CRYPTO !== 'undefined') {
+    crypto = CRYPTO.find(function(c){ return c.id === sym || c.s === sym; });
+  }
+  if (crypto && crypto.px > 0) {
+    s('bbg-close',  fmtP(crypto.px));
+    s('bbg-high',   fmtP(crypto.hi || crypto.px));
+    s('bbg-low',    fmtP(crypto.lo || crypto.px));
+    if (crypto.vol > 0) s('bbg-volume', fmtV(crypto.vol));
+    var px = document.getElementById('bbg-current-price');
+    if (px) px.innerText = fmtP(crypto.px);
+    var chgEl = document.getElementById('bbg-price-change');
+    if (chgEl && crypto.chg != null) {
+      var chg = parseFloat(crypto.chg);
+      chgEl.innerText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+      chgEl.style.color = chg >= 0 ? '#4caf50' : '#f44336';
+    }
+    return; // Fast path done
+  }
+
+  // 2) Try MKT object (indices, equities, forex, commodities)
+  if (typeof MKT !== 'undefined') {
+    var mktEntry = MKT[sym] || MKT[sym + ' Index'] || MKT[sym + ' Equity'];
+    if (!mktEntry) {
+      // Try case-insensitive search
+      var keys = Object.keys(MKT);
+      for (var i = 0; i < keys.length; i++) {
+        if (keys[i].toUpperCase().indexOf(sym.toUpperCase()) === 0) {
+          mktEntry = MKT[keys[i]]; break;
+        }
+      }
+    }
+    if (mktEntry && mktEntry.px > 0) {
+      s('bbg-close', fmtP(mktEntry.px));
+      if (mktEntry.hi > 0) s('bbg-high', fmtP(mktEntry.hi));
+      if (mktEntry.lo > 0) s('bbg-low',  fmtP(mktEntry.lo));
+      if (mktEntry.open > 0) s('bbg-start', fmtP(mktEntry.open));
+      var px2 = document.getElementById('bbg-current-price');
+      if (px2) px2.innerText = fmtP(mktEntry.px);
+      var chgEl2 = document.getElementById('bbg-price-change');
+      if (chgEl2 && mktEntry.chg != null) {
+        var chg2 = parseFloat(mktEntry.chg);
+        chgEl2.innerText = (chg2 >= 0 ? '+' : '') + chg2.toFixed(2) + '%';
+        chgEl2.style.color = chg2 >= 0 ? '#4caf50' : '#f44336';
+      }
+      return;
+    }
+  }
+
+  // 3) Fallback: l1Data sync cache
+  if (window._l1Data) {
+    var d = window._l1Data;
+    var symLow = sym.toUpperCase();
+    var px3 = null;
+    if (symLow === 'BTC' && d.btc) px3 = parseFloat(d.btc);
+    else if (symLow === 'SPX' && d.sp)  px3 = parseFloat(d.sp);
+    else if (symLow === 'NDX' && d.ndx) px3 = parseFloat(d.ndx);
+    else if (symLow === 'DJI' && d.dji) px3 = parseFloat(d.dji);
+    else if (symLow === 'GOLD' && d.gold) px3 = parseFloat(d.gold);
+    if (px3 && px3 > 0) {
+      s('bbg-close', fmtP(px3));
+      var px3El = document.getElementById('bbg-current-price');
+      if (px3El) px3El.innerText = fmtP(px3);
+    }
+  }
+};
+
+/* store formatters globally for TV sync listener */
+window._bbgFmtP = function(v){ if(!v||isNaN(v)||v<=0)return'—'; return v>=1000?v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):v>=1?parseFloat(v.toFixed(4)).toString():parseFloat(v.toPrecision(5)).toString(); };
+window._bbgFmtV = function(v){ if(!v||isNaN(v)||v<=0)return'—'; return v>=1e9?(v/1e9).toFixed(2)+'B':v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?(v/1e3).toFixed(1)+'K':v.toFixed(2); };
+
 /* ── Open chart for any crypto symbol from sidebar click ── */
 window._openChartForSymbol = function(sym) {
     if (!sym) return;
@@ -28466,6 +28606,9 @@ window._openChartForSymbol = function(sym) {
     var idsToClose = Object.keys(window.PANEL_REGISTRY || {}).filter(function(id) { return id !== pnlId; });
     idsToClose.forEach(function(id) { try { closePanel(id); } catch(e){} });
     
+    // 0) Instant price fill from cache — before any async calls
+    window._bbgInstantFill(sym);
+
     // 1b) Close existing chart WebSocket before switching symbol
     if(window._currentBbgWs) {
         try { window._currentBbgWs.close(); } catch(e){}
@@ -28622,9 +28765,12 @@ window._openChartForSymbol = function(sym) {
     if (window._toggleBbgClocks) window._toggleBbgClocks(false);
     const _sth=document.getElementById('STAT'); if(_sth) _sth.style.display='none';
 
-    // Init iframe immediately
+    // Init iframe immediately — reuse existing iframe if present (faster symbol switch)
     if (!document.getElementById('bbg-tv-iframe')) {
         if (window._initBbg) window._initBbg();
+    } else {
+        // iframe exists — ensure ribbon feed functions are available
+        if (!window._startBbgRibbonFeed && window._initBbg) window._initBbg();
     }
     // _setChartInterval řídí vše: TV iframe + ribbon data (Binance WS / Yahoo)
     if (window._setChartInterval) window._setChartInterval('1d');
@@ -35125,6 +35271,457 @@ G._nvIntelRun = async function(){
 
   // Initialize endpoint-dependent visibility
   window._mmtEndpointChanged();
+})();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   IVOL — Implied Volatility Surface  |  Real Binance Options Data
+   Auto-refresh every 20 minutes. Scatter dots hidden (opacity:0).
+   ══════════════════════════════════════════════════════════════════════ */
+
+(function(){
+  // ── CONFIG ──────────────────────────────────────────────────────────
+  const REFRESH_MS   = 20 * 60 * 1000; // 20 minutes
+  const BINANCE_BASE = 'https://eapi.binance.com/eapi/v1';
+  const UNIVERSE     = ['BTCUSDT','ETHUSDT'];
+  const N_GRID       = 28;
+  const MIN_DAYS     = 7;
+  const MAX_DAYS     = 180;
+  const MAX_LM       = 0.20;
+  const MIN_IV       = 0.01;
+  const MAX_IV       = 8.0;
+
+  // ── STATE ────────────────────────────────────────────────────────────
+  let _ivolTimer     = null;
+  let _ivolLastFetch = null;
+  let _ivolDataCache = null;
+  let _ivolSymbol    = 'BTCUSDT';
+  let _ivolMethod    = 'kernel';  // 'kernel' | 'svi'
+  let _ivolMounted   = false;
+
+  // ── BINANCE API ──────────────────────────────────────────────────────
+  async function _bGet(path){
+    const r = await fetch(`${BINANCE_BASE}/${path}`);
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  }
+
+  async function _fetchData(){
+    // Exchange info
+    const info = await _bGet('exchangeInfo');
+    const now  = new Date(info.serverTime);
+
+    // Mark IVs
+    const marks = await _bGet('mark');
+    const markMap = {};
+    for(const m of marks){
+      if(m.bidIV && m.askIV && m.markIV){
+        markMap[m.symbol] = {
+          bidIV:  parseFloat(m.bidIV),
+          askIV:  parseFloat(m.askIV),
+          markIV: parseFloat(m.markIV),
+        };
+      }
+    }
+
+    // Index prices
+    const idxMap = {};
+    for(const u of UNIVERSE){
+      try {
+        const d = await _bGet(`index?underlying=${u}`);
+        idxMap[u] = parseFloat(d.indexPrice);
+      } catch(e){ idxMap[u] = null; }
+    }
+
+    // Build rows per underlying
+    const result = {};
+    for(const u of UNIVERSE){
+      const spot = idxMap[u];
+      if(!spot) continue;
+      const rows = [];
+
+      for(const sym of info.optionSymbols){
+        if(sym.underlying !== u) continue;
+        const m = markMap[sym.symbol];
+        if(!m) continue;
+
+        const { bidIV, askIV, markIV } = m;
+        if(bidIV < MIN_IV || askIV < MIN_IV || markIV < MIN_IV) continue;
+        if(markIV > MAX_IV) continue;
+
+        const expMs  = sym.expiryDate;
+        const daysTE = (expMs - info.serverTime) / 86400000;
+        if(daysTE < MIN_DAYS || daysTE > MAX_DAYS) continue;
+
+        const strike = parseFloat(sym.strikePrice);
+        const logMon = Math.log(spot / strike);
+        if(Math.abs(logMon) > MAX_LM) continue;
+
+        const weight = 1 / (1 + askIV - bidIV);
+
+        rows.push({ logMon, daysTE, markIV, weight, side: sym.side, strike, spot });
+      }
+      result[u] = { rows, spot, updateTime: now };
+    }
+    return result;
+  }
+
+  // ── KERNEL SMOOTHING ─────────────────────────────────────────────────
+  function _kernelSmooth(rows, gridX, gridY, hx, hy){
+    const Z = Array.from({length: gridY.length}, () => new Float32Array(gridX.length));
+    for(let yi=0; yi<gridY.length; yi++){
+      for(let xi=0; xi<gridX.length; xi++){
+        let num=0, den=0;
+        for(const r of rows){
+          const dx = r.logMon - gridX[xi];
+          const dy = Math.log(r.daysTE / gridY[yi]);
+          const k  = Math.exp(-(dx*dx)/(2*hx) - (dy*dy)/(2*hy)) / Math.sqrt(2*Math.PI);
+          const w  = r.weight * k;
+          num += r.markIV * w;
+          den += w;
+        }
+        Z[yi][xi] = den > 1e-9 ? num/den : NaN;
+      }
+    }
+    return Z;
+  }
+
+  // ── SVI PER-SLICE FIT ────────────────────────────────────────────────
+  function _rawSVI(k, a, b, rho, m, s){
+    return a + b*(rho*(k-m) + Math.sqrt((k-m)**2 + s*s));
+  }
+
+  function _fitSVISlice(logMons, markIVs, weights, daysTE, maxIter=400){
+    // Simple gradient-free Nelder-Mead–like via randomised restarts
+    const tau = daysTE/365;
+    let best = [0.04, 0.1, -0.3, 0, 0.1];
+    let bestErr = Infinity;
+
+    function err(p){
+      const [a,b,rho,m,s] = p;
+      if(b<0||s<0||Math.abs(rho)>0.999) return 1e9;
+      let e=0;
+      for(let i=0;i<logMons.length;i++){
+        const tv = _rawSVI(logMons[i],a,b,rho,m,s);
+        if(tv<=0) return 1e9;
+        const iv = Math.sqrt(tv/tau);
+        const d  = iv - markIVs[i];
+        e += weights[i]*d*d;
+      }
+      return e;
+    }
+
+    // Multiple random starts
+    for(let t=0;t<12;t++){
+      let p = t===0 ? [...best] : [
+        Math.random()*0.1,
+        Math.random()*0.3,
+        (Math.random()-0.5)*1.6,
+        (Math.random()-0.5)*0.2,
+        Math.random()*0.15+0.01
+      ];
+      // Simple coordinate descent
+      for(let iter=0;iter<maxIter;iter++){
+        for(let d=0;d<5;d++){
+          let step=0.02;
+          for(let ss=0;ss<8;ss++){
+            const p1=[...p]; p1[d]+=step;
+            const p2=[...p]; p2[d]-=step;
+            const e0=err(p), e1=err(p1), e2=err(p2);
+            if(e1<e0&&e1<e2){ p=p1; }
+            else if(e2<e0){ p=p2; }
+            else step*=0.5;
+          }
+        }
+      }
+      const e=err(p);
+      if(e<bestErr){ bestErr=e; best=[...p]; }
+    }
+    return best;
+  }
+
+  function _buildSVISurface(rows, gridX, gridY){
+    // Group by time slice
+    const slices = {};
+    for(const r of rows){
+      const k = Math.round(r.daysTE);
+      if(!slices[k]) slices[k]={lms:[],ivs:[],ws:[],days:r.daysTE};
+      slices[k].lms.push(r.logMon);
+      slices[k].ivs.push(r.markIV);
+      slices[k].ws.push(r.weight);
+    }
+    const sliceKeys = Object.keys(slices).map(Number).sort((a,b)=>a-b);
+    if(sliceKeys.length < 2) return null;
+
+    // Fit each slice
+    const fittedSlices = [];
+    for(const k of sliceKeys){
+      const sl = slices[k];
+      if(sl.lms.length < 3) continue;
+      const params = _fitSVISlice(sl.lms, sl.ivs, sl.ws, sl.days);
+      fittedSlices.push({ days: sl.days, params });
+    }
+    if(fittedSlices.length < 2) return null;
+
+    // Interpolate over horizon
+    const Z = Array.from({length: gridY.length}, () => new Float32Array(gridX.length));
+    for(let yi=0; yi<gridY.length; yi++){
+      const yt = gridY[yi];
+      // Find bracketing slices
+      let lo=fittedSlices[0], hi=fittedSlices[fittedSlices.length-1];
+      for(let i=0;i<fittedSlices.length-1;i++){
+        if(fittedSlices[i].days<=yt && fittedSlices[i+1].days>=yt){
+          lo=fittedSlices[i]; hi=fittedSlices[i+1]; break;
+        }
+      }
+      const t = hi.days===lo.days ? 0 : (yt-lo.days)/(hi.days-lo.days);
+      // Interpolate params
+      const p = lo.params.map((v,i) => v + t*(hi.params[i]-v));
+      const tau = yt/365;
+      for(let xi=0; xi<gridX.length; xi++){
+        const tv = _rawSVI(gridX[xi], ...p);
+        Z[yi][xi] = tv>0 ? Math.sqrt(tv/tau) : NaN;
+      }
+    }
+    return Z;
+  }
+
+  // ── PLOTLY SURFACE RENDER ────────────────────────────────────────────
+  function _renderSurface(containerId, underlying, data, method, hx, hy){
+    const el = document.getElementById(containerId);
+    if(!el || !window.Plotly) return;
+
+    const { rows, spot } = data;
+    if(!rows || rows.length < 5){
+      el.innerHTML='<div style="padding:20px;color:#555;font-size:9px">Insufficient option data from Binance</div>';
+      return;
+    }
+
+    const gridX = Array.from({length:N_GRID}, (_,i) => -MAX_LM + i*(2*MAX_LM/(N_GRID-1)));
+    const maxD  = Math.min(MAX_DAYS, Math.max(...rows.map(r=>r.daysTE)));
+    const gridY = Array.from({length:N_GRID}, (_,i) => MIN_DAYS + i*(maxD-MIN_DAYS)/(N_GRID-1));
+
+    let Z;
+    if(method === 'svi'){
+      Z = _buildSVISurface(rows, gridX, gridY);
+      if(!Z){ el.innerHTML='<div style="padding:20px;color:#555;font-size:9px">SVI fit failed — insufficient slices</div>'; return; }
+    } else {
+      Z = _kernelSmooth(rows, gridX, gridY, hx, hy);
+    }
+
+    // Clamp & convert to %
+    const zPct = Z.map(row => Array.from(row).map(v => isNaN(v)?null : Math.min(Math.max(v*100, 1), 800)));
+
+    const colorMap = underlying==='BTCUSDT'
+      ? [[0,'#1a0800'],[0.25,'#7a3300'],[0.5,'#F39F41'],[0.75,'#ffe0a0'],[1,'#ffffff']]
+      : [[0,'#00050a'],[0.25,'#003355'],[0.5,'#00B7EB'],[0.75,'#aaeeff'],[1,'#ffffff']];
+
+    const traces = [{
+      type: 'surface',
+      x: gridX,
+      y: gridY,
+      z: zPct,
+      colorscale: colorMap,
+      opacity: 0.92,
+      contours: { z: { show:true, usecolormap:true, highlightcolor:'#fff', project:{z:false} } },
+      showscale: true,
+      colorbar: { title:{text:'IV %',side:'right'}, tickformat:'.0f', thickness:8, len:0.7, x:1.01,
+                  tickfont:{color:'#888',size:7,family:'Courier New'}, titlefont:{color:'#888',size:7} },
+      hovertemplate: 'Log-Moneyness: %{x:.3f}<br>Days to Expiry: %{y:.0f}<br>IV: %{z:.1f}%<extra></extra>',
+    }];
+
+    // Scatter dots — present in data but invisible (opacity:0)
+    const calls = rows.filter(r=>r.side==='CALL');
+    const puts  = rows.filter(r=>r.side==='PUT');
+    for(const [grp,color] of [[calls,'#00CC96'],[puts,'#EF553B']]){
+      traces.push({
+        type:'scatter3d', mode:'markers',
+        x: grp.map(r=>r.logMon),
+        y: grp.map(r=>r.daysTE),
+        z: grp.map(r=>r.markIV*100),
+        marker:{ size:3, color, opacity:0 },   // ← invisible
+        showlegend:false, hoverinfo:'none',
+      });
+    }
+
+    Plotly.react(el, traces, {
+      paper_bgcolor:'#000', plot_bgcolor:'#000',
+      margin:{l:0,r:30,t:10,b:0},
+      scene:{
+        bgcolor:'#000',
+        xaxis:{ title:{text:'Log Moneyness',font:{color:'#555',size:8}}, color:'#444', gridcolor:'#1a1200', showspikes:false, range:[-MAX_LM,MAX_LM] },
+        yaxis:{ title:{text:'Days to Expiry',font:{color:'#555',size:8}}, color:'#444', gridcolor:'#1a1200', showspikes:false },
+        zaxis:{ title:{text:'IV (%)',font:{color:'#555',size:8}}, color:'#444', gridcolor:'#1a1200', showspikes:false },
+        camera:{ eye:{x:1.6,y:-1.6,z:0.9} },
+      },
+      font:{color:'#888',family:'Courier New',size:8},
+    }, { responsive:true, displayModeBar:false });
+  }
+
+  // ── COUNTDOWN DISPLAY ────────────────────────────────────────────────
+  function _startCountdown(){
+    const el = document.getElementById('ivol-next-refresh');
+    if(!el) return;
+    if(window._ivolCountdownInterval) clearInterval(window._ivolCountdownInterval);
+    let remaining = REFRESH_MS;
+    window._ivolCountdownInterval = setInterval(()=>{
+      remaining -= 1000;
+      if(remaining < 0) remaining = REFRESH_MS;
+      const m = Math.floor(remaining/60000);
+      const s = Math.floor((remaining%60000)/1000);
+      if(el) el.textContent = `NEXT REFRESH ${m}:${String(s).padStart(2,'0')}`;
+    }, 1000);
+  }
+
+  // ── FETCH + RENDER CYCLE ─────────────────────────────────────────────
+  async function _ivolRefresh(){
+    const statusEl = document.getElementById('ivol-status');
+    const timeEl   = document.getElementById('ivol-update-time');
+    if(statusEl) statusEl.textContent = 'FETCHING…';
+
+    try {
+      _ivolDataCache = await _fetchData();
+      _ivolLastFetch = new Date();
+      if(timeEl) timeEl.textContent = _ivolLastFetch.toUTCString().slice(17,25)+' UTC';
+      if(statusEl){ statusEl.textContent='LIVE'; statusEl.style.color='#00cc44'; }
+      _ivolRenderAll();
+    } catch(e){
+      if(statusEl){ statusEl.textContent='ERR: '+e.message.slice(0,30); statusEl.style.color='#ff4444'; }
+    }
+  }
+
+  function _ivolRenderAll(){
+    if(!_ivolDataCache) return;
+    const method = _ivolMethod;
+    const hx = parseFloat(document.getElementById('ivol-hx')?.value || '0.01');
+    const hy = parseFloat(document.getElementById('ivol-hy')?.value || '0.10');
+    for(const u of UNIVERSE){
+      if(_ivolDataCache[u])
+        _renderSurface('ivol-chart-'+u, u, _ivolDataCache[u], method, hx, hy);
+    }
+  }
+
+  // ── PANEL BUILDER ────────────────────────────────────────────────────
+  window.buildIVOL = function(){
+    // Stop old timer if re-opened
+    if(_ivolTimer){ clearInterval(_ivolTimer); _ivolTimer=null; }
+
+    const html = `
+<div style="height:100%;display:flex;flex-direction:column;background:#000;font-family:'Courier New',monospace;overflow:hidden">
+
+  <!-- Header bar -->
+  <div style="flex-shrink:0;background:#060200;border-bottom:1px solid #1a0e00;padding:4px 10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="color:#cc66ff;font-size:8px;font-weight:700;letter-spacing:2px">◈ IVOL · IMPLIED VOLATILITY SURFACE</span>
+    <span style="color:#2a2200;font-size:8px">|</span>
+    <span style="color:#555;font-size:7px">BINANCE OPTIONS · REAL-TIME</span>
+    <span id="ivol-status" style="color:#ff8800;font-size:7px;font-weight:700;letter-spacing:1px">LOADING…</span>
+    <span id="ivol-update-time" style="color:#333;font-size:7px;margin-left:4px"></span>
+    <span id="ivol-next-refresh" style="color:#2a2200;font-size:7px;margin-left:8px;letter-spacing:1px"></span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+      <!-- Method toggle -->
+      <span style="color:#444;font-size:7px">METHOD:</span>
+      <button id="ivol-btn-kernel" onclick="window._ivolSetMethod('kernel')"
+        style="font-family:'Courier New',monospace;font-size:7px;padding:1px 7px;border:1px solid #cc66ff;background:#cc66ff;color:#000;cursor:pointer;letter-spacing:1px">KERNEL</button>
+      <button id="ivol-btn-svi" onclick="window._ivolSetMethod('svi')"
+        style="font-family:'Courier New',monospace;font-size:7px;padding:1px 7px;border:1px solid #3a2800;background:#0a0500;color:#666;cursor:pointer;letter-spacing:1px">SVI</button>
+      <!-- Manual refresh -->
+      <button onclick="window._ivolForceRefresh()"
+        style="font-family:'Courier New',monospace;font-size:7px;padding:1px 9px;border:1px solid #cc66ff44;background:transparent;color:#cc66ff;cursor:pointer;letter-spacing:1px">↺ REFRESH</button>
+    </div>
+  </div>
+
+  <!-- Bandwidth sliders (kernel only) -->
+  <div id="ivol-kernel-controls" style="flex-shrink:0;background:#040100;border-bottom:1px solid #110900;padding:3px 12px;display:flex;gap:16px;align-items:center">
+    <span style="color:#444;font-size:7px">MONEYNESS h<sub>x</sub>:</span>
+    <input id="ivol-hx" type="range" min="0.005" max="0.05" step="0.005" value="0.01"
+      style="width:90px;accent-color:#cc66ff" oninput="document.getElementById('ivol-hx-val').textContent=parseFloat(this.value).toFixed(3);window._ivolRenderAll()">
+    <span id="ivol-hx-val" style="color:#cc66ff;font-size:7px;width:28px">0.010</span>
+    <span style="color:#444;font-size:7px;margin-left:8px">HORIZON h<sub>y</sub>:</span>
+    <input id="ivol-hy" type="range" min="0.05" max="0.3" step="0.01" value="0.10"
+      style="width:90px;accent-color:#cc66ff" oninput="document.getElementById('ivol-hy-val').textContent=parseFloat(this.value).toFixed(2);window._ivolRenderAll()">
+    <span id="ivol-hy-val" style="color:#cc66ff;font-size:7px;width:28px">0.10</span>
+    <span style="color:#2a1600;font-size:7px;margin-left:12px">↑ smoothness controls for kernel method</span>
+  </div>
+
+  <!-- Charts -->
+  <div style="flex:1;display:flex;gap:0;overflow:hidden;min-height:0">
+    <div style="flex:1;min-width:0;border-right:1px solid #0d0800;position:relative">
+      <div style="position:absolute;top:6px;left:10px;color:#F39F41;font-size:8px;font-weight:700;letter-spacing:2px;z-index:10;pointer-events:none">₿ BTC</div>
+      <div id="ivol-chart-BTCUSDT" style="width:100%;height:100%"></div>
+    </div>
+    <div style="flex:1;min-width:0;position:relative">
+      <div style="position:absolute;top:6px;left:10px;color:#00B7EB;font-size:8px;font-weight:700;letter-spacing:2px;z-index:10;pointer-events:none">Ξ ETH</div>
+      <div id="ivol-chart-ETHUSDT" style="width:100%;height:100%"></div>
+    </div>
+  </div>
+
+  <!-- Footer stats -->
+  <div id="ivol-footer" style="flex-shrink:0;background:#040100;border-top:1px solid #110900;padding:3px 12px;display:flex;gap:20px;font-size:7px;color:#333"></div>
+</div>`;
+
+    // Defer init after DOM paint
+    setTimeout(()=>{
+      if(!window.Plotly){
+        const s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';
+        s.onload=()=>{ _ivolInit(); };
+        document.head.appendChild(s);
+      } else {
+        _ivolInit();
+      }
+    }, 80);
+
+    return html;
+  };
+
+  function _ivolInit(){
+    // Method toggle helpers
+    window._ivolSetMethod = function(m){
+      _ivolMethod = m;
+      const kb = document.getElementById('ivol-btn-kernel');
+      const sb = document.getElementById('ivol-btn-svi');
+      const kc = document.getElementById('ivol-kernel-controls');
+      if(kb){ kb.style.background=m==='kernel'?'#cc66ff':'#0a0500'; kb.style.color=m==='kernel'?'#000':'#666'; kb.style.borderColor=m==='kernel'?'#cc66ff':'#3a2800'; }
+      if(sb){ sb.style.background=m==='svi'?'#cc66ff':'#0a0500';    sb.style.color=m==='svi'?'#000':'#666';    sb.style.borderColor=m==='svi'?'#cc66ff':'#3a2800'; }
+      if(kc) kc.style.display = m==='kernel' ? 'flex' : 'none';
+      _ivolRenderAll();
+    };
+
+    window._ivolRenderAll = _ivolRenderAll;
+
+    window._ivolForceRefresh = async function(){
+      if(_ivolTimer){ clearInterval(_ivolTimer); }
+      await _ivolRefresh();
+      _ivolTimer = setInterval(_ivolRefresh, REFRESH_MS);
+      _startCountdown();
+    };
+
+    // First fetch
+    _ivolRefresh().then(()=>{
+      _ivolTimer = setInterval(_ivolRefresh, REFRESH_MS);
+      _startCountdown();
+      // Footer stats
+      _updateFooter();
+    });
+  }
+
+  function _updateFooter(){
+    const el = document.getElementById('ivol-footer');
+    if(!el || !_ivolDataCache) return;
+    let parts = [];
+    for(const u of UNIVERSE){
+      const d = _ivolDataCache[u];
+      if(!d) continue;
+      const name = u.replace('USDT','');
+      const spot = d.spot ? `$${d.spot.toLocaleString('en-US',{maximumFractionDigits:0})}` : '—';
+      const nOpts = d.rows?.length || 0;
+      parts.push(`<span style="color:#cc66ff">${name}</span> <span style="color:#555">SPOT</span> <span style="color:#888">${spot}</span> <span style="color:#444">·</span> <span style="color:#555">${nOpts} OPTIONS</span>`);
+    }
+    parts.push(`<span style="color:#333">AUTO-REFRESH EVERY 20 MIN</span>`);
+    el.innerHTML = parts.join('<span style="color:#1a0e00;margin:0 6px">│</span>');
+  }
+
 })();
 </script>
 
