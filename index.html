@@ -271,6 +271,7 @@ body.sat-active .m-wrap{opacity:1!important;}
 }
 .panel.maximized{position:fixed!important;left:24px!important;top:0!important;right:24px!important;bottom:0!important;width:calc(100% - 48px)!important;height:100%!important;max-width:none!important;resize:none;z-index:1000000!important;display:flex!important;}
 .panel.maximized .panel-body{zoom:1.44;height:calc(100% - 22px)!important;}
+.panel.maximized .panel-body[data-fn="IVOL"]{zoom:1;height:calc(100% - 22px)!important;}
 .panel-hd{
   height:22px;background:#000;
   display:flex;align-items:center;padding:0 0 0 8px;gap:6px;
@@ -35681,7 +35682,7 @@ G._nvIntelRun = async function(){
       <button onclick="window._ivolForceRefresh()"
         style="font-family:'Courier New',monospace;font-size:7px;padding:1px 9px;border:1px solid #cc66ff44;background:transparent;color:#cc66ff;cursor:pointer;letter-spacing:1px">↺ REFRESH</button>
       <!-- Edit Chart -->
-      <button id="ivol-edit-btn" onclick="window._ivolToggleEditChart()"
+      <button id="ivol-edit-btn" onclick="if(typeof window._ivolToggleEditChart==='function'){window._ivolToggleEditChart();}else{this.style.animation='none';this.style.opacity='0.5';setTimeout(()=>{this.style.opacity='1';},400);}"
         style="font-family:'Courier New',monospace;font-size:7px;padding:1px 9px;border:1px solid #444;background:#111;color:#aaa;cursor:pointer;letter-spacing:1px;display:flex;align-items:center;gap:4px">
         <span style="font-size:9px">✎</span> Edit Chart <span style="font-size:8px;margin-left:2px">⚙</span>
       </button>
@@ -35893,6 +35894,37 @@ G._nvIntelRun = async function(){
   <!-- Footer stats -->
   <div id="ivol-footer" style="flex-shrink:0;background:#040100;border-top:1px solid #110900;padding:3px 12px;display:flex;gap:20px;font-size:7px;color:#333"></div>
 </div>`;
+
+    // Pre-define UI functions immediately so Edit Chart / folder toggles work
+    // before Plotly finishes loading (_ivolInit will overwrite them with full versions)
+    window._ivolEditState = window._ivolEditState || {
+      open: false, asset:'both', layout:'side', ivSrc:'mark', color:'default',
+      dots:'none', opacity:0.92, contours:true, camera:'default', maxDays:180, moneyness:0.20
+    };
+    if(!window._ivolToggleEditChart){
+      window._ivolToggleEditChart = function(){
+        const es = window._ivolEditState;
+        es.open = !es.open;
+        const panel = document.getElementById('ivol-edit-panel');
+        const btn   = document.getElementById('ivol-edit-btn');
+        if(panel) panel.style.width = es.open ? '220px' : '0';
+        if(btn){
+          btn.style.borderColor = es.open ? '#cc66ff' : '#444';
+          btn.style.color       = es.open ? '#cc66ff' : '#aaa';
+          btn.style.background  = es.open ? '#1a0830' : '#111';
+        }
+      };
+    }
+    if(!window._ivolToggleFolder){
+      window._ivolToggleFolder = function(name){
+        const body = document.getElementById('ivol-folder-'+name+'-body');
+        const hdr  = document.querySelector('#ivol-folder-'+name+' > div > span');
+        if(!body) return;
+        const open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : 'flex';
+        if(hdr) hdr.textContent = (open?'▶ ':'▼ ') + hdr.textContent.slice(2);
+      };
+    }
 
     // Defer init after DOM paint
     setTimeout(()=>{
