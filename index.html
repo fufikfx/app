@@ -1143,18 +1143,6 @@ body {
 </script>
 </head>
 <body>
-<div id="bbg-debug-panel" style="position:fixed; top:0; left:0; width:100%; height:22px; background:#400; color:#f66; font-family:monospace; font-size:11px; z-index:999999; display:none; align-items:center; padding:0 12px; border-bottom:1px solid #d00; pointer-events:none;">
-    [SYSTEM ERROR] <span id="bbg-debug-msg" style="margin-left:8px;"></span>
-</div>
-<script>
-    window.onerror = function(msg, url, line, col, error) {
-        var p = document.getElementById('bbg-debug-panel');
-        var m = document.getElementById('bbg-debug-msg');
-        if(p && m) { p.style.display = 'flex'; m.innerText = msg + " @ " + line + ":" + col; }
-        console.error("BBG_ERR:", msg, url, line);
-        return false;
-    };
-</script>
 <style>
   #bbg-chart-container .tv-lightweight-charts table tr td:nth-child(2),
   #bbg-chart-container .tv-lightweight-charts table tr td:nth-child(2) * { cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><line x1="10" y1="0" x2="10" y2="20" stroke="rgba(255,255,255,0.6)" stroke-width="1"/><line x1="0" y1="10" x2="20" y2="10" stroke="rgba(255,255,255,0.6)" stroke-width="1"/></svg>') 10 10, crosshair !important; }
@@ -1767,21 +1755,11 @@ const _bbgSecurities = [
 ];
 // ── EQUITIES ─────────────────────────────────────────────────────────────────
 const _bbgEquities = [
-  {sym:'MSTR Equity',   name:'MicroStrategy (Binance Perp)'},
-  {sym:'COIN Equity',   name:'Coinbase Global (Binance Perp)'},
-  {sym:'SOFI Equity',   name:'SoFi Technologies (Binance Perp)'},
-  {sym:'HOOD Equity',   name:'Robinhood Markets (Binance Perp)'},
-  {sym:'PLTR Equity',   name:'Palantir Technologies (Binance Perp)'},
-  {sym:'TSLA Equity',   name:'Tesla Inc (Binance Perp)'},
-  {sym:'NVDA Equity',   name:'NVIDIA Corp (Binance Perp)'},
-  {sym:'AAPL Equity',   name:'Apple Inc (Binance Perp)'},
-  {sym:'AMZN Equity',   name:'Amazon.com (Binance Perp)'},
-  {sym:'MSFT Equity',   name:'Microsoft (Binance Perp)'},
-  {sym:'META Equity',   name:'Meta Platforms (Binance Perp)'},
-  {sym:'GOOGL Equity',  name:'Alphabet Inc (Binance Perp)'},
-  {sym:'NFLX Equity',   name:'Netflix Inc (Binance Perp)'},
-  {sym:'AMD Equity',    name:'AMD (Binance Perp)'},
-  {sym:'INTC Equity',   name:'Intel (Binance Perp)'},
+  {sym:'MSTR Equity',   name:'MicroStrategy'},
+  {sym:'COIN Equity',   name:'Coinbase Global'},
+  {sym:'SOFI Equity',   name:'SoFi Technologies'},
+  {sym:'HOOD Equity',   name:'Robinhood Markets'},
+  {sym:'PLTR Equity',   name:'Palantir Technologies'},
   {sym:'UPST Equity',   name:'Upstart Holdings'},
   {sym:'AFRM Equity',   name:'Affirm Holdings'},
   {sym:'SNOW Equity',   name:'Snowflake'},
@@ -1810,11 +1788,9 @@ const _bbgETFs = [
   {sym:'ARKK Equity',   name:'ARK Innovation ETF (NYSE Arca)'},
 ];
 const _bbgIndices = [
-  {sym:'SPX Index',     name:'S&P 500 (Bybit Perp)'},
-  {sym:'NDX Index',     name:'Nasdaq 100 (Bybit Perp)'},
-  {sym:'DJI Index',     name:'Dow Jones (Bybit Perp)'},
+  {sym:'SPX Index',     name:'S&P 500 Index (FOREXCOM:SPXUSD)'},
   {sym:'ES1! Futures',  name:'S&P 500 E-mini Futures (CME)'},
-  {sym:'NDX Index (Y)', name:'Nasdaq 100 Index (Yahoo)'},
+  {sym:'NDX Index',     name:'Nasdaq 100 Index'},
   {sym:'NQ1! Futures',  name:'Nasdaq 100 E-mini Futures (CME)'},
   {sym:'DJI Index',     name:'Dow Jones Industrial (TVC)'},
   {sym:'YM1! Futures',  name:'Dow Jones E-mini Futures (CME)'},
@@ -1826,10 +1802,9 @@ const _bbgIndices = [
   {sym:'FTSE Index',    name:'FTSE 100 UK'},
 ];
 const _bbgCommodities = [
-  {sym:'GOLD Comdty',   name:'GOLD Spot (Binance)'},
-  {sym:'SILVER Comdty', name:'SILVER Spot (Binance)'},
-  {sym:'OIL Comdty',    name:'Crude Oil WTI (Binance)'},
-  {sym:'BRENT Comdty',  name:'Crude Oil BRENT (Bybit)'},
+  {sym:'GOLD Comdty',   name:'GOLD Spot (XAU)'},
+  {sym:'SILVER Comdty', name:'SILVER Spot (XAG)'},
+  {sym:'OIL Comdty',    name:'WTI Crude Oil'},
   {sym:'GAS Comdty',    name:'Natural Gas'},
   {sym:'COPPER Comdty', name:'Copper LME'},
 ];
@@ -4193,21 +4168,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Ship List - takes all space -->
     <div id="ais-ship-list" class="sbl" style="flex:1;overflow-y:auto;background:transparent;min-height:80px;"></div>
 
-    <!-- Vessel Detail Pane -->
-    <div id="ais-detail-pane" style="display:none;background:#050400;border-top:1px solid #1a1000;padding:8px 10px;flex-shrink:0;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span id="ais-det-name" style="color:#F39F41;font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;">VESSEL NAME</span>
-        <span onclick="document.getElementById('ais-detail-pane').style.display='none'" style="cursor:pointer;color:#444;font-size:10px;padding:2px 4px;" onmouseover="this.style.color='#f22'" onmouseout="this.style.color='#444'">✕</span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:4px 10px;">
-        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">MMSI</div><div id="ais-det-mmsi" style="color:#c8c8c8;font-size:8px;font-family:var(--fn-num);">—</div></div>
-        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">FLAG</div><div id="ais-det-flag" style="color:#c8c8c8;font-size:9px;">—</div></div>
-        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">TYPE</div><div id="ais-det-type" style="color:#c8c8c8;font-size:8px;">—</div></div>
-        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">SPEED</div><div id="ais-det-speed" style="color:#00ddff;font-size:9px;font-weight:700;font-family:var(--fn-num);">0.0 KN</div></div>
-        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">STATUS</div><div id="ais-det-status" style="color:#998870;font-size:7px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div></div>
-        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">DESTINATION</div><div id="ais-det-dest" style="color:#998870;font-size:7px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div></div>
-      </div>
-    </div>
+    <!-- Detail removed -->
 
     <!-- Bottom bar -->
     <div style="display:flex;padding:3px 8px;background:#020100;border-top:1px solid #060400;flex-shrink:0;align-items:center;">
@@ -4727,8 +4688,6 @@ const STKS={
   TQQQ:{n:'ProShares UltraPro QQQ',px:null,open:48.40,hi:50.20,lo:44.40,vol:'48.4M',pe:0,  mc:'$14B',  div:0,   beta:3.24,eps:0,    sec:'ETF',        ytd:-24.4},
   SQQQ:{n:'ProShares Short QQQ', px:null,open:8.40,  hi:9.20,  lo:8.00,  vol:'48.4M',pe:0,  mc:'$2.4B', div:0,   beta:-3.24,eps:0,   sec:'ETF',        ytd:+24.4},
 };
-// ── Fallback: seed px from static open price if live data not yet available ──
-Object.keys(STKS).forEach(function(k){if(STKS[k].px===null&&STKS[k].open){STKS[k].px=STKS[k].open;STKS[k].chg=0;}});
 const CRYPTO=[
   {id:'bitcoin',     s:'BTC',  n:'Bitcoin',       px:null,    chg:0,      chg7:0,    mc:1400000000000, vol:51590000000,  rank:1,  ath:108786, dom:'58.39%'},
   {id:'ethereum',    s:'ETH',  n:'Ethereum',      px:null,    chg:+1.21, chg7:-6.4,  mc:258000000000,  vol:16400000000,  rank:2,  ath:4891,   dom:'10.4%'},
@@ -5636,26 +5595,7 @@ function _getSatLayer(){
   }, 1000);
 
   // Show vessel details in sidebar
-  window._aisShowDetail = function(p){
-    const d = document.getElementById('ais-detail-pane');
-    if(!d) return;
-    d.style.display = 'block';
-    
-    const nm = (p.name || 'MMSI:' + p.mmsi).toUpperCase();
-    const flag = _mmsiFlag(p.mmsi);
-    const typ = p.tanker ? 'TANKER' : p.cargo ? 'CARGO' : p.passenger ? 'PASSENGER' : 'OTHER';
-    const nst = (p.navStatus || 'UNDER WAY').toUpperCase();
-    const dst = (p.destination || '—').toUpperCase();
-    const spd = (p.speed || 0).toFixed(1) + ' KN';
-    
-    document.getElementById('ais-det-name').textContent = nm;
-    document.getElementById('ais-det-mmsi').textContent = p.mmsi;
-    document.getElementById('ais-det-flag').textContent = flag + ' ' + (p.mmsi.toString().substring(0,3));
-    document.getElementById('ais-det-type').textContent = typ;
-    document.getElementById('ais-det-speed').textContent = spd;
-    document.getElementById('ais-det-status').textContent = nst;
-    document.getElementById('ais-det-dest').textContent = dst;
-  };
+  window._aisShowDetail = function(p){ /* disabled */ };
   
   window.toggleAISPanel = function() {
     const p = document.getElementById('ais-panel');
@@ -10412,17 +10352,7 @@ const REGIONS=[
   {n:'ASIA PACIFIC',ids:['tok','sha','hkg','sin','mum','seo','tai','ban','syd']}
 ];
 
-let _sidebarRenderPending = false;
-function renderSidebar() {
-  if (_sidebarRenderPending) return;
-  _sidebarRenderPending = true;
-  requestAnimationFrame(() => {
-    _renderSidebarInternal();
-    _sidebarRenderPending = false;
-  });
-}
-
-function _renderSidebarInternal(){
+function renderSidebar(){
   let h='';
   REGIONS.forEach(r=>{
     h+=`<div class="rh">${r.n}</div>`;
@@ -10439,20 +10369,15 @@ function _renderSidebarInternal(){
       </div>`;
     });
   });
-  const mktList = document.getElementById('mkt-list');
-  if(mktList) mktList.innerHTML=h;
+  document.getElementById('mkt-list').innerHTML=h;
 
   let fh='';
   FXP.slice(0,10).forEach(f=>{
     const up=f.c>=0;const mid=(f.b+f.a)/2;const dp=mid>10?4:mid>1?5:6;
     fh+=`<div class="mk"><span class="mk-s">${f.p.split('/')[0]}</span><span class="mk-n">${f.p}</span><span class="mk-p">${mid.toFixed(dp)}</span><span class="mk-c ${up?'up':'dn'}">${up?'+':'-'}${Math.abs(f.c).toFixed(3)}%</span></div>`;
   });
-  const fxList = document.getElementById('fx-list');
-  if(fxList) fxList.innerHTML=fh;
-
-  const sbTime = document.getElementById('sb-time');
-  if(sbTime) sbTime.textContent=new Date().toLocaleTimeString('en-GB',{hour12:false});
-  
+  document.getElementById('fx-list').innerHTML=fh;
+  document.getElementById('sb-time').textContent=new Date().toLocaleTimeString('en-GB',{hour12:false});
   // also refresh active tab
   const at=window._sbTab||'idx';
   if(at==='fx') sbRenderFX();
@@ -11631,25 +11556,18 @@ const STOOQ_ETF_SET=new Set(['SPY','QQQ','IWM','DIA','VTI','GLD','SLV','TLT','HY
 async function _fetchRace(url, ms=8000) {
   const proxies = [
     url,
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     `https://thingproxy.freeboard.io/fetch/${url}`
   ];
   const wrap = (proxyUrl) => new Promise((res, rej) => {
     const ctrl = new AbortController();
     const tid = setTimeout(() => { ctrl.abort(); rej(new Error('timeout')); }, ms);
-    fetch(proxyUrl, { 
-      signal: ctrl.signal,
-      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-    })
-      .then(r => { 
-        clearTimeout(tid); 
-        if (r && r.ok) res(r); 
-        else rej(new Error('bad status ' + (r ? r.status : 'no_resp'))); 
-      })
+    fetch(proxyUrl, { signal: ctrl.signal })
+      .then(r => { clearTimeout(tid); if (r && r.ok) res(r); else rej(new Error('bad status '+r?.status)); })
       .catch(e => { clearTimeout(tid); rej(e); });
   });
+  // Promise.any — returns as soon as first proxy succeeds
   try { return await Promise.any(proxies.map(wrap)); } catch(_) { return null; }
 }
 
@@ -11659,13 +11577,9 @@ async function _fetchRaceJSON(url, ms=8000) {
   if (!r) return null;
   try {
     const text = await r.text();
-    if (!text || text.length < 2) return null;
-    let j;
-    try { j = JSON.parse(text); } catch(e) { return null; }
-    // Allorigins wrapper
-    if (j && typeof j.contents === 'string' && j.contents.length > 2) {
-      try { return JSON.parse(j.contents); } catch(e) { return j; } // Fallback to j if inner JSON fails
-    }
+    const j = JSON.parse(text);
+    // allorigins /get wraps in {"contents":"..."}
+    if (j && typeof j.contents === 'string') return JSON.parse(j.contents);
     return j;
   } catch(_) { return null; }
 }
@@ -11792,59 +11706,26 @@ let _yahooIdx=0;
 
 async function fetchYahooQuotes(){
   const batch=YAHOO_BATCHES[_yahooIdx%YAHOO_BATCHES.length]; _yahooIdx++;
-  const syms=batch.join(',');
-  const fields='regularMarketPrice,regularMarketChangePercent,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,marketCap';
-  const u1=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=${fields}`;
-  const u2=`https://query2.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=${fields}`;
-  
-  try {
-    let d = await _fetchRaceJSON(u1, 5000);
-    if(!d?.quoteResponse?.result?.length) {
-       d = await _fetchRaceJSON(u2, 5000);
-    }
-    
-    if(!d?.quoteResponse?.result?.length) {
-      window._layerStatus.yahoo={ok:false,ts:Date.now(),err:'Empty/Timeout'};
-      return;
-    }
-
+  try{
+    const syms=batch.join(',');
+    const fields='regularMarketPrice,regularMarketChangePercent,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketPreviousClose,marketCap';
+    const url7=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}&fields=${fields}`;
+    // Všechny proxy současně — bere první která odpoví
+    const d = await _fetchRaceJSON(url7, 8000);
+    if(!d?.quoteResponse?.result?.length) return;
     let n=0;
     d.quoteResponse.result.forEach(q=>{
-      const rawSym = q.symbol;
-      const sym=YAHOO_SYM_MAP[rawSym]||rawSym.replace('-B','').replace('^','');
-      const px=q.regularMarketPrice; 
-      if(!px||px<=0) return;
-      
+      const sym=YAHOO_SYM_MAP[q.symbol]||q.symbol.replace('-B','').replace('^','');
+      const px=q.regularMarketPrice; if(!px||px<=0) return;
       _eqUpdate(sym,px,'yahoo');
-      
       const chg=q.regularMarketChangePercent;
-      if(MKT[sym]){ 
-        MKT[sym].px=px; 
-        if(chg!=null)MKT[sym].chg=chg; 
-        if(q.regularMarketOpen)MKT[sym].open=q.regularMarketOpen; 
-      }
-      if(STKS[sym]){ 
-        if(chg!=null)STKS[sym].chg=chg; 
-        if(q.regularMarketOpen)STKS[sym].open=q.regularMarketOpen; 
-        if(q.marketCap)STKS[sym].mc='$'+_fmtBig(q.marketCap); 
-      }
-      if(STOOQ_ETF_SET&&STOOQ_ETF_SET.has(sym)){ 
-        if(!window._etfPx)window._etfPx={}; 
-        if(!window._etfPx[sym])window._etfPx[sym]={}; 
-        Object.assign(window._etfPx[sym],{px,chg,ts:Date.now()}); 
-      }
+      if(MKT[sym]){ MKT[sym].px=px; if(chg!=null)MKT[sym].chg=chg; if(q.regularMarketOpen)MKT[sym].open=q.regularMarketOpen; }
+      if(STKS[sym]){ if(chg!=null)STKS[sym].chg=chg; if(q.regularMarketOpen)STKS[sym].open=q.regularMarketOpen; if(q.marketCap)STKS[sym].mc='$'+_fmtBig(q.marketCap); }
+      if(STOOQ_ETF_SET&&STOOQ_ETF_SET.has(sym)){ if(!window._etfPx)window._etfPx={}; if(!window._etfPx[sym])window._etfPx[sym]={}; Object.assign(window._etfPx[sym],{px,chg,ts:Date.now()}); }
       n++;
     });
-
-    if(n>0){ 
-      window._layerStatus.yahoo={ok:true,ts:Date.now(),count:n}; 
-      buildTicker(); 
-      refreshAllPanels(); 
-      setStat('YAHOO — '+n+' quotes  |  '+new Date().toLocaleTimeString('en-GB'));
-    }
-  } catch(e) {
-    window._layerStatus.yahoo={ok:false,ts:Date.now(),err:e.message};
-  }
+    if(n>0){ window._layerStatus.yahoo={ok:true,ts:Date.now(),count:n}; buildTicker(); refreshAllPanels(); setStat('YAHOO — '+n+' quotes  |  '+new Date().toLocaleTimeString('en-GB')); } else { window._layerStatus.yahoo={ok:false,ts:Date.now()}; }
+  }catch(_){}
 }
 
 // ── Twelve Data — free 55 req/min, rotates batches ───────────────────────
@@ -26036,242 +25917,104 @@ async function fetchVolumeProfile(sym='BTCUSDT', interval='1h', limit=200){
   }catch(e){}
 }
 
-function buildVPVR(sym='BTCUSDT'){
-  const coin = sym.replace('USDT','');
-  const spotPrice = window._liveData?.crypto?.[coin]?.price || 83200;
-  
-  fetchVolumeProfile(sym);
-  
-  return `<div style="height:100%;background:#000;font-family:'Courier Prime',monospace;display:flex;flex-direction:column">
-  <div style="background:#060400;border-bottom:1px solid #1a0e00;padding:4px 10px;display:flex;gap:10px;align-items:center;flex-shrink:0">
-    <span style="color:#F39F41;font-size:8px;font-weight:700;letter-spacing:2px">VOLUME PROFILE</span>
-    <div style="display:flex;gap:6px">
-      ${['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT'].map(s=>`
-        <span onclick="document.getElementById('vpvr-content').innerHTML=buildVPVR('${s}');fetchVolumeProfile('${s}').then(()=>renderVPVR('${s}'))" 
-          style="cursor:pointer;color:${s===sym?'#ff8800':'#443322'};font-size:8px;padding:1px 6px;border:1px solid ${s===sym?'#ff6600':'#1a0e00'}">${s.replace('USDT','')}</span>`).join('')}
-    </div>
-    <span style="color:#998870;font-size:7px">1H · 200 BARS</span>
-  </div>
-  <div id="vpvr-content" style="flex:1;overflow:auto;padding:8px">
-    <div id="vpvr-chart-${sym}" style="height:100%">
-      <div style="padding:20px;text-align:center;color:#998870;font-size:9px">⟳ LOADING VOLUME PROFILE...</div>
-    </div>
-  </div>
-  </div>`;
-}
+window._setChartInterval = async function(interval) {
+    window._bbgActiveInterval = interval;
 
-function renderVPVR(sym){
-  const el = document.getElementById('vpvr-chart-'+sym);
-  if(!el) return;
-  const data = window._vpvrData[sym];
-  if(!data) return;
-  
-  const coin = sym.replace('USDT','');
-  const spotPrice = window._liveData?.crypto?.[coin]?.price || 83200;
-  
-  const sorted = Object.values(data.profile).sort((a,b)=>b.price-a.price);
-  const maxVol = Math.max(...sorted.map(b=>b.total));
-  const poc = sorted.reduce((a,b)=>b.total>a.total?b:a);
-  
-  el.innerHTML = '<div style="font-size:7px;color:#998870;margin-bottom:4px;padding:0 4px">' +
-    'POC: <span style="color:#ff8800">' + poc.price.toLocaleString() + '</span> · ' +
-    'RANGE: <span style="color:#665840">' + data.minP.toFixed(0) + ' — ' + data.maxP.toFixed(0) + '</span>' +
-  '</div>' + sorted.map(b=>{
-    const pct = (b.total/maxVol*100);
-    const buyPct = (b.buy/b.total*100);
-    const isSpot = Math.abs(b.price-spotPrice)/spotPrice < 0.005;
-    const isPOC = b.price===poc.price;
-    return '<div style="display:flex;align-items:center;height:12px;margin-bottom:1px;' + (isSpot?'border-left:2px solid #ff8800;':isPOC?'border-left:2px solid #ff6600;':'border-left:2px solid transparent;') + '">' +
-      '<span style="color:' + (isSpot?'#ff8800':isPOC?'#ff6600':'#332200') + ';font-size:6.5px;width:52px;text-align:right;padding-right:4px;font-family:\'Roboto Mono\',monospace">' + b.price.toFixed(0) + '</span>' +
-      '<div style="position:relative;flex:1;height:10px;background:#0a0500">' +
-        '<div style="position:absolute;left:0;top:0;bottom:0;width:' + pct + '%;background:' + (isPOC?'rgba(255,102,0,.6)':isSpot?'rgba(255,136,0,.4)':'rgba(255,136,0,.2)') + '"></div>' +
-        '<div style="position:absolute;left:0;top:0;bottom:0;width:' + (pct*buyPct/100) + '%;background:rgba(0,204,68,.25)"></div>' +
-      '</div>' +
-      '<span style="color:#1a0e00;font-size:6px;width:36px;text-align:right;padding-left:4px;font-family:\'Roboto Mono\',monospace">' + (b.total/1000).toFixed(0) + 'K</span>' +
-    '</div>';
-  }).join('');
-  
-  setTimeout(()=>renderVPVR(sym), 60000);
-}
+    const labelEl = document.getElementById('bbg-chart-mode-label');
+    if (labelEl) labelEl.innerText = interval.toUpperCase();
 
-
-// ── LIQUIDATION HEATMAP ──────────────────────────────────────────
-window._liqMap = {};
-
-async function fetchLiqHeatmap(sym='BTCUSDT'){
-  try{
-    // Use Binance OI + price data to estimate liquidation levels
-    const [price, oi, funding] = await Promise.all([
-      fetch('https://fapi.binance.com/fapi/v1/ticker/price?symbol=' + sym,{signal:(()=>{const c=new AbortController();setTimeout(()=>c.abort(),5000);return c.signal;})()}).then(r=>r.json()),
-      fetch('https://fapi.binance.com/fapi/v1/openInterest?symbol=' + sym,{signal:(()=>{const c=new AbortController();setTimeout(()=>c.abort(),5000);return c.signal;})()}).then(r=>r.json()),
-      fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=' + sym + '&limit=1',{signal:(()=>{const c=new AbortController();setTimeout(()=>c.abort(),5000);return c.signal;})()}).then(r=>r.json())
-    ]);
-    
-    const spot = parseFloat(price.price);
-    const totalOI = parseFloat(oi.openInterest) * spot;
-    const fundingRate = funding[0] ? parseFloat(funding[0].fundingRate) : 0;
-    
-    // Estimate liquidation clusters at leverage levels
-    const leverages = [5,10,20,25,50,100];
-    const liqLevels = [];
-    
-    leverages.forEach(lev=>{
-      const longLiq = spot * (1 - 1/lev);
-      const shortLiq = spot * (1 + 1/lev);
-      const weight = totalOI / leverages.length * (100/lev);
-      liqLevels.push({price:longLiq,side:'long',lev,est:weight,label:`${lev}x LONG LIQ`});
-      liqLevels.push({price:shortLiq,side:'short',lev,est:weight,label:`${lev}x SHORT LIQ`});
-    });
-    
-    window._liqMap[sym] = {spot, totalOI, fundingRate, liqLevels, ts:Date.now()};
-  }catch(e){}
-}
-
-function buildLIQHEAT(){
-  const syms = ['BTCUSDT','ETHUSDT','SOLUSDT'];
-  syms.forEach(s=>fetchLiqHeatmap(s));
-  
-  return '<div style="height:100%;background:#000;font-family:\'Courier Prime\',monospace;overflow:auto">' +
-  '<div style="background:#060400;border-bottom:1px solid #1a0e00;padding:4px 10px;display:flex;gap:10px;align-items:center">' +
-    '<span style="color:#F39F41;font-size:8px;font-weight:700;letter-spacing:2px">LIQUIDATION HEATMAP</span>' +
-    '<span style="color:#998870;font-size:7px">Estimated liq clusters by leverage</span>' +
-    '<span style="color:#ff2222;font-size:7px">● LONG LIQ</span>' +
-    '<span style="color:#00cc44;font-size:7px">● SHORT LIQ</span>' +
-  '</div>' +
-  '<div id="liq-heat-content" style="padding:8px">' +
-    '<div style="padding:20px;text-align:center;color:#998870;font-size:9px">⟳ LOADING...</div>' +
-  '</div>' +
-  '</div>';
-}
-
-function renderLiqHeatmap(){
-  const el = document.getElementById('liq-heat-content');
-  if(!el) return;
-  
-  const syms = ['BTCUSDT','ETHUSDT','SOLUSDT'];
-  let html = '';
-  
-  syms.forEach(sym=>{
-    const data = window._liqMap[sym];
-    if(!data) return;
-    const coin = sym.replace('USDT','');
-    
-    const allLevels = [...data.liqLevels].sort((a,b)=>b.price-a.price);
-    const maxEst = Math.max(...allLevels.map(l=>l.est));
-    
-    html += \`<div style="margin-bottom:16px">
-      <div style="color:#F39F41;font-size:9px;font-weight:700;margin-bottom:6px;padding:4px 6px;background:#060300;border-left:2px solid #ff6600">
-        \${coin} · SPOT: \${data.spot.toLocaleString()} · OI: $\${(data.totalOI/1e9).toFixed(2)}B · FUNDING: \${(data.fundingRate*100).toFixed(4)}%
-      </div>
-      \${allLevels.map(l=>{
-        const pct = (l.est/maxEst*100);
-        const diff = ((l.price-data.spot)/data.spot*100).toFixed(2);
-        const col = l.side==='long'?'#ff2222':'#00cc44';
-        const bg = l.side==='long'?`rgba(255,34,34,${pct/300})`:`rgba(0,204,68,${pct/300})`;
-        return `<div style="display:flex;align-items:center;height:18px;margin-bottom:1px;background:${bg}">
-          <span style="color:#887760;font-size:7px;width:90px;padding:0 6px">${l.label}</span>
-          <span style="color:${col};font-size:8.5px;font-family:'Roboto Mono',monospace;width:80px;text-align:right;padding-right:6px">${l.price.toLocaleString('en',{maximumFractionDigits:0})}</span>
-          <span style="color:#998870;font-size:7.5px;width:54px;text-align:right;padding-right:6px">${diff}%</span>
-          <div style="flex:1;height:8px;background:#0a0500;margin:0 6px">
-            <div style="height:100%;width:${pct}%;background:${col};opacity:.6"></div>
-          </div>
-          <span style="color:#1a0e00;font-size:7px;width:64px;text-align:right;padding-right:6px">~$${(l.est/1e6).toFixed(0)}M</span>
-        </div>`;
-      }).join('')}
-    </div>`;
-  });
-  
-  el.innerHTML = html || '<div style="padding:20px;color:#998870;font-size:9px;text-align:center">LOADING...</div>';
-  setTimeout(renderLiqHeatmap, 30000);
-}
-
-// ── CVD — CUMULATIVE VOLUME DELTA ────────────────────────────────
-window._cvdStore = {BTC:[],ETH:[],SOL:[]};
-let _cvdWS = {};
-
-function connectCVD(coin='BTC'){
-  const sym = coin.toLowerCase()+'usdt';
-  if(_cvdWS[coin]) try{_cvdWS[coin].close();}catch(e){}
-  try{
-    _cvdWS[coin] = new WebSocket(`wss://stream.binance.com:9443/ws/${sym}@aggTrade`);
-    _cvdWS[coin].onmessage = e => {
-      try{
-        const d = JSON.parse(e.data);
-        const isBuy = !d.m; // m=true means market maker (sell), false=buy
-        const vol = parseFloat(d.q) * parseFloat(d.p);
-        const delta = isBuy ? vol : -vol;
-        const store = window._cvdStore[coin];
-        const last = store[store.length-1];
-        const cvd = (last?.cvd||0) + delta;
-        store.push({ts:d.T, px:parseFloat(d.p), vol, delta, cvd, isBuy});
-        if(store.length > 500) store.shift();
-        _renderCVD(coin);
-      }catch(ex){}
+    const tvIntervalMap = {
+        '1m':'1','5m':'5','15m':'15','30m':'30',
+        '1h':'60','3d':'60','1d':'D','6m_h':'60',
+        'ytd':'D','1y':'D','5y':'W','max':'M'
     };
-    _cvdWS[coin].onerror = ()=>{};
-  }catch(e){}
-}
+    const tvInterval = tvIntervalMap[interval] || 'D';
+    const binanceInterval = {'1m':'1m','5m':'5m','15m':'15m','30m':'30m','1h':'1h','3d':'1h','1d':'1d','6m_h':'1h','ytd':'1d','1y':'1d','5y':'1w','max':'1M'}[interval] || '1d';
 
-function _renderCVD(coin){
-  const el = document.getElementById('cvd-'+coin.toLowerCase());
-  if(!el) return;
-  const store = window._cvdStore[coin];
-  if(!store||store.length<2) return;
-  
-  const last50 = store.slice(-50);
-  const maxCVD = Math.max(...last50.map(d=>Math.abs(d.cvd)));
-  const lastCVD = last50[last50.length-1]?.cvd||0;
-  const firstCVD = last50[0]?.cvd||0;
-  const trend = lastCVD > firstCVD ? 'BULLISH' : 'BEARISH';
-  const trendCol = lastCVD > firstCVD ? '#00cc44' : '#ff2222';
-  
-  // Simple sparkline
-  const w=180, h=40;
-  const pts = last50.map((d,i)=>{
-    const x = i/(last50.length-1)*w;
-    const y = h/2 - (d.cvd/maxCVD)*(h/2-2);
-    return `${x},${y}`;
-  }).join(' ');
-  
-  el.innerHTML = `<div style="padding:4px 6px">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-      <span style="color:#998870;font-size:7px;letter-spacing:1px">CVD</span>
-      <span style="color:${trendCol};font-size:8px;font-weight:700">${trend}</span>
-      <span style="color:${lastCVD>=0?'#00cc44':'#ff2222'};font-size:8px;font-family:'Roboto Mono',monospace">${lastCVD>=0?'+':''}${(lastCVD/1000).toFixed(1)}K</span>
-    </div>
-    <svg width="${w}" height="${h}" style="display:block">
-      <line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" stroke="#1a0e00" stroke-width="0.5"/>
-      <polyline points="${pts}" fill="none" stroke="${trendCol}" stroke-width="1.5" opacity=".8"/>
-    </svg>
-  </div>`;
-}
+    let rawSym = ((window._bbgActiveSym || 'BTC').toUpperCase()).replace('/', '');
 
-// ── OPEN INTEREST BY EXCHANGE ────────────────────────────────────
-window._oiExchanges = {};
+    // ── Symbol routing maps (Preserving v14 expanded list) ──
+    const cryptoMap = {
+        'BTC':'BTCUSDT','ETH':'ETHUSDT','SOL':'SOLUSDT','BNB':'BNBUSDT','XRP':'XRPUSDT',
+        'ADA':'ADAUSDT','TRX':'TRXUSDT','AVAX':'AVAXUSDT','LTC':'LTCUSDT','BCH':'BCHUSDT',
+        'ETC':'ETCUSDT','ZEC':'ZECUSDT','DASH':'DASHUSDT','ARB':'ARBUSDT','OP':'OPUSDT',
+        'MATIC':'MATICUSDT','LINK':'LINKUSDT','DOT':'DOTUSDT','SHIB':'SHIBUSDT','PEPE':'PEPEUSDT',
+        'WIF':'WIFUSDT','BONK':'BONKUSDT','TURBO':'TURBOUSDT','ORDI':'ORDIUSDT','STX':'STXUSDT',
+        'TIA':'TIAUSDT','SUI':'SUIUSDT','NEAR':'NEARUSDT','APT':'APTUSDT','FET':'FETUSDT',
+        'RENDER':'RENDERUSDT','RNDR':'RNDRUSDT','TAO':'TAOUSDT','HYPE':'HYPEUSDT',
+    };
+    const yahooMap = {
+        // Global Indices
+        'SPX':'^GSPC','NDX':'^NDX','DJI':'^DJI','DAX':'^GDAXI','NI225':'^N225','VIX':'^VIX',
+        // Commodities
+        'GOLD':'GC=F','SILVER':'SI=F','OIL':'CL=F','WTI':'CL=F','BRENT':'BZ=F','GAS':'NG=F',
+        // ETFs
+        'SPY':'SPY','QQQ':'QQQ','TLT':'TLT','IBIT':'IBIT','FBTC':'FBTC',
+        // Equities (Long tail from v14)
+        'AAPL':'AAPL','NVDA':'NVDA','MSFT':'MSFT','GOOGL':'GOOGL','META':'META','AMZN':'AMZN','TSLA':'TSLA',
+        'MSTR':'MSTR','COIN':'COIN','SOFI':'SOFI','HOOD':'HOOD','PLTR':'PLTR',
+        'JPM':'JPM','GS':'GS','V':'V','MA':'MA','UNH':'UNH','LLY':'LLY',
+    };
+    const tvSymMap = {
+        'SPX':'FOREXCOM:SPXUSD','NDX':'NASDAQ:NDX','DJI':'TVC:DJI','VIX':'TVC:VIX',
+        'GOLD':'TVC:GOLD','SILVER':'TVC:SILVER','OIL':'TVC:USOIL','WTI':'TVC:USOIL','BRENT':'TVC:UKOIL',
+        'BTC':'BINANCE:BTCUSDT','ETH':'BINANCE:ETHUSDT','SOL':'BINANCE:SOLUSDT',
+    };
 
-async function fetchOIByExchange(sym='BTC'){
-  const exchanges = [
-    {name:'Binance',  url:`https://fapi.binance.com/fapi/v1/openInterest?symbol=${sym}USDT`},
-    {name:'Bybit',    url:`https://api.bybit.com/v5/market/open-interest?category=linear&symbol=${sym}USDT&intervalTime=1h&limit=1`},
-    {name:'OKX',      url:`https://www.okx.com/api/v5/public/open-interest?instType=SWAP&instId=${sym}-USDT-SWAP`}
-  ];
-  
-  const results = await Promise.allSettled(exchanges.map(async ex=>{
-    try{
-      const r = await fetch(ex.url,{signal:(()=>{const c=new AbortController();setTimeout(()=>c.abort(),6000);return c.signal;})()});
-      const d = await r.json();
-      let oi = 0;
-      if(ex.name==='Binance') oi=parseFloat(d.openInterest||0);
-      else if(ex.name==='Bybit') oi=parseFloat(d.result?.list?.[0]?.openInterest||0);
-      else if(ex.name==='OKX') oi=parseFloat(d.data?.[0]?.oi||0);
-      return {name:ex.name, oi};
-    }catch(e){return {name:ex.name,oi:0};}
-  }));
-  
-  window._oiExchanges[sym] = results.filter(r=>r.status==='fulfilled').map(r=>r.value);
-}
+    // ── SMART DATA RESOLVER ──
+    const _resolveBestDataSource = (sym) => {
+        const binanceMap = { 'GOLD':'XAUUSDT', 'SILVER':'XAGUSDT', 'OIL':'CLUSDT', 'WTI':'CLUSDT' };
+        const bybitMap = {
+            'SPX':'SPXUSD', 'NDX':'NDXUSD', 'DJI':'DJIUSD', 'VIX':'VIXUSD', 'BRENT':'BRENTUSDT',
+            'MSTR':'MSTRUSDT', 'COIN':'COINUSDT', 'SOFI':'SOFIUSDT', 'HOOD':'HOODUSDT',
+            'TSLA':'TSLAUSDT', 'NVDA':'NVDAUSDT', 'AAPL':'AAPLUSDT', 'META':'METAUSDT',
+            'AMZN':'AMZNUSDT', 'GOOGL':'GOOGLUSDT', 'MSFT':'MSFTUSDT', 'NFLX':'NFLXUSDT',
+            'AMD':'AMDUSDT', 'INTC':'INTCUSDT', 'PLTR':'PLTRUSDT'
+        };
+        if (binanceMap[sym]) return { provider: 'BINANCE', ticker: binanceMap[sym], type: 'WS' };
+        if (bybitMap[sym]) return { provider: 'BYBIT', ticker: bybitMap[sym], type: 'WS' };
+        if (cryptoMap[sym]) return { provider: 'BINANCE', ticker: cryptoMap[sym], type: 'WS' };
+        return { provider: 'YAHOO', ticker: (yahooMap[sym] || sym), type: 'POLL' };
+        }
+    const _hasNonEqPrefix = _nonEquityPrefix.some(p => tvSym.startsWith(p));
+    if (!indexTVMap[tvSym] && !_hasNonEqPrefix && useYahoo && !tvSymMap[rawSym]) tvSym = 'NASDAQ:' + rawSym;
+};
 
-// ── WHALE ALERT FEED ─────────────────────────────────────────────
+window._selectTF = function(btn, interval) {
+    if(!btn) return;
+    console.log('[BBG] Selecting TF:', interval);
+    document.querySelectorAll('#bbg-tf-btns .tf-btn').forEach(b => {
+        b.style.background = 'transparent'; 
+        b.style.color = '#fff';
+        b.style.fontWeight = 'normal';
+        b.style.padding = '0';
+    });
+    btn.style.background = '#1d4e9e'; 
+    btn.style.color = '#fff';
+    btn.style.fontWeight = 'bold';
+    
+    const labelEl = document.getElementById('bbg-chart-mode-label');
+    if(labelEl) labelEl.innerText = btn.innerText;
+    if(window._setChartInterval) window._setChartInterval(interval);
+};
+
+/* ── Daily/Weekly/Monthly dropdown handler ── */
+window._dailyModeInterval = '1d'; // current base interval
+window._setDailyMode = function(binanceInterval, label) {
+    var menu = document.getElementById('daily-dropdown-menu');
+    if(menu) menu.style.display = 'none';
+    var btn = document.getElementById('daily-dropdown-btn');
+    if(btn) btn.innerText = label + ' \u25BE';
+    document.querySelectorAll('#daily-dropdown-menu .dd-item').forEach(function(el) {
+        el.style.background = 'transparent'; el.style.color = '#888'; el.classList.remove('dd-active');
+    });
+    document.querySelectorAll('#daily-dropdown-menu .dd-item').forEach(function(el) {
+        if(el.innerText === label) { el.style.background = 'rgba(255,255,255,.08)'; el.style.color = '#fff'; el.classList.add('dd-active'); }
+    });
+    window._dailyModeInterval = binanceInterval;
+    if(window._setChartInterval) window._setChartInterval('1d');
+};
+�────
 window._whaleAlerts = [];
 
 async function fetchWhaleAlerts(){
@@ -26438,7 +26181,6 @@ function _renderWhalePanel(){
       <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #080500">
         <span style="color:#887760;font-size:7.5px;letter-spacing:.5px">${k}</span>
         <span style="color:${c};font-size:8.5px;font-family:'Roboto Mono',monospace">${v}</span>
-
       </div>`).join('');
   }
 }
@@ -26574,10 +26316,10 @@ function _renderOIDash(){
       } else {
           mapGL.addSource('epic-fury-shapes', { type: 'geojson', data: { type: 'FeatureCollection', features: geojsonShapes } });
           mapGL.addSource('epic-fury-pts', { type: 'geojson', data: { type: 'FeatureCollection', features: geojsonPts } });
-          // epic-fury-poly layer removed
-          // epic-fury-line layer removed
-          // epic-fury-pulse layer removed
-          // epic-fury-dot layer removed
+          mapGL.addLayer({ id: 'epic-fury-poly', type: 'fill', source: 'epic-fury-shapes', paint: { 'fill-color': '#ff2222', 'fill-opacity': 0.1 }, filter: ['==', '$type', 'Polygon'] });
+          mapGL.addLayer({ id: 'epic-fury-line', type: 'line', source: 'epic-fury-shapes', paint: { 'line-color': '#ffaa00', 'line-width': 2, 'line-dasharray': [4,4] } });
+          mapGL.addLayer({ id: 'epic-fury-pulse', type: 'circle', source: 'epic-fury-pts', paint: { 'circle-radius': 9, 'circle-color': 'transparent', 'circle-stroke-width': 1, 'circle-stroke-color': '#ff2222', 'circle-opacity': 0.5, 'circle-pitch-alignment': 'map' }});
+          mapGL.addLayer({ id: 'epic-fury-dot', type: 'circle', source: 'epic-fury-pts', paint: { 'circle-radius': 3.5, 'circle-color': '#ff2222', 'circle-opacity': 1.0, 'circle-pitch-alignment': 'map' }});
       }
     } catch(err) {}
   }
@@ -26809,10 +26551,10 @@ setTimeout(function(){ if(typeof fetchFundingRates==='function') try{fetchFundin
       } else {
           mapGL.addSource('epic-fury-shapes', { type: 'geojson', data: { type: 'FeatureCollection', features: geojsonShapes } });
           mapGL.addSource('epic-fury-pts', { type: 'geojson', data: { type: 'FeatureCollection', features: geojsonPts } });
-          // epic-fury-poly layer removed
-          // epic-fury-line layer removed
-          // epic-fury-pulse layer removed
-          // epic-fury-dot layer removed
+          mapGL.addLayer({ id: 'epic-fury-poly', type: 'fill', source: 'epic-fury-shapes', paint: { 'fill-color': '#ff2222', 'fill-opacity': 0.1 }, filter: ['==', '$type', 'Polygon'] });
+          mapGL.addLayer({ id: 'epic-fury-line', type: 'line', source: 'epic-fury-shapes', paint: { 'line-color': '#ffaa00', 'line-width': 2, 'line-dasharray': [4,4] } });
+          mapGL.addLayer({ id: 'epic-fury-pulse', type: 'circle', source: 'epic-fury-pts', paint: { 'circle-radius': 9, 'circle-color': 'transparent', 'circle-stroke-width': 1, 'circle-stroke-color': '#ff2222', 'circle-opacity': 0.5, 'circle-pitch-alignment': 'map' }});
+          mapGL.addLayer({ id: 'epic-fury-dot', type: 'circle', source: 'epic-fury-pts', paint: { 'circle-radius': 3.5, 'circle-color': '#ff2222', 'circle-opacity': 1.0, 'circle-pitch-alignment': 'map' }});
       }
     } catch(err) {}
   }
@@ -26894,16 +26636,26 @@ window._bbgChart = null;
 // ── Kill TradingView attribution in Lightweight Charts ──────────────────
 (function() {
   function killTVLogo() {
+    // Remove all <a> links pointing to tradingview.com anywhere on page
     document.querySelectorAll('a[href*="tradingview"],a[href*="TradingView"]').forEach(el => {
+      el.style.cssText = 'display:none!important;width:0!important;height:0!important;overflow:hidden!important;opacity:0!important;';
+      el.setAttribute('aria-hidden','true');
+      try { el.parentNode && el.parentNode.removeChild(el); } catch(e) {}
+    });
+    // Also hide any .tv-lightweight-charts anchor
+    document.querySelectorAll('.tv-lightweight-charts a').forEach(el => {
       el.style.cssText = 'display:none!important;width:0!important;height:0!important;';
       try { el.parentNode && el.parentNode.removeChild(el); } catch(e) {}
     });
+    // Ensure cover div is on top
     const cover = document.getElementById('tv-logo-cover');
     if (cover) cover.style.zIndex = '99999';
   }
+  // Run immediately and on DOM changes
   killTVLogo();
   const obs = new MutationObserver(killTVLogo);
   obs.observe(document.body, { childList: true, subtree: true });
+  // Also run after delays in case chart loads late
   [200, 500, 1000, 2000, 4000].forEach(t => setTimeout(killTVLogo, t));
 })();
 window._currentBbgSeries = null;
@@ -27202,8 +26954,6 @@ window._setChartInterval = async function(interval) {
         'BERA':'BERAUSDT','OM':'OMUSDT','VIRTUAL':'VIRTUALUSDT','MOVE':'MOVEUSDT',
         'KAS':'KASUSDT','ZRO':'ZROUSDT','W':'WUSDT','ONDO':'ONDOUSDT',
         'DRIFT':'DRIFTUSDT','OSMO':'OSMOUSDT',
-        // ── 'Hybrid' Equities (Use Binance Perpetuals for High-Speed) ────────
-        'MSTR':'MSTRUSDT','COIN':'COINUSDT','SOFI':'SOFIUSDT',
         // NOTE: GOLD, SILVER, EURUSD intentionally NOT here — they route via Yahoo
     };
     const yahooMap = {
@@ -27304,83 +27054,180 @@ window._setChartInterval = async function(interval) {
     };
     const tvSymMap = {
         // ── Global Indices ────────────────────────────────────────────────────
-        'SPX':'CBOE:SPX','NDX':'NASDAQ:NDX','DJI':'DJ:DJI','RUT':'TVC:RUT',
-        'VIX':'TVC:VIX','VVIX':'CBOE:VVIX','DAX':'XETR:DAX','NI225':'TVC:NI225',
-        'FTSE':'TVC:UKX','CAC':'TVC:CAC40','HSI':'TVC:HSI','NIFTY':'NSE:NIFTY',
+        'SPX':'FOREXCOM:SPXUSD','NDX':'NASDAQ:NDX','DJI':'TVC:DJI',
+        'RUT':'TVC:RUT','MID':'TVC:MID',
+        'DAX':'XETR:DAX','NI225':'TVC:NI225','NIKKEI':'TVC:NI225',
+        'FTSE':'TVC:UKX','CAC':'TVC:CAC40','SENSEX':'BSE:SENSEX',
+        'NIFTY':'NSE:NIFTY','HSI':'TVC:HSI','SHCOMP':'SSE:000001',
+        'KOSPI':'KRX:KOSPI','ASX200':'ASX:XJO','IBOV':'BMFBOVESPA:IBOV',
+        'TSX':'TSX:OSPTX','AEX':'EURONEXT:AEX','SMI':'SIX:SMI',
+        'IBEX':'BME:IBC','MIB':'MIL:FTSEMIB','ATX':'WBAG:ATX',
+        'PRAGUE':'XPRA:PX','NKY':'TVC:NI225','LONDON':'TVC:UKX',
+        'VIX':'TVC:VIX','VVIX':'CBOE:VVIX',
+        // ── US Futures ────────────────────────────────────────────────────────
         'ES1':'CME_MINI:ES1!','NQ1':'CME_MINI:NQ1!','YM1':'CME_MINI:YM1!',
+        'ES':'CME_MINI:ES1!','NQ':'CME_MINI:NQ1!','YM':'CME_MINI:YM1!',
+        'RTY1':'CME_MINI:RTY1!','CL1':'NYMEX:CL1!','GC1':'COMEX:GC1!',
         // ── Commodities ───────────────────────────────────────────────────────
-        'GOLD':'TVC:GOLD','SILVER':'TVC:SILVER','OIL':'TVC:USOIL','WTI':'TVC:USOIL',
-        'BRENT':'TVC:UKOIL','NATGAS':'TVC:NATGAS','GAS':'TVC:NATGAS',
-        'COPPER':'TVC:COPPER','WHEAT':'CBOT:ZW1!','CORN':'CBOT:ZC1!',
+        'GOLD':'TVC:GOLD','SILVER':'TVC:SILVER','COPPER':'TVC:COPPER',
+        'XAUUSD':'TVC:GOLD','XAGUSD':'TVC:SILVER',
+        'OIL':'TVC:USOIL','WTI':'TVC:USOIL','BRENT':'TVC:UKOIL',
+        'GAS':'TVC:NATURALGAS','NATGAS':'TVC:NATURALGAS',
+        'WHEAT':'CBOT:ZW1!','CORN':'CBOT:ZC1!','SOYBEAN':'CBOT:ZS1!',
+        'COFFEE':'ICEUS:KC1!','COCOA':'ICEUS:CC1!','SUGAR':'ICEUS:SB1!',
+        'COTTON':'ICEUS:CT1!','LUMBER':'CME:LBR1!',
+        'PLATINUM':'TVC:PLATINUM','PALLADIUM':'TVC:PALLADIUM',
+        // ── Bonds / Rates ─────────────────────────────────────────────────────
+        'US10Y':'TVC:US10Y','US2Y':'TVC:US02Y','US30Y':'TVC:US30Y','US5Y':'TVC:US05Y',
+        'DE10Y':'TVC:DE10Y','GB10Y':'TVC:GB10Y','JP10Y':'TVC:JP10Y',
+        // ── Forex ─────────────────────────────────────────────────────────────
+        'EURUSD':'FX:EURUSD','GBPUSD':'FX:GBPUSD','USDJPY':'FX:USDJPY',
+        'AUDUSD':'FX:AUDUSD','USDCAD':'FX:USDCAD','USDCHF':'FX:USDCHF',
+        'NZDUSD':'FX:NZDUSD','EURGBP':'FX:EURGBP','EURJPY':'FX:EURJPY',
+        'GBPJPY':'FX:GBPJPY','USDMXN':'FX:USDMXN','USDBRL':'FX:USDBRL',
+        'USDZAR':'FX:USDZAR','USDTRY':'FX:USDTRY','USDINR':'FX:USDINR',
+        'USDCNY':'FX:USDCNY','USDKRW':'FX:USDKRW','USDSEK':'FX:USDSEK',
+        'USDNOK':'FX:USDNOK','USDPLN':'FX:USDPLN','USDCZK':'FX:USDCZK',
         // ── Crypto (Binance) ──────────────────────────────────────────────────
         'BTC':'BINANCE:BTCUSDT','ETH':'BINANCE:ETHUSDT','SOL':'BINANCE:SOLUSDT',
         'BNB':'BINANCE:BNBUSDT','XRP':'BINANCE:XRPUSDT','ADA':'BINANCE:ADAUSDT',
         'DOGE':'BINANCE:DOGEUSDT','AVAX':'BINANCE:AVAXUSDT','LINK':'BINANCE:LINKUSDT',
         'DOT':'BINANCE:DOTUSDT','TRX':'BINANCE:TRXUSDT','LTC':'BINANCE:LTCUSDT',
         'BCH':'BINANCE:BCHUSDT','UNI':'BINANCE:UNIUSDT','AAVE':'BINANCE:AAVEUSDT',
-        'PEPE':'BINANCE:PEPEUSDT','TON':'BINANCE:TONUSDT','HYPE':'BYBIT:HYPEUSDT.P',
-        // ── Equities (Chart Sources) ──────────────────────────────────────────
+        'MATIC':'BINANCE:MATICUSDT','ARB':'BINANCE:ARBUSDT','OP':'BINANCE:OPUSDT',
+        'SHIB':'BINANCE:SHIBUSDT','PEPE':'BINANCE:PEPEUSDT','TON':'BINANCE:TONUSDT',
+        'INJ':'BINANCE:INJUSDT','APT':'BINANCE:APTUSDT','SUI':'BINANCE:SUIUSDT',
+        'MKR':'BINANCE:MKRUSDT','CRV':'BINANCE:CRVUSDT','SNX':'BINANCE:SNXUSDT',
+        'ATOM':'BINANCE:ATOMUSDT','NEAR':'BINANCE:NEARUSDT','FTM':'BINANCE:FTMUSDT',
+        'HBAR':'BINANCE:HBARUSDT','ICP':'BINANCE:ICPUSDT','FIL':'BINANCE:FILUSDT',
+        'GRT':'BINANCE:GRTUSDT','SAND':'BINANCE:SANDUSDT','MANA':'BINANCE:MANAUSDT',
+        'AXS':'BINANCE:AXSUSDT','GALA':'BINANCE:GALAUSDT','ENJ':'BINANCE:ENJUSDT',
+        'ALGO':'BINANCE:ALGOUSDT','VET':'BINANCE:VETUSDT','XLM':'BINANCE:XLMUSDT',
+        'ETC':'BINANCE:ETCUSDT','ZEC':'BINANCE:ZECUSDT','DASH':'BINANCE:DASHUSDT',
+        'FET':'BINANCE:FETUSDT','RENDER':'BINANCE:RENDERUSDT','RNDR':'BINANCE:RNDRUSDT',
+        'WIF':'BINANCE:WIFUSDT','BONK':'BINANCE:BONKUSDT','WLD':'BINANCE:WLDUSDT',
+        'JUP':'BINANCE:JUPUSDT','JTO':'BINANCE:JTOUSDT','TIA':'BINANCE:TIAUSDT',
+        'ENA':'BINANCE:ENAUSDT','PENDLE':'BINANCE:PENDLEUSDT','OM':'BINANCE:OMUSDT',
+        'KAS':'BINANCE:KASUSDT','HYPE':'BYBIT:HYPEUSDT.P','NOT':'BINANCE:NOTUSDT',
+        'ORDI':'BINANCE:ORDIUSDT','STX':'BINANCE:STXUSDT','TAO':'BINANCE:TAOUSDT',
+        'VIRTUAL':'BINANCE:VIRTUALUSDT','BERA':'BINANCE:BERAUSDT',
+        // ── Mega Cap Tech ─────────────────────────────────────────────────────
         'AAPL':'NASDAQ:AAPL','NVDA':'NASDAQ:NVDA','MSFT':'NASDAQ:MSFT',
-        'GOOGL':'NASDAQ:GOOGL','META':'NASDAQ:META','AMZN':'NASDAQ:AMZN',
-        'TSLA':'NASDAQ:TSLA','NFLX':'NASDAQ:NFLX','AMD':'NASDAQ:AMD',
-        'INTC':'NASDAQ:INTC','PLTR':'NYSE:PLTR','CRM':'NYSE:CRM',
-        'SOFI':'NASDAQ:SOFI','MSTR':'NASDAQ:MSTR','COIN':'NASDAQ:COIN',
-        'HOOD':'NASDAQ:HOOD','PYPL':'NASDAQ:PYPL','SQ':'NYSE:SQ',
-        'UBER':'NYSE:UBER','SPOT':'NYSE:SPOT','SHOP':'NYSE:SHOP',
-        'DIS':'NYSE:DIS','BA':'NYSE:BA','LMT':'NYSE:LMT',
-        'V':'NYSE:V','MA':'NYSE:MA','JPM':'NYSE:JPM','GS':'NYSE:GS',
+        'GOOGL':'NASDAQ:GOOGL','GOOG':'NASDAQ:GOOG','META':'NASDAQ:META',
+        'AMZN':'NASDAQ:AMZN','TSLA':'NASDAQ:TSLA','NFLX':'NASDAQ:NFLX',
+        'AMD':'NASDAQ:AMD','INTC':'NASDAQ:INTC','CRM':'NYSE:CRM',
+        'ORCL':'NYSE:ORCL','ADBE':'NASDAQ:ADBE','QCOM':'NASDAQ:QCOM',
+        'AVGO':'NASDAQ:AVGO','MU':'NASDAQ:MU','AMAT':'NASDAQ:AMAT',
+        'TXN':'NASDAQ:TXN','ARM':'NASDAQ:ARM','SMCI':'NASDAQ:SMCI',
+        'DELL':'NYSE:DELL','IBM':'NYSE:IBM','CSCO':'NASDAQ:CSCO',
+        'NOW':'NYSE:NOW','TEAM':'NASDAQ:TEAM','WDAY':'NASDAQ:WDAY',
+        'ZM':'NASDAQ:ZM','HPQ':'NYSE:HPQ','HPE':'NYSE:HPE',
+        // ── Fintech & Finance ─────────────────────────────────────────────────
+        'JPM':'NYSE:JPM','GS':'NYSE:GS','BAC':'NYSE:BAC','WFC':'NYSE:WFC',
+        'MS':'NYSE:MS','C':'NYSE:C','BLK':'NYSE:BLK','AXP':'NYSE:AXP',
+        'V':'NYSE:V','MA':'NYSE:MA','PYPL':'NASDAQ:PYPL','SQ':'NYSE:SQ',
+        'AFRM':'NASDAQ:AFRM','UPST':'NASDAQ:UPST','SOFI':'NASDAQ:SOFI',
+        'HOOD':'NASDAQ:HOOD','COIN':'NASDAQ:COIN','MSTR':'NASDAQ:MSTR',
+        'SCHW':'NYSE:SCHW','CME':'NASDAQ:CME','CBOE':'CBOE:CBOE',
+        'BRK':'NYSE:BRK.B',
+        // ── Healthcare / Pharma ────────────────────────────────────────────────
+        'JNJ':'NYSE:JNJ','UNH':'NYSE:UNH','LLY':'NYSE:LLY','ABBV':'NYSE:ABBV',
+        'MRK':'NYSE:MRK','PFE':'NYSE:PFE','AMGN':'NASDAQ:AMGN','GILD':'NASDAQ:GILD',
+        'REGN':'NASDAQ:REGN','VRTX':'NASDAQ:VRTX','MRNA':'NASDAQ:MRNA',
+        'BNTX':'NASDAQ:BNTX','BMY':'NYSE:BMY','ABT':'NYSE:ABT','MDT':'NYSE:MDT',
+        'ISRG':'NASDAQ:ISRG',
+        // ── Consumer / Retail ─────────────────────────────────────────────────
+        'WMT':'NYSE:WMT','COST':'NASDAQ:COST','TGT':'NYSE:TGT',
+        'HD':'NYSE:HD','LOW':'NYSE:LOW','NKE':'NYSE:NKE','SBUX':'NASDAQ:SBUX',
+        'MCD':'NYSE:MCD','KO':'NYSE:KO','PEP':'NASDAQ:PEP','PG':'NYSE:PG',
+        'PM':'NYSE:PM','MO':'NYSE:MO','LULU':'NASDAQ:LULU','ULTA':'NASDAQ:ULTA',
+        // ── Energy ────────────────────────────────────────────────────────────
+        'XOM':'NYSE:XOM','CVX':'NYSE:CVX','COP':'NYSE:COP','SLB':'NYSE:SLB',
+        'EOG':'NYSE:EOG','OXY':'NYSE:OXY','HAL':'NYSE:HAL','DVN':'NYSE:DVN',
+        // ── Industrials / Defense ─────────────────────────────────────────────
+        'LMT':'NYSE:LMT','RTX':'NYSE:RTX','NOC':'NYSE:NOC','GD':'NYSE:GD',
+        'BA':'NYSE:BA','GE':'NYSE:GE','HON':'NASDAQ:HON','CAT':'NYSE:CAT',
+        'DE':'NYSE:DE','UNP':'NYSE:UNP','FDX':'NYSE:FDX','UPS':'NYSE:UPS',
+        'DAL':'NYSE:DAL','UAL':'NASDAQ:UAL','AAL':'NASDAQ:AAL',
+        // ── Growth / SaaS ─────────────────────────────────────────────────────
+        'PLTR':'NYSE:PLTR','CRWD':'NASDAQ:CRWD','DDOG':'NASDAQ:DDOG',
+        'NET':'NYSE:NET','ZS':'NASDAQ:ZS','SNOW':'NYSE:SNOW','OKTA':'NASDAQ:OKTA',
+        'MNDY':'NASDAQ:MNDY','RBLX':'NYSE:RBLX','ABNB':'NASDAQ:ABNB',
+        'UBER':'NYSE:UBER','LYFT':'NASDAQ:LYFT','SNAP':'NYSE:SNAP',
+        'PINS':'NYSE:PINS','SPOT':'NYSE:SPOT','SHOP':'NYSE:SHOP',
+        // ── EV / Clean Energy ─────────────────────────────────────────────────
+        'RIVN':'NASDAQ:RIVN','LCID':'NASDAQ:LCID','NIO':'NYSE:NIO',
+        'XPEV':'NYSE:XPEV','LI':'NASDAQ:LI','ENPH':'NASDAQ:ENPH',
+        'FSLR':'NASDAQ:FSLR','SEDG':'NASDAQ:SEDG',
+        // ── Crypto ETFs ───────────────────────────────────────────────────────
+        'IBIT':'NASDAQ:IBIT','FBTC':'NASDAQ:FBTC','BITB':'NYSE:BITB',
+        'ARKB':'NYSE:ARKB','ETHA':'NASDAQ:ETHA',
         // ── ETFs ──────────────────────────────────────────────────────────────
         'SPY':'AMEX:SPY','QQQ':'NASDAQ:QQQ','IWM':'AMEX:IWM','DIA':'AMEX:DIA',
-        'GLD':'AMEX:GLD','SLV':'AMEX:SLV','USO':'AMEX:USO','TLT':'NASDAQ:TLT',
+        'GLD':'AMEX:GLD','SLV':'AMEX:SLV','USO':'AMEX:USO',
+        'TLT':'NASDAQ:TLT','IEF':'NASDAQ:IEF','HYG':'AMEX:HYG','LQD':'AMEX:LQD',
+        'XLK':'AMEX:XLK','XLF':'AMEX:XLF','XLE':'AMEX:XLE','XLV':'AMEX:XLV',
+        'XLI':'AMEX:XLI','XLC':'AMEX:XLC','XLY':'AMEX:XLY','XLP':'AMEX:XLP',
+        'XLU':'AMEX:XLU','XLRE':'AMEX:XLRE','XLB':'AMEX:XLB',
+        'ARKK':'AMEX:ARKK','EEM':'AMEX:EEM','VTI':'AMEX:VTI','VOO':'AMEX:VOO',
+        'TQQQ':'NASDAQ:TQQQ','SQQQ':'NASDAQ:SQQQ','SPXL':'AMEX:SPXL',
+        'UVXY':'AMEX:UVXY','VXX':'AMEX:VXX',
+        'MSTU':'NYSE:MSTU','NVDL':'AMEX:NVDL',
     };
 
-    // ── SMART DATA RESOLVER ──
-    const _resolveBestDataSource = (sym) => {
-        // High-speed WebSocket sources for Ribbon data
-        const binanceMap = {
-            'GOLD':'XAUUSDT', 'SILVER':'XAGUSDT', 'OIL':'OILUSDT', 'WTI':'OILUSDT',
-            'BTC':'BTCUSDT', 'ETH':'ETHUSDT', 'SOL':'SOLUSDT', 'BNB':'BNBUSDT'
-        };
-        const bybitMap = {
-            'SPX':'SPXUSD', 'NDX':'NDXUSD', 'DJI':'DJIUSD', 'VIX':'VIXUSD',
-            'MSTR':'MSTRUSDT', 'COIN':'COINUSDT', 'SOFI':'SOFIUSDT',
-            'TSLA':'TSLAUSDT', 'NVDA':'NVDAUSDT', 'AAPL':'AAPLUSDT',
-            'HYPE':'HYPEUSDT'
-        };
-        
-        if (binanceMap[sym]) return { provider: 'BINANCE', ticker: binanceMap[sym], type: 'WS' };
-        if (bybitMap[sym])   return { provider: 'BYBIT',   ticker: bybitMap[sym],   type: 'WS' };
-        if (cryptoMap[sym])  return { provider: 'BINANCE', ticker: cryptoMap[sym],  type: 'WS' };
-        
-        return { provider: 'YAHOO', ticker: (yahooMap[sym] || sym), type: 'POLL' };
+    const binanceSym  = cryptoMap[rawSym] || (rawSym.endsWith('USDT') ? rawSym : null);
+    const yahooTicker = !binanceSym ? (yahooMap[rawSym] || null) : null;
+    const useBinance  = !!binanceSym;
+    const useYahoo    = !!yahooTicker;
+
+    // ── TradingView iframe symbol ──
+    let tvSym;
+    if (tvSymMap[rawSym])                       tvSym = tvSymMap[rawSym];
+    else if (yahooMap[rawSym] && !binanceSym)   tvSym = 'NASDAQ:' + rawSym;  // equity fallback
+    else if (binanceSym)                        tvSym = 'BINANCE:' + binanceSym;
+    else                                        tvSym = 'NASDAQ:' + rawSym;
+
+    // Fix equity TV sym — all non-equity prefixes that must NOT get NASDAQ fallback
+    const indexTVMap = {
+        // Futures
+        'CME_MINI:ES1!':1,'CME_MINI:NQ1!':1,'CME_MINI:YM1!':1,'CME_MINI:RTY1!':1,
+        'EUREX:FDAX1!':1,'OSE:NK1!':1,'NYMEX:CL1!':1,'COMEX:GC1!':1,
+        // Indices
+        'FOREXCOM:SPXUSD':1,'CBOE:SPX':1,'NASDAQ:NDX':1,'TVC:DJI':1,'TVC:RUT':1,'TVC:MID':1,
+        'XETR:DAX':1,'TVC:NI225':1,'TVC:UKX':1,'TVC:CAC40':1,'TVC:VIX':1,'CBOE:VVIX':1,
+        'BSE:SENSEX':1,'NSE:NIFTY':1,'TVC:HSI':1,'SSE:000001':1,'KRX:KOSPI':1,
+        'ASX:XJO':1,'BMFBOVESPA:IBOV':1,'TSX:OSPTX':1,'EURONEXT:AEX':1,
+        'SIX:SMI':1,'BME:IBC':1,'MIL:FTSEMIB':1,'WBAG:ATX':1,'XPRA:PX':1,
+        // Commodities
+        'TVC:USOIL':1,'TVC:UKOIL':1,'TVC:GOLD':1,'TVC:SILVER':1,
+        'TVC:NATURALGAS':1,'TVC:COPPER':1,'TVC:PLATINUM':1,'TVC:PALLADIUM':1,
+        'CBOT:ZW1!':1,'CBOT:ZC1!':1,'CBOT:ZS1!':1,
+        'ICEUS:KC1!':1,'ICEUS:CC1!':1,'ICEUS:SB1!':1,'ICEUS:CT1!':1,
+        // Bonds
+        'TVC:US10Y':1,'TVC:US02Y':1,'TVC:US30Y':1,'TVC:US05Y':1,
+        'TVC:DE10Y':1,'TVC:GB10Y':1,'TVC:JP10Y':1,
+        // Forex
+        'FX:EURUSD':1,'FX:GBPUSD':1,'FX:USDJPY':1,'FX:AUDUSD':1,'FX:USDCAD':1,
+        'FX:USDCHF':1,'FX:NZDUSD':1,'FX:EURGBP':1,'FX:EURJPY':1,'FX:GBPJPY':1,
+        'FX:USDMXN':1,'FX:USDBRL':1,'FX:USDZAR':1,'FX:USDTRY':1,'FX:USDINR':1,
+        'FX:USDCNY':1,'FX:USDKRW':1,'FX:USDSEK':1,'FX:USDNOK':1,
+        'FX:USDPLN':1,'FX:USDCZK':1,
+        // Crypto (Binance prefix)
+        'BINANCE:BTCUSDT':1,'BINANCE:ETHUSDT':1,'BINANCE:SOLUSDT':1,
+        'BINANCE:BNBUSDT':1,'BINANCE:XRPUSDT':1,'BINANCE:ADAUSDT':1,
     };
-
-    const resolved = _resolveBestDataSource(rawSym);
-
-    // ── Smart Chart Routing: Decouple Data Stream from Chart Display ──
-    let tvSym = tvSymMap[rawSym];
-    
-    if (!tvSym) {
-        // Build interactive TV symbol based on provider
-        if (resolved.type === 'WS') {
-            tvSym = resolved.provider + ':' + (resolved.provider === 'BYBIT' ? resolved.ticker + '.P' : resolved.ticker);
-        } else {
-            // Fallback to CryptoMap or raw symbol with NASDAQ/NYSE prefix if possible
-            const isKnownEquity = !!yahooMap[rawSym] && !cryptoMap[rawSym];
-            tvSym = (isKnownEquity ? 'NASDAQ:' : '') + (yahooMap[rawSym] || rawSym);
-        }
-    }
-
-    const _nonEquityPrefix = ['BINANCE:','BYBIT:','FX:','TVC:','FOREXCOM:','XETR:','CME_MINI:',
+    // Only apply NASDAQ fallback for equities not already in tvSymMap
+    // Also skip fallback for BINANCE: crypto and other known non-equity prefixes
+    const _nonEquityPrefix = ['BINANCE:','FX:','TVC:','FOREXCOM:','XETR:','CME_MINI:',
         'NYMEX:','COMEX:','CBOT:','ICEUS:','BSE:','NSE:','KRX:','ASX:','SSE:',
         'BMFBOVESPA:','TSX:','EURONEXT:','SIX:','BME:','MIL:','WBAG:','XPRA:',
-        'CBOE:','AMEX:','NYSE:','NASDAQ:','DJ:','ICE:'];
+        'CBOE:','AMEX:','NYSE:','NASDAQ:'];
     const _hasNonEqPrefix = _nonEquityPrefix.some(p => tvSym.startsWith(p));
-    
-    window._tvActiveSym      = tvSym;
+    if (!indexTVMap[tvSym] && !_hasNonEqPrefix && useYahoo && !tvSymMap[rawSym]) tvSym = 'NASDAQ:' + rawSym;
+
+    window._tvActiveSym     = tvSym;
     window._tvActiveInterval = tvInterval;
     window._updateTVChart(tvSym, tvInterval);
-    console.log("[BBG-SMART-DATA] Routing:", { symbol: rawSym, resolved, tv: tvSym, interval: tvInterval });
 
     // ── Close old feeds ──
     if (window._currentBbgWs) { try{window._currentBbgWs.close();}catch(e){} window._currentBbgWs=null; }
@@ -27398,12 +27245,7 @@ window._setChartInterval = async function(interval) {
         if(!v||isNaN(v)) return '—';
         return v>=1e9?(v/1e9).toFixed(2)+'B':v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?(v/1e3).toFixed(1)+'K':v.toFixed(0);
     };
-    const setEl = (id,val) => { 
-        try {
-            const e = document.getElementById(id); 
-            if(e) e.innerText = val; 
-        } catch(e){}
-    };
+    const setEl = (id,val) => { const e=document.getElementById(id); if(e) e.innerText=val; };
 
     // ── CRYPTO: Shared Ribbon Prefill & Helper ──
     const _cPreload = (typeof CRYPTO !== 'undefined') && CRYPTO.find(c => c.s === rawSym);
@@ -27424,45 +27266,42 @@ window._setChartInterval = async function(interval) {
     }
 
     const _applyTick = (price, chgPct, hi, lo, vol, openPx) => {
-        try {
-            if(!price || isNaN(price)) return;
-            const up  = chgPct >= 0;
-            const col = up ? '#00cc44' : '#ff3d3d';
-            const now = new Date();
-            const currentSym = (window._bbgActiveSym || 'BTC').toUpperCase().replace('/','');
-            
-            // Update Ribbon elements
-            setEl('bbg-time',  String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
-            setEl('bbg-current-price', fmtP(price));
-            setEl('bbg-close', fmtP(price));
-            if(hi>0) setEl('bbg-high',   fmtP(hi));
-            if(lo>0) setEl('bbg-low',    fmtP(lo));
-            if(vol>0) setEl('bbg-volume', fmtV(vol));
-            if(openPx>0) {
-                const _nyOpen = window._nyMidnightOpen > 0 ? window._nyMidnightOpen : openPx;
-                setEl('ov-open', fmtP(_nyOpen));
-                if(!window._firstBbgPrice || window._firstBbgPrice <= 0) window._firstBbgPrice = _nyOpen;
-            }
-            const chgEl = document.getElementById('bbg-price-change');
-            if(chgEl){chgEl.innerText=(up?'+':'')+chgPct.toFixed(2)+'%';chgEl.style.color=col;}
-            const arrEl = document.getElementById('bbg-price-arrow');
-            if(arrEl){arrEl.innerText=up?'↑':'↓';arrEl.style.color=col;}
-            const ctnr = document.getElementById('bbg-current-price-container');
-            if(ctnr) ctnr.style.color=col;
-            
-            // Update Overall stats
-            setEl('ov-start', fmtP(price));
-            setEl('ov-close', fmtP(price));
-            if(hi>0) setEl('ov-high', fmtP(hi));
-            if(lo>0) setEl('ov-low',  fmtP(lo));
+        if(!price || isNaN(price)) return;
+        const up  = chgPct >= 0;
+        const col = up ? '#00cc44' : '#ff3d3d';
+        const now = new Date();
+        
+        // Update Ribbon elements
+        setEl('bbg-time',  String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
+        setEl('bbg-current-price', fmtP(price));
+        setEl('bbg-close', fmtP(price));
+        if(hi>0) setEl('bbg-high',   fmtP(hi));
+        if(lo>0) setEl('bbg-low',    fmtP(lo));
+        if(vol>0) setEl('bbg-volume', fmtV(vol));
+        if(openPx>0) {
+            const _nyOpen = window._nyMidnightOpen > 0 ? window._nyMidnightOpen : openPx;
+            setEl('ov-open', fmtP(_nyOpen));
+            if(!window._firstBbgPrice || window._firstBbgPrice <= 0) window._firstBbgPrice = _nyOpen;
+        }
+        const chgEl = document.getElementById('bbg-price-change');
+        if(chgEl){chgEl.innerText=(up?'+':'')+chgPct.toFixed(2)+'%';chgEl.style.color=col;}
+        const arrEl = document.getElementById('bbg-price-arrow');
+        if(arrEl){arrEl.innerText=up?'↑':'↓';arrEl.style.color=col;}
+        const ctnr = document.getElementById('bbg-current-price-container');
+        if(ctnr) ctnr.style.color=col;
+        
+        // Update Overall stats
+        setEl('ov-start', fmtP(price));
+        setEl('ov-close', fmtP(price));
+        if(hi>0) setEl('ov-high', fmtP(hi));
+        if(lo>0) setEl('ov-low',  fmtP(lo));
 
-            // CRITICAL SYNC: Update the global CRYPTO state (sidebar) so it matches 1:1
-            const coinId = (typeof HL_MAP !== 'undefined') ? HL_MAP[currentSym] : null;
-            if (coinId && typeof updateCoin === 'function') {
-                updateCoin(coinId, {px: price, chg: chgPct, hi: hi, lo: lo, vol: vol}, 'tv_sync', 0);
-                if(typeof renderSidebar === 'function') renderSidebar(); 
-            }
-        } catch(e){ console.error("ApplyTick Failure:", e); }
+        // CRITICAL SYNC: Update the global CRYPTO state (sidebar) so it matches 1:1
+        const coinId = (typeof HL_MAP !== 'undefined') ? HL_MAP[rawSym] : null;
+        if (coinId && typeof updateCoin === 'function') {
+            updateCoin(coinId, {px: price, chg: chgPct, hi: hi, lo: lo, vol: vol}, 'tv_sync', 0);
+            renderSidebar(); 
+        }
     };
 
     const _HYPE_ONLY = ['HYPE','PURR','FRIEND','POINTS'];
@@ -27472,11 +27311,11 @@ window._setChartInterval = async function(interval) {
     const tvTk = tvParts[1] || '';
 
     const cryptoExList = ['BINANCE','BYBIT','OKX','GATEIO','MEXC','KUCOIN'];
-    const useCryptoSync = resolved.type === 'WS' || cryptoExList.includes(tvEx) || isHL;
+    const useCryptoSync = cryptoExList.includes(tvEx) || isHL || useBinance;
 
     if (useCryptoSync) {
-        const symBin = resolved.provider === 'BINANCE' ? resolved.ticker : (tvEx === 'BINANCE' ? tvTk : null);
-        const symBybit = resolved.provider === 'BYBIT' ? resolved.ticker : (tvEx === 'BYBIT' ? tvTk.split('.')[0] : (isHL ? (rawSym + 'USDT') : null));
+        const symBin = tvEx === 'BINANCE' ? tvTk : (useBinance ? binanceSym : null);
+        const symBybit = tvEx === 'BYBIT' ? tvTk.split('.')[0] : (isHL ? (rawSym + 'USDT') : null);
         const symOKX = tvEx === 'OKX' ? tvTk.split('.')[0].replace('USDT', '-USDT') : null;
 
         // 1. Binance REST (only if symBin exists)
@@ -27595,8 +27434,8 @@ window._setChartInterval = async function(interval) {
         }
 
         // 2. MMT API polling - Sync exchange with chart
-        const _mmtExchange = resolved.provider === 'BYBIT' ? 'bybitf' : (tvEx === 'BYBIT' ? 'bybitf' : (tvEx === 'OKX' ? 'okxf' : (isHL ? 'hyperliquid' : (window._mmtPreferExchange || 'binancef'))));
-        const _mmtSymbol   = (resolved.provider === 'MMT' ? resolved.ticker : rawSym.toLowerCase() + '/usd');
+        const _mmtExchange = tvEx === 'BYBIT' ? 'bybitf' : (tvEx === 'OKX' ? 'okxf' : (isHL ? 'hyperliquid' : (window._mmtPreferExchange || 'binancef')));
+        const _mmtSymbol   = rawSym.toLowerCase() + '/usd';
         const _mmtKey      = (() => { try { return localStorage.getItem('mmt_api_key') || ''; } catch(e){ return ''; } })();
         const MMT_BASE_URL = 'https://eu-central-1.mmt.gg/api/v1';
 
@@ -27653,46 +27492,6 @@ window._setChartInterval = async function(interval) {
         _mmtPoll(); _mmtStatsPoll();
         const _mmtTimer = setInterval(() => { _mmtPoll(); _mmtStatsPoll(); }, 5000);
 
-        // ── VOLUME PROFILE REAL-TIME COMPONENT ──
-        window._renderVolumeProfile = function(pts) {
-            const container = document.getElementById('bbg-chart-container');
-            if(!container) return;
-            let vp = document.getElementById('bbg-vol-profile');
-            if(!vp) {
-                vp = document.createElement('div');
-                vp.id = 'bbg-vol-profile';
-                vp.style.cssText = 'position:absolute;top:0;right:0;bottom:0;width:120px;pointer-events:none;z-index:9980;display:flex;flex-direction:column;justify-content:center;opacity:0.6;';
-                container.appendChild(vp);
-            }
-            
-            // Calculate Profile
-            const prices = pts.map(p => parseFloat(p.c || p[4]));
-            const min = Math.min(...prices);
-            const max = Math.max(...prices);
-            const range = max - min;
-            if(range <= 0) return;
-            
-            const buckets = 40;
-            const step = range / buckets;
-            const profile = new Array(buckets).fill(0);
-            
-            pts.forEach(p => {
-                const px = parseFloat(p.c || p[4]);
-                const vol = parseFloat(p.v || p[5] || 0);
-                const bIdx = Math.min(buckets - 1, Math.floor((px - min) / step));
-                profile[bIdx] += vol;
-            });
-            
-            const maxVol = Math.max(...profile);
-            let html = '';
-            for(let i = buckets - 1; i >= 0; i--) {
-                const w = (profile[i] / maxVol) * 100;
-                const col = i > buckets/2 ? 'rgba(0,221,255,0.4)' : 'rgba(243,159,65,0.4)';
-                html += `<div style="height:${100/buckets}%;width:${w}%;background:${col};margin-bottom:1px;align-self:flex-end;"></div>`;
-            }
-            vp.innerHTML = html;
-        };
-
         // 3. Universal WebSocket Sync (Live Streaming)
         const _openUniversalWS = () => {
             let wsUrl = '';
@@ -27700,24 +27499,35 @@ window._setChartInterval = async function(interval) {
             let subMsg = null;
 
             // Normalize symbol for WS
-            const cleanTk = resolved.ticker || tvTk.split('.')[0].replace('USDT', ''); 
+            const cleanTk = tvTk.split('.')[0].replace('USDT', ''); 
             
-            if (resolved.provider === 'BINANCE' || (!resolved.provider && symBin)) {
-                const s = (resolved.ticker || symBin).toLowerCase();
+            if (tvEx === 'BINANCE' || (!tvEx && symBin)) {
+                const s = (tvTk || symBin).toLowerCase();
                 wsUrl = 'wss://stream.binance.com:9443/ws/' + s + '@ticker';
                 onMsg = d => {
                     const price = parseFloat(d.c);
                     if(price) _applyTick(price, parseFloat(d.P), parseFloat(d.h), parseFloat(d.l), parseFloat(d.q), parseFloat(d.o));
                 };
-            } else if (resolved.provider === 'BYBIT' || (!resolved.provider && tvEx === 'BYBIT')) {
-                const s = resolved.ticker || symBybit;
+            } else if (tvEx === 'BYBIT') {
                 wsUrl = 'wss://stream.bybit.com/v5/public/linear';
-                subMsg = JSON.stringify({op: "subscribe", args: ["tickers." + s]});
+                subMsg = JSON.stringify({op: "subscribe", args: ["tickers." + symBybit]});
                 onMsg = d => {
                     if (d.topic && d.topic.startsWith("tickers") && d.data) {
                         const t = d.data;
                         const px = parseFloat(t.lastPrice);
                         if(px) _applyTick(px, parseFloat(t.price24hPcnt)*100, parseFloat(t.highPrice24h), parseFloat(t.lowPrice24h), parseFloat(t.volume24h), parseFloat(t.prevPrice24h));
+                    }
+                };
+            } else if (tvEx === 'OKX') {
+                wsUrl = 'wss://ws.okx.com:8443/ws/v5/public';
+                subMsg = JSON.stringify({op: "subscribe", args: [{channel: "tickers", instId: symOKX}]});
+                onMsg = d => {
+                    if (d.data && d.data[0]) {
+                        const t = d.data[0];
+                        const px = parseFloat(t.last);
+                        const op = parseFloat(t.open24h);
+                        const chg = op > 0 ? ((px - op)/op*100) : 0;
+                        if(px) _applyTick(px, chg, parseFloat(t.high24h), parseFloat(t.low24h), parseFloat(t.vol24h), op);
                     }
                 };
             }
@@ -27774,154 +27584,52 @@ window._setChartInterval = async function(interval) {
 
         const doFetch = async () => {
             try {
-                // ── Multi-source data fetch with fallback chain ──
+                const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1m&range=1d';
+                // Race all proxies in parallel — first valid response wins
                 let j = null;
-
-                // Helper: parse allorigins / raw response
-                const _parseRaw = (raw) => {
-                    try {
-                        if(raw.startsWith('{"contents"')) return JSON.parse(JSON.parse(raw).contents);
-                        if(raw.startsWith('{"status"')) { const w=JSON.parse(raw); return JSON.parse(w.contents||w.body||'{}'); }
-                        return JSON.parse(raw);
-                    } catch(e) { return null; }
-                };
-
-                // SOURCE 1: Yahoo v8/chart (more reliable endpoint) via multiple proxies
-                const yahooChartUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=5d&includePrePost=false';
-                const yahooChartUrl2 = 'https://query2.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=5d';
-                const yahooQuoteUrl  = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + encodeURIComponent(ticker) + '&fields=regularMarketPrice,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketVolume,regularMarketChangePercent,regularMarketPreviousClose';
-
-                const proxySources = [
-                    'https://corsproxy.io/?' + encodeURIComponent(yahooChartUrl),
-                    'https://api.allorigins.win/raw?url=' + encodeURIComponent(yahooChartUrl),
-                    'https://corsproxy.io/?' + encodeURIComponent(yahooChartUrl2),
-                    'https://api.allorigins.win/get?url=' + encodeURIComponent(yahooChartUrl2),
-                    'https://corsproxy.io/?' + encodeURIComponent(yahooQuoteUrl),
-                    'https://api.allorigins.win/raw?url=' + encodeURIComponent(yahooQuoteUrl),
-                    yahooChartUrl,
-                    yahooChartUrl2,
+                const proxies = [
+                    'https://corsproxy.io/?' + encodeURIComponent(yahooUrl),
+                    'https://api.allorigins.win/raw?url=' + encodeURIComponent(yahooUrl),
+                    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(yahooUrl),
                 ];
-
-                const tryYahooChart = async (url) => {
-                    const r = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(4000), headers: {'Accept':'application/json'} });
-                    if(!r.ok) throw new Error('HTTP '+r.status);
+                const tryProxy = async (purl) => {
+                    const r = await fetch(purl, {cache:'no-store', signal: AbortSignal.timeout(6000)});
+                    if (!r.ok) throw new Error('bad status');
                     const raw = await r.text();
-                    const parsed = _parseRaw(raw);
-                    if(!parsed) throw new Error('parse fail');
-                    // v8/chart response
-                    if(parsed.chart?.result?.[0]) {
-                        const meta = parsed.chart.result[0].meta;
-                        const price = meta.regularMarketPrice || meta.chartPreviousClose;
-                        if(!price) throw new Error('no price');
-                        const prev = meta.previousClose || meta.chartPreviousClose || price;
-                        const pct  = prev > 0 ? ((price - prev) / prev * 100) : 0;
-                        return { quoteResponse: { result: [{
-                            regularMarketPrice: price,
-                            regularMarketPreviousClose: prev,
-                            regularMarketChangePercent: pct,
-                            regularMarketOpen: meta.currentTradingPeriod?.regular?.start ? prev : (meta.chartPreviousClose || prev),
-                            regularMarketDayHigh: meta.regularMarketDayHigh || price,
-                            regularMarketDayLow:  meta.regularMarketDayLow  || price,
-                            regularMarketVolume:  meta.regularMarketVolume   || 0,
-                        }] } };
-                    }
-                    // v7/quote response
-                    if(parsed.quoteResponse?.result?.[0]) return parsed;
-                    throw new Error('no data');
+                    const parsed = JSON.parse(raw.startsWith('{"contents"') ? JSON.parse(raw).contents : raw);
+                    if (!parsed?.chart?.result) throw new Error('no result');
+                    return parsed;
                 };
-
-                // Race all proxy sources
-                try { j = await Promise.any(proxySources.map(u => tryYahooChart(u))); } catch(e) { j = null; }
-
-                // SOURCE 2: Stooq.com (no CORS issues for many tickers)
-                if (!j) {
-                    try {
-                        const stooqTicker = ({'AAPL':'AAPL.US','MSFT':'MSFT.US','NVDA':'NVDA.US','TSLA':'TSLA.US',
-                            'META':'META.US','GOOGL':'GOOGL.US','AMZN':'AMZN.US','NFLX':'NFLX.US',
-                            'AMD':'AMD.US','INTC':'INTC.US','SOFI':'SOFI.US','PLTR':'PLTR.US',
-                            'SPY':'SPY.US','QQQ':'QQQ.US','GLD':'GLD.US',
-                            '^GSPC':'^SPX','^NDX':'^NDX','^DJI':'^DJI','^VIX':'^VIX',
-                            'GC=F':'GC.F','CL=F':'CL.F','SI=F':'SI.F',
-                        })[ticker] || null;
-                        if(stooqTicker) {
-                            const sr = await fetch('https://stooq.com/q/d/l/?s='+encodeURIComponent(stooqTicker)+'&d1=&d2=&i=d', {signal:AbortSignal.timeout(5000)});
-                            const csv = await sr.text();
-                            const lines = csv.trim().split('\n');
-                            if(lines.length >= 2) {
-                                const cols = lines[lines.length-1].split(',');
-                                const price = parseFloat(cols[4]); // Close
-                                const open  = parseFloat(cols[1]);
-                                const high  = parseFloat(cols[2]);
-                                const low   = parseFloat(cols[3]);
-                                if(!isNaN(price) && price > 0) {
-                                    const prev = lines.length >= 3 ? parseFloat(lines[lines.length-2].split(',')[4]) : price;
-                                    const pct  = prev > 0 ? ((price-prev)/prev*100) : 0;
-                                    j = { quoteResponse: { result: [{
-                                        regularMarketPrice: price,
-                                        regularMarketPreviousClose: prev,
-                                        regularMarketChangePercent: pct,
-                                        regularMarketOpen: open||prev,
-                                        regularMarketDayHigh: high||price,
-                                        regularMarketDayLow:  low||price,
-                                        regularMarketVolume:  0,
-                                    }] } };
-                                }
-                            }
-                        }
-                    } catch(e2) { console.warn('[Stooq Fallback] Failed:', e2.message); }
+                try { j = await Promise.any(proxies.map(tryProxy)); } catch(e) {}
+                if (!j) return;
+                const res  = j?.chart?.result?.[0];
+                if(!res) return;
+                const meta = res.meta || {};
+                const q    = res.indicators?.quote?.[0] || {};
+                // Najdi poslední validní close (1m data)
+                const closes = q.close || [];
+                let price = meta.regularMarketPrice;
+                if (!price) {
+                    for (let i = closes.length-1; i >= 0; i--) {
+                        if (closes[i] && !isNaN(closes[i]) && closes[i] > 0) { price = closes[i]; break; }
+                    }
                 }
+                if(!price||isNaN(price)) return;
+                const prevClose = meta.chartPreviousClose || meta.previousClose || price;
+                const open      = meta.regularMarketOpen || meta.open || prevClose;
+                const high      = meta.regularMarketDayHigh || Math.max(...closes.filter(v=>v>0).slice(-390), price);
+                const low       = meta.regularMarketDayLow  || Math.min(...closes.filter(v=>v>0).slice(-390), price);
+                const vol       = meta.regularMarketVolume  || q.volume?.reduce((a,b)=>a+(b||0),0) || 0;
 
-                // SOURCE 3: Yahoo v8 via more proxies with longer timeout
-                if (!j) {
-                    try {
-                        const extraProxies = [
-                            'https://corsproxy.io/?url=' + encodeURIComponent(yahooChartUrl),
-                            'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1m&range=1d'),
-                        ];
-                        const r3 = await Promise.any(extraProxies.map(u => fetch(u, {signal:AbortSignal.timeout(6000)})));
-                        const raw3 = await r3.text();
-                        const p3 = _parseRaw(raw3);
-                        if(p3?.chart?.result?.[0]) {
-                            const meta = p3.chart.result[0].meta;
-                            const price = meta.regularMarketPrice;
-                            if(price && !isNaN(price)) {
-                                const prev = meta.previousClose || meta.chartPreviousClose || price;
-                                const pct  = prev > 0 ? ((price-prev)/prev*100) : 0;
-                                j = { quoteResponse: { result: [{
-                                    regularMarketPrice: price,
-                                    regularMarketPreviousClose: prev,
-                                    regularMarketChangePercent: pct,
-                                    regularMarketOpen: meta.chartPreviousClose || prev,
-                                    regularMarketDayHigh: meta.regularMarketDayHigh || price,
-                                    regularMarketDayLow:  meta.regularMarketDayLow  || price,
-                                    regularMarketVolume:  meta.regularMarketVolume   || 0,
-                                }] } };
-                            }
-                        }
-                    } catch(e3) { console.warn('[Yahoo Extra Fallback] Failed:', e3.message); }
-                }
-                
-                if (!j || !j.quoteResponse?.result?.[0]) return;
-                
-                const data = j.quoteResponse.result[0];
-                const price = data.regularMarketPrice;
-                if (!price || isNaN(price)) return;
-
-                const prevClose = data.regularMarketPreviousClose || price;
-                const open      = data.regularMarketOpen || prevClose;
-                const high      = data.regularMarketDayHigh || price;
-                const low       = data.regularMarketDayLow || price;
-                const vol       = data.regularMarketVolume || 0;
-                const pct       = data.regularMarketChangePercent || 0;
-
+                const pct = prevClose ? ((price-prevClose)/prevClose*100) : 0;
                 const up  = pct >= 0;
+                const col = up ? '#00cc44' : '#ff3d3d';
                 const now = new Date();
 
-                // Stable retention for high-speed updates
-                if(!window._firstBbgPrice || window._firstBbgPrice <= 0) window._firstBbgPrice = open;
+                // Set firstBbgPrice from open so _updateBbgHeader chg calculation works
+                if(!window._firstBbgPrice || window._firstBbgPrice<=0) window._firstBbgPrice = open;
                 window._chigh = high; window._clow = low; window._cvol = vol;
 
-                // Fast Ribbon Update
                 setEl('bbg-current-price', fmtP(price));
                 setEl('bbg-start',  fmtP(open));
                 setEl('bbg-high',   fmtP(high));
@@ -27929,22 +27637,20 @@ window._setChartInterval = async function(interval) {
                 setEl('bbg-close',  fmtP(prevClose));
                 setEl('bbg-volume', fmtV(vol));
                 setEl('bbg-time',   String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
-                
-                // Detailed Terminal sync
+                // ov-left-panel
                 setEl('ov-start', fmtP(price));
                 setEl('ov-open',  fmtP(open));
                 setEl('ov-high',  fmtP(high));
                 setEl('ov-low',   fmtP(low));
                 setEl('ov-close', fmtP(prevClose));
+                // Final sync via _applyTick for 1:1 parity with chart & sidebar
+                _applyTick(price, pct, high, low, vol, open);
                 
-                // Master Sync Hook
-                if(typeof _applyTick === 'function') _applyTick(price, pct, high, low, vol, open);
-                
-            } catch(e){ console.warn('[Bloomberg High-Speed Engine] Error:', e.message); }
+                console.log('[YF]', rawSym, fmtP(price), (up?'+':'')+pct.toFixed(2)+'%');
+            } catch(e){ console.warn('[YF] error:', e.message); }
         };
         doFetch();
-        // Increased polling frequency to 1.1s for near real-time stock/commodity movement
-        window._ovRefreshTimer = setInterval(() => { try { doFetch(); } catch(e){} }, 1100);
+        window._ovRefreshTimer = setInterval(doFetch, 2500);
         // Set fake WS object so close() works
         window._currentBbgWs = { close: ()=>{ clearInterval(window._ovRefreshTimer); window._ovRefreshTimer=null; } };
     }
@@ -27973,11 +27679,18 @@ window._updateTVChart = function(sym, interval) {
       + 'html,body{height:100%;width:100%;overflow:hidden;background:#000;}'
       + '#tv_chart{width:100%;height:100%;}'
       + '.tv-watermark{display:none!important;}'
+      + '.pane-legend{display:none!important;}'
+      + '[class*="pane-legend"]{display:none!important;}'
+      + '[class*="tv-logo"]{display:none!important;}'
+      + '[class*="logo"]{display:none!important;}'
       + 'a[href*="tradingview"]{display:none!important;}'
+      + '[data-name="logo"]{display:none!important;}'
+      + '[class*="legendMainSourceWrapper"]{display:none!important;}'
+      + '[class*="legendSources"]{display:none!important;}'
+      + '[class*="tv-chart-view__legend"]{display:none!important;}'
+      + '[data-name="legend"]{display:none!important;}'
       + '#header-toolbar-logo{display:none!important;}'
-      + '[data-name="logo"]{display:none!important;}'      + '[class*="dialog"]{display:none!important;}'      + '[class*="Dialog"]{display:none!important;}'      + '[class*="notification"]{display:none!important;}'      + '[class*="Notification"]{display:none!important;}'      + '[class*="modal"]{display:none!important;}'      + '[class*="Modal"]{display:none!important;}'      + '[class*="popup"]{display:none!important;}'      + '[class*="Popup"]{display:none!important;}'      + '[class*="toast"]{display:none!important;}'      + '[class*="Toast"]{display:none!important;}'      + '[class*="overlay"]{display:none!important;}'      + '[role="dialog"]{display:none!important;}'      + '[class*="alert-dialog"]{display:none!important;}'
-      + '.pane-legend,[class*="pane-legend"],[class*="legend-"],[class*="seriesTitle"],[class*="studyTitle"],[class*="legendMainSourceWrapper"],[data-name="legend"]{display:none!important;opacity:0!important;visibility:hidden!important;height:0!important;pointer-events:none!important;}'
-      + '</style>'
+      + '[data-name="logo"]{display:none!important;}'      + '[class*="dialog"]{display:none!important;}'      + '[class*="Dialog"]{display:none!important;}'      + '[class*="notification"]{display:none!important;}'      + '[class*="Notification"]{display:none!important;}'      + '[class*="modal"]{display:none!important;}'      + '[class*="Modal"]{display:none!important;}'      + '[class*="popup"]{display:none!important;}'      + '[class*="Popup"]{display:none!important;}'      + '[class*="toast"]{display:none!important;}'      + '[class*="Toast"]{display:none!important;}'      + '[class*="overlay"]{display:none!important;}'      + '[role="dialog"]{display:none!important;}'      + '[class*="alert-dialog"]{display:none!important;}'      + '</style>'
       + '<script>'      + '(function(){'      + 'var _origOpen=XMLHttpRequest.prototype.open;'      + 'function killDialogs(){'      + '  var sel=['      + '    "[class*=dialog]","[class*=Dialog]","[class*=notification]","[class*=Notification]",'      + '    "[class*=modal]","[class*=Modal]","[role=dialog]","[role=alertdialog]",'      + '    "[class*=popup]","[class*=Popup]","[class*=overlay]","[class*=Overlay]",'      + '    ".tv-dialog",".js-dialog",".tv-notification"'      + '  ];'      + '  sel.forEach(function(s){document.querySelectorAll(s).forEach(function(e){e.style.cssText="display:none!important;pointer-events:none!important;";});});'      + '}'      + 'new MutationObserver(killDialogs).observe(document.documentElement,{childList:true,subtree:true,attributes:true});'      + 'window.addEventListener("message",function(e){try{var d=JSON.parse(e.data||e);if(d&&(d.name==="notification"||d.name==="alert"||d.type==="notification"))e.stopImmediatePropagation();}catch(ex){}},{capture:true});'      + '})();'      + '<\/script>'      + '<script src="https://s3.tradingview.com/tv.js"><\/script>'
       + '</head><body>'
       + '<div id="tv_chart"></div>'
@@ -28001,14 +27714,6 @@ window._updateTVChart = function(sym, interval) {
       + '  backgroundColor:"rgba(0,0,0,1)",'
       + '  gridColor:"#000000",'
       + '  overrides:{'
-      // ─── Legend Suppression ─────────────────────────────────────
-      + '    "paneProperties.legendProperties.showStudyArguments":false,'
-      + '    "paneProperties.legendProperties.showStudyTitles":false,'
-      + '    "paneProperties.legendProperties.showStudyValues":false,'
-      + '    "paneProperties.legendProperties.showSeriesTitle":false,'
-      + '    "paneProperties.legendProperties.showSeriesOHLC":false,'
-      + '    "paneProperties.legendProperties.showBarChange":false,'
-      + '    "paneProperties.legendProperties.showLegend":false,'
       // ─── Area series ───────────────────────────────────────────
       + '    "mainSeriesProperties.style":3,'
       + '    "mainSeriesProperties.areaStyle.color1":"rgba(180,180,180,0.2)",'
@@ -28038,57 +27743,23 @@ window._updateTVChart = function(sym, interval) {
       + '    "scalesProperties.lineColor":"#000000",'
       + '    "scalesProperties.axisHighlightColor":"#000000",'
       + '    "scalesProperties.showStudyLastValue":false,'
-      // ─── Legend Properties ─────────────────────────────────────
-      + '    "paneProperties.legendProperties.showLegend":false,'
-      + '    "paneProperties.legendProperties.showStudyArguments":false,'
-      + '    "paneProperties.legendProperties.showStudyTitles":false,'
-      + '    "paneProperties.legendProperties.showStudyValues":false,'
-      + '    "paneProperties.legendProperties.showSeriesTitle":false,'
-      + '    "paneProperties.legendProperties.showSeriesOHLC":false,'
       // ─── Price line (last price horizontal) ────────────────────
       + '    "mainSeriesProperties.priceLineColor":"#F39F41",'
       + '    "mainSeriesProperties.priceLineWidth":1'
       + '  },'
-      + '  studies_overrides:{'
-      + '    "volume.showLegend":false,'
-      + '    "cmo.showLegend":false,'
-      + '    "rsi.showLegend":false'
-      + '  },'
+      + '  studies_overrides:{},'
       + '  disabled_features:['
       + '    "left_toolbar","header_widget","header_symbol_search",'
       + '    "header_resolutions","header_chart_type","header_settings",'
-      + '    "header_indicators","header_compare","header_undo_redo","header_screenshot",'
-      + '    "legend_widget","edit_buttons_in_legend","header_fullscreen_button","border_around_the_chart",'
+      + '    "header_compare","header_undo_redo","header_screenshot",'
+      + '    "header_fullscreen_button","border_around_the_chart",'
       + '    "remove_library_container_border","chart_crosshair_menu",'
       + '    "display_market_status","show_logo_on_all_charts","create_volume_indicator_by_default",'
-      + '    "show_missing_notifications_icon","study_buttons_in_legend",'
-      + '    "study_backtesting_buttons","pane_context_menu","legend_context_menu",'
-      + '    "main_series_scale_menu","property_pages","pane_legend_render_options",'
-      + '    "source_selection_markers","chart_property_page_legend",'
+      + '    "show_missing_notifications_icon",'
       + '  ],'
       + '  enabled_features:["hide_left_toolbar_by_default"]'
       + '});'
-      + '(function(){'
-      + '  var s=".tv-watermark,[data-name=logo],#header-toolbar-logo,.pane-legend,[class*=pane-legend],[class*=legendMainSourceWrapper],[class*=legendSources],[data-name=legend],[class*=tv-logo],[class*=logo-wrapped],a[href*=tradingview],.tv-circle-logo,[class*=dialog],[class*=Dialog],[class*=notification],[class*=Notification],[class*=popup],[class*=Popup],[class*=modal],[class*=Modal],[class*=toast],[class*=Toast],[class*=alert],[class*=Alert],.legend-item,.legend-text,[class*=mainSourceWrapper],[class*=seriesTitle],[class*=studyTitle],[class*=legend-],[class*=source-],[class*=item-],[class*=title-],[id*=legend]";'
-      + '  function k(){'
-      + '    document.querySelectorAll(s).forEach(function(e){'
-      + '      e.style.cssText="display:none!important;opacity:0!important;visibility:hidden!important;height:0!important;width:0!important;pointer-events:none!important;";'
-      + '    });'
-      + '    var tags=document.querySelectorAll("div,span,button,a,i,strong,p,h1,h2,h3,header,section");'
-      + '    for(var i=0;i<tags.length;i++){'
-      + '      var t=(tags[i].innerText||tags[i].textContent||"").trim();'
-      + '      if(t && (t.includes("Indicators") || t.includes("Last Price") || t.includes("High on") || t.includes("Volume") || t.includes("Low on") || t.includes("M.") || t.includes("Open") || t.includes("High") || t.includes("Low") || t.includes("Close"))){'
-      + '        tags[i].style.cssText="display:none!important;opacity:0!important;visibility:hidden!important;height:0!important;width:0!important;pointer-events:none!important;";'
-      + '        if(tags[i].parentElement) tags[i].parentElement.style.cssText="display:none!important;height:0!important;";'
-      + '        if(tags[i].parentElement && tags[i].parentElement.parentElement) tags[i].parentElement.parentElement.style.cssText="display:none!important;height:0!important;";'
-      + '      }'
-      + '    }'
-      + '  }'
-      + '  k();'
-      + '  var OBS = new MutationObserver(k);'
-      + '  OBS.observe(document.documentElement,{childList:true,subtree:true,attributes:true,characterData:true});'
-      + '  [100,250,500,750,1000,2000,3000,5000].forEach(function(t){setTimeout(k,t);});'
-      + '})();'
+      + '(function(){var s=".tv-watermark,[data-name=logo],#header-toolbar-logo,.pane-legend,[class*=pane-legend],[class*=legendMainSourceWrapper],[class*=legendSources],[data-name=legend],[class*=tv-logo],[class*=logo-wrapped],a[href*=tradingview],.tv-circle-logo,[class*=dialog],[class*=Dialog],[class*=notification],[class*=Notification],[class*=popup],[class*=Popup],[class*=modal],[class*=Modal],[class*=toast],[class*=Toast],[class*=alert],[class*=Alert]";function k(){document.querySelectorAll(s).forEach(function(e){e.style.cssText="display:none!important;opacity:0!important;visibility:hidden!important;";});}k();new MutationObserver(k).observe(document.documentElement,{childList:true,subtree:true});[500,1000,2000,3000,5000].forEach(function(t){setTimeout(k,t);});})();'
       + '<\/script>'
       + '</body></html>';
     iframe.srcdoc = srcdoc;
@@ -28405,25 +28076,24 @@ window._openChartForSymbol = function(sym) {
         'HYPE':'HYPEUSDT.P',  'BERA':'BERAUSDT',
         // ── HYPERLIQUID perp (for HL-only) ────────────────────────────────────
         'HYPE-PERP':'HYPEUSDT.P', 'BERA-PERP':'BERAUSDT',
-        // ── US EQUITIES — TradingView symbols ──
-        'HOOD':'HOOD',
-        'PLTR':'NYSE:PLTR','UPST':'NASDAQ:UPST','AFRM':'NASDAQ:AFRM','SQ':'NYSE:SQ',
-        'PYPL':'NASDAQ:PYPL','IBIT':'NASDAQ:IBIT','SNOW':'NYSE:SNOW','DDOG':'NASDAQ:DDOG',
-        'NET':'NYSE:NET','CRWD':'NASDAQ:CRWD','ZS':'NASDAQ:ZS','OKTA':'NASDAQ:OKTA',
-        'MNDY':'NASDAQ:MNDY','RBLX':'NYSE:RBLX','RIVN':'NASDAQ:RIVN','LCID':'NASDAQ:LCID',
-        'NIO':'NYSE:NIO','XPEV':'NYSE:XPEV','ENPH':'NASDAQ:ENPH','FSLR':'NASDAQ:FSLR',
-        'LMT':'NYSE:LMT','RTX':'NYSE:RTX','NOC':'NYSE:NOC','GD':'NYSE:GD','BA':'NYSE:BA',
-        'MRNA':'NASDAQ:MRNA','BNTX':'NASDAQ:BNTX','REGN':'NASDAQ:REGN','VRTX':'NASDAQ:VRTX','AMGN':'NASDAQ:AMGN',
-        'DIS':'NYSE:DIS','PARA':'NASDAQ:PARA','WBD':'NASDAQ:WBD','SPOT':'NYSE:SPOT','TGT':'NYSE:TGT',
-        'NEM':'NYSE:NEM','FCX':'NYSE:FCX','QCOM':'NASDAQ:QCOM','AVGO':'NASDAQ:AVGO',
-        'MU':'NASDAQ:MU','AMAT':'NASDAQ:AMAT','TXN':'NASDAQ:TXN','SPY':'AMEX:SPY','QQQ':'NASDAQ:QQQ','GLD':'AMEX:GLD',
-        'AAPL':'NASDAQ:AAPL','NVDA':'NASDAQ:NVDA','MSFT':'NASDAQ:MSFT','GOOGL':'NASDAQ:GOOGL','META':'NASDAQ:META',
-        'AMZN':'NASDAQ:AMZN','TSLA':'NASDAQ:TSLA','JPM':'NYSE:JPM','V':'NYSE:V','MA':'NYSE:MA',
-        'NFLX':'NASDAQ:NFLX','AMD':'NASDAQ:AMD','INTC':'NASDAQ:INTC','CRM':'NYSE:CRM','ORCL':'NYSE:ORCL',
-        'ADBE':'NASDAQ:ADBE','UBER':'NYSE:UBER','XOM':'NYSE:XOM','CVX':'NYSE:CVX','WMT':'NYSE:WMT',
-        'COST':'NASDAQ:COST','KO':'NYSE:KO','HD':'NYSE:HD','BRK':'NYSE:BRK.B','GS':'NYSE:GS',
-        'BAC':'NYSE:BAC','WFC':'NYSE:WFC','MS':'NYSE:MS','UNH':'NYSE:UNH','LLY':'NYSE:LLY',
-        'JNJ':'NYSE:JNJ','ABBV':'NYSE:ABBV','PFE':'NYSE:PFE','MRK':'NYSE:MRK',
+        // ── US EQUITIES (Yahoo Finance chart) ──────────────────────────────────
+        'MSTR':'MSTR','COIN':'COIN','SOFI':'SOFI','HOOD':'HOOD','PLTR':'PLTR',
+        'UPST':'UPST','AFRM':'AFRM','SQ':'SQ','PYPL':'PYPL','IBIT':'IBIT',
+        'SNOW':'SNOW','DDOG':'DDOG','NET':'NET','CRWD':'CRWD','ZS':'ZS',
+        'OKTA':'OKTA','MNDY':'MNDY','RBLX':'RBLX','RIVN':'RIVN','LCID':'LCID',
+        'NIO':'NIO','XPEV':'XPEV','ENPH':'ENPH','FSLR':'FSLR',
+        'LMT':'LMT','RTX':'RTX','NOC':'NOC','GD':'GD','BA':'BA',
+        'MRNA':'MRNA','BNTX':'BNTX','REGN':'REGN','VRTX':'VRTX','AMGN':'AMGN',
+        'DIS':'DIS','PARA':'PARA','WBD':'WBD','SPOT':'SPOT','TGT':'TGT',
+        'NEM':'NEM','FCX':'FCX','QCOM':'QCOM','AVGO':'AVGO',
+        'MU':'MU','AMAT':'AMAT','TXN':'TXN','SPY':'SPY','QQQ':'QQQ','GLD':'GLD',
+        'AAPL':'AAPL','NVDA':'NVDA','MSFT':'MSFT','GOOGL':'GOOGL','META':'META',
+        'AMZN':'AMZN','TSLA':'TSLA','JPM':'JPM','V':'V','MA':'MA',
+        'NFLX':'NFLX','AMD':'AMD','INTC':'INTC','CRM':'CRM','ORCL':'ORCL',
+        'ADBE':'ADBE','UBER':'UBER','XOM':'XOM','CVX':'CVX','WMT':'WMT',
+        'COST':'COST','KO':'KO','HD':'HD','BRK':'BRK-B','GS':'GS',
+        'BAC':'BAC','WFC':'WFC','MS':'MS','UNH':'UNH','LLY':'LLY',
+        'JNJ':'JNJ','ABBV':'ABBV','PFE':'PFE','MRK':'MRK',
         // ── INDICES ────────────────────────────────────────────────────────────
         'SPX':'SPX', 'NDX':'NDX', 'DJI':'DJI', 'RUT':'RUT', 'VIX':'VIX',
         'DAX':'DAX', 'NI225':'NI225', 'NIKKEI':'NI225', 'FTSE':'FTSE', 'CAC':'CAC',
@@ -28458,8 +28128,6 @@ window._openChartForSymbol = function(sym) {
         'EURUSD':'Curncy', 'GBPUSD':'Curncy', 'USDJPY':'Curncy', 'AUDUSD':'Curncy', 'USDCAD':'Curncy',
         // US Equities
         'MSTR':'Equity','COIN':'Equity','SOFI':'Equity','HOOD':'Equity','PLTR':'Equity',
-        'TSLA':'Equity','NVDA':'Equity','AAPL':'Equity','AMZN':'Equity','MSFT':'Equity',
-        'META':'Equity','GOOGL':'Equity','NFLX':'Equity','AMD':'Equity','INTC':'Equity',
         'UPST':'Equity','AFRM':'Equity','SQ':'Equity','PYPL':'Equity','IBIT':'Equity',
         'SNOW':'Equity','DDOG':'Equity','NET':'Equity','CRWD':'Equity','ZS':'Equity',
         'OKTA':'Equity','MNDY':'Equity','RBLX':'Equity','RIVN':'Equity','LCID':'Equity',
@@ -32713,7 +32381,10 @@ function _buildTVLiveHTML(data) {
       <div style="color:#665500;font-family:'Roboto Mono',monospace;font-size:10px">${q.volume?(q.volume/1e6).toFixed(1)+'M':'—'}</div>
     </div>
   </div>
-  <!-- Indicators section removed as per request -->
+  <div style="padding:4px 12px;border-bottom:1px solid #0d0800">
+    <span style="color:#553300;font-size:7.5px;letter-spacing:1.5px">INDICATORS: </span>
+    <span style="color:#664400;font-size:8.5px">${(chart.studies||[]).slice(0,8).join(' · ')||'—'}</span>
+  </div>
   ${levels.length ? `
   <div style="color:#553300;font-size:7.5px;letter-spacing:1.5px;padding:6px 12px 2px">PRICE LEVELS (${levels.length})</div>
   <table style="width:100%;border-collapse:collapse">
@@ -33532,15 +33203,6 @@ function _panelState(fn){
   var srcMap={CRYPTO:['BINANCE','COINGECKO'],WEI:['STOOQ','YAHOO'],FX:['FX'],IDX:['STOOQ','YAHOO'],EQUITY:['YAHOO','STOOQ','FINNHUB'],COMDTY:['STOOQ'],WORLD:['STOOQ','YAHOO'],MOVERS:['BINANCE','YAHOO'],STOCKS2:['YAHOO','STOOQ']};
   var srcs=srcMap[fn]||['BINANCE'];
   var minAge=Math.min.apply(null,srcs.map(function(s){return _srcAge(s);}));
-  
-  // Check for recent explicit errors
-  if(window._layerStatus){
-    if(srcs.includes('YAHOO') && window._layerStatus.yahoo && window._layerStatus.yahoo.err) 
-      return {state:'fail', label:'YAHOO ERR: '+window._layerStatus.yahoo.err.substring(0,12), ageMs:minAge};
-    if(srcs.includes('STOOQ') && window._layerStatus.stooq && window._layerStatus.stooq.err)
-      return {state:'fail', label:'STOOQ ERR', ageMs:minAge};
-  }
-
   if(minAge===Infinity)return{state:'stale',label:'FALLBACK DATA',ageMs:null};
   if(minAge<20000)return{state:'live',label:'LIVE',ageMs:minAge};
   if(minAge<60000)return{state:'live',label:'RECENT',ageMs:minAge};
