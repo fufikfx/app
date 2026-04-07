@@ -26572,10 +26572,10 @@ function _renderOIDash(){
       } else {
           mapGL.addSource('epic-fury-shapes', { type: 'geojson', data: { type: 'FeatureCollection', features: geojsonShapes } });
           mapGL.addSource('epic-fury-pts', { type: 'geojson', data: { type: 'FeatureCollection', features: geojsonPts } });
-          mapGL.addLayer({ id: 'epic-fury-poly', type: 'fill', source: 'epic-fury-shapes', paint: { 'fill-color': '#ff2222', 'fill-opacity': 0.1 }, filter: ['==', '$type', 'Polygon'] });
-          mapGL.addLayer({ id: 'epic-fury-line', type: 'line', source: 'epic-fury-shapes', paint: { 'line-color': '#ffaa00', 'line-width': 2, 'line-dasharray': [4,4] } });
-          mapGL.addLayer({ id: 'epic-fury-pulse', type: 'circle', source: 'epic-fury-pts', paint: { 'circle-radius': 9, 'circle-color': 'transparent', 'circle-stroke-width': 1, 'circle-stroke-color': '#ff2222', 'circle-opacity': 0.5, 'circle-pitch-alignment': 'map' }});
-          mapGL.addLayer({ id: 'epic-fury-dot', type: 'circle', source: 'epic-fury-pts', paint: { 'circle-radius': 3.5, 'circle-color': '#ff2222', 'circle-opacity': 1.0, 'circle-pitch-alignment': 'map' }});
+          // epic-fury-poly layer removed
+          // epic-fury-line layer removed
+          // epic-fury-pulse layer removed
+          // epic-fury-dot layer removed
       }
     } catch(err) {}
   }
@@ -26807,10 +26807,10 @@ setTimeout(function(){ if(typeof fetchFundingRates==='function') try{fetchFundin
       } else {
           mapGL.addSource('epic-fury-shapes', { type: 'geojson', data: { type: 'FeatureCollection', features: geojsonShapes } });
           mapGL.addSource('epic-fury-pts', { type: 'geojson', data: { type: 'FeatureCollection', features: geojsonPts } });
-          mapGL.addLayer({ id: 'epic-fury-poly', type: 'fill', source: 'epic-fury-shapes', paint: { 'fill-color': '#ff2222', 'fill-opacity': 0.1 }, filter: ['==', '$type', 'Polygon'] });
-          mapGL.addLayer({ id: 'epic-fury-line', type: 'line', source: 'epic-fury-shapes', paint: { 'line-color': '#ffaa00', 'line-width': 2, 'line-dasharray': [4,4] } });
-          mapGL.addLayer({ id: 'epic-fury-pulse', type: 'circle', source: 'epic-fury-pts', paint: { 'circle-radius': 9, 'circle-color': 'transparent', 'circle-stroke-width': 1, 'circle-stroke-color': '#ff2222', 'circle-opacity': 0.5, 'circle-pitch-alignment': 'map' }});
-          mapGL.addLayer({ id: 'epic-fury-dot', type: 'circle', source: 'epic-fury-pts', paint: { 'circle-radius': 3.5, 'circle-color': '#ff2222', 'circle-opacity': 1.0, 'circle-pitch-alignment': 'map' }});
+          // epic-fury-poly layer removed
+          // epic-fury-line layer removed
+          // epic-fury-pulse layer removed
+          // epic-fury-dot layer removed
       }
     } catch(err) {}
   }
@@ -27772,93 +27772,154 @@ window._setChartInterval = async function(interval) {
 
         const doFetch = async () => {
             try {
-                // Strategy 1: Stooq (no CORS issues, reliable for stocks/commodities/forex)
-                const stooqMap = {
-                    'BZ=F':'@brent.f', 'CL=F':'@cl.f', 'GC=F':'@gc.f', 'SI=F':'@si.f',
-                    'NG=F':'@ng.f', 'HG=F':'@hg.f', 'ZW=F':'@w.f', 'ZC=F':'@c.f',
-                    '^TNX':'10ust.b', '^IRX':'3mt.b', '^TYX':'30ust.b',
-                    'EURUSD=X':'eurusd', 'GBPUSD=X':'gbpusd', 'USDJPY=X':'usdjpy',
-                    'AUDUSD=X':'audusd', 'USDCAD=X':'usdcad', 'USDCHF=X':'usdchf',
-                };
-                const stooqSym = stooqMap[ticker] || ticker.replace('=X','').replace('=F','').replace('^','').toLowerCase();
-                const stooqUrl = 'https://stooq.com/q/l/?s=' + encodeURIComponent(stooqSym) + '&f=sd2t2ohlcv&h&e=csv';
+                // ── Multi-source data fetch with fallback chain ──
+                let j = null;
 
-                // Strategy 2: Yahoo v8/chart via proxies
-                const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1m&range=1d';
-                const proxies = [
-                    'https://corsproxy.io/?' + encodeURIComponent(yahooUrl),
-                    'https://api.allorigins.win/raw?url=' + encodeURIComponent(yahooUrl),
-                    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(yahooUrl),
+                // Helper: parse allorigins / raw response
+                const _parseRaw = (raw) => {
+                    try {
+                        if(raw.startsWith('{"contents"')) return JSON.parse(JSON.parse(raw).contents);
+                        if(raw.startsWith('{"status"')) { const w=JSON.parse(raw); return JSON.parse(w.contents||w.body||'{}'); }
+                        return JSON.parse(raw);
+                    } catch(e) { return null; }
+                };
+
+                // SOURCE 1: Yahoo v8/chart (more reliable endpoint) via multiple proxies
+                const yahooChartUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=5d&includePrePost=false';
+                const yahooChartUrl2 = 'https://query2.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=5d';
+                const yahooQuoteUrl  = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + encodeURIComponent(ticker) + '&fields=regularMarketPrice,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketVolume,regularMarketChangePercent,regularMarketPreviousClose';
+
+                const proxySources = [
+                    'https://corsproxy.io/?' + encodeURIComponent(yahooChartUrl),
+                    'https://api.allorigins.win/raw?url=' + encodeURIComponent(yahooChartUrl),
+                    'https://corsproxy.io/?' + encodeURIComponent(yahooChartUrl2),
+                    'https://api.allorigins.win/get?url=' + encodeURIComponent(yahooChartUrl2),
+                    'https://corsproxy.io/?' + encodeURIComponent(yahooQuoteUrl),
+                    'https://api.allorigins.win/raw?url=' + encodeURIComponent(yahooQuoteUrl),
+                    yahooChartUrl,
+                    yahooChartUrl2,
                 ];
 
-                let price = null, open = null, high = null, low = null, prevClose = null, vol = 0, pct = 0;
-
-                // Try Stooq first (fastest, no proxy needed)
-                try {
-                    const sr = await fetch('https://corsproxy.io/?' + encodeURIComponent(stooqUrl), {
-                        cache: 'no-store', signal: AbortSignal.timeout(5000)
-                    });
-                    if (sr.ok) {
-                        const csv = await sr.text();
-                        const lines = csv.trim().split('\n');
-                        if (lines.length >= 2) {
-                            const vals = lines[1].split(',');
-                            // Symbol,Date,Time,Open,High,Low,Close,Volume
-                            const o = parseFloat(vals[3]), h = parseFloat(vals[4]);
-                            const l = parseFloat(vals[5]), c = parseFloat(vals[6]);
-                            const v = parseFloat(vals[7]) || 0;
-                            if (c > 0) {
-                                price = c; open = o; high = h; low = l; vol = v;
-                                prevClose = o; // use open as prev for pct calc
-                                pct = open > 0 ? ((price - open) / open * 100) : 0;
-                            }
-                        }
+                const tryYahooChart = async (url) => {
+                    const r = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(4000), headers: {'Accept':'application/json'} });
+                    if(!r.ok) throw new Error('HTTP '+r.status);
+                    const raw = await r.text();
+                    const parsed = _parseRaw(raw);
+                    if(!parsed) throw new Error('parse fail');
+                    // v8/chart response
+                    if(parsed.chart?.result?.[0]) {
+                        const meta = parsed.chart.result[0].meta;
+                        const price = meta.regularMarketPrice || meta.chartPreviousClose;
+                        if(!price) throw new Error('no price');
+                        const prev = meta.previousClose || meta.chartPreviousClose || price;
+                        const pct  = prev > 0 ? ((price - prev) / prev * 100) : 0;
+                        return { quoteResponse: { result: [{
+                            regularMarketPrice: price,
+                            regularMarketPreviousClose: prev,
+                            regularMarketChangePercent: pct,
+                            regularMarketOpen: meta.currentTradingPeriod?.regular?.start ? prev : (meta.chartPreviousClose || prev),
+                            regularMarketDayHigh: meta.regularMarketDayHigh || price,
+                            regularMarketDayLow:  meta.regularMarketDayLow  || price,
+                            regularMarketVolume:  meta.regularMarketVolume   || 0,
+                        }] } };
                     }
-                } catch(e) {}
+                    // v7/quote response
+                    if(parsed.quoteResponse?.result?.[0]) return parsed;
+                    throw new Error('no data');
+                };
 
-                // Fallback: Yahoo v8/chart
-                if (!price) {
+                // Race all proxy sources
+                try { j = await Promise.any(proxySources.map(u => tryYahooChart(u))); } catch(e) { j = null; }
+
+                // SOURCE 2: Stooq.com (no CORS issues for many tickers)
+                if (!j) {
                     try {
-                        const tryProxy = async (purl) => {
-                            const r = await fetch(purl, {cache:'no-store', signal: AbortSignal.timeout(6000)});
-                            if (!r.ok) throw new Error('bad');
-                            const raw = await r.text();
-                            const parsed = JSON.parse(raw.startsWith('{"contents"') ? JSON.parse(raw).contents : raw);
-                            if (!parsed?.chart?.result) throw new Error('no result');
-                            return parsed;
-                        };
-                        let j = null;
-                        try { j = await Promise.any(proxies.map(tryProxy)); } catch(e) {}
-                        if (j) {
-                            const res = j?.chart?.result?.[0];
-                            const meta = res?.meta || {};
-                            const q = res?.indicators?.quote?.[0] || {};
-                            const closes = q.close || [];
-                            price = meta.regularMarketPrice;
-                            if (!price) {
-                                for (let i = closes.length-1; i >= 0; i--) {
-                                    if (closes[i] > 0) { price = closes[i]; break; }
+                        const stooqTicker = ({'AAPL':'AAPL.US','MSFT':'MSFT.US','NVDA':'NVDA.US','TSLA':'TSLA.US',
+                            'META':'META.US','GOOGL':'GOOGL.US','AMZN':'AMZN.US','NFLX':'NFLX.US',
+                            'AMD':'AMD.US','INTC':'INTC.US','SOFI':'SOFI.US','PLTR':'PLTR.US',
+                            'SPY':'SPY.US','QQQ':'QQQ.US','GLD':'GLD.US',
+                            '^GSPC':'^SPX','^NDX':'^NDX','^DJI':'^DJI','^VIX':'^VIX',
+                            'GC=F':'GC.F','CL=F':'CL.F','SI=F':'SI.F',
+                        })[ticker] || null;
+                        if(stooqTicker) {
+                            const sr = await fetch('https://stooq.com/q/d/l/?s='+encodeURIComponent(stooqTicker)+'&d1=&d2=&i=d', {signal:AbortSignal.timeout(5000)});
+                            const csv = await sr.text();
+                            const lines = csv.trim().split('\n');
+                            if(lines.length >= 2) {
+                                const cols = lines[lines.length-1].split(',');
+                                const price = parseFloat(cols[4]); // Close
+                                const open  = parseFloat(cols[1]);
+                                const high  = parseFloat(cols[2]);
+                                const low   = parseFloat(cols[3]);
+                                if(!isNaN(price) && price > 0) {
+                                    const prev = lines.length >= 3 ? parseFloat(lines[lines.length-2].split(',')[4]) : price;
+                                    const pct  = prev > 0 ? ((price-prev)/prev*100) : 0;
+                                    j = { quoteResponse: { result: [{
+                                        regularMarketPrice: price,
+                                        regularMarketPreviousClose: prev,
+                                        regularMarketChangePercent: pct,
+                                        regularMarketOpen: open||prev,
+                                        regularMarketDayHigh: high||price,
+                                        regularMarketDayLow:  low||price,
+                                        regularMarketVolume:  0,
+                                    }] } };
                                 }
                             }
-                            if (price) {
-                                prevClose = meta.chartPreviousClose || meta.previousClose || price;
-                                open = meta.regularMarketOpen || prevClose;
-                                high = meta.regularMarketDayHigh || price;
-                                low  = meta.regularMarketDayLow  || price;
-                                vol  = meta.regularMarketVolume  || 0;
-                                pct  = prevClose ? ((price - prevClose) / prevClose * 100) : 0;
-                            }
                         }
-                    } catch(e) {}
+                    } catch(e2) { console.warn('[Stooq Fallback] Failed:', e2.message); }
                 }
 
+                // SOURCE 3: Yahoo v8 via more proxies with longer timeout
+                if (!j) {
+                    try {
+                        const extraProxies = [
+                            'https://corsproxy.io/?url=' + encodeURIComponent(yahooChartUrl),
+                            'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1m&range=1d'),
+                        ];
+                        const r3 = await Promise.any(extraProxies.map(u => fetch(u, {signal:AbortSignal.timeout(6000)})));
+                        const raw3 = await r3.text();
+                        const p3 = _parseRaw(raw3);
+                        if(p3?.chart?.result?.[0]) {
+                            const meta = p3.chart.result[0].meta;
+                            const price = meta.regularMarketPrice;
+                            if(price && !isNaN(price)) {
+                                const prev = meta.previousClose || meta.chartPreviousClose || price;
+                                const pct  = prev > 0 ? ((price-prev)/prev*100) : 0;
+                                j = { quoteResponse: { result: [{
+                                    regularMarketPrice: price,
+                                    regularMarketPreviousClose: prev,
+                                    regularMarketChangePercent: pct,
+                                    regularMarketOpen: meta.chartPreviousClose || prev,
+                                    regularMarketDayHigh: meta.regularMarketDayHigh || price,
+                                    regularMarketDayLow:  meta.regularMarketDayLow  || price,
+                                    regularMarketVolume:  meta.regularMarketVolume   || 0,
+                                }] } };
+                            }
+                        }
+                    } catch(e3) { console.warn('[Yahoo Extra Fallback] Failed:', e3.message); }
+                }
+                
+                if (!j || !j.quoteResponse?.result?.[0]) return;
+                
+                const data = j.quoteResponse.result[0];
+                const price = data.regularMarketPrice;
                 if (!price || isNaN(price)) return;
+
+                const prevClose = data.regularMarketPreviousClose || price;
+                const open      = data.regularMarketOpen || prevClose;
+                const high      = data.regularMarketDayHigh || price;
+                const low       = data.regularMarketDayLow || price;
+                const vol       = data.regularMarketVolume || 0;
+                const pct       = data.regularMarketChangePercent || 0;
 
                 const up  = pct >= 0;
                 const now = new Date();
-                if (!window._firstBbgPrice || window._firstBbgPrice <= 0) window._firstBbgPrice = open;
+
+                // Stable retention for high-speed updates
+                if(!window._firstBbgPrice || window._firstBbgPrice <= 0) window._firstBbgPrice = open;
                 window._chigh = high; window._clow = low; window._cvol = vol;
 
+                // Fast Ribbon Update
                 setEl('bbg-current-price', fmtP(price));
                 setEl('bbg-start',  fmtP(open));
                 setEl('bbg-high',   fmtP(high));
@@ -27866,17 +27927,23 @@ window._setChartInterval = async function(interval) {
                 setEl('bbg-close',  fmtP(prevClose));
                 setEl('bbg-volume', fmtV(vol));
                 setEl('bbg-time',   String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
+                
+                // Detailed Terminal sync
                 setEl('ov-start', fmtP(price));
                 setEl('ov-open',  fmtP(open));
                 setEl('ov-high',  fmtP(high));
                 setEl('ov-low',   fmtP(low));
                 setEl('ov-close', fmtP(prevClose));
-                _applyTick(price, pct, high, low, vol, open);
-                console.log('[DATA]', rawSym, fmtP(price), (up?'+':'')+pct.toFixed(2)+'%');
-            } catch(e) { console.warn('[DATA] error:', e.message); }
+                
+                // Master Sync Hook
+                if(typeof _applyTick === 'function') _applyTick(price, pct, high, low, vol, open);
+                
+            } catch(e){ console.warn('[Bloomberg High-Speed Engine] Error:', e.message); }
         };
         doFetch();
-        window._ovRefreshTimer = setInterval(doFetch, 5000);
+        // Increased polling frequency to 1.1s for near real-time stock/commodity movement
+        window._ovRefreshTimer = setInterval(() => { try { doFetch(); } catch(e){} }, 1100);
+        // Set fake WS object so close() works
         window._currentBbgWs = { close: ()=>{ clearInterval(window._ovRefreshTimer); window._ovRefreshTimer=null; } };
     }
 };
@@ -27924,10 +27991,10 @@ window._updateTVChart = function(sym, interval) {
       + '  locale:"en",'
       + '  toolbar_bg:"#000000",'
       + '  enable_publishing:false,'
-      + '  hide_top_toolbar:false,'
+      + '  hide_top_toolbar:true,'
       + '  hide_legend:true,'
-      + '  hide_side_toolbar:false,'
-      + '  allow_symbol_change:true,'
+      + '  hide_side_toolbar:true,'
+      + '  allow_symbol_change:false,'
       + '  save_image:false,'
       + '  backgroundColor:"rgba(0,0,0,1)",'
       + '  gridColor:"#000000",'
@@ -28336,13 +28403,8 @@ window._openChartForSymbol = function(sym) {
         'HYPE':'HYPEUSDT.P',  'BERA':'BERAUSDT',
         // ── HYPERLIQUID perp (for HL-only) ────────────────────────────────────
         'HYPE-PERP':'HYPEUSDT.P', 'BERA-PERP':'BERAUSDT',
-        // ── US EQUITIES (Binance/Bybit Perp optimized) ──
-        'MSTR':'MSTRUSDT','COIN':'COINUSDT','SOFI':'SOFIUSDT','HOOD':'HOODUSDT',
-        'TSLA':'TSLAUSDT','NVDA':'NVDAUSDT','AAPL':'AAPLUSDT','AMZN':'AMZNUSDT',
-        'MSFT':'MSFTUSDT','META':'METAUSDT','GOOGL':'GOOGLUSDT','NFLX':'NFLXUSDT',
-        'AMD':'AMDUSDT','INTC':'INTCUSDT','AAPL':'AAPLUSDT',
-        // ── Others (Yahoo/Standard) ──
-        'MSTR':'NASDAQ:MSTR','COIN':'NASDAQ:COIN','SOFI':'NASDAQ:SOFI','HOOD':'HOOD',
+        // ── US EQUITIES — TradingView symbols ──
+        'HOOD':'HOOD',
         'PLTR':'NYSE:PLTR','UPST':'NASDAQ:UPST','AFRM':'NASDAQ:AFRM','SQ':'NYSE:SQ',
         'PYPL':'NASDAQ:PYPL','IBIT':'NASDAQ:IBIT','SNOW':'NYSE:SNOW','DDOG':'NASDAQ:DDOG',
         'NET':'NYSE:NET','CRWD':'NASDAQ:CRWD','ZS':'NASDAQ:ZS','OKTA':'NASDAQ:OKTA',
