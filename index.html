@@ -1531,7 +1531,7 @@ _boot.render();
     try{ if(typeof _activateAIFeatures==='function') _activateAIFeatures(); }catch(e){}
   }, 300);
   setTimeout(function(){
-    try{ if(typeof sbSwitchTab==='function') sbSwitchTab('fx'); }catch(e){}
+    try{ if(typeof sbSwitchTab==='function') sbSwitchTab('cmd'); }catch(e){}
   }, 900);
   // Force map resize after boot dismiss
   [100,500,1500].forEach(function(ms){
@@ -1918,7 +1918,6 @@ const _bbgMenuCategories = [
     items: [
       { num:1,  run:true,  cmd:'CRYPTO',  desc:'Crypto Markets Dashboard' },
       { num:2,  run:true,  cmd:'WEI',     desc:'World Equity Indices' },
-      { num:3,  run:true,  cmd:'FX',      desc:'FX Spot Rates' },
       { num:4,  run:true,  cmd:'WORLD',   desc:'World Assets' },
     ]
   },
@@ -1986,32 +1985,10 @@ const _bbgMenuCategoriesR = [
       { num:14, run:true,  cmd:'EQUITY',  desc:'Equity Dashboard' },
     ]
   },
-  { label: 'FX Electronic Trading', isLink: true, items: [] },
-  {
-    label: null,
-    items: [
-      { num:21, run:true,  cmd:'FXIP',    desc:'FX Information Portal' },
-      { num:22, run:true,  cmd:'FX',      desc:'FX Spot Rates Table' },
-      { num:23, run:true,  cmd:'ALLQ',    desc:'All Quotes' },
-      { num:24, run:true,  cmd:'OVML',    desc:'Option Pricer FX/CMDT' },
-      { num:25, run:false, cmd:'BFIX',    desc:'Bloomberg FX Fixings' },
-      { num:26, run:false, cmd:'FXFA',    desc:'FX-Interest Rate Arbitrage' },
-      { num:27, run:true,  cmd:'GP',      desc:'Line Chart' },
-    ]
-  },
-  { label: 'FX Derivatives', isLink: true, items: [] },
-  {
-    label: null,
-    items: [
-      { num:28, run:false, cmd:'FIRS',    desc:'First Word FX' },
-      { num:29, run:false, cmd:'TOP FX',  desc:'Top News Stories' },
+  { label: null, items: [
       { num:30, run:true,  cmd:'STNI',    desc:'Suggested News Feed' },
       { num:31, run:true,  cmd:'RES',     desc:'Research Home' },
       { num:32, run:true,  cmd:'BICO',    desc:'Bloomberg Intelligence Primer' },
-    ]
-  },
-  { label: null, items: [
-      { num:33, run:false, cmd:'MARS FX', desc:'Foreign Exchange' },
   ]},
 ];
 
@@ -2072,9 +2049,8 @@ function _bbgBuildFullMenu(q) {
 const _bbgDirectPanels = ['CRYEXC','CRYPTO','DOMN','FUND','FUNDHIST','LIQD','LIQHEAT',
     'OIDASH','ORDB','CHAIN','DEFI','WHALE','ETFF','PERF','DHLO','VPVR',
     'MMAP','PORT','ALERTS','JOURN','SENT','RISK','ECAL','WIRP',
-    'WN','NWS','INTEL','MACRO','FED','WORLD','ALLQ','FXIP','FXDS','FXTF',
-    'FXC','WCR','WVOL','XCCY','GMM','FXSW','XDSH','FXFC','WCRS','ECMI',
-    'BFIX','FXFA','GP','FIRS','STNI','RES','BICO','GHNEWS','FX',
+    'WN','NWS','INTEL','MACRO','FED','WORLD','ALLQ',
+    'GP','STNI','RES','BICO','GHNEWS',
     'COMDTY','BYFC','CRYEXC'];
 
 window._bbgMenuSelect = function(cmd) {
@@ -2122,10 +2098,9 @@ function _bbgShowAC(q) {
   const rETFs   = _bbgETFs.filter(matchSec).slice(0,4);
   const rIdx    = _bbgIndices.filter(matchSec).slice(0,5);
   const rCmd    = _bbgCommodities.filter(matchSec).slice(0,5);
-  const rFx     = _bbgForex.filter(matchSec).slice(0,5);
 
   const hasResults = rCrypto.length || rMacro.length || rNews.length || rSecs.length ||
-    rEqs.length || rETFs.length || rIdx.length || rCmd.length || rFx.length || allMenuItems.length;
+    rEqs.length || rETFs.length || rIdx.length || rCmd.length || allMenuItems.length;
 
   if (!hasResults) { _bbgHideAC(); return; }
 
@@ -2204,10 +2179,6 @@ function _bbgShowAC(q) {
   if (rCmd.length) {
     rightCol += secHead('COMMODITIES', !rightCol);
     rightCol += rCmd.map(s => secRow(s.sym.replace(' Comdty',''), s.name, 'Comdty', s.sym)).join('');
-  }
-  if (rFx.length) {
-    rightCol += secHead('FOREIGN EXCHANGE', !rightCol);
-    rightCol += rFx.map(s => secRow(s.sym.replace(' Curncy',''), s.name, 'Curncy', s.sym)).join('');
   }
 
   // Two columns if both sides have content, else single
@@ -3477,7 +3448,7 @@ function _handleGlobalCmd() {
   // If function code is recognized, open it
   if(fn) {
     const title = getPanelTitle(fn);
-    if(title !== fn || ['WN','INTEL','DES','FA','GP','EQUITY','NWS','CRYPTO','WEI','FX'].includes(fn)) {
+    if(title !== fn || ['WN','INTEL','DES','FA','GP','EQUITY','NWS','CRYPTO','WEI'].includes(fn)) {
       if(sec && typeof onSelect === 'function') {
         try { onSelect(sec); } catch(e){}
       }
@@ -3623,21 +3594,6 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ql-it" onclick="_openChartForSymbol('DJI');closeAllQL()"><div class="ql-it-desc">Dow Jones (DJI)</div></div>
           <div class="ql-it" onclick="_openChartForSymbol('DAX');closeAllQL()"><div class="ql-it-desc">DAX Germany 40</div></div>
           <div class="ql-it" onclick="_openChartForSymbol('NI225');closeAllQL()"><div class="ql-it-desc">Nikkei 225 Japan</div></div>
-        </div>
-      </div>
-
-      <!-- FX & RATES folder -->
-      <div class="ql-folder open" onclick="event.stopPropagation()">
-        <div class="ql-folder-hd">
-          <span class="ql-folder-arrow">▶</span>
-          <span class="ql-folder-name">Foreign Exchange</span>
-        </div>
-        <div class="ql-folder-body">
-          <div class="ql-it" onclick="_openChartForSymbol('EURUSD');closeAllQL()"><div class="ql-it-desc">EUR/USD — Binance EURUSDT</div></div>
-          <div class="ql-it" onclick="_openChartForSymbol('GBPUSD');closeAllQL()"><div class="ql-it-desc">GBP/USD — Yahoo Finance</div></div>
-          <div class="ql-it" onclick="_openChartForSymbol('USDJPY');closeAllQL()"><div class="ql-it-desc">USD/JPY — Yahoo Finance</div></div>
-          <div class="ql-it" onclick="_openChartForSymbol('AUDUSD');closeAllQL()"><div class="ql-it-desc">AUD/USD — Yahoo Finance</div></div>
-          <div class="ql-it" onclick="openPanel('FX');closeAllQL()"><div class="ql-it-desc">FX: All Rates Table</div></div>
         </div>
       </div>
 
@@ -4240,8 +4196,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- TAB BAR -->
     <div id="sb-tabs" style="display:flex;flex-shrink:0;background:#000;border-bottom:1px solid #1a1000;overflow-x:auto;scrollbar-width:none;">
       
-      <div class="sbtab on" data-tab="fx"  onclick="sbSwitchTab('fx')">FX</div>
-      <div class="sbtab" data-tab="cmd" onclick="sbSwitchTab('cmd')">CMD</div>
+      <div class="sbtab on" data-tab="cmd" onclick="sbSwitchTab('cmd')">CMD</div>
       <div class="sbtab" data-tab="cry" onclick="sbSwitchTab('cry')">CRYPTO</div>
       <div class="sbtab" data-tab="stk" onclick="sbSwitchTab('stk')">STOCKS</div>
       <div class="sbtab" data-tab="etf" onclick="sbSwitchTab('etf')">ETF</div>
@@ -4252,12 +4207,6 @@ document.addEventListener('DOMContentLoaded', function() {
     <div id="sbt-idx" class="sb-tab-body" style="display:none!important;">
       <div class="sb-hd"><span class="sb-ht" id="sb-title">WORLD INDICES</span><span class="sb-time" id="sb-time"></span></div>
       <div class="sbl" id="mkt-list" style="flex:1;overflow-y:auto;"></div>
-    </div>
-
-    <!-- TAB: FX -->
-    <div id="sbt-fx" class="sb-tab-body" style="flex:1;display:none;flex-direction:column;min-height:0;overflow:hidden;">
-      <div class="sb-hd"><span class="sb-ht">FOREIGN EXCHANGE</span></div>
-      <div class="sbl" id="fx-list-full" style="flex:1;overflow-y:auto;"></div>
     </div>
 
     <!-- TAB: CMD (Commodities & Futures) -->
@@ -4298,8 +4247,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     
 
-    <!-- hidden fx-list kept for backward-compat with renderSidebar() -->
-    <div id="fx-list" style="display:none"></div>
   </div>
 </div>
 
@@ -4382,7 +4329,6 @@ document.addEventListener('DOMContentLoaded', function() {
       <span class="si-badge" id="si-cb">CBS</span>
       <span class="si-badge" id="si-okx">OKX</span>
       <span class="si-badge" id="si-bybit">BYB</span>
-      <span class="si-badge" id="si-fx">FX</span>
       <span class="si-badge" id="si-idx">IDX</span>
       <span class="si-badge" id="si-defi">DFI</span>
       <span class="si-badge" id="si-cg">CGK</span>
@@ -4862,7 +4808,7 @@ const COMDTY_DATA=[
   {s:'U308',n:'URANIUM SPOT',px:null, u:'lb',  chg:.84,  open:71.80,  hi:73.2,lo:71.4,ytd:-12.8}
 ];
 
-// FXP — static fallback; overwritten by fetchFX() (Frankfurter/ECB) on load
+// FXP — static fallback data
 const FXP=[
   {p:'EUR/USD',b:1.08620,a:1.08631,c:-.28},
   {p:'GBP/USD',b:1.29340,a:1.29354,c:-.18},
@@ -5975,7 +5921,7 @@ function flyTo(c,z){map.flyTo(c,z,{duration:2.5, easeLinearity:0.05});}
 
 const LG={mkt:L.layerGroup().addTo(map),fx:L.layerGroup().addTo(map),news:L.layerGroup().addTo(map),lbl:L.layerGroup().addTo(map),cb:L.layerGroup().addTo(map),cables:L.layerGroup().addTo(map)};
 const LV={mkt:true,fx:true,news:true,lbl:true,cb:true,cables:true};
-const LYR_LABELS={mkt:'MKT',fx:'FX',news:'NEWS',lbl:'LABELS',cb:'CENTRAL BANKS',cables:'POWER CABLES'};
+const LYR_LABELS={mkt:'MKT',news:'NEWS',lbl:'LABELS',cb:'CENTRAL BANKS',cables:'POWER CABLES'};
 
 /* ═══════════════════════════════════════════════════════
    UNDERGROUND POWER CABLES LAYER — OpenStreetMap/Overpass
@@ -6244,9 +6190,7 @@ function makePriceLabel(sym, px, chg, fxPair, fxPx){
   </div>`;
 }
 
-function renderFXPins(){ renderFXStateLayer();
-  LG.fx.clearLayers();
-}
+function renderFXPins(){ /* removed */ }
 
 function renderNewsPins(){
   LG.news.clearLayers();
@@ -6536,7 +6480,6 @@ function fmtVOL(v){if(!v&&v!==0)return '—';if(typeof v==='number')return '$'+f
 function getPanelTabs(fn){
   const tabs={
     WEI:['ALL','AMERICAS','EUROPE','ASIA/PAC','MIDEAST'],
-    FX:['SPOT','CROSSES'],
     IDX:['ALL','US','EUROPE','ASIA','AMERICAS','VOLATILITY'],
     CRYPTO:['MKT CAP'],
     COMDTY:['ALL','ENERGY','METALS','AGRI'],
@@ -6557,7 +6500,7 @@ function getPanelTabs(fn){
   return tabs[fn]||null;
 }
 function getPanelTitle(fn){
-  const t={WEI:'WORLD EQUITY INDICES',FX:'FOREIGN EXCHANGE RATES',EQUITY:'US EQUITY QUOTES',IDX:'WORLD INDICES',MOVERS:'TOP MOVERS',CRYPTO:'DIGITAL ASSETS / CRYPTO',COMDTY:'COMMODITIES',ENERGY:'ENERGY MARKETS',METALS:'PRECIOUS METALS',AGRI:'AGRICULTURAL',MACRO:'MACRO DASHBOARD',WIRP:'RATE CUT PROBABILITIES',WN:'NEWS FEED',NWS:'NEWS & RESEARCH',ALERTS:'MACRO ALERTS',DES:'SECURITY DESCRIPTION',FA:'FINANCIAL ANALYSIS',MMAP:'MARKET HEATMAP',CRYPTOHEAT:'CRYPTO HEATMAP',YLDS:'TREASURY YIELD CURVE',FXIP:'FX IMPLIED VOLATILITY',FXCL:'FX CORRELATIONS',CN:'X / SOCIAL FEED',ECON:'COUNTRY ECONOMICS',ECAL:'ECONOMIC CALENDAR',ECAL2:'ECONOMIC CALENDAR — NEXT WEEK',DEFI:'DEFI PROTOCOLS',CHAIN:'BLOCKCHAIN NETWORKS',PERF:'PERFORMANCE TABLE',BYFC:'BOND YIELD FORECASTS',ETFF:'ETF FLOWS — BITCOIN & ETHEREUM',FUND:'PERPETUAL FUNDING RATES',LIQD:'LIQUIDATIONS MONITOR',DOMN:'',NETSIT:'DATA NETWORK SYSTEM — P2P MESH VISUALIZER',DHLO:'DAILY HIGH · LOW · OPEN · CLOSE',INTEL:'GLOBAL INTELLIGENCE',JOURN:'JOURNALIST & TRADER WATCHLIST',SRCM:'SOURCE HEALTH MONITOR',SRC:'SOURCES & DATA PROVIDERS',OPT:'OPTIONS CHAIN',BNDS:'SOVEREIGN BONDS & CREDIT',EARN:'EARNINGS CALENDAR',PORT:'PORTFOLIO TRACKER',SENT:'MARKET SENTIMENT',IPO:'IPO CALENDAR',MNA:'M&A DEAL TRACKER',CRYEXC:'CRYEXC — LIVE ORDER FLOW & NEWS',RISK:'RISK METRICS',GMHM:'GLOBAL MACRO HEATMAP',ORDB:'ORDER BOOK DEPTH',CRYPTOOPT:'CRYPTO OPTIONS CHAIN',WHALE:'WHALE TRACKER & ON-CHAIN',OIDASH:'OPEN INTEREST DASHBOARD',FUNDHIST:'FUNDING RATE HISTORY',VPVR:'VOLUME PROFILE VPVR',LIQHEAT:'LIQUIDATION HEATMAP',HYPER:'HYPERLIQUID — LIVE PERP DASHBOARD',CRCL:'CRCL — CIRCULAR MARKET METRICS',METR:'METR — CROSS-ASSET METRICS DASHBOARD',MULTIFEED:'MULTI-EXCHANGE LIVE FEED',STOCKS2:'EXTENDED EQUITY UNIVERSE'};
+  const t={WEI:'WORLD EQUITY INDICES',EQUITY:'US EQUITY QUOTES',IDX:'WORLD INDICES',MOVERS:'TOP MOVERS',CRYPTO:'DIGITAL ASSETS / CRYPTO',COMDTY:'COMMODITIES',ENERGY:'ENERGY MARKETS',METALS:'PRECIOUS METALS',AGRI:'AGRICULTURAL',MACRO:'MACRO DASHBOARD',WIRP:'RATE CUT PROBABILITIES',WN:'NEWS FEED',NWS:'NEWS & RESEARCH',ALERTS:'MACRO ALERTS',DES:'SECURITY DESCRIPTION',FA:'FINANCIAL ANALYSIS',MMAP:'MARKET HEATMAP',CRYPTOHEAT:'CRYPTO HEATMAP',YLDS:'TREASURY YIELD CURVE',CN:'X / SOCIAL FEED',ECON:'COUNTRY ECONOMICS',ECAL:'ECONOMIC CALENDAR',ECAL2:'ECONOMIC CALENDAR — NEXT WEEK',DEFI:'DEFI PROTOCOLS',CHAIN:'BLOCKCHAIN NETWORKS',PERF:'PERFORMANCE TABLE',BYFC:'BOND YIELD FORECASTS',ETFF:'ETF FLOWS — BITCOIN & ETHEREUM',FUND:'PERPETUAL FUNDING RATES',LIQD:'LIQUIDATIONS MONITOR',DOMN:'',NETSIT:'DATA NETWORK SYSTEM — P2P MESH VISUALIZER',DHLO:'DAILY HIGH · LOW · OPEN · CLOSE',INTEL:'GLOBAL INTELLIGENCE',JOURN:'JOURNALIST & TRADER WATCHLIST',SRCM:'SOURCE HEALTH MONITOR',SRC:'SOURCES & DATA PROVIDERS',OPT:'OPTIONS CHAIN',BNDS:'SOVEREIGN BONDS & CREDIT',EARN:'EARNINGS CALENDAR',PORT:'PORTFOLIO TRACKER',SENT:'MARKET SENTIMENT',IPO:'IPO CALENDAR',MNA:'M&A DEAL TRACKER',CRYEXC:'CRYEXC — LIVE ORDER FLOW & NEWS',RISK:'RISK METRICS',GMHM:'GLOBAL MACRO HEATMAP',ORDB:'ORDER BOOK DEPTH',CRYPTOOPT:'CRYPTO OPTIONS CHAIN',WHALE:'WHALE TRACKER & ON-CHAIN',OIDASH:'OPEN INTEREST DASHBOARD',FUNDHIST:'FUNDING RATE HISTORY',VPVR:'VOLUME PROFILE VPVR',LIQHEAT:'LIQUIDATION HEATMAP',HYPER:'HYPERLIQUID — LIVE PERP DASHBOARD',CRCL:'CRCL — CIRCULAR MARKET METRICS',METR:'METR — CROSS-ASSET METRICS DASHBOARD',MULTIFEED:'MULTI-EXCHANGE LIVE FEED',STOCKS2:'EXTENDED EQUITY UNIVERSE'};
   return t[fn]||fn;
 }
 
@@ -6570,7 +6513,7 @@ function openPanel(fn,posX,posY){
   // Auto-update TOPBAR with panel name
   const _panelNames = {
     'EQUITY':'Equities','MMAP':'Market Heatmap','PERF':'Performance',
-    'IDX':'World Indices','FA':'Financial Analysis','FX':'FX Spot Rates',
+    'IDX':'World Indices','FA':'Financial Analysis',
     'WIRP':'Rate Probabilities','BYFC':'Bond Yield Forecasts',
     'CRYPTO':'Crypto Markets','WEI':'World Equity Indices',
     'ETFF':'ETF Flows','FUND':'Fund Screener','NWS':'News',
@@ -6936,7 +6879,6 @@ function _buildFilteredNewsPanel(title, filter, bodyId) {
 function buildPanelContent(fn){
   switch(fn){
     case 'WEI':    return buildWEITable(CENTERS);
-    case 'FX':     return buildFXTable(FXP);
     case 'IDX':    return buildIDX();
     case 'EQUITY': return buildEQUITY();
     case 'MOVERS': return buildMOVERS();
@@ -7093,10 +7035,6 @@ function buildPanelContentTab(fn,ti){
     const rmap={nyc:'AM',chi:'AM',tor:'AM',sao:'AM',bue:'AM',lon:'EU',fra:'EU',par:'EU',zur:'EU',ams:'EU',mad:'EU',mil:'EU',sto:'EU',war:'EU',pra:'EU',vie:'EU',bud:'EU',mow:'EU',ist:'EU',dub:'ME',riy:'ME',tlv:'ME',cai:'ME',joh:'ME',tok:'AS',sha:'AS',hkg:'AS',sin:'AS',mum:'AS',seo:'AS',tai:'AS',ban:'AS',syd:'AS'};
     const regs=[null,'AM','EU','AS','ME'];
     return buildWEITable(CENTERS.filter(c=>!regs[ti]||rmap[c.id]===regs[ti]));
-  }
-  if(fn==='FX'){
-    if(ti===0)return buildFXTable(FXP.slice(0,10));
-    return buildFXTable(FXP.slice(10));
   }
   if(fn==='IDX'){
     const regions={1:'US',2:'EU',3:'AS',4:'AM',5:'VIX'};
@@ -7298,79 +7236,7 @@ function buildWEITable(data){
   return h;
 }
 
-function buildFXTable(data){
-  const MAJORS = ['EUR/USD','GBP/USD','USD/JPY','USD/CHF','AUD/USD','NZD/USD','USD/CAD'];
-  const chgStr = v => (v>=0?'+':'')+v.toFixed(2)+'%';
-  // Bloomberg-authentic colored cell backgrounds for % change columns
-  const chgCell = (v, sz='10') => {
-    const abs = Math.abs(v);
-    const intensity = Math.min(0.42, abs * 0.08 + 0.08);
-    const bg = v >= 0 ? `rgba(0,170,55,${intensity})` : `rgba(210,35,35,${intensity})`;
-    const col = v >= 0 ? '#00ee55' : '#ff4444';
-    return `<td style="padding:2px 5px;text-align:right;background:${bg};color:${col};font-weight:900;font-size:${sz}px;font-variant-numeric:tabular-nums;white-space:nowrap">${chgStr(v)}</td>`;
-  };
-  const th = (label,align='right') => `<th style="padding:4px 5px;font-size:7.5px;color:#cc7722;text-align:${align};letter-spacing:1px;font-weight:700;white-space:nowrap;border-bottom:1px solid #1a1100;background:#0a0500">${label}</th>`;
-  const grpHdr = lbl => `<tr><td colspan="14" style="padding:5px 6px 3px;font-size:7px;font-weight:700;letter-spacing:2.5px;color:#665533;background:#000;border-top:1px solid #1a1100">${lbl}</td></tr>`;
-  // Simulate daily volumes for FX pairs
-  const volMap={'EUR/USD':'$680B','GBP/USD':'$330B','USD/JPY':'$580B','USD/CHF':'$120B','AUD/USD':'$190B','NZD/USD':'$68B','USD/CAD':'$210B','USD/CNY':'$42B','USD/INR':'$38B','USD/BRL':'$22B','USD/CZK':'$8B','EUR/CZK':'$6B','USD/TRY':'$18B','USD/ZAR':'$24B','USD/KRW':'$32B','USD/SGD':'$28B','USD/SEK':'$14B','USD/PLN':'$12B','USD/HUF':'$9B','EUR/GBP':'$120B','EUR/JPY':'$84B','GBP/JPY':'$42B','AUD/JPY':'$28B','EUR/CHF':'$36B','USD/MXN':'$48B','USD/THB':'$8B','USD/TWD':'$12B','USD/ILS':'$6B','USD/CLP':'$4B','USD/ARS':'$2B','NZD/JPY':'$14B','CAD/JPY':'$18B','CHF/JPY':'$22B','GBP/CHF':'$16B','AUD/NZD':'$8B','GBP/AUD':'$12B','EUR/AUD':'$18B','USD/NOK':'$16B','USD/DKK':'$8B','USD/RUB':'$6B','USD/PHP':'$4B','USD/IDR':'$6B','USD/MYR':'$4B','USD/VND':'$2B','USD/EGP':'$1B','USD/NGN':'$.8B','USD/PKR':'$1B','USD/BDT':'$.4B','USD/COP':'$3B','USD/PEN':'$2B'};
-  let h=`<table style="width:auto;border-collapse:collapse;font-family:var(--fn-num);table-layout:fixed;background:#000">
-  <colgroup>
-    <col style="width:14px"><col style="width:68px"><col style="width:68px">
-    <col style="width:58px"><col style="width:52px">
-    <col style="width:50px"><col style="width:50px"><col style="width:50px"><col style="width:50px">
-    <col style="width:58px"><col style="width:58px"><col style="width:58px">
-    <col style="width:46px"><col style="width:36px">
-  </colgroup>`;
-  const colHdr = `<tr>
-    ${th('#','right')}${th('PAIR','left')}${th('PRICE')}
-    ${th('CHG')}${th('SPREAD')}
-    ${th('1D%')}${th('5D%')}${th('1M%')}${th('YTD%')}
-    ${th('HIGH')}${th('LOW')}${th('OPEN')}
-    ${th('VOL')}${th('TIME')}
-  </tr>`;
-  const mkRow = (f,idx) => {
-    const mid=(f.b+f.a)/2,sp=f.a-f.b;
-    const dp=mid>10?2:mid>1?4:5;
-    const fn2=v=>v.toFixed(dp);
-    const chgAbs=mid*f.c/100;
-    const open=mid/(1+f.c/100);
-    const hi=mid*(1+Math.abs(f.c||0.3)/100*1.2);
-    const lo=mid*(1-Math.abs(f.c||0.3)/100*1.2);
-    const seed=f.p.charCodeAt(0)+f.p.charCodeAt(4);
-    const d5=f.c*2.4+((seed%7)-3)*0.3;
-    const m1=f.c*5.2+((seed%11)-5)*0.8;
-    const ytd=((mid/(window.YTD_FX&&window.YTD_FX[f.p]||mid)-1)*100);
-    const now=new Date();const timeStr=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-    const vol=volMap[f.p]||'—';
-    const rowBg = idx%2===0 ? '#040200' : '#000';
-    const chgAbsCol = chgAbs >= 0 ? '#00ee55' : '#ff4444';
-    return `<tr onmouseover="this.style.background='rgba(243,159,65,.06)'" onmouseout="this.style.background='${rowBg}'" style="background:${rowBg};border-bottom:1px solid #0d0800;cursor:pointer">
-      <td style="padding:2px 4px;text-align:right;color:#443322;font-size:8.5px;font-weight:700">${idx}</td>
-      <td style="padding:2px 6px"><span style="color:#F39F41;font-weight:800;font-size:10.5px;letter-spacing:.3px">${f.p}</span></td>
-      <td style="padding:2px 6px;text-align:right;color:#e8dfc8;font-size:10.5px;font-variant-numeric:tabular-nums;font-weight:800">${fn2(mid)}</td>
-      <td style="padding:2px 5px;text-align:right;color:${chgAbsCol};font-size:9.5px;font-variant-numeric:tabular-nums;font-weight:700">${chgAbs>=0?'+':''}${chgAbs.toFixed(dp)}</td>
-      <td style="padding:2px 5px;text-align:right;color:#665544;font-size:9.5px;font-variant-numeric:tabular-nums">${sp.toFixed(dp)}</td>
-      ${chgCell(f.c,'10.5')}
-      ${chgCell(d5,'10')}
-      ${chgCell(m1,'10')}
-      ${chgCell(ytd,'10.5')}
-      <td style="padding:2px 5px;text-align:right;color:#665840;font-size:9.5px;font-variant-numeric:tabular-nums">${fn2(hi)}</td>
-      <td style="padding:2px 5px;text-align:right;color:#554433;font-size:9.5px;font-variant-numeric:tabular-nums">${fn2(lo)}</td>
-      <td style="padding:2px 5px;text-align:right;color:#443322;font-size:9.5px;font-variant-numeric:tabular-nums">${fn2(open)}</td>
-      <td style="padding:2px 5px;text-align:right;color:#4488aa;font-size:8.5px;font-weight:700">${vol}</td>
-      <td style="padding:2px 4px;text-align:right;color:#332211;font-size:8.5px">${timeStr}</td>
-    </tr>`;
-  };
-  const majors = data.filter(f=>MAJORS.includes(f.p));
-  const em = data.filter(f=>!MAJORS.includes(f.p));
-  h += grpHdr('MAJORS') + colHdr;
-  majors.forEach((f,i) => h += mkRow(f,i+1));
-  if(em.length){
-    h += grpHdr('EM / OTHER') + colHdr;
-    em.forEach((f,i) => h += mkRow(f,majors.length+i+1));
-  }
-  return h+'</table>';
-}
+function buildFXTable(data){ return ""; /* removed */ }
 
 function buildEQUITY(){
   // Bloomberg-authentic: colored cell backgrounds for % change columns
@@ -7789,7 +7655,7 @@ function buildMOVERS(){
   // přidám ytd počítané z Jan 1 2026 open
   const eqAll = Object.entries(STKS).map(([k,v],i)=>({s:k,n:v.n,px:v.px,chg:(rng(ds,i+1)-.45)*9.4,ytd:calcYtd2026(k,v.px)}));
   const crAll = CRYPTO.map((c,i)=>({s:c.s,n:c.n,px:c.px,chg:c.chg+(rng(ds+1000,i)-.5)*2,ytd:calcYtd2026(c.s,c.px)}));
-  const fxAll = FXP.map((f,i)=>({s:f.p,n:f.p,px:f.b,chg:f.c+(rng(ds+2000,i)-.5)*.6,ytd:calcYtd2026(f.p,f.b)}));
+  const fxAll = [];
   const cmAll = COMDTY_DATA.map((c,i)=>({s:c.s,n:c.n,px:c.px,chg:c.chg+(rng(ds+3000,i)-.5)*1.2,ytd:calcYtd2026(c.s,c.px)}));
   const etfAll = [
     {s:'SPY', n:'SPDR S&P 500 ETF',          px:558.40, ytd:-8.2},
@@ -7868,7 +7734,6 @@ function buildMOVERS(){
   window._mvData = {
     EQ:    mkRows(eqAll,  v=>'$'+v.toFixed(2)),
     CRYPTO:mkRows(crAll,  fmtCPx),
-    FX:    mkRows(fxAll,  v=>v.toFixed(4)),
     CMDTY: mkRows(cmAll,  v=>'$'+v.toFixed(2)),
     ETF:   mkRows(etfAll, v=>'$'+v.toFixed(2))
 };
@@ -7888,7 +7753,6 @@ function buildMOVERS(){
     <div style="display:flex;align-items:stretch;height:20px;border-bottom:1px solid #0d0a00;flex-shrink:0;overflow-x:auto">
       <div class="mv-ptab" data-sec="EQ"     onclick="window._mvSwitch('EQ',event)"     style="padding:0 16px;font-size:7px;font-weight:700;letter-spacing:.8px;cursor:pointer;display:flex;align-items:center;color:#ff8800;border-bottom:1px solid #ff6600;border-right:1px solid #0d0a00;white-space:nowrap;flex-shrink:0">EQUITIES</div>
       <div class="mv-ptab" data-sec="CRYPTO" onclick="window._mvSwitch('CRYPTO',event)" style="padding:0 16px;font-size:7px;font-weight:700;letter-spacing:.8px;cursor:pointer;display:flex;align-items:center;color:#998870;border-bottom:1px solid transparent;border-right:1px solid #0d0a00;white-space:nowrap;flex-shrink:0">CRYPTO</div>
-      <div class="mv-ptab" data-sec="FX"     onclick="window._mvSwitch('FX',event)"     style="padding:0 16px;font-size:7px;font-weight:700;letter-spacing:.8px;cursor:pointer;display:flex;align-items:center;color:#998870;border-bottom:1px solid transparent;border-right:1px solid #0d0a00;white-space:nowrap;flex-shrink:0">FX</div>
       <div class="mv-ptab" data-sec="CMDTY"  onclick="window._mvSwitch('CMDTY',event)"  style="padding:0 16px;font-size:7px;font-weight:700;letter-spacing:.8px;cursor:pointer;display:flex;align-items:center;color:#998870;border-bottom:1px solid transparent;border-right:1px solid #0d0a00;white-space:nowrap;flex-shrink:0">COMMODITIES</div>
       <div class="mv-ptab" data-sec="ETF"    onclick="window._mvSwitch('ETF',event)"    style="padding:0 16px;font-size:7px;font-weight:700;letter-spacing:.8px;cursor:pointer;display:flex;align-items:center;color:#998870;border-bottom:1px solid transparent;border-right:1px solid #0d0a00;white-space:nowrap;flex-shrink:0">ETFs</div>
     </div>
@@ -10459,20 +10323,11 @@ function _renderSidebarInternal(){
   const mktList = document.getElementById('mkt-list');
   if(mktList) mktList.innerHTML=h;
 
-  let fh='';
-  FXP.slice(0,10).forEach(f=>{
-    const up=f.c>=0;const mid=(f.b+f.a)/2;const dp=mid>10?4:mid>1?5:6;
-    fh+=`<div class="mk"><span class="mk-s">${f.p.split('/')[0]}</span><span class="mk-n">${f.p}</span><span class="mk-p">${mid.toFixed(dp)}</span><span class="mk-c ${up?'up':'dn'}">${up?'+':'-'}${Math.abs(f.c).toFixed(3)}%</span></div>`;
-  });
-  const fxList = document.getElementById('fx-list');
-  if(fxList) fxList.innerHTML=fh;
-
   const sbTime = document.getElementById('sb-time');
   if(sbTime) sbTime.textContent=new Date().toLocaleTimeString('en-GB',{hour12:false});
   
   // also refresh active tab
   const at=window._sbTab||'idx';
-  if(at==='fx') sbRenderFX();
   if(at==='cmd') sbRenderCMD();
   if(at==='cry') sbRenderCRYPTO();
   if(at==='stk') sbRenderSTKS();
@@ -10486,7 +10341,6 @@ function sbSwitchTab(tab){
   document.querySelectorAll('.sb-tab-body').forEach(b=>b.style.display='none');
   const el=document.getElementById('sbt-'+tab);
   if(el){el.style.display='flex';}
-  if(tab==='fx')  sbRenderFX();
   if(tab==='cmd') sbRenderCMD();
   if(tab==='cry') sbRenderCRYPTO();
   if(tab==='stk') sbRenderSTKS();
@@ -10500,24 +10354,7 @@ function _mkRow(sym,name,px,chg,extra){
   return `<div class="mk" style="cursor:pointer" onclick="${clickHandler}"><span class="mk-s">${sym}</span><span class="mk-n">${name}${extra?'<span style="font-size:7px;color:#887760;margin-left:3px">'+extra+'</span>':''}</span><span class="mk-p">${pr}</span><span class="mk-c ${up?'up':'dn'}">${up?'+':'-'}${Math.abs(chg).toFixed(2)}%</span></div>`;
 }
 
-function sbRenderFX(){
-  const el=document.getElementById('fx-list-full');if(!el)return;
-  const groups=[
-    {h:'MAJORS',pairs:['EUR/USD','GBP/USD','USD/JPY','USD/CHF','AUD/USD','NZD/USD','USD/CAD']},
-    {h:'EM / OTHER',pairs:['USD/CNY','USD/INR','USD/BRL','USD/TRY','USD/ZAR','USD/KRW','USD/SGD','USD/SEK','USD/PLN','USD/HUF','USD/CZK','EUR/CZK']}
-  ];
-  let h='';
-  groups.forEach(g=>{
-    h+=`<div class="rh">${g.h}</div>`;
-    g.pairs.forEach(p=>{
-      const f=FXP.find(x=>x.p===p);if(!f)return;
-      const mid=(f.b+f.a)/2;const up=f.c>=0;
-      const dp=mid>10?2:mid>1?5:6;
-      h+=`<div class="mk"><span class="mk-s">${p.split('/')[0]}</span><span class="mk-n">${p}</span><span class="mk-p">${mid.toFixed(dp)}</span><span class="mk-c ${up?'up':'dn'}">${up?'+':'-'}${Math.abs(f.c).toFixed(3)}%</span></div>`;
-    });
-  });
-  el.innerHTML=h;
-}
+function sbRenderFX(){ /* removed */ }
 
 function sbRenderCMD(){
   const el=document.getElementById('cmd-list');if(!el)return;
@@ -10946,12 +10783,8 @@ setInterval(()=>_CITIES.forEach(c=>_fetchWeather(c)),600000);
 ═══════════════════════════════════════════════════════ */
 function jitter(){
   Object.values(MKT).forEach(m=>{m.chg+=(Math.random()-.5)*.012;m.px=Math.max(m.px*(1+(Math.random()-.499)*.0005),.001);});
-  FXP.forEach(f=>{const d=f.b*(Math.random()-.499)*.0003;f.b+=d;f.a+=d;f.c+=(Math.random()-.5)*.008;});
   CRYPTO.forEach(c=>{c.chg+=(Math.random()-.5)*.04;c.px=Math.max(c.px*(1+(Math.random()-.499)*.0005),.000001);});
-  buildTicker();renderSidebar();renderMarkers();renderFXPins();
-  // Update menu FX vals
-  const eurusd=FXP.find(f=>f.p==='EUR/USD');if(eurusd){const el=document.getElementById('fx-eurusd');if(el)el.textContent=((eurusd.b+eurusd.a)/2).toFixed(5);}
-  const usdczk=FXP.find(f=>f.p==='USD/CZK');if(usdczk){const el=document.getElementById('fx-usdczk');if(el)el.textContent=((usdczk.b+usdczk.a)/2).toFixed(3);}
+  buildTicker();renderSidebar();renderMarkers();
   // Update all crypto menu prices + colors
   [['BTC','mn-btc'],['ETH','mn-eth'],['SOL','mn-sol'],['XRP','mn-xrp'],['BNB','mn-bnb']].forEach(([sym,id])=>{
     const c=CRYPTO.find(x=>x.s===sym);
@@ -10967,7 +10800,7 @@ function jitter(){
     const tabEl=p.querySelector('.ptab.on');
     const body=p.querySelector('.panel-body');
     if(!fn||!body)return;
-    if(['WEI','FX','EQUITY','CRYPTO','COMDTY','MOVERS','MMAP'].includes(fn)){
+    if(['WEI','EQUITY','CRYPTO','COMDTY','MOVERS','MMAP'].includes(fn)){
       const tabs=getPanelTabs(fn);
       const ti=tabs&&tabEl?tabs.indexOf(tabEl.textContent):0;
       body.innerHTML=ti>0?buildPanelContentTab(fn,ti):buildPanelContent(fn);
@@ -10990,7 +10823,7 @@ function jitter(){
    Refresh: WS real-time, REST confirm every 10s, ecosystem APIs every 20s
 ═══════════════════════════════════════════════════════════════ */
 
-const LIVE={fx:false,crypto:false,ws:false,idx:false};
+const LIVE={crypto:false,ws:false,idx:false};
 let wsConn=null;
 let _wsLastTick=0;
 // Per-coin last-update source tracking
@@ -11578,39 +11411,7 @@ async function fetchDefiLlama(){
 /* ════════════════════════════════════════════
    8. FX + STOOQ (indices, commodities)
 ════════════════════════════════════════════ */
-async function fetchFX(){
-  try{
-    const r=await _fetchTimeout('https://api.frankfurter.app/latest?from=USD', 10000);
-    if(!r.ok)throw 0;
-    const d=await r.json();const rates={...d.rates,USD:1};let n=0;
-    FXP.forEach(f=>{
-      const[b,q]=f.p.split('/');let mid=null;
-      if(b==='USD'&&rates[q])mid=rates[q];
-      else if(q==='USD'&&rates[b])mid=1/rates[b];
-      else if(rates[b]&&rates[q])mid=rates[q]/rates[b];
-      if(mid&&!isNaN(mid)&&mid>0){
-        const sp=mid*0.00005;if(!f._open)f._open=mid;
-        f.b=mid-sp;f.a=mid+sp;f.c=f._open>0?((mid-f._open)/f._open)*100:0;n++;
-      }
-    });
-    LIVE.fx=true;window._layerStatus.macro=Object.assign(window._layerStatus.macro||{},{ok:true,ts:Date.now()});setLiveBadge('si-fx',true);renderFXPins();renderSidebar();refreshAllPanels();
-    setStat('FX ECB — '+n+' pairs  |  '+new Date().toLocaleTimeString('en-GB'));
-  }catch(_){
-    try{
-      const r2=await _fetchTimeout('https://open.er-api.com/v6/latest/USD', 10000);
-      if(!r2.ok)throw 0;
-      const rates=(await r2.json()).rates;rates.USD=1;
-      FXP.forEach(f=>{
-        const[b,q]=f.p.split('/');let mid=null;
-        if(b==='USD'&&rates[q])mid=rates[q];
-        else if(q==='USD'&&rates[b])mid=1/rates[b];
-        else if(rates[b]&&rates[q])mid=rates[q]/rates[b];
-        if(mid&&!isNaN(mid)&&mid>0){const sp=mid*0.00005;if(!f._open)f._open=mid;f.b=mid-sp;f.a=mid+sp;f.c=f._open>0?((mid-f._open)/f._open)*100:0;}
-      });
-      LIVE.fx=true;setLiveBadge('si-fx',true);renderFXPins();renderSidebar();
-    }catch(_){}
-  }
-}
+async function fetchFX(){ /* removed */ }
 
 const STOOQ_ALL={
   // Indexy — globální
@@ -12416,11 +12217,11 @@ async function fetchFinnhubTradFi(){
   }
 
   if(updated>0){
-    LIVE.idx=true; LIVE.fx=true;
-    setLiveBadge('si-idx',true); setLiveBadge('si-fx',true);
+    LIVE.idx=true;
+    setLiveBadge('si-idx',true);
     window._layerStatus.finnhubTF={ok:true,ts:Date.now(),count:updated};
     renderMarkers(); renderSidebar(); buildTicker(); refreshAllPanels();
-    setStat('FINNHUB TF — '+updated+' quotes (EQ+IDX+FX+CMD)  |  '+new Date().toLocaleTimeString('en-GB'));
+    setStat('FINNHUB TF — '+updated+' quotes (EQ+IDX+CMD)  |  '+new Date().toLocaleTimeString('en-GB'));
     console.log('[FinnhubTF] Updated '+updated+' traditional finance quotes');
   }
 }
@@ -12706,21 +12507,8 @@ function recordFX(pair, mid, source){
   _xFX[pair][source]={mid,ts:Date.now()};
 }
 
-/* Patch into existing fetchFX to record per-source */
 
-async function fetchAlphaVantageFX(){
-  // Alpha Vantage free tier for FX cross-validation
-  try{
-    const pairs=[['EUR','USD'],['GBP','USD'],['USD','JPY'],['USD','CHF']];
-    await Promise.allSettled(pairs.map(async([from,to])=>{
-      const r=await _fetchTimeout(`https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=${from}&to_currency=${to}&apikey=demo`, 8000);
-      if(!r.ok)return;
-      const d=await r.json();
-      const rate=parseFloat(d?.['Realtime Currency Exchange Rate']?.['5. Exchange Rate']);
-      if(rate>0)recordFX(`${from}/${to}`,rate,'AlphaVantage');
-    }));
-  }catch(_){}
-}
+async function fetchAlphaVantageFX(){ /* removed */ }
 
 /* Stooq also records commodity prices per source */
 
@@ -13145,10 +12933,6 @@ function _collectDataSnapshot(){
   if(gold) lines.push(`GOLD: $${gold.px} (${gold.chg>0?'+':''}${gold.chg?.toFixed(1)}%)`);
   if(wti) lines.push(`WTI: $${wti.px} (${wti.chg>0?'+':''}${wti.chg?.toFixed(1)}%)`);
   if(brent) lines.push(`BRENT: $${brent.px} (${brent.chg>0?'+':''}${brent.chg?.toFixed(1)}%)`);
-  
-  // FX
-  const fxPairs = FXP.slice(0,6).map(f=>`${f.p}: ${((f.b+f.a)/2).toFixed(4)} (${f.c>0?'+':''}${f.c?.toFixed(2)}%)`);
-  if(fxPairs.length) lines.push('FX: ' + fxPairs.join(', '));
   
   // Fear & Greed
   if(window._fng) lines.push(`Fear&Greed: ${window._fng.value} (${window._fng.classification})`);
@@ -13760,8 +13544,7 @@ function buildXSRC(tab){
   if(tab===3)return buildXSRCLiquidations();
   if(tab===4)return buildXSRCDominance();
   if(tab===5)return buildXSRCEquity();
-  if(tab===6)return buildXSRCFX();
-  if(tab===7)return buildXSRCCommodity();
+  if(tab===6)return buildXSRCCommodity();
   return buildXSRCCrypto();
 }
 
@@ -16214,23 +15997,20 @@ async function fetchBinanceYTDOpen(){
   
   // Meta enrichment
   setTimeout(fetchCoinStats,    8000);
-  fetchFX();
   fetchStooq();
   fetchDefiLlama();
-  setTimeout(fetchFinnhubTradFi, 6000); // Finnhub TradFi quotes (EQ+IDX+FX+CMD)
-  setTimeout(fetchAlphaVantageFX, 10000);
+  setTimeout(fetchFinnhubTradFi, 6000); // Finnhub TradFi quotes (EQ+IDX+CMD)
   
   // Repeat intervals
-  setInterval(fetchBinance24hr,     15000);  // Binance REST 5s (přímý)
-  setInterval(fetchHyperliquid,     10000);  // HL REST polling 3s (přímý, rychlý)
-  setInterval(fetchJupiterPrices,  20000);  // Jupiter every 20s
-  setInterval(fetchRaydium,        30000);  // Raydium every 30s
-  setInterval(fetchUniswapV3,      30000);  // Uniswap every 30s
-  setInterval(fetchPancakeSwap,    45000);  // Pancake every 45s
-  setInterval(watchdogBinance,     30000);  // WS watchdog
-  setInterval(fetchFX,             30000);
+  setInterval(fetchBinance24hr,     15000);
+  setInterval(fetchHyperliquid,     10000);
+  setInterval(fetchJupiterPrices,  20000);
+  setInterval(fetchRaydium,        30000);
+  setInterval(fetchUniswapV3,      30000);
+  setInterval(fetchPancakeSwap,    45000);
+  setInterval(watchdogBinance,     30000);
   setInterval(fetchStooq,          60000);
-  setInterval(fetchFinnhubTradFi,  60000); // Finnhub TradFi every 60s (rate limit safe)
+  setInterval(fetchFinnhubTradFi,  60000);
   // Finnhub WebSocket — real-time equities
   setTimeout(_startFinnhubWS, 2000);
   // Yahoo Finance — rotates all batches, one per 15s
@@ -16258,7 +16038,7 @@ async function fetchBinanceYTDOpen(){
   setInterval(fetchLive7D, 60000);              // 7D% refresh every 60s (CoinGecko rate limit)
   setInterval(fetchBinanceWeeklyOpen, 300000);  // klines fallback every 5min
   setInterval(()=>{
-    renderFXPins(); renderSidebar(); buildTicker(); renderMarkers();
+    renderSidebar(); buildTicker(); renderMarkers();
     // refreshAllPanels je throttlovaný interně — CRYPTO panel je skipnutý (má vlastní patch)
     refreshAllPanels();
   }, 2000);
@@ -17135,9 +16915,6 @@ const _MCMDS = {
   MMAP:   {label:'Market Heatmap',   cat:'E', action:()=>openPanel('MMAP')},
   PERF:   {label:'Performance',      cat:'E', action:()=>openPanel('PERF')},
   EQUITY: {label:'US Stocks',        cat:'E', action:()=>openPanel('EQUITY')},
-  FX:     {label:'FX Rates',         cat:'F', action:()=>openPanel('FX')},
-  FXIP:   {label:'FX Implied Vol',   cat:'F', action:()=>openPanel('FXIP')},
-  FXCL:   {label:'FX Correlations',  cat:'F', action:()=>openPanel('FXCL')},
   BYFC:   {label:'Bond Forecasts',   cat:'F', action:()=>openPanel('BYFC')},
   CRYPTO: {label:'Digital Assets',   cat:'C', action:()=>openPanel('CRYPTO')},
   LIQD:   {label:'Liquidations',     cat:'C', action:()=>openPanel('LIQD')},
@@ -17385,17 +17162,17 @@ function _ndraw(canvas, ts){
     // STATUS DOT — čte reálná live data: zelená=živá, červená=mrtvá
     let dotActive = false;
     if(isHub){
-      dotActive = !!(LIVE.ws||LIVE.fx||LIVE.crypto||LIVE.idx);
+      dotActive = !!(LIVE.ws||LIVE.crypto||LIVE.idx);
     } else if(isP2p){
       // každý P2P node mapuje na jiný datový zdroj
       const pid=node.id;
       if(pid==='p2p-ny')  dotActive=!!(LIVE.ws||LIVE.crypto||LIVE.idx);
-      else if(pid==='p2p-ldn') dotActive=!!(LIVE.fx||LIVE.idx);
-      else if(pid==='p2p-fra') dotActive=!!(LIVE.fx);
+      else if(pid==='p2p-ldn') dotActive=!!(LIVE.idx);
+      else if(pid==='p2p-fra') dotActive=false;
       else if(pid==='p2p-tok') dotActive=!!(LIVE.idx);
       else if(pid==='p2p-sg')  dotActive=!!(LIVE.ws||LIVE.crypto);
-      else if(pid==='p2p-pra') dotActive=!!(LIVE.idx||LIVE.fx);
-      else dotActive=!!(LIVE.ws||LIVE.fx);
+      else if(pid==='p2p-pra') dotActive=!!(LIVE.idx);
+      else dotActive=!!(LIVE.ws);
     } else if(node.type==='crypto'){
       const cr=CRYPTO.find(x=>x.s===node.label);
       dotActive=!!(cr&&cr.px>0);
@@ -17513,11 +17290,11 @@ function _nhud(uid){
     const pid=n.id;
     let live=false;
     if(pid==='p2p-ny')  live=!!(LIVE.ws||LIVE.crypto||LIVE.idx);
-    else if(pid==='p2p-ldn') live=!!(LIVE.fx||LIVE.idx);
-    else if(pid==='p2p-fra') live=!!(LIVE.fx);
+    else if(pid==='p2p-ldn') live=!!(LIVE.idx);
+    else if(pid==='p2p-fra') live=false;
     else if(pid==='p2p-tok') live=!!(LIVE.idx);
     else if(pid==='p2p-sg')  live=!!(LIVE.ws||LIVE.crypto);
-    else if(pid==='p2p-pra') live=!!(LIVE.idx||LIVE.fx);
+    else if(pid==='p2p-pra') live=!!(LIVE.idx);
     const dotC=live?'#00cc44':'#ff2222';
     const dotG=live?'0 0 5px rgba(0,204,68,0.8)':'0 0 4px rgba(255,34,34,0.6)';
     const dotAnim=live?'animation:blink 1.8s ease-in-out infinite':'';
@@ -17688,22 +17465,6 @@ function _initNetNodes(){
   _net.edges.push({from:'eth',to:'sol',type:'crypto',active:true,speed:0.052,bw:'BRIDGE'});
   _net.edges.push({from:'btc',to:'xrp',type:'crypto',active:true,speed:0.046,bw:'LIQUIDITY'});
 
-  // ── FX NODES
-  const fxPairs=[
-    {id:'eurusd',label:'EUR/USD',p:'p2p-fra'},
-    {id:'usdjpy',label:'USD/JPY',p:'p2p-tok'},
-    {id:'gbpusd',label:'GBP/USD',p:'p2p-ldn'},
-    {id:'usdczk',label:'USD/CZK',p:'p2p-pra'},
-    {id:'usdchf',label:'USD/CHF',p:'p2p-fra'}
-  ];
-  fxPairs.forEach((f,i)=>{
-    const fx=FXP.find(x=>x.p===f.label)||{b:'—',a:'—',c:0};
-    const a=(i/fxPairs.length)*Math.PI*2+Math.PI*.6;
-    _net.nodes.push({id:f.id,x:Math.cos(a)*195,y:Math.sin(a)*195+35,label:f.label,type:'fx',vx:0,vy:0,_pp:Math.random()*6.28,
-      data:{bid:fx.b,ask:fx.a,chg:(fx.c>=0?'+':'')+fx.c.toFixed(3)+'%',via:f.p,feed:'ECN·FX'}});
-    _net.edges.push({from:f.p,to:f.id,type:'fx',active:true,speed:0.058,bw:'ECN'});
-  });
-
   // ── MACRO + GOLD + ONCHAIN
   try{
     const xau=COMDTY_DATA?.find(c=>c.s==='XAU')||{px:3200,chg:0.5};
@@ -17785,7 +17546,7 @@ function _startNet(uid){
         const filled = (typeof CRYPTO!=='undefined'?CRYPTO:[].filter(x=>x.px>0).length);
         dataQuality = l1Qual !== null ? l1Qual : Math.min(1, filled/10);
       } else if(e.type==='fx'){
-        dataLive = l1Live || !!LIVE.fx;
+        dataLive = l1Live;
         const filled = (typeof FXP!=='undefined'?FXP:[].filter(x=>parseFloat(x.b)>0).length);
         dataQuality = l1Qual !== null ? l1Qual : Math.min(1, filled/8);
       } else if(e.type==='market'){
@@ -17793,8 +17554,8 @@ function _startNet(uid){
         const filled = Object.values(typeof MKT!=='undefined'?MKT:{}).filter(x=>x.px>0).length;
         dataQuality = l1Qual !== null ? l1Qual : Math.min(1, filled/6);
       } else if(e.type==='p2p'){
-        dataLive = l1Live || !!(LIVE.ws||LIVE.fx||LIVE.crypto||LIVE.idx);
-        dataQuality = l1Qual !== null ? l1Qual : [LIVE.ws,LIVE.fx,LIVE.crypto,LIVE.idx].filter(Boolean).length/4;
+        dataLive = l1Live || !!(LIVE.ws||LIVE.crypto||LIVE.idx);
+        dataQuality = l1Qual !== null ? l1Qual : [LIVE.ws,LIVE.crypto,LIVE.idx].filter(Boolean).length/3;
       } else if(e.type==='macro'){
         dataLive = l1Live || !!(_liveData?.fred?.ffr);
         dataQuality = l1Qual !== null ? (l1Qual * 0.8 + 0.2) : (dataLive?0.7:0.2);
@@ -18369,11 +18130,6 @@ function _getLiveFeedsSources(){
      fields:['open','high','low','close','volume','change%','date'],
      panels:['WEI','EQUITY'],          ok:LIVE?.stooq||false, last:null},
     {group:'MARKET DATA FEEDS',
-     key:'FX-MULTI',     label:'Frankfurter + ECB + ER-API',sub:'FX Rate Cascade',
-     url:'api.frankfurter.app + ecb.europa.eu + open.er-api.com',type:'REST',interval:'1min',
-     fields:['EUR/USD','GBP/USD','USD/JPY','USD/CZK','USD/CHF','USD/SGD'],
-     panels:['FX','FXCL','MACRO'],     ok:LIVE?.fx||false, last:null},
-    {group:'MARKET DATA FEEDS',
      key:'COINGECKO',    label:'CoinGecko',             sub:'Markets v3 API',
      url:'api.coingecko.com/api/v3/coins/markets',type:'REST',interval:'2min',
      fields:['current_price','market_cap','total_volume','price_change_24h','ath_change_percentage'],
@@ -18569,7 +18325,6 @@ function _buildMenuTab(uid){
   const cats={
     'CRYPTO AND ON-CHAIN':  {cmds:['CRYPTO','DOMN','DHLO','LIQD','FUND','ETFF'], col:'#bbbbbb'},
     'EQUITIES AND INDICES': {cmds:['WEI','MOVERS','MMAP','PERF','EQUITY'],                      col:'#aaaaaa'},
-    'FX AND FIXED INCOME':  {cmds:['FX','FXIP','FXCL','BYFC'],                          col:'#aaaaaa'},
     'MACRO AND CALENDAR':   {cmds:['MACRO','ECAL','COMDTY','ENERGY','METALS'],           col:'#aaaaaa'},
     'NEWS AND ALERTS':      {cmds:['WN','NWS'],                                               col:'#aaaaaa'}
 };
@@ -18692,7 +18447,6 @@ function buildNETSIT(ti){
     ${btnStyle('p2p','P2P','#aaa',false)}
     ${btnStyle('market','MKT','#aaa',false)}
     ${btnStyle('crypto','CRYPTO','#aaa',false)}
-    ${btnStyle('fx','FX','#aaa',false)}
     ${btnStyle('cmd','CMD','#aaa',false)}
     <button onclick="_nphy('${uid}')" id="nl-phy-${uid}" style="font-size:6px;padding:1.5px 5px;border:1px solid #1a1a1a;color:#333;background:transparent;cursor:pointer;font-family:inherit;margin-left:3px">PHYSICS</button>
     <button onclick="_nfit('${uid}')"                    style="font-size:6px;padding:1.5px 5px;border:1px solid #1a1a1a;color:#333;background:transparent;cursor:pointer;font-family:inherit">FIT</button>
@@ -19123,7 +18877,6 @@ function _loadLayout(){
 const _PRESETS = {
   trading: [
     {fn:'CRYPTO', x:'auto',y:0,   w:900, h:620},
-    {fn:'FX',     x:'auto',y:0,   w:400, h:320},
     {fn:'FUND',   x:'auto',y:324, w:560, h:300},
     {fn:'LIQD',   x:'auto',y:324, w:400, h:300}
   ],
@@ -22588,7 +22341,7 @@ window.addEventListener('online', () => {
   _hideOfflineBanner();
   // Trigger immediate refresh of all sources
   setTimeout(() => {
-    try { fetchBinance24hr(); fetchFX(); fetchHyperliquid(); } catch(e) {}
+    try { fetchBinance24hr(); fetchHyperliquid(); } catch(e) {}
     setTimeout(() => { try { fetchCoinGecko(); fetchKraken(); fetchOKX(); } catch(e) {} }, 2000);
   }, 1000);
 });
@@ -22768,8 +22521,7 @@ document.addEventListener('visibilitychange', () => {
       setTimeout(() => {
         try {
           fetchBinance24hr();
-          fetchFX();
-          fetchHyperliquid();
+                    fetchHyperliquid();
           buildTicker();
           renderSidebar();
           refreshAllPanels();
@@ -22828,7 +22580,7 @@ document.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.shiftKey && e.key === 'R') {
     e.preventDefault();
     try {
-      fetchBinance24hr(); fetchFX(); fetchHyperliquid();
+      fetchBinance24hr(); fetchHyperliquid();
       fetchCoinGecko(); fetchKraken(); fetchOKX(); fetchBybit();
       fetchAllNews(true); fetchMacroCalendar && fetchMacroCalendar(true);
       buildTicker(); renderSidebar(); refreshAllPanels();
@@ -28849,13 +28601,7 @@ async function fetchIndex(sym) {
   }
 }
 
-async function fetchFX(to) {
-  try {
-    const res = await fetch(`https://api.frankfurter.app/latest?from=USD&to=${to}`);
-    const data = await res.json();
-    return data.rates[to] ? (1 / data.rates[to]).toFixed(5) : '--';
-  } catch { return '--'; } 
-}
+async function fetchFX(to){ /* removed */ }
 
 async function fetchMetals() {
   try {
@@ -28882,11 +28628,9 @@ async function masterUpdate() {
   // START ALL FETCHES IN PARALLEL
   const [
     btcRes, spxRes, ndxRes, djiRes,
-    eurRes, gbpRes, jpyRes, audRes, cadRes,
     metalsRes
   ] = await Promise.allSettled([
     fetchBTC(), fetchIndex('%5EGSPC'), fetchIndex('%5ENDX'), fetchIndex('%5EDJI'),
-    fetchFX('EUR'), fetchFX('GBP'), fetchFX('JPY'), fetchFX('AUD'), fetchFX('CAD'),
     fetchMetals()
   ]);
 
@@ -28894,14 +28638,6 @@ async function masterUpdate() {
   const spx = spxRes.status === 'fulfilled' ? spxRes.value : '--';
   const ndx = ndxRes.status === 'fulfilled' ? ndxRes.value : '--';
   const dji = djiRes.status === 'fulfilled' ? djiRes.value : '--';
-  
-  const fxData = {
-    EUR: eurRes.status === 'fulfilled' ? eurRes.value : '--',
-    GBP: gbpRes.status === 'fulfilled' ? gbpRes.value : '--',
-    JPY: jpyRes.status === 'fulfilled' ? jpyRes.value : '--',
-    AUD: audRes.status === 'fulfilled' ? audRes.value : '--',
-    CAD: cadRes.status === 'fulfilled' ? cadRes.value : '--'
-  };
 
   const metals = metalsRes.status === 'fulfilled' ? metalsRes.value : {};
   const gold = metals.XAU ? (1 / metals.XAU).toFixed(2) : '--';
@@ -28909,7 +28645,6 @@ async function masterUpdate() {
 
   // Count successes
   [btc, spx, ndx, dji, gold, silver].forEach(v => { if(v !== '--') l1_sourcesOK++; });
-  Object.values(fxData).forEach(v => { if(v !== '--') l1_sourcesOK++; });
 
   // Sync via localStorage as requested
   const syncData = {
@@ -28918,13 +28653,9 @@ async function masterUpdate() {
     sp:  spx !== '--' ? parseFloat(spx).toFixed(2) : '5400.00',
     ndx: ndx !== '--' ? parseFloat(ndx).toFixed(2) : '18800.00',
     dji: dji !== '--' ? parseFloat(dji).toFixed(2) : '40000.00',
-    eur: fxData.EUR || '1.1468',
-    gbp: fxData.GBP || '1.2842',
-    jpy: fxData.JPY || '148.20',
-    aud: fxData.AUD || '0.6642',
     gold,
     silver,
-    quality: l1_sourcesOK / 12,
+    quality: l1_sourcesOK / 7,
     sources: l1_sourcesOK,
     uptime: l1_uptime * 5
   };
@@ -28966,16 +28697,7 @@ async function masterUpdate() {
     if (btc !== '--') updateCoin('BTC', { px: btc }, 'ws', 1);
     if (gold !== '--') updateCoin('GOLD', { px: parseFloat(gold) }, 'comdty', 1);
     
-    // Update FXP array for FX ribbon
-    if (typeof FXP !== 'undefined') {
-      Object.entries(fxData).forEach(([p, val]) => {
-        if (val !== '--') {
-          const v = parseFloat(val);
-          const f = FXP.find(x => x.p === p + 'USD');
-          if (f) { f.b = v; f.a = v; }
-        }
-      });
-    }
+
   }
 
   // Update DOM Elements (Hidden and Visible)
@@ -28984,15 +28706,13 @@ async function masterUpdate() {
   const spEl = document.getElementById('sp-l1');
   const ndxEl = document.getElementById('ndx-l1');
   const goldEl = document.getElementById('gold-l1');
-  const eurEl = document.getElementById('eurusd-l1');
   const uptimeEl = document.getElementById('l1-uptime');
 
-  if(statusEl) statusEl.textContent = `${Math.min(l1_sourcesOK, 12)}/12 sources OK`;
+  if(statusEl) statusEl.textContent = `${Math.min(l1_sourcesOK, 7)}/7 sources OK`;
   if(btcEl) btcEl.textContent = typeof btc === 'number' ? btc.toLocaleString() : btc;
   if(spEl) spEl.textContent = syncData.sp;
   if(ndxEl) ndxEl.textContent = syncData.ndx;
   if(goldEl) goldEl.textContent = syncData.gold;
-  if(eurEl) eurEl.textContent = syncData.eur;
   if(uptimeEl) uptimeEl.textContent = (l1_uptime * 5) + 's';
 
   // Force Render of the visible ribbon and sidebar
@@ -29033,7 +28753,7 @@ async function fetchIndex(sym) {
 
 window.refreshLivePanels = function() {
     Object.entries(PANEL_REGISTRY).forEach(([id, reg]) => {
-        if (['WEI', 'FX', 'COMDTY', 'METALS', 'ENERGY', 'WORLD'].includes(reg.fn)) {
+        if (['WEI', 'COMDTY', 'METALS', 'ENERGY', 'WORLD'].includes(reg.fn)) {
             const body = document.getElementById('pb-' + id);
             if (!body) return;
             const pnl = document.getElementById(id);
@@ -33764,8 +33484,7 @@ window._panelForceRefresh=function(id,fn){
     if(fn==='CRYPTO'||fn==='DOMN'){
       if(typeof fetchBinance24hr==='function')fetchBinance24hr();
       if(typeof fetchCoinGecko==='function')setTimeout(fetchCoinGecko,600);
-    }else if(fn==='FX'||fn==='WORLD'||fn==='WEI'||fn==='IDX'){
-      if(typeof fetchFX==='function')fetchFX();
+    }else if(fn==='WORLD'||fn==='WEI'||fn==='IDX'){
       if(typeof fetchStooq==='function')fetchStooq();
       if(typeof fetchYahooQuotes==='function')setTimeout(fetchYahooQuotes,400);
     }else if(fn==='EQUITY'||fn==='MOVERS'||fn==='STOCKS2'){
@@ -33779,7 +33498,6 @@ window._panelForceRefresh=function(id,fn){
       if(typeof fetchAllNews==='function')fetchAllNews(true);
     }else{
       if(typeof fetchBinance24hr==='function')fetchBinance24hr();
-      if(typeof fetchFX==='function')setTimeout(fetchFX,200);
       if(typeof fetchStooq==='function')setTimeout(fetchStooq,400);
     }
   }catch(e){}
@@ -33803,10 +33521,10 @@ var _srcLastTs={};
 function _markSrcLive(src){_srcLastTs[src]=Date.now();}
 function _srcAge(src){return _srcLastTs[src]?Date.now()-_srcLastTs[src]:Infinity;}
 
-['fetchBinance24hr','fetchCoinGecko','fetchFX','fetchStooq','fetchYahooQuotes','fetchFinnhubTradFi'].forEach(function(fname){
+['fetchBinance24hr','fetchCoinGecko','fetchStooq','fetchYahooQuotes','fetchFinnhubTradFi'].forEach(function(fname){
   var orig=window[fname];
   if(typeof orig!=='function')return;
-  var srcMap={fetchBinance24hr:'BINANCE',fetchCoinGecko:'COINGECKO',fetchFX:'FX',fetchStooq:'STOOQ',fetchYahooQuotes:'YAHOO',fetchFinnhubTradFi:'FINNHUB'};
+  var srcMap={fetchBinance24hr:'BINANCE',fetchCoinGecko:'COINGECKO',fetchStooq:'STOOQ',fetchYahooQuotes:'YAHOO',fetchFinnhubTradFi:'FINNHUB'};
   window[fname]=async function(){
     try{var r=await orig.apply(this,arguments);_markSrcLive(srcMap[fname]);_updateAllPanelStatuses();return r;}
     catch(e){_updateAllPanelStatuses();throw e;}
@@ -33814,7 +33532,7 @@ function _srcAge(src){return _srcLastTs[src]?Date.now()-_srcLastTs[src]:Infinity
 });
 
 function _panelState(fn){
-  var srcMap={CRYPTO:['BINANCE','COINGECKO'],WEI:['STOOQ','YAHOO'],FX:['FX'],IDX:['STOOQ','YAHOO'],EQUITY:['YAHOO','STOOQ','FINNHUB'],COMDTY:['STOOQ'],WORLD:['STOOQ','YAHOO'],MOVERS:['BINANCE','YAHOO'],STOCKS2:['YAHOO','STOOQ']};
+  var srcMap={CRYPTO:['BINANCE','COINGECKO'],WEI:['STOOQ','YAHOO'],IDX:['STOOQ','YAHOO'],EQUITY:['YAHOO','STOOQ','FINNHUB'],COMDTY:['STOOQ'],WORLD:['STOOQ','YAHOO'],MOVERS:['BINANCE','YAHOO'],STOCKS2:['YAHOO','STOOQ']};
   var srcs=srcMap[fn]||['BINANCE'];
   var minAge=Math.min.apply(null,srcs.map(function(s){return _srcAge(s);}));
   
@@ -33865,7 +33583,6 @@ setInterval(function(){
   // Auto-retry stale sources
   if(_srcAge('BINANCE')>45000&&typeof fetchBinance24hr==='function')try{fetchBinance24hr();}catch(e){}
   if(_srcAge('COINGECKO')>120000&&typeof fetchCoinGecko==='function')try{fetchCoinGecko();}catch(e){}
-  if(_srcAge('FX')>90000&&typeof fetchFX==='function')try{fetchFX();}catch(e){}
   if(_srcAge('STOOQ')>90000&&typeof fetchStooq==='function')try{fetchStooq();}catch(e){}
   if(_srcAge('YAHOO')>90000&&typeof fetchYahooQuotes==='function')try{fetchYahooQuotes();}catch(e){}
 },20000);
