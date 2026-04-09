@@ -3915,6 +3915,7 @@ document.addEventListener('DOMContentLoaded', function() {
                       <span>✎</span> Edit Chart
                    </div>
                    <div onclick="window._openChartSettings()" style="cursor:pointer; color:#fff; font-size:14px; margin-left:2px; transition:color .15s;" onmouseover="this.style.color='#F39F41'" onmouseout="this.style.color='#fff'">⚙</div>
+
                 </div>
              </div>
           </div>
@@ -28607,6 +28608,8 @@ window._bbgInstantFill = function(sym) {
 window._bbgFmtP = function(v){ if(!v||isNaN(v)||v<=0)return'—'; return v>=1000?v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):v>=1?parseFloat(v.toFixed(4)).toString():parseFloat(v.toPrecision(5)).toString(); };
 window._bbgFmtV = function(v){ if(!v||isNaN(v)||v<=0)return'—'; return v>=1e9?(v/1e9).toFixed(2)+'B':v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?(v/1e3).toFixed(1)+'K':v.toFixed(2); };
 
+
+
 /* ── Chart Settings Overlay ── */
 window._openChartSettings = function(){
   const existing = document.getElementById('bbg-chart-settings-overlay');
@@ -28625,10 +28628,9 @@ window._openChartSettings = function(){
     {g:'COMMODITIES',items:['GOLD','SILVER','OIL','NATGAS']},
   ];
 
-  // Build surface stats HTML from cache
   function buildSurfaceStats(){
     const cache = window._ivolDataCache;
-    if(!cache) return '<div style="color:#888;font-size:8px;padding:20px 0;">AWAITING SURFACE DATA — OPEN IVOL PANEL FIRST</div>';
+    if(!cache) return '';
 
     function statBlock(key, color, label){
       const d = cache[key];
@@ -28646,8 +28648,6 @@ window._openChartSettings = function(){
       const ivs=d.rows.map(r=>r.markIV*100);
       const ivMin=Math.min(...ivs).toFixed(0), ivMax=Math.max(...ivs).toFixed(0);
       const exps=[...new Set(d.rows.map(r=>Math.round(r.daysTE)))].sort((a,b)=>a-b);
-
-      // Term structure mini-bar chart
       const buckets={};
       for(const r of d.rows){ if(Math.abs(r.logMon)>0.05) continue; const day=Math.round(r.daysTE/7)*7; if(!buckets[day])buckets[day]=[]; buckets[day].push(r.markIV*100); }
       const sorted=Object.entries(buckets).sort((a,b)=>+a[0]-+b[0]);
@@ -28661,7 +28661,6 @@ window._openChartSettings = function(){
           <span style="color:#aaa;font-size:4.5px;">${day}d</span>
         </div>`;
       }).join('');
-
       return `<div style="border:1px solid rgba(255,255,255,0.1);padding:10px 12px;margin-bottom:10px;background:rgba(0,0,0,0.25);border-radius:2px;">
         <div style="color:${color};font-size:8px;font-weight:700;letter-spacing:2px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.08);">${label}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-bottom:10px;">
@@ -28688,14 +28687,11 @@ window._openChartSettings = function(){
         <div style="display:flex;align-items:flex-end;gap:2px;height:38px;border-left:1px solid rgba(255,255,255,0.12);border-bottom:1px solid rgba(255,255,255,0.12);padding:0 0 0 3px;">${bars}</div>
       </div>`;
     }
-
     return statBlock('BTCUSDT','#FF9900','₿ BTC · BITCOIN') + statBlock('ETHUSDT','#00B7EB','Ξ ETH · ETHEREUM');
   }
 
   overlay.innerHTML = `
     <div style="height:30px;background:rgb(50,50,50);border-bottom:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;">
-      <span style="color:#F39F41;font-size:9px;font-weight:700;letter-spacing:2.5px;">⚙ CHART SETTINGS</span>
-      <span style="color:#555;">│</span>
       <span id="cso-sym-display" style="color:#aaa;font-size:7px;letter-spacing:1px;">${sym}</span>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
         <button onclick="window._csoApply()" style="font-family:'Courier New',monospace;font-size:8px;padding:2px 14px;border:1px solid #F39F41;background:#F39F41;color:#000;cursor:pointer;font-weight:700;letter-spacing:1px;">APPLY</button>
@@ -28704,17 +28700,9 @@ window._openChartSettings = function(){
     </div>
 
     <div style="flex:1;overflow:hidden;display:flex;">
-
-      <!-- Surface Data (full width, no left panel) -->
       <div style="flex:1;overflow-y:auto;padding:14px 18px;background:transparent;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div style="color:#aaa;font-size:7px;letter-spacing:1.5px;">▸ IMPLIED VOLATILITY SURFACE DATA</div>
-          <button onclick="window._csoRefreshSurf()" style="font-family:'Courier New',monospace;font-size:6px;padding:2px 8px;border:1px solid #555;background:transparent;color:#aaa;cursor:pointer;letter-spacing:1px;">↺ REFRESH</button>
-        </div>
-        <div id="cso-surf-body">${buildSurfaceStats()}</div>
-        <div style="margin-top:6px;color:#666;font-size:6px;">SOURCE: BINANCE OPTIONS API · AUTO-REFRESH 20 MIN</div>
+        <div id="cso-surf-body"></div>
       </div>
-
     </div>
 
     <div style="height:18px;background:rgb(50,50,50);border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;padding:0 12px;">
@@ -36834,7 +36822,7 @@ if __name__ == "__main__":
 
   window._ghrepoData = window._ghrepoData || {btc:null,eth:null,ts:null,loading:false};
   let _ghTimer=null, _ghCountdownTimer=null;
-  const REFRESH_MS = 20*60*1000;
+  const REFRESH_MS = 15*60*1000;
 
   async function fetchGHData(){
     const D=window._ghrepoData;
@@ -36909,6 +36897,9 @@ if __name__ == "__main__":
     _ghMiniChart('eth');
     _ghStats();
     _ghCountdown();
+    // _ghRender3D retries internally until element has size + Plotly is ready
+    _ghRender3D('btc');
+    _ghRender3D('eth');
   }
 
   function _ghHeader(){
@@ -36974,6 +36965,14 @@ if __name__ == "__main__":
       set('ghrepo-skew-'+key,sk30,v=>{col('ghrepo-skew-'+key,v>0?'#ff3d3d':v<-.005?'#00cc44':'#888');return(v>=0?'+':'')+( v*100).toFixed(1)+'%';});
       const ts30=d.surface[4]&&d.surface[0]?(d.surface[4][4]-d.surface[0][4]):0;
       set('ghrepo-ts-'+key,ts30,v=>{col('ghrepo-ts-'+key,v>0?'#00cc44':'#888');return(v>=0?'+':'')+(v*100).toFixed(1)+'%';});
+      // 3D overlay stats
+      if(d.spot){
+        const fmt=key==='btc'?v=>'$'+Math.round(v).toLocaleString():v=>'$'+v.toFixed(2);
+        set('ghrepo-3d-spot-'+key,d.spot,fmt);
+      }
+      set('ghrepo-3d-atm-'+key,d.surface[2]?.[4],v=>(v*100).toFixed(1)+'%');
+      set('ghrepo-3d-skew-'+key,sk30,v=>{col('ghrepo-3d-skew-'+key,v>0?'#ff3d3d':v<-.005?'#00cc44':'#888');return(v>=0?'+':'')+(v*100).toFixed(1)+'%';});
+      if(d.histVol)set('ghrepo-3d-hv-'+key,d.histVol,v=>(v*100).toFixed(1)+'%');
     }
   }
 
@@ -36988,8 +36987,118 @@ if __name__ == "__main__":
     },1000);
   }
 
+  // ── 3D SURFACE RENDER ────────────────────────────────────────────────
+  const _ghAnimState={};
+  const _ghAnimRAF={};  // separate rAF handles for camera animation
+  function _ghRender3D(key, attempt){
+    attempt = attempt||0;
+    if(attempt > 30) return; // give up after ~3s
+
+    const d=window._ghrepoData[key];
+    if(!d?.surface) return;
+
+    // Plotly must be loaded
+    if(!window.Plotly){
+      setTimeout(()=>_ghRender3D(key, attempt+1), 150);
+      return;
+    }
+
+    const el=document.getElementById('ghrepo-3d-'+key);
+    if(!el){ setTimeout(()=>_ghRender3D(key, attempt+1), 150); return; }
+
+    // Wait until container has real dimensions (panel may still be animating open)
+    const w=el.offsetWidth, h=el.offsetHeight;
+    if(w < 10 || h < 10){
+      setTimeout(()=>_ghRender3D(key, attempt+1), 150);
+      return;
+    }
+
+    const colorScale=key==='btc'
+      ?[[0,'#1a0800'],[0.25,'#7a3300'],[0.5,'#F39F41'],[0.75,'#ffe0a0'],[1,'#ffffff']]
+      :[[0,'#00050a'],[0.25,'#003355'],[0.5,'#00B7EB'],[0.75,'#aaeeff'],[1,'#ffffff']];
+    const MPCT=[-0.20,-0.15,-0.10,-0.05,0,0.05,0.10,0.15,0.20];
+    const TAUS=[7,14,30,60,90];
+    const zData=d.surface.map(row=>row.map(v=>+(v*100).toFixed(2)));
+
+    try {
+      Plotly.newPlot(el,[{
+        type:'surface',
+        x:MPCT.map(p=>(p*100).toFixed(0)+'%'),
+        y:TAUS,
+        z:zData,
+        colorscale:colorScale,
+        opacity:0.92,
+        contours:{z:{show:true,usecolormap:true,highlightcolor:'#ffffff',project:{z:false}}},
+        showscale:true,
+        colorbar:{title:{text:'IV %',side:'right'},tickformat:'.0f',thickness:8,len:0.75,x:1.01,
+                  tickfont:{color:'#888',size:7,family:'Courier New'},titlefont:{color:'#888',size:7}},
+        hovertemplate:'Moneyness: %{x}<br>DTE: %{y}d<br>IV: %{z:.1f}%<extra></extra>',
+      }],{
+        paper_bgcolor:'#111',plot_bgcolor:'#111',
+        margin:{l:0,r:36,t:10,b:0},
+        scene:{
+          bgcolor:'#1a1a1a',
+          xaxis:{title:{text:'Moneyness',font:{color:'#aaa',size:8}},color:'#888',gridcolor:'#333',showspikes:false},
+          yaxis:{title:{text:'Days to Expiry',font:{color:'#aaa',size:8}},color:'#888',gridcolor:'#333',showspikes:false},
+          zaxis:{title:{text:'IV (%)',font:{color:'#aaa',size:8}},color:'#888',gridcolor:'#333',showspikes:false},
+          camera:{eye:{x:1.6,y:-1.6,z:0.9}},
+        },
+        font:{color:'#bbb',family:'Courier New',size:8},
+      },{responsive:true,displayModeBar:false});
+      // Start animated camera only after successful plot
+      _ghStartAnim(el, key);
+    } catch(e){
+      setTimeout(()=>_ghRender3D(key, attempt+1), 300);
+    }
+  }
+
+  // Throttled camera sweep — uses setInterval not rAF to avoid hammering Plotly
+  function _ghStartAnim(el, key){
+    if(_ghAnimRAF[key]){ clearInterval(_ghAnimRAF[key]); delete _ghAnimRAF[key]; }
+    const waypoints=[
+      {x: 1.6, y:-1.6, z:0.9},
+      {x:-0.5, y:-2.1, z:1.2},
+      {x:-1.9, y: 0.7, z:0.7},
+      {x: 0.3, y: 2.1, z:1.4},
+      {x: 2.0, y: 0.5, z:0.5},
+      {x:-1.3, y:-1.1, z:1.3},
+      {x: 0.5, y:-1.8, z:0.6},
+      {x:-0.9, y: 1.7, z:1.0},
+    ];
+    let wi=0, progress=0;
+    const ease=(t)=>t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    // 50ms tick = 20fps, smooth enough without overloading Plotly
+    _ghAnimRAF[key]=setInterval(()=>{
+      if(!document.getElementById('ghrepo-3d-'+key)){
+        clearInterval(_ghAnimRAF[key]); delete _ghAnimRAF[key]; return;
+      }
+      progress+=0.004;
+      if(progress>=1){progress=0; wi=(wi+1)%waypoints.length;}
+      const a=waypoints[wi], b=waypoints[(wi+1)%waypoints.length];
+      const e=ease(progress);
+      Plotly.relayout(el,{'scene.camera.eye':{
+        x:a.x+(b.x-a.x)*e,
+        y:a.y+(b.y-a.y)*e,
+        z:a.z+(b.z-a.z)*e,
+      }});
+    }, 50);
+  }
+
   window.buildGHREPO=function(){
-    setTimeout(()=>{fetchGHData();if(_ghTimer)clearInterval(_ghTimer);_ghTimer=setInterval(fetchGHData,REFRESH_MS);},80);
+    // Cancel any running animations
+    for(const k of ['btc','eth']){
+      if(_ghAnimRAF[k]){clearInterval(_ghAnimRAF[k]);delete _ghAnimRAF[k];}
+      if(_ghAnimState[k]){cancelAnimationFrame(_ghAnimState[k]);delete _ghAnimState[k];}
+    }
+    // Ensure Plotly is loaded before data fetch kicks off renders
+    if(!window.Plotly){
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';
+      s.onload=()=>{setTimeout(()=>{fetchGHData();if(_ghTimer)clearInterval(_ghTimer);_ghTimer=setInterval(fetchGHData,REFRESH_MS);},400);};
+      document.head.appendChild(s);
+    } else {
+      setTimeout(()=>{fetchGHData();if(_ghTimer)clearInterval(_ghTimer);_ghTimer=setInterval(fetchGHData,REFRESH_MS);},400);
+    }
     const ce=PY_CODE.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const lines=ce.split('\n').map((line,i)=>{
       let h=line
@@ -37058,128 +37167,64 @@ if __name__ == "__main__":
     </div>
   </div>
 
-  <!-- VOL SURFACE TABLES -->
-  <div style="display:flex;border-bottom:1px solid #111;flex-shrink:0">
-    <div style="flex:1;padding:6px 10px;border-right:1px solid #111;overflow-x:auto">
-      <div style="color:#FF9900;font-size:7.5px;font-weight:700;letter-spacing:1px;margin-bottom:3px">₿ BTC · SABR IMPLIED VOLATILITY SURFACE</div>
-      <table id="ghrepo-surf-btc" style="border-collapse:collapse;font-size:8px;width:100%"></table>
-    </div>
-    <div style="flex:1;padding:6px 10px;overflow-x:auto">
-      <div style="color:#00B7EB;font-size:7.5px;font-weight:700;letter-spacing:1px;margin-bottom:3px">Ξ ETH · SABR IMPLIED VOLATILITY SURFACE</div>
-      <table id="ghrepo-surf-eth" style="border-collapse:collapse;font-size:8px;width:100%"></table>
-    </div>
-  </div>
 
-  <!-- MAIN CONTENT -->
-  <div style="flex:1;display:flex;overflow:hidden;min-height:0">
+  <!-- 3D SURFACE CHARTS — full space -->
+  <div style="flex:1;display:flex;min-height:0;overflow:hidden;flex-direction:column">
 
-    <!-- LEFT: file tree + screenshots + SABR params -->
-    <div style="width:330px;flex-shrink:0;border-right:1px solid #111;overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:#1a1800 #000">
-      <!-- File tree header -->
-      <div style="background:#0a0800;border-bottom:1px solid #111;padding:4px 10px;display:flex;align-items:center;gap:6px;flex-shrink:0">
-        <span style="color:#886633;font-size:8px;font-weight:700">⑂ main</span>
-        <span style="color:#333;font-size:8px">·</span>
-        <span style="color:#553322;font-size:8px">6 commits</span>
-        <span style="margin-left:auto;border:1px solid #238636;color:#3fb950;font-size:7.5px;padding:1px 7px;cursor:pointer">&#8595; Code ▾</span>
+    <!-- Surface charts side by side -->
+    <div style="flex:1;display:flex;min-height:0;overflow:hidden">
+
+      <!-- BTC 3D Surface -->
+      <div style="flex:1;min-width:0;border-right:1px solid #1a1200;position:relative;background:#111;min-height:200px">
+        <div style="position:absolute;top:8px;left:12px;z-index:10;pointer-events:none;display:flex;flex-direction:column;gap:3px">
+          <span style="color:#FF9900;font-size:9px;font-weight:700;letter-spacing:2px">₿ BTC · SABR IMPLIED VOLATILITY SURFACE</span>
+          <div style="display:flex;gap:12px">
+            <span style="color:#443322;font-size:7.5px">SPOT: <span id="ghrepo-3d-spot-btc" style="color:#FF9900;font-family:'Roboto Mono',monospace">—</span></span>
+            <span style="color:#443322;font-size:7.5px">ATM30: <span id="ghrepo-3d-atm-btc" style="color:#FF9900;font-family:'Roboto Mono',monospace">—</span></span>
+            <span style="color:#443322;font-size:7.5px">SKEW: <span id="ghrepo-3d-skew-btc" style="font-family:'Roboto Mono',monospace">—</span></span>
+            <span style="color:#443322;font-size:7.5px">HVOL: <span id="ghrepo-3d-hv-btc" style="color:#aaa;font-family:'Roboto Mono',monospace">—</span></span>
+          </div>
+        </div>
+        <div id="ghrepo-3d-btc" style="position:absolute;inset:0"></div>
       </div>
-      <!-- Files -->
-      ${[
-        ['crypto_vol_surface.py','🐍','#3fb950','Add SABR model fit','2h ago'],
-        ['README.md','📄','#58a6ff','Initial commit','3 days ago'],
-        ['btc.png','🖼','#FF9900','Add screenshots','3 days ago'],
-        ['eth.png','🖼','#00B7EB','Add screenshots','3 days ago'],
-        ['requirements.txt','📋','#c8c8c8','Add deps','3 days ago'],
-        ['.gitignore','⚙','#666','Add ignore','3 days ago'],
-      ].map(([fn,ico,col,msg,t])=>`
-        <div style="display:flex;align-items:center;padding:3px 10px;border-bottom:1px solid #0d0800;gap:5px;flex-shrink:0" onmouseover="this.style.background='#0a0800'" onmouseout="this.style.background=''">
-          <span style="font-size:10px;width:16px">${ico}</span>
-          <span style="color:${col};font-size:9px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${fn}</span>
-          <span style="color:#2a2a2a;font-size:8px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${msg}</span>
-          <span style="color:#333;font-size:7.5px;white-space:nowrap">${t}</span>
-        </div>`).join('')}
-      <!-- Screenshots -->
-      <div style="padding:8px 10px;border-bottom:1px solid #111;flex-shrink:0">
-        <div style="color:#443322;font-size:7.5px;font-weight:700;letter-spacing:.5px;margin-bottom:6px">📸 SCREENSHOTS</div>
-        <div style="color:#886633;font-size:7.5px;margin-bottom:3px">btc.png · <span style="color:#FF9900">#FF9900</span> · BTC/USDT</div>
-        <img src="${BTC_IMG}" style="width:100%;border:1px solid #1a1000;display:block;margin-bottom:8px"/>
-        <div style="color:#886633;font-size:7.5px;margin-bottom:3px">eth.png · <span style="color:#00B7EB">#00B7EB</span> · ETH/USDT</div>
-        <img src="${ETH_IMG}" style="width:100%;border:1px solid #001820;display:block"/>
-      </div>
-      <!-- SABR params table -->
-      <div style="padding:8px 10px;flex-shrink:0">
-        <div style="color:#443322;font-size:7.5px;font-weight:700;letter-spacing:.5px;margin-bottom:5px">⚙ SABR PARAMETERS (crypto β=0.7)</div>
-        <table style="border-collapse:collapse;width:100%;font-size:8px">
-          <tr style="border-bottom:1px solid #0d0800">
-            <th style="color:#443322;text-align:left;padding:2px 5px;font-size:7.5px;letter-spacing:.3px">PARAM</th>
-            <th style="color:#FF9900;text-align:center;padding:2px;font-size:7.5px">BTC</th>
-            <th style="color:#00B7EB;text-align:center;padding:2px;font-size:7.5px">ETH</th>
-            <th style="color:#443322;text-align:left;padding:2px 5px;font-size:7.5px">DESCRIPTION</th>
-          </tr>
-          ${[['alpha (α)','~hist','~hist','Vol level'],['beta (β)','0.700','0.700','CEV exponent (fixed)'],['rho (ρ)','-0.150','-0.200','Skew correlation'],['nu (ν)','0.350','0.350','Vol of vol']].map(([p,b,e,d])=>`
-          <tr style="border-bottom:1px solid #0d0800">
-            <td style="color:#886633;padding:2px 5px">${p}</td>
-            <td style="color:#FF9900;text-align:center;font-family:'Roboto Mono',monospace;padding:2px">${b}</td>
-            <td style="color:#00B7EB;text-align:center;font-family:'Roboto Mono',monospace;padding:2px">${e}</td>
-            <td style="color:#444;padding:2px 5px">${d}</td>
-          </tr>`).join('')}
-        </table>
+
+      <!-- ETH 3D Surface -->
+      <div style="flex:1;min-width:0;position:relative;background:#111;min-height:200px">
+        <div style="position:absolute;top:8px;left:12px;z-index:10;pointer-events:none;display:flex;flex-direction:column;gap:3px">
+          <span style="color:#00B7EB;font-size:9px;font-weight:700;letter-spacing:2px">Ξ ETH · SABR IMPLIED VOLATILITY SURFACE</span>
+          <div style="display:flex;gap:12px">
+            <span style="color:#443322;font-size:7.5px">SPOT: <span id="ghrepo-3d-spot-eth" style="color:#00B7EB;font-family:'Roboto Mono',monospace">—</span></span>
+            <span style="color:#443322;font-size:7.5px">ATM30: <span id="ghrepo-3d-atm-eth" style="color:#00B7EB;font-family:'Roboto Mono',monospace">—</span></span>
+            <span style="color:#443322;font-size:7.5px">SKEW: <span id="ghrepo-3d-skew-eth" style="font-family:'Roboto Mono',monospace">—</span></span>
+            <span style="color:#443322;font-size:7.5px">HVOL: <span id="ghrepo-3d-hv-eth" style="color:#aaa;font-family:'Roboto Mono',monospace">—</span></span>
+          </div>
+        </div>
+        <div id="ghrepo-3d-eth" style="position:absolute;inset:0"></div>
       </div>
     </div>
 
-    <!-- RIGHT: README + Source Code -->
-    <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:thin;scrollbar-color:#1a1800 #000">
-      <!-- README -->
-      <div style="border-bottom:1px solid #111;flex-shrink:0">
-        <div style="background:#0a0800;border-bottom:1px solid #111;padding:4px 10px;display:flex;align-items:center;gap:6px">
-          <span>📄</span>
-          <span style="color:#58a6ff;font-size:9px;font-weight:700">README.md</span>
-        </div>
-        <div style="padding:16px 20px;font-size:10px;line-height:1.8;color:#c8c8c8">
-          <div style="font-size:17px;font-weight:700;color:#F39F41;border-bottom:1px solid #1a1000;padding-bottom:10px;margin-bottom:14px">crypto_vol_surface</div>
-          <p style="margin-bottom:10px">Simulates and visualizes implied volatility surfaces for cryptocurrency options (<span style="color:#FF9900;font-weight:700">BTC</span>, <span style="color:#00B7EB;font-weight:700">ETH</span>) using the <span style="color:#bc8cff;font-weight:700">SABR stochastic volatility model</span>.</p>
-          <p style="color:#886633;margin-bottom:14px">Fetches real-time hourly spot data from Binance via ccxt, simulates option chains with vol smile &amp; skew, fits SABR, and renders 3D Plotly surfaces.</p>
-          <div style="border-left:3px solid #238636;padding-left:12px;margin-bottom:14px">
-            <div style="color:#3fb950;font-size:8.5px;font-weight:700;letter-spacing:.5px;margin-bottom:6px">── FILES</div>
-            ${[
-              ['crypto_vol_surface.py','Main script — fetch, simulate, fit, visualize','#3fb950'],
-              ['btc.png','Bitcoin volatility surface · #FF9900','#FF9900'],
-              ['eth.png','Ethereum volatility surface · #00B7EB','#00B7EB'],
-              ['requirements.txt','Python dependencies','#c8c8c8'],
-            ].map(([f,d,c])=>`<div style="margin-bottom:4px"><span style="color:${c};font-weight:700">${f}</span> <span style="color:#443322;font-size:9px">—</span> <span style="color:#886633;font-size:9px">${d}</span></div>`).join('')}
-          </div>
-          <div style="border-left:3px solid #58a6ff;padding-left:12px;margin-bottom:14px">
-            <div style="color:#58a6ff;font-size:8.5px;font-weight:700;letter-spacing:.5px;margin-bottom:6px">── LIBRARIES</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              ${['numpy','pandas','plotly.graph_objects','ccxt','scipy.optimize','datetime'].map(l=>`<span style="border:1px solid #1a3060;background:rgba(88,166,255,.06);color:#58a6ff;font-size:8px;padding:1px 7px">${l}</span>`).join('')}
-            </div>
-          </div>
-          <div style="border-left:3px solid #886633;padding-left:12px;margin-bottom:14px">
-            <div style="color:#886633;font-size:8.5px;font-weight:700;letter-spacing:.5px;margin-bottom:6px">── TIMEFRAME</div>
-            <div>Input: Hourly spot data <span style="color:#F39F41">2024-09-01</span> → <span style="color:#F39F41">2024-10-12</span></div>
-            <div>Output: Volatility surfaces at <span style="color:#F39F41">7, 14, 30, 60, 90</span> days to expiration</div>
-          </div>
-          <div style="border-left:3px solid #bc8cff;padding-left:12px">
-            <div style="color:#bc8cff;font-size:8.5px;font-weight:700;letter-spacing:.5px;margin-bottom:6px">── FEATURES</div>
-            ${['Real-time Binance spot data via ccxt','Vol smile + skew simulation','SABR model fitting (L-BFGS-B optimiser)','3D Plotly surface with contour lines','Configurable expiry grid 7–90 DTE','Strike range ±20% around spot'].map(f=>`<div style="color:#886633;font-size:9px;margin-bottom:3px"><span style="color:#bc8cff">◉</span> ${f}</div>`).join('')}
-          </div>
-        </div>
+    <!-- SURFACE DATA folder — collapsible strip at bottom -->
+    <div id="ghrepo-surf-fold" style="flex-shrink:0;border-top:1px solid #1a1200;max-height:200px;overflow:hidden;transition:max-height .3s ease">
+      <div onclick="(function(){const b=document.getElementById('ghrepo-surf-body');const a=document.getElementById('ghrepo-surf-arr');const open=b.style.display!=='none';b.style.display=open?'none':'flex';a.textContent=open?'▶':'▼';})()" style="background:#0a0800;border-bottom:1px solid #0d0800;padding:4px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0">
+        <span id="ghrepo-surf-arr" style="color:#886633;font-size:7px">▼</span>
+        <span style="color:#886633;font-size:7.5px;font-weight:700;letter-spacing:1px">◈ SURFACE DATA — BINANCE LIVE · SABR MODEL</span>
+        <span style="margin-left:auto;color:#333;font-size:7px">DTE×MONEYNESS IMPLIED VOLATILITY MATRIX</span>
       </div>
-      <!-- Source Code -->
-      <div style="flex-shrink:0">
-        <div style="background:#0a0800;border-top:1px solid #111;border-bottom:1px solid #111;padding:4px 10px;display:flex;align-items:center;gap:6px">
-          <span>🐍</span>
-          <span style="color:#3fb950;font-size:9px;font-weight:700">crypto_vol_surface.py</span>
-          <span style="margin-left:auto;color:#333;font-size:7.5px">78 lines · Python 3</span>
+      <div id="ghrepo-surf-body" style="display:flex;overflow-x:auto;background:#050300">
+        <div style="flex:1;padding:5px 8px;border-right:1px solid #0d0800;min-width:0">
+          <div style="color:#FF9900;font-size:7px;font-weight:700;letter-spacing:1px;margin-bottom:3px">₿ BTC</div>
+          <table id="ghrepo-surf-btc" style="border-collapse:collapse;font-size:7.5px;width:100%"></table>
         </div>
-        <div style="background:#030200;overflow-x:auto">
-          <table style="border-collapse:collapse;min-width:100%">${lines}</table>
+        <div style="flex:1;padding:5px 8px;min-width:0">
+          <div style="color:#00B7EB;font-size:7px;font-weight:700;letter-spacing:1px;margin-bottom:3px">Ξ ETH</div>
+          <table id="ghrepo-surf-eth" style="border-collapse:collapse;font-size:7.5px;width:100%"></table>
         </div>
       </div>
     </div>
 
   </div>
 
-  <!-- FOOTER -->
+  <!-- FOOTER-REPLACED -->
   <div style="height:17px;background:#050300;border-top:1px solid #0d0d00;display:flex;align-items:center;padding:0 12px;gap:10px;flex-shrink:0">
     <svg width="12" height="12" viewBox="0 0 16 16" style="fill:#238636;flex-shrink:0"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
     <span style="color:#238636;font-size:7.5px">github.com / username / crypto_vol_surface</span>
@@ -37190,7 +37235,7 @@ if __name__ == "__main__":
     <span style="margin-left:auto;display:flex;gap:8px;align-items:center">
       <span style="color:#443322;font-size:7.5px">DATA: BINANCE API</span>
       <span id="ghrepo-status-2" style="font-size:7.5px;color:#886633"></span>
-      <span style="color:#443322;font-size:7.5px">AUTO-REFRESH 20 MIN</span>
+      <span style="color:#443322;font-size:7.5px">AUTO-REFRESH 15 MIN</span>
     </span>
   </div>
 </div>`;
