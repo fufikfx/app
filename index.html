@@ -35939,6 +35939,7 @@ if __name__ == "__main__":
       let d;
       try{ d=await _bderibit(sym==='btc'?'BTC':'ETH'); if(!d.pts||d.pts.length<30)throw 0; }
       catch(e){ d=await _bsabr(sym); }
+      d._ts=Date.now();
       _BC[sym]=d;
       _bdraw(sym);
     }catch(e){
@@ -36018,13 +36019,16 @@ if __name__ == "__main__":
     else _BCUR='btc';
 
     ov.style.display='flex';
+    // Data is fresh if less than 15 min old
+    const _fresh = _BC[_BCUR] && _BC[_BCUR]._ts && (Date.now()-_BC[_BCUR]._ts < 15*60*1000);
     if(!window.Plotly){
       const s=document.createElement('script');
       s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';
-      s.onload=()=>{ if(!_BC[_BCUR])_bload(_BCUR); else _bdraw(_BCUR); };
+      s.onload=()=>{ if(_fresh) _bdraw(_BCUR); else _bload(_BCUR); };
       document.head.appendChild(s);
     } else {
-      if(!_BC[_BCUR])_bload(_BCUR); else setTimeout(()=>_bdraw(_BCUR),50);
+      if(_fresh) setTimeout(()=>_bdraw(_BCUR),50);
+      else _bload(_BCUR);
     }
   };
 
@@ -36034,6 +36038,36 @@ if __name__ == "__main__":
       if(ov&&ov.style.display!=='none') ov.style.display='none';
     }
   });
+
+  // ── AUTO BACKGROUND REFRESH ──────────────────────────────────────────
+  // Silently pre-fetches both BTC and ETH every 15 minutes in background.
+  // When overlay opens, data is already fresh — no waiting.
+  async function _brefreshSilent(sym){
+    try{
+      let d;
+      try{ d=await _bderibit(sym==='btc'?'BTC':'ETH'); if(!d.pts||d.pts.length<30)throw 0; }
+      catch(e){ d=await _bsabr(sym); }
+      d._ts=Date.now();
+      _BC[sym]=d;
+      // If overlay is open and showing this sym, redraw silently
+      const ov=document.getElementById('bbg-chart-settings-overlay');
+      if(ov&&ov.style.display!=='none'&&_BCUR===sym) _bdraw(sym);
+    }catch(e){}
+  }
+
+  // Stagger BTC and ETH fetches so they don't fire simultaneously
+  function _bstartAutoRefresh(){
+    // Initial pre-fetch for both (with stagger)
+    setTimeout(()=>_brefreshSilent('btc'), 2000);
+    setTimeout(()=>_brefreshSilent('eth'), 8000);
+    // Then every 15 minutes
+    setInterval(()=>_brefreshSilent('btc'), 15*60*1000);
+    setInterval(()=>{ setTimeout(()=>_brefreshSilent('eth'),6000); }, 15*60*1000);
+  }
+
+  // Start after page has settled
+  setTimeout(_bstartAutoRefresh, 3000);
+
 })();
 </script>
 
