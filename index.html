@@ -35984,39 +35984,69 @@ if __name__ == "__main__":
     const plotEl=document.getElementById('bbg-vs-plot'); if(!plotEl||plotEl.offsetWidth<10){setTimeout(()=>_bdraw(sym),200);return;}
     if(!window.Plotly){setTimeout(()=>_bdraw(sym),300);return;}
 
+    // Update spot price
     const parts=d.spot.toFixed(2).split('.');
     parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,' ');
     const spotEl=document.getElementById('bbg-vs-spot');
     if(spotEl) spotEl.textContent='$'+parts.join(',');
 
-    const xs=d.pts.map(p=>p.K),ys=d.pts.map(p=>p.dte);
-    const kMn=Math.min(...xs),kMx=Math.max(...xs),dMn=Math.min(...ys),dMx=Math.max(...ys);
-    const nK=75,nD=40;
+    // Build grid — exact same as volsurface-11.html
+    const xs=d.pts.map(p=>p.K), ys=d.pts.map(p=>p.dte);
+    const kMn=Math.min(...xs), kMx=Math.max(...xs);
+    const dMn=Math.min(...ys), dMx=Math.max(...ys);
+    const nK=75, nD=40;
     const kG=Array.from({length:nK},(_,i)=>kMn+i*(kMx-kMn)/(nK-1));
-    const dG=[...new Set(Array.from({length:nD},(_,i)=>{
-      const t=i/(nD-1); return Math.round(dMn+(dMx-dMn)*Math.pow(t,0.7));
-    }))].sort((a,b)=>a-b);
-    const rK=(kMx-kMn)||1, rD=(dMx-dMn)||1;
-    const zG=dG.map(td=>kG.map(tk=>{
-      let sw=0,sz=0;
-      d.pts.forEach(p=>{
-        const w=1/(Math.pow(Math.sqrt(((p.K-tk)/rK)**2+((p.dte-td)/rD)**2),1.7)+1e-9);
-        sw+=w; sz+=w*p.iv;
+    const dG=Array.from({length:nD},(_,i)=>{
+      const t=i/(nD-1);
+      return Math.round(dMn+(dMx-dMn)*Math.pow(t,0.7));
+    }).filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b);
+
+    const rangeK=(kMx-kMn)||1;
+    const rangeD=(dMx-dMn)||1;
+
+    const zG=dG.map(td=>{
+      return kG.map(tk=>{
+        let sw=0, sz=0;
+        d.pts.forEach(p=>{
+          const dk=(p.K-tk)/rangeK;
+          const dd=(p.dte-td)/rangeD;
+          const dist=Math.sqrt(dk*dk+dd*dd);
+          const w=1.0/(Math.pow(dist,1.7)+1e-9);
+          sw+=w; sz+=w*p.iv;
+        });
+        return sw>0?sz/sw:null;
       });
-      return sw>0?sz/sw:null;
-    }));
+    });
 
-    const CS=[[0,'#10174F'],[0.15,'#1E2B8F'],[0.3,'#354AA8'],[0.45,'#7F93E4'],[0.6,'#E5E6E8'],[0.75,'#F8CE5D'],[0.9,'#D85412'],[1,'#980C00']];
+    const CS=[
+      [0.0,'#10174F'],[0.15,'#1E2B8F'],[0.3,'#354AA8'],[0.45,'#7F93E4'],
+      [0.6,'#E5E6E8'],[0.75,'#F8CE5D'],[0.9,'#D85412'],[1.0,'#980C00']
+    ];
 
-    Plotly.react(plotEl,[{
+    const traceSurface={
       type:'surface',x:kG,y:dG,z:zG,colorscale:CS,opacity:0.95,showscale:true,
       hovertemplate:'STRIKE: $%{x:,.0f}<br>DTE: %{y}<br>IV: %{z:.1f}%<extra></extra>',
-      contours:{x:{show:false,highlight:true,highlightcolor:'#fff',highlightwidth:2},y:{show:false,highlight:true,highlightcolor:'#fff',highlightwidth:2},z:{show:false,highlight:false}},
-      colorbar:{title:{text:'IV %',font:{color:'#666',size:10},side:'top'},tickfont:{color:'#666',size:9},ticksuffix:'%',thickness:10,len:0.7,x:0.99,bgcolor:'rgba(0,0,0,0)',outlinecolor:'transparent'},
-      lighting:{ambient:0.7,diffuse:0.9,specular:0.1,roughness:0.8,fresnel:0.1},lightposition:{x:100,y:100,z:1000},
-    }],{
-      paper_bgcolor:'#101114',plot_bgcolor:'#101114',autosize:true,
-      margin:{l:0,r:95,t:30,b:0},showlegend:false,
+      contours:{
+        x:{show:false,highlight:true,highlightcolor:'#ffffff',highlightwidth:2},
+        y:{show:false,highlight:true,highlightcolor:'#ffffff',highlightwidth:2},
+        z:{show:false,highlight:false}
+      },
+      colorbar:{
+        title:{text:'IV %',font:{color:'#666',size:10},side:'top'},
+        tickfont:{color:'#666',size:9},ticksuffix:'%',
+        thickness:10,len:0.7,x:0.99,bgcolor:'rgba(0,0,0,0)',outlinecolor:'transparent'
+      },
+      lighting:{ambient:0.7,diffuse:0.9,specular:0.1,roughness:0.8,fresnel:0.1},
+      lightposition:{x:100,y:100,z:1000},
+    };
+
+    // Use newPlot first time, react on updates — preserves camera for smooth rotation
+    const hasPlot=plotEl._hasPlot;
+    const fn=hasPlot?Plotly.react:Plotly.newPlot;
+    fn(plotEl,[traceSurface],{
+      paper_bgcolor:'#101114',plot_bgcolor:'#101114',
+      autosize:true,
+      margin:{l:0,r:95,t:30,b:0},
       scene:{
         bgcolor:'#101114',
         camera:{eye:{x:1.6,y:1.3,z:0.55},center:{x:0,y:0,z:-0.15},up:{x:0,y:0,z:1}},
@@ -36028,15 +36058,17 @@ if __name__ == "__main__":
       font:{color:'#ccc',family:'Inter,Arial,sans-serif'},
       hoverlabel:{bgcolor:'#333333',bordercolor:'#ffffff',font:{color:'#ffffff',size:13,family:'Inter,-apple-system,sans-serif'}},
       hovermode:'closest'
-    },{ responsive:true, displayModeBar:true,
-    modeBarButtonsToRemove:['toImage','sendDataToCloud','toggleSpikelines'],
-    modeBarButtonsToAdd:[{
-      name:'close',
-      title:'Close',
-      icon:{ width:1792, height:1792, path:'M1490 1322q0 40-28 68l-136 136q-28 28-68 28t-68-28l-294-294-294 294q-28 28-68 28t-68-28l-136-136q-28-28-28-68t28-68l294-294-294-294q-28-28-28-68t28-68l136-136q28-28 68-28t68 28l294 294 294-294q28-28 68-28t68 28l136 136q28 28 28 68t-28 68l-294 294 294 294q28 28 28 68z', ascent:1792, descent:0 },
-      click: function(){ document.getElementById('bbg-chart-settings-overlay').style.display='none'; }
-    }],
-    displaylogo:false });
+    },{
+      responsive:true,displayModeBar:true,
+      modeBarButtonsToRemove:['toImage','sendDataToCloud','toggleSpikelines'],
+      modeBarButtonsToAdd:[{
+        name:'close',title:'Close',
+        icon:{width:1792,height:1792,path:'M1490 1322q0 40-28 68l-136 136q-28 28-68 28t-68-28l-294-294-294 294q-28 28-68 28t-68-28l-136-136q-28-28-28-68t28-68l294-294-294-294q-28-28-28-68t28-68l136-136q28-28 68-28t68 28l294 294 294-294q28-28 68-28t68 28l136 136q28 28 28 68t-28 68l-294 294 294 294q28 28 28 68z',ascent:1792,descent:0},
+        click:function(){ document.getElementById('bbg-chart-settings-overlay').style.display='none'; }
+      }],
+      displaylogo:false
+    });
+    plotEl._hasPlot=true;
 
   }
 
