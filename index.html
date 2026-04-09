@@ -36040,35 +36040,49 @@ if __name__ == "__main__":
       lightposition:{x:100,y:100,z:1000},
     };
 
-    // Use newPlot first time, react on updates — preserves camera for smooth rotation
-    const hasPlot=plotEl._hasPlot;
-    const fn=hasPlot?Plotly.react:Plotly.newPlot;
-    fn(plotEl,[traceSurface],{
-      paper_bgcolor:'#101114',plot_bgcolor:'#101114',
-      autosize:true,
-      margin:{l:0,r:95,t:30,b:0},
-      scene:{
-        bgcolor:'#101114',
-        camera:{eye:{x:1.6,y:1.3,z:0.55},center:{x:0,y:0,z:-0.15},up:{x:0,y:0,z:1}},
-        aspectmode:'manual',aspectratio:{x:1.4,y:1.2,z:0.85},
-        xaxis:{title:{text:'STRIKE ($)',font:{color:'#666',size:11}},tickfont:{color:'#555',size:9},gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
-        yaxis:{title:{text:'EXPIRY (DTE)',font:{color:'#666',size:11}},tickfont:{color:'#555',size:9},gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
-        zaxis:{title:{text:'VOLATILITY (%)',font:{color:'#666',size:11}},tickfont:{color:'#555',size:9},ticksuffix:'%',gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
-      },
-      font:{color:'#ccc',family:'Inter,Arial,sans-serif'},
-      hoverlabel:{bgcolor:'#333333',bordercolor:'#ffffff',font:{color:'#ffffff',size:13,family:'Inter,-apple-system,sans-serif'}},
-      hovermode:'closest'
-    },{
-      responsive:true,displayModeBar:true,
-      modeBarButtonsToRemove:['toImage','sendDataToCloud','toggleSpikelines'],
-      modeBarButtonsToAdd:[{
-        name:'close',title:'Close',
-        icon:{width:1792,height:1792,path:'M1490 1322q0 40-28 68l-136 136q-28 28-68 28t-68-28l-294-294-294 294q-28 28-68 28t-68-28l-136-136q-28-28-28-68t28-68l294-294-294-294q-28-28-28-68t28-68l136-136q28-28 68-28t68 28l294 294 294-294q28-28 68-28t68 28l136 136q28 28 28 68t-28 68l-294 294 294 294q28 28 28 68z',ascent:1792,descent:0},
-        click:function(){ document.getElementById('bbg-chart-settings-overlay').style.display='none'; }
-      }],
-      displaylogo:false
-    });
-    plotEl._hasPlot=true;
+    // newPlot once, then only update data — camera never resets
+    // Set pixel ratio for crisp rendering on retina/HiDPI screens
+    if(!plotEl._dprSet){
+      plotEl.style.imageRendering='crisp-edges';
+      plotEl._dprSet=true;
+    }
+
+    if(!plotEl._hasPlot){
+      Plotly.newPlot(plotEl,[traceSurface],{
+        paper_bgcolor:'#101114',plot_bgcolor:'#101114',
+        autosize:true,
+        uirevision:'volsurface',
+        margin:{l:0,r:95,t:30,b:0},
+        scene:{
+          bgcolor:'#101114',
+          uirevision:'volsurface',
+          camera:{eye:{x:1.6,y:1.3,z:0.55},center:{x:0,y:0,z:-0.15},up:{x:0,y:0,z:1}},
+          aspectmode:'manual',aspectratio:{x:1.4,y:1.2,z:0.85},
+          xaxis:{title:{text:'STRIKE ($)',font:{color:'#666',size:11}},tickfont:{color:'#555',size:9},gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
+          yaxis:{title:{text:'EXPIRY (DTE)',font:{color:'#666',size:11}},tickfont:{color:'#555',size:9},gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
+          zaxis:{title:{text:'VOLATILITY (%)',font:{color:'#666',size:11}},tickfont:{color:'#555',size:9},ticksuffix:'%',gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
+        },
+        font:{color:'#ccc',family:'Inter,Arial,sans-serif'},
+        hoverlabel:{bgcolor:'#333333',bordercolor:'#ffffff',font:{color:'#ffffff',size:13,family:'Inter,-apple-system,sans-serif'}},
+        hovermode:'closest'
+      },{
+        responsive:true,displayModeBar:true,
+        modeBarButtonsToRemove:['toImage','sendDataToCloud','toggleSpikelines'],
+        modeBarButtonsToAdd:[{
+          name:'close',title:'Close',
+          icon:{width:1792,height:1792,path:'M1490 1322q0 40-28 68l-136 136q-28 28-68 28t-68-28l-294-294-294 294q-28 28-68 28t-68-28l-136-136q-28-28-28-68t28-68l294-294-294-294q-28-28-28-68t28-68l136-136q28-28 68-28t68 28l294 294 294-294q28-28 68-28t68 28l136 136q28 28 28 68t-28 68l-294 294 294 294q28 28 28 68z',ascent:1792,descent:0},
+          click:function(){ document.getElementById('bbg-chart-settings-overlay').style.display='none'; }
+        }],
+        displaylogo:false,
+        plotGlPixelRatio: window.devicePixelRatio||2
+      });
+      plotEl._hasPlot=true;
+    } else {
+      // Only update data, never touch layout — camera stays exactly where user left it
+      Plotly.restyle(plotEl,{
+        x:[kG], y:[dG], z:[zG]
+      },[0]);
+    }
 
   }
 
