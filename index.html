@@ -36077,11 +36077,12 @@ if __name__ == "__main__":
         plotGlPixelRatio: window.devicePixelRatio||2
       });
       plotEl._hasPlot=true;
+      _bAttachInteractionTracker(plotEl);
     } else {
       // Only update data, never touch layout — camera stays exactly where user left it
-      Plotly.restyle(plotEl,{
-        x:[kG], y:[dG], z:[zG]
-      },[0]);
+      if(!_bUserInteracting){
+        Plotly.restyle(plotEl,{x:[kG],y:[dG],z:[zG]},[0]);
+      }
     }
 
   }
@@ -36120,6 +36121,25 @@ if __name__ == "__main__":
   // ── AUTO BACKGROUND REFRESH ──────────────────────────────────────────
   // Silently pre-fetches both BTC and ETH every 15 minutes in background.
   // When overlay opens, data is already fresh — no waiting.
+  let _bUserInteracting=false;
+  let _bInteractTimer=null;
+
+  // Track user interaction — don't redraw while rotating
+  function _bTrackInteraction(){
+    _bUserInteracting=true;
+    if(_bInteractTimer) clearTimeout(_bInteractTimer);
+    _bInteractTimer=setTimeout(()=>{ _bUserInteracting=false; },2000);
+  }
+
+  // Attach interaction tracker once plot exists
+  function _bAttachInteractionTracker(plotEl){
+    if(plotEl._interactionTracked) return;
+    plotEl._interactionTracked=true;
+    ['mousedown','touchstart','wheel'].forEach(ev=>{
+      plotEl.addEventListener(ev,_bTrackInteraction,{passive:true});
+    });
+  }
+
   async function _brefreshSilent(sym){
     try{
       let d;
@@ -36127,9 +36147,34 @@ if __name__ == "__main__":
       catch(e){ d=await _bsabr(sym); }
       d._ts=Date.now();
       _BC[sym]=d;
-      // If overlay is open and showing this sym, redraw silently
+      // Only redraw if overlay open, showing this sym, AND user is NOT interacting
       const ov=document.getElementById('bbg-chart-settings-overlay');
-      if(ov&&ov.style.display!=='none'&&_BCUR===sym) _bdraw(sym);
+      if(ov&&ov.style.display!=='none'&&_BCUR===sym&&!_bUserInteracting){
+        const plotEl=document.getElementById('bbg-vs-plot');
+        if(plotEl&&plotEl._hasPlot){
+          // Only update data via restyle — never touches camera
+          const xs=d.pts.map(p=>p.K), ys=d.pts.map(p=>p.dte);
+          const kMn=Math.min(...xs),kMx=Math.max(...xs),dMn=Math.min(...ys),dMx=Math.max(...ys);
+          const nK=75,nD=40;
+          const kG=Array.from({length:nK},(_,i)=>kMn+i*(kMx-kMn)/(nK-1));
+          const dG=Array.from({length:nD},(_,i)=>{
+            const t=i/(nD-1); return Math.round(dMn+(dMx-dMn)*Math.pow(t,0.7));
+          }).filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b);
+          const rangeK=(kMx-kMn)||1, rangeD=(dMx-dMn)||1;
+          const zG=dG.map(td=>kG.map(tk=>{
+            let sw=0,sz=0;
+            d.pts.forEach(p=>{
+              const dk=(p.K-tk)/rangeK, dd=(p.dte-td)/rangeD;
+              const w=1.0/(Math.pow(Math.sqrt(dk*dk+dd*dd),1.7)+1e-9);
+              sw+=w; sz+=w*p.iv;
+            });
+            return sw>0?sz/sw:null;
+          }));
+          Plotly.restyle(plotEl,{x:[kG],y:[dG],z:[zG]},[0]);
+          const spotEl=document.getElementById('bbg-vs-spot');
+          if(spotEl){ const p=d.spot.toFixed(2).split('.'); p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,' '); spotEl.textContent='$'+p.join(','); }
+        }
+      }
     }catch(e){}
   }
 
