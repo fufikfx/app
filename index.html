@@ -35136,8 +35136,10 @@ if __name__ == "__main__":
           const chi = Math.abs(z) < 1e-8 ? 1 : Math.log((Math.sqrt(1 - 2 * ro * z + z * z) + z - ro) / (1 - ro)) / z;
           const t1 = al / (Math.pow(F * K, (1 - be) / 2) * (1 + ((1 - be) * Math.log(F / K)) ** 2 / 24 + ((1 - be) * Math.log(F / K)) ** 4 / 1920));
           const t2 = 1 + ((1 - be) ** 2 / 24 * al ** 2 / Math.pow(F * K, 1 - be) + ro * be * nu * al / (4 * Math.pow(F * K, (1 - be) / 2)) + nu ** 2 * (2 - 3 * ro ** 2) / 24) * tau;
-          iv = Math.max(10, t1 * (z / chi) * t2 * 100);
+          iv = Math.max(5, t1 * (z / chi) * t2 * 100);
         }
+        if(dte<=5) iv*=(1+0.4*Math.exp(-Math.pow(pct/0.08,2)));
+        if(dte<=10&&Math.abs(pct)>0.2) iv*=1.15;
         pts.push({ K, dte, iv });
       }
     });
@@ -35608,8 +35610,8 @@ if __name__ == "__main__":
       const K=parseFloat(p[2]);
       const exp=new Date(p[1].replace(/(\d+)([A-Z]+)(\d+)/,'$1 $2 20$3')+' 08:00 UTC');
       const dte=Math.round((exp-now)/86400000);
-      if(dte<1||dte>365)return;
-      if(spot>0&&(K<spot*0.25||K>spot*2.50))return;
+      if(dte<1||dte>180)return;
+      if(spot>0&&(K<spot*0.50||K>spot*1.55))return;
       pts.push({K,dte,iv:b.mark_iv});
     });
     return {spot,pts};
@@ -35637,8 +35639,10 @@ if __name__ == "__main__":
           const chi=Math.abs(z)<1e-8?1:Math.log((Math.sqrt(1-2*ro*z+z*z)+z-ro)/(1-ro))/z;
           const t1=al/(Math.pow(F*K,(1-be)/2)*(1+((1-be)*Math.log(F/K))**2/24+((1-be)*Math.log(F/K))**4/1920));
           const t2=1+((1-be)**2/24*al**2/Math.pow(F*K,1-be)+ro*be*nu*al/(4*Math.pow(F*K,(1-be)/2))+nu**2*(2-3*ro**2)/24)*tau;
-          iv=Math.max(10,t1*(z/chi)*t2*100);
+          iv=Math.max(5,t1*(z/chi)*t2*100);
         }
+        if(dte<=5) iv*=(1+0.4*Math.exp(-Math.pow(pct/0.08,2)));
+        if(dte<=10&&Math.abs(pct)>0.2) iv*=1.15;
         pts.push({K,dte,iv});
       }
     });
