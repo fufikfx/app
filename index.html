@@ -3802,9 +3802,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="background:#F69F26; color:#000000; padding:0 8px; font-weight:bold; height:calc(100% + 2px); margin-top:-1px; margin-bottom:-1px; display:flex; align-items:center; font-size:11px; border:1px solid #F69F26; box-sizing:border-box; position:relative; z-index:1;" id="bbg-toolbar-title">
                    <span>BTCUSDT Curncy</span>
                 </div>
-                <div style="padding:0 16px; border-right:1px solid #700a18; line-height:20px; cursor:pointer; color:#D3D3D3 !important; font-weight:bold !important;"><span style="color:#D48A94 !important; opacity:0.95;">94)</span> Suggested Charts ▾</div>
-                <div style="padding:0 16px; border-right:1px solid #700a18; line-height:20px; cursor:pointer; color:#D3D3D3 !important; font-weight:bold !important;"><span style="color:#D48A94 !important; opacity:0.95;">96)</span> Actions ▾</div>
-                <div style="padding:0 16px; line-height:20px; cursor:pointer; color:#D3D3D3 !important; font-weight:bold !important;"><span style="color:#D48A94 !important; opacity:0.95;">97)</span> Edit ▾</div>
+                <div style="padding:0 16px; border-right:1px solid #700a18; line-height:20px; cursor:pointer; color:#D3D3D3 !important; font-weight:bold !important;"><span style="color:#D48A94 !important; opacity:1;">94)</span> Suggested Charts ▾</div>
+                <div style="padding:0 16px; border-right:1px solid #700a18; line-height:20px; cursor:pointer; color:#D3D3D3 !important; font-weight:bold !important;"><span style="color:#D48A94 !important; opacity:1;">96)</span> Actions ▾</div>
+                <div style="padding:0 16px; line-height:20px; cursor:pointer; color:#D3D3D3 !important; font-weight:bold !important;"><span style="color:#D48A94 !important; opacity:1;">97)</span> Edit ▾</div>
              </div>
              <div style="display:flex; gap:16px; align-items:center; padding-right:12px;">
                 <span style="font-weight:bold;">Line Chart ⬆ ▾</span>
@@ -35195,8 +35195,7 @@ if __name__ == "__main__":
           let sw=0,sz=0;
           d.pts.forEach(p=>{
             const dk=(p.K-tk)/rangeK, dd=(p.dte-td)/rangeD;
-            const dist=Math.sqrt(dk*dk+dd*dd);
-            const w=1/(Math.pow(dist,1.7)+1e-9);
+            const w=1/(Math.pow(dk*dk+dd*dd,0.85)+1e-7);
             sw+=w; sz+=w*p.iv;
           });
           return sw>0?(sz/sw)/100:0.3;
@@ -35326,9 +35325,9 @@ if __name__ == "__main__":
   const _ghAnimRAF={};
 
   const _VS_CS=[
-    [0.0,'#10174F'],[0.15,'#1E2B8F'],[0.3,'#354AA8'],
-    [0.45,'#7F93E4'],[0.6,'#E5E6E8'],[0.75,'#F8CE5D'],
-    [0.9,'#D85412'],[1.0,'#980C00']
+    [0.0,'#10174F'],[0.2,'#354AA8'],[0.4,'#7F93E4'],
+    [0.5,'#E5E6E8'],[0.6,'#F8CE5D'],[0.8,'#D85412'],
+    [1.0,'#980C00']
   ];
 
   function _ghRender3D(key, attempt){
@@ -35353,16 +35352,14 @@ if __name__ == "__main__":
     const kG=Array.from({length:nK},(_,i)=>kMn+i*(kMx-kMn)/(nK-1));
     const dG=Array.from({length:nD},(_,i)=>{
       const t=i/(nD-1);
-      return Math.round(dMn+(dMx-dMn)*Math.pow(t,0.7));
+      return Math.round(dMn+(dMx-dMn)*Math.pow(t,0.65));
     }).filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b);
 
-    const rangeK=(kMx-kMn)||1, rangeD=(dMx-dMn)||1;
     const zG=dG.map(td=>kG.map(tk=>{
       let sw=0,sz=0;
       d.pts.forEach(p=>{
-        const dk=(p.K-tk)/rangeK, dd=(p.dte-td)/rangeD;
-        const dist=Math.sqrt(dk*dk+dd*dd);
-        const w=1/(Math.pow(dist,1.7)+1e-9);
+        const dk=(p.K-tk)/(kMx-kMn||1), dd=(p.dte-td)/(dMx-dMn||1);
+        const w=1/(Math.pow(dk*dk+dd*dd,0.85)+1e-7);
         sw+=w; sz+=w*p.iv;
       });
       return sw>0?sz/sw:null;
@@ -35371,8 +35368,8 @@ if __name__ == "__main__":
     try {
       Plotly.react(el,[{
         type:'surface', x:kG, y:dG, z:zG,
-        colorscale:_VS_CS, opacity:0.95, showscale:true,
-        hovertemplate:'STRIKE: $%{x:,.0f}<br>DTE: %{y}<br>IV: %{z:.1f}%<extra></extra>',
+        colorscale:_VS_CS, opacity:1, showscale:true,
+        hovertemplate:'Strike: $%{x:,.0f}<br>DTE: %{y} days<br>IV: %{z:.1f}%<extra></extra>',
         contours:{
           x:{show:false,highlight:true,highlightcolor:'#ffffff',highlightwidth:2},
           y:{show:false,highlight:true,highlightcolor:'#ffffff',highlightwidth:2},
@@ -35384,7 +35381,7 @@ if __name__ == "__main__":
           thickness:8, len:0.65, x:0.99, bgcolor:'rgba(0,0,0,0)', outlinecolor:'transparent'
         },
         lighting:{ambient:0.7,diffuse:0.9,specular:0.1,roughness:0.8,fresnel:0.1},
-        lightposition:{x:100,y:100,z:1000},
+        lightposition:{x:0,y:0,z:100000},
       }],{
         paper_bgcolor:'#111', plot_bgcolor:'#111',
         autosize:true,
@@ -35393,7 +35390,7 @@ if __name__ == "__main__":
           bgcolor:'#111',
           camera:{eye:{x:1.6,y:1.3,z:0.55},center:{x:0,y:0,z:-0.15},up:{x:0,y:0,z:1}},
           aspectmode:'manual', aspectratio:{x:1.4,y:1.2,z:0.85},
-          xaxis:{title:{text:'STRIKE ($)',font:{color:'#555',size:9}},tickfont:{color:'#444',size:8},
+          xaxis:{title:{text:'Strike ($)',font:{color:'#555',size:9}},tickfont:{color:'#444',size:8},
             gridcolor:'rgba(255,255,255,0.1)',linecolor:'transparent',backgroundcolor:'#111',
             showgrid:true,showspikes:true,spikemode:'across',spikecolor:'rgba(255,255,255,0.3)',spikethickness:1},
           yaxis:{title:{text:'DTE',font:{color:'#555',size:9}},tickfont:{color:'#444',size:8},
@@ -35495,37 +35492,36 @@ if __name__ == "__main__":
     const nK=75, nD=40;
     const kG=Array.from({length:nK},(_,i)=>kMn+i*(kMx-kMn)/(nK-1));
     const dG=[...new Set(Array.from({length:nD},(_,i)=>{
-      const t=i/(nD-1); return Math.round(dMn+(dMx-dMn)*Math.pow(t,0.7));
+      const t=i/(nD-1); return Math.round(dMn+(dMx-dMn)*Math.pow(t,0.65));
     }))].sort((a,b)=>a-b);
-    const rangeK=(kMx-kMn)||1, rangeD=(dMx-dMn)||1;
     const zG=dG.map(td=>kG.map(tk=>{
       let sw=0,sz=0;
       d.pts.forEach(p=>{
-        const dk=(p.K-tk)/rangeK, dd=(p.dte-td)/rangeD;
-        const w=1/(Math.pow(Math.sqrt(dk*dk+dd*dd),1.7)+1e-9);
+        const dk=(p.K-tk)/(kMx-kMn||1), dd=(p.dte-td)/(dMx-dMn||1);
+        const w=1/(Math.pow(dk*dk+dd*dd,0.85)+1e-7);
         sw+=w; sz+=w*p.iv;
       });
       return sw>0?sz/sw:null;
     }));
 
-    const CS=[[0,'#10174F'],[0.15,'#1E2B8F'],[0.3,'#354AA8'],[0.45,'#7F93E4'],[0.6,'#E5E6E8'],[0.75,'#F8CE5D'],[0.9,'#D85412'],[1,'#980C00']];
+    const CS=[[0,'#10174F'],[0.2,'#354AA8'],[0.4,'#7F93E4'],[0.5,'#E5E6E8'],[0.6,'#F8CE5D'],[0.8,'#D85412'],[1,'#980C00']];
 
     Plotly.react(plotEl,[{
-      type:'surface',x:kG,y:dG,z:zG,colorscale:CS,opacity:0.95,showscale:true,
-      hovertemplate:'STRIKE: $%{x:,.0f}<br>DTE: %{y}<br>IV: %{z:.1f}%<extra></extra>',
+      type:'surface',x:kG,y:dG,z:zG,colorscale:CS,opacity:1,showscale:true,
+      hovertemplate:'Strike: $%{x:,.0f}<br>DTE: %{y} days<br>IV: %{z:.1f}%<extra></extra>',
       contours:{x:{show:false,highlight:true,highlightcolor:'#fff',highlightwidth:2},y:{show:false,highlight:true,highlightcolor:'#fff',highlightwidth:2},z:{show:false,highlight:false}},
       colorbar:{title:{text:'IV %',font:{color:'#666',size:10},side:'top'},tickfont:{color:'#666',size:9},ticksuffix:'%',thickness:10,len:0.7,x:0.99,bgcolor:'rgba(0,0,0,0)',outlinecolor:'transparent'},
-      lighting:{ambient:0.7,diffuse:0.9,specular:0.1,roughness:0.8,fresnel:0.1},lightposition:{x:100,y:100,z:1000},
+      lighting:{ambient:0.7,diffuse:0.9,specular:0.1,roughness:0.8,fresnel:0.1},lightposition:{x:0,y:0,z:100000},
     }],{
       paper_bgcolor:'#101114',plot_bgcolor:'#101114',autosize:true,
-      margin:{l:0,r:95,t:30,b:0},
+      margin:{l:0,r:100,t:40,b:20},
       scene:{
         bgcolor:'#101114',
         camera:{eye:{x:1.6,y:1.3,z:0.55},center:{x:0,y:0,z:-0.15},up:{x:0,y:0,z:1}},
         aspectmode:'manual',aspectratio:{x:1.4,y:1.2,z:0.85},
-        xaxis:{title:{text:'STRIKE ($)',font:{color:'#666',size:11}},tickfont:{color:'#555',size:9},gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
-        yaxis:{title:{text:'EXPIRY (DTE)',font:{color:'#666',size:11}},tickfont:{color:'#555',size:9},gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
-        zaxis:{title:{text:'VOLATILITY (%)',font:{color:'#666',size:11}},tickfont:{color:'#555',size:9},ticksuffix:'%',gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
+        xaxis:{title:{text:'Strike ($)',font:{color:'#aaa',size:13}},tickfont:{color:'#999',size:11},gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
+        yaxis:{title:{text:'Days to Expiry',font:{color:'#aaa',size:13}},tickfont:{color:'#999',size:11},gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
+        zaxis:{title:{text:'IV (%)',font:{color:'#aaa',size:13}},tickfont:{color:'#999',size:11},ticksuffix:'%',gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
       },
       font:{color:'#ccc',family:'Inter,Arial,sans-serif'},
       hoverlabel:{bgcolor:'#333333',bordercolor:'#ffffff',font:{color:'#ffffff',size:13,family:'Inter,-apple-system,sans-serif'}},
@@ -35715,20 +35711,16 @@ if __name__ == "__main__":
     const kG=Array.from({length:nK},(_,i)=>kMn+i*(kMx-kMn)/(nK-1));
     const dG=Array.from({length:nD},(_,i)=>{
       const t=i/(nD-1);
-      return Math.round(dMn+(dMx-dMn)*Math.pow(t,0.7));
+      return Math.round(dMn+(dMx-dMn)*Math.pow(t,0.65));
     }).filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b);
-
-    const rangeK=(kMx-kMn)||1;
-    const rangeD=(dMx-dMn)||1;
 
     const zG=dG.map(td=>{
       return kG.map(tk=>{
         let sw=0, sz=0;
         d.pts.forEach(p=>{
-          const dk=(p.K-tk)/rangeK;
-          const dd=(p.dte-td)/rangeD;
-          const dist=Math.sqrt(dk*dk+dd*dd);
-          const w=1.0/(Math.pow(dist,1.7)+1e-9);
+          const dk=(p.K-tk)/(kMx-kMn||1);
+          const dd=(p.dte-td)/(dMx-dMn||1);
+          const w=1/(Math.pow(dk*dk+dd*dd,0.85)+1e-7);
           sw+=w; sz+=w*p.iv;
         });
         return sw>0?sz/sw:null;
@@ -35736,25 +35728,23 @@ if __name__ == "__main__":
     });
 
     const CS=[
-      [0.0,'#10174F'],[0.15,'#1E2B8F'],[0.3,'#354AA8'],[0.45,'#7F93E4'],
-      [0.6,'#E5E6E8'],[0.75,'#F8CE5D'],[0.9,'#D85412'],[1.0,'#980C00']
+      [0.0,'#10174F'],[0.2,'#354AA8'],[0.4,'#7F93E4'],
+      [0.5,'#E5E6E8'],[0.6,'#F8CE5D'],[0.8,'#D85412'],[1.0,'#980C00']
     ];
 
     const traceSurface={
-      type:'surface',x:kG,y:dG,z:zG,colorscale:CS,opacity:0.95,showscale:true,
-      hovertemplate:'STRIKE: $%{x:,.0f}<br>DTE: %{y}<br>IV: %{z:.1f}%<extra></extra>',
+      type:'surface',x:kG,y:dG,z:zG,colorscale:CS,opacity:1,showscale:true,
+      hovertemplate:'Strike: $%{x:,.0f}<br>DTE: %{y} days<br>IV: %{z:.1f}%<extra></extra>',
       contours:{
-        x:{show:false,highlight:true,highlightcolor:'#ffffff',highlightwidth:2},
-        y:{show:false,highlight:true,highlightcolor:'#ffffff',highlightwidth:2},
-        z:{show:false,highlight:false}
+        x:{show:false,highlight:false},y:{show:false,highlight:false},z:{show:false}
       },
       colorbar:{
-        title:{text:'IV %',font:{color:'#666',size:10},side:'top'},
-        tickfont:{color:'#666',size:9},ticksuffix:'%',
-        thickness:10,len:0.7,x:0.99,bgcolor:'rgba(0,0,0,0)',outlinecolor:'transparent'
+        title:{text:'IV %',font:{color:'#ccc',size:12},side:'right'},
+        tickfont:{color:'#ccc',size:11},ticksuffix:'%',
+        thickness:12,len:0.65,x:1.01,bgcolor:'rgba(0,0,0,0)',outlinecolor:'#222',outlinewidth:0
       },
       lighting:{ambient:0.7,diffuse:0.9,specular:0.1,roughness:0.8,fresnel:0.1},
-      lightposition:{x:100,y:100,z:1000},
+      lightposition:{x:0,y:0,z:100000},
     };
 
     // newPlot once, then only update data — camera never resets
@@ -35769,15 +35759,15 @@ if __name__ == "__main__":
         paper_bgcolor:'#101114',plot_bgcolor:'#101114',
         autosize:true,
         uirevision:'volsurface',
-        margin:{l:0,r:95,t:30,b:0},
+        margin:{l:0,r:100,t:40,b:20},
         scene:{
           bgcolor:'#101114',
           uirevision:'volsurface',
           camera:{eye:{x:1.6,y:1.3,z:0.55},center:{x:0,y:0,z:-0.15},up:{x:0,y:0,z:1}},
           aspectmode:'manual',aspectratio:{x:1.4,y:1.2,z:0.85},
-          xaxis:{title:{text:'STRIKE ($)',font:{color:'#666',size:11}},tickfont:{color:'#555',size:9},gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
-          yaxis:{title:{text:'EXPIRY (DTE)',font:{color:'#666',size:11}},tickfont:{color:'#555',size:9},gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
-          zaxis:{title:{text:'VOLATILITY (%)',font:{color:'#666',size:11}},tickfont:{color:'#555',size:9},ticksuffix:'%',gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
+          xaxis:{title:{text:'Strike ($)',font:{color:'#aaa',size:13}},tickfont:{color:'#999',size:11},gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
+          yaxis:{title:{text:'Days to Expiry',font:{color:'#aaa',size:13}},tickfont:{color:'#999',size:11},gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
+          zaxis:{title:{text:'IV (%)',font:{color:'#aaa',size:13}},tickfont:{color:'#999',size:11},ticksuffix:'%',gridcolor:'rgba(255,255,255,0.12)',linecolor:'transparent',backgroundcolor:'#101114',showgrid:true,showspikes:true,spikemode:'across',spikesnap:'cursor',spikecolor:'rgba(255,255,255,0.4)',spikethickness:1},
         },
         font:{color:'#ccc',family:'Inter,Arial,sans-serif'},
         hoverlabel:{bgcolor:'#333333',bordercolor:'#ffffff',font:{color:'#ffffff',size:13,family:'Inter,-apple-system,sans-serif'}},
@@ -35875,14 +35865,13 @@ if __name__ == "__main__":
           const nK=75,nD=40;
           const kG=Array.from({length:nK},(_,i)=>kMn+i*(kMx-kMn)/(nK-1));
           const dG=Array.from({length:nD},(_,i)=>{
-            const t=i/(nD-1); return Math.round(dMn+(dMx-dMn)*Math.pow(t,0.7));
+            const t=i/(nD-1); return Math.round(dMn+(dMx-dMn)*Math.pow(t,0.65));
           }).filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b);
-          const rangeK=(kMx-kMn)||1, rangeD=(dMx-dMn)||1;
           const zG=dG.map(td=>kG.map(tk=>{
             let sw=0,sz=0;
             d.pts.forEach(p=>{
-              const dk=(p.K-tk)/rangeK, dd=(p.dte-td)/rangeD;
-              const w=1.0/(Math.pow(Math.sqrt(dk*dk+dd*dd),1.7)+1e-9);
+              const dk=(p.K-tk)/(kMx-kMn||1), dd=(p.dte-td)/(dMx-dMn||1);
+              const w=1.0/(Math.pow(dk*dk+dd*dd,0.85)+1e-7);
               sw+=w; sz+=w*p.iv;
             });
             return sw>0?sz/sw:null;
