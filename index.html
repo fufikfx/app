@@ -3637,6 +3637,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="ql-it" onclick="openPanel('GHREPO');closeAllQL()" style="border-left:2px solid #238636"><div class="ql-it-desc" style="color:#3fb950;font-weight:700">⬡ GHREPO · GitHub — crypto_vol_surface</div></div>
           <div class="ql-it" onclick="openPanel('CRYEXC');closeAllQL()" style="border-left:2px solid #ff6600"><div class="ql-it-desc" style="color:#ff8800;font-weight:700">⚡ CRYEXC · Live Order Flow &amp; News</div></div>
           <div class="ql-it" onclick="openPanel('HYPER');closeAllQL()" style="border-left:2px solid #44ffcc"><div class="ql-it-desc" style="color:#44ffcc;font-weight:700">⬡ HYPER · Hyperliquid Live Dashboard</div></div>
+              <div class="ql-it" onclick="openPanel('OPTFLOW');closeAllQL()" style="border-left:2px solid #ee9944"><div class="ql-it-desc" style="color:#ee9944;font-weight:700">&#x2B21; OPTFLOW · Options Flow &amp; GEX Dashboard</div></div>
           <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('HYPE');closeAllQL()"><div class="ql-it-desc">HYPE · Hyperliquid Token Chart</div></div>
           <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('PEPE');closeAllQL()"><div class="ql-it-desc">PEPE · Pepe Memecoin Chart</div></div>
           <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('WIF');closeAllQL()"><div class="ql-it-desc">WIF · dogwifhat Chart</div></div>
@@ -6500,7 +6501,7 @@ function getPanelTabs(fn){
   return tabs[fn]||null;
 }
 function getPanelTitle(fn){
-  const t={WEI:'WORLD EQUITY INDICES',EQUITY:'US EQUITY QUOTES',IDX:'WORLD INDICES',MOVERS:'TOP MOVERS',CRYPTO:'DIGITAL ASSETS / CRYPTO',COMDTY:'COMMODITIES',ENERGY:'ENERGY MARKETS',METALS:'PRECIOUS METALS',AGRI:'AGRICULTURAL',MACRO:'MACRO DASHBOARD',WIRP:'RATE CUT PROBABILITIES',WN:'NEWS FEED',NWS:'NEWS & RESEARCH',ALERTS:'MACRO ALERTS',DES:'SECURITY DESCRIPTION',FA:'FINANCIAL ANALYSIS',MMAP:'MARKET HEATMAP',CRYPTOHEAT:'CRYPTO HEATMAP',YLDS:'TREASURY YIELD CURVE',CN:'X / SOCIAL FEED',ECON:'COUNTRY ECONOMICS',ECAL:'ECONOMIC CALENDAR',ECAL2:'ECONOMIC CALENDAR — NEXT WEEK',DEFI:'DEFI PROTOCOLS',CHAIN:'BLOCKCHAIN NETWORKS',PERF:'PERFORMANCE TABLE',BYFC:'BOND YIELD FORECASTS',ETFF:'ETF FLOWS — BITCOIN & ETHEREUM',FUND:'PERPETUAL FUNDING RATES',LIQD:'LIQUIDATIONS MONITOR',DOMN:'',NETSIT:'DATA NETWORK SYSTEM — P2P MESH VISUALIZER',DHLO:'DAILY HIGH · LOW · OPEN · CLOSE',INTEL:'GLOBAL INTELLIGENCE',JOURN:'JOURNALIST & TRADER WATCHLIST',SRCM:'SOURCE HEALTH MONITOR',SRC:'SOURCES & DATA PROVIDERS',OPT:'OPTIONS CHAIN',BNDS:'SOVEREIGN BONDS & CREDIT',EARN:'EARNINGS CALENDAR',PORT:'PORTFOLIO TRACKER',SENT:'MARKET SENTIMENT',IPO:'IPO CALENDAR',MNA:'M&A DEAL TRACKER',CRYEXC:'CRYEXC — LIVE ORDER FLOW & NEWS',RISK:'RISK METRICS',GMHM:'GLOBAL MACRO HEATMAP',ORDB:'ORDER BOOK DEPTH',CRYPTOOPT:'CRYPTO OPTIONS CHAIN',WHALE:'WHALE TRACKER & ON-CHAIN',OIDASH:'OPEN INTEREST DASHBOARD',FUNDHIST:'FUNDING RATE HISTORY',VPVR:'VOLUME PROFILE VPVR',LIQHEAT:'LIQUIDATION HEATMAP',HYPER:'HYPERLIQUID — LIVE PERP DASHBOARD',CRCL:'CRCL — CIRCULAR MARKET METRICS',METR:'METR — CROSS-ASSET METRICS DASHBOARD',MULTIFEED:'MULTI-EXCHANGE LIVE FEED',STOCKS2:'EXTENDED EQUITY UNIVERSE'};
+  const t={WEI:'WORLD EQUITY INDICES',EQUITY:'US EQUITY QUOTES',IDX:'WORLD INDICES',MOVERS:'TOP MOVERS',CRYPTO:'DIGITAL ASSETS / CRYPTO',COMDTY:'COMMODITIES',ENERGY:'ENERGY MARKETS',METALS:'PRECIOUS METALS',AGRI:'AGRICULTURAL',MACRO:'MACRO DASHBOARD',WIRP:'RATE CUT PROBABILITIES',WN:'NEWS FEED',NWS:'NEWS & RESEARCH',ALERTS:'MACRO ALERTS',DES:'SECURITY DESCRIPTION',FA:'FINANCIAL ANALYSIS',MMAP:'MARKET HEATMAP',CRYPTOHEAT:'CRYPTO HEATMAP',YLDS:'TREASURY YIELD CURVE',CN:'X / SOCIAL FEED',ECON:'COUNTRY ECONOMICS',ECAL:'ECONOMIC CALENDAR',ECAL2:'ECONOMIC CALENDAR — NEXT WEEK',DEFI:'DEFI PROTOCOLS',CHAIN:'BLOCKCHAIN NETWORKS',PERF:'PERFORMANCE TABLE',BYFC:'BOND YIELD FORECASTS',ETFF:'ETF FLOWS — BITCOIN & ETHEREUM',FUND:'PERPETUAL FUNDING RATES',LIQD:'LIQUIDATIONS MONITOR',DOMN:'',NETSIT:'DATA NETWORK SYSTEM — P2P MESH VISUALIZER',DHLO:'DAILY HIGH · LOW · OPEN · CLOSE',INTEL:'GLOBAL INTELLIGENCE',JOURN:'JOURNALIST & TRADER WATCHLIST',SRCM:'SOURCE HEALTH MONITOR',SRC:'SOURCES & DATA PROVIDERS',OPT:'OPTIONS CHAIN',BNDS:'SOVEREIGN BONDS & CREDIT',EARN:'EARNINGS CALENDAR',PORT:'PORTFOLIO TRACKER',SENT:'MARKET SENTIMENT',IPO:'IPO CALENDAR',MNA:'M&A DEAL TRACKER',CRYEXC:'CRYEXC — LIVE ORDER FLOW & NEWS',RISK:'RISK METRICS',GMHM:'GLOBAL MACRO HEATMAP',ORDB:'ORDER BOOK DEPTH',CRYPTOOPT:'CRYPTO OPTIONS CHAIN',WHALE:'WHALE TRACKER & ON-CHAIN',OIDASH:'OPEN INTEREST DASHBOARD',FUNDHIST:'FUNDING RATE HISTORY',VPVR:'VOLUME PROFILE VPVR',LIQHEAT:'LIQUIDATION HEATMAP',HYPER:'HYPERLIQUID — LIVE PERP DASHBOARD',OPTFLOW:'OPTFLOW — OPTIONS FLOW & GEX',CRCL:'CRCL — CIRCULAR MARKET METRICS',METR:'METR — CROSS-ASSET METRICS DASHBOARD',MULTIFEED:'MULTI-EXCHANGE LIVE FEED',STOCKS2:'EXTENDED EQUITY UNIVERSE'};
   return t[fn]||fn;
 }
 
@@ -6542,7 +6543,7 @@ function openPanel(fn,posX,posY){
   const tabs=getPanelTabs(fn);
   const tabsHtml=tabs?`<div class="panel-tabs">${tabs.map((t,i)=>`<div class="ptab${i===0?' on':''}" onclick="switchPanelTab('${id}','${fn}',${i},this)">${t}</div>`).join('')}</div>`:'';
 
-  const widePanel={'CRYEXC':true,'ETFF':true,'FUND':true,'LIQD':true,'WEI':true,'CRYPTO':true,'NETSIT':true,'INTEL':true,'JOURN':true,'SRCM':true,'SRC':true,'NWS':true,'CRYPTOHEAT':true,'HYPER':true,'CRCL':true,'METR':true,'MULTIFEED':true,'STOCKS2':true,'GHREPO':true};
+  const widePanel={'OPTFLOW':true,'CRYEXC':true,'ETFF':true,'FUND':true,'LIQD':true,'WEI':true,'CRYPTO':true,'NETSIT':true,'INTEL':true,'JOURN':true,'SRCM':true,'SRC':true,'NWS':true,'CRYPTOHEAT':true,'HYPER':true,'CRCL':true,'METR':true,'MULTIFEED':true,'STOCKS2':true,'GHREPO':true};
   const defaultW=widePanel[fn]?(fn==='CRYEXC'?620:fn==='ETFF'?920:fn==='FUND'?780:fn==='LIQD'?700:fn==='NETSIT'?820:fn==='INTEL'?820:fn==='JOURN'?620:fn==='SRCM'?580:fn==='SRC'?820:fn==='NWS'?660:fn==='CRYPTO'?780:fn==='WEI'?900:fn==='HYPER'?860:fn==='CRCL'?780:fn==='METR'?900:fn==='MULTIFEED'?820:fn==='STOCKS2'?900:fn==='GHREPO'?1100:700):520;
   const defaultH=widePanel[fn]?(fn==='CRYEXC'?680:fn==='ETFF'?480:fn==='FUND'?400:fn==='LIQD'?380:fn==='NETSIT'?560:fn==='INTEL'?600:fn==='JOURN'?580:fn==='SRCM'?500:fn==='SRC'?600:fn==='NWS'?600:fn==='CRYPTO'?880:fn==='WEI'?860:fn==='HYPER'?680:fn==='CRCL'?680:fn==='METR'?680:fn==='MULTIFEED'?580:fn==='STOCKS2'?680:fn==='GHREPO'?820:600):500;
   const _ow=document.getElementById('map-overlay');
@@ -7020,6 +7021,7 @@ function buildPanelContent(fn){
     case 'LIQHEAT': return typeof buildLIQHEAT==='function'?buildLIQHEAT():'';
     case 'CRYPTOHEAT': return buildMMAPCrypto();
     case 'HYPER':   return buildHYPER();
+    case 'OPTFLOW': return typeof buildOPTFLOW==='function'?buildOPTFLOW():'';
     case 'CRCL':    return buildCRCL();
     case 'METR':    return buildMETR();
     case 'MULTIFEED': return buildMULTIFEED();
@@ -29089,9 +29091,9 @@ window.addEventListener('storage', (e) => {
   // ── BACKEND URL — změň zde po nasazení na Railway/Render ─────────────────
   // Lokálně:  'localhost:8086'
   // Railway:  'tvuj-projekt.up.railway.app'  (bez https://)
-  const CE_HOST   = 'cryexc-backend-production.up.railway.app';
-  const CE_WS_URL = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + CE_HOST + '/ws';
-  const CE_HTTP   = (window.location.protocol === 'https:' ? 'https://' : 'http://') + CE_HOST;
+  const CE_HOST   = 'localhost:8086';  // Railway: 'tvuj-projekt.up.railway.app'
+  const CE_WS_URL = 'ws://' + CE_HOST + '/ws';
+  const CE_HTTP   = 'http://' + CE_HOST;
   // Full symbol universe — musí přesně odpovídat SYMBOLS v main.py backendu
   const CE_SYMBOLS = [
     // Majors
@@ -29109,7 +29111,7 @@ window.addEventListener('storage', (e) => {
     'PENDLEUSDT','INJUSDT','GRTUSDT','OMUSDT',
     // Other top coins
     'LTCUSDT','BCHUSDT','ETCUSDT','XMRUSDT','ZECUSDT',
-    'LINKUSDT','FILUSDT','FTMUSDT','BERASUDT','DOGEUSDT','SHIBUSDT',
+    'LINKUSDT','FILUSDT','FTMUSDT','BERAUSDT','DOGEUSDT','SHIBUSDT',
   ];
   const CE_EXCHANGE  = 'binancef';
   const CE_EXCHANGE2 = 'hyperliquid';
@@ -35079,11 +35081,11 @@ if __name__ == "__main__":
 
   const _apiFetch = async (url) => {
     try {
-      const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
+      const r = await fetch(url, {signal: AbortSignal.timeout(5000)});
       if (r.ok) return r.json();
     } catch(e) {}
     try {
-      const r = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(url), {signal: AbortSignal.timeout(10000)});
+      const r = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(url), {signal: AbortSignal.timeout(6000)});
       if (r.ok) return r.json();
     } catch(e2) {}
     throw new Error('fetch failed: ' + url);
@@ -35224,11 +35226,13 @@ if __name__ == "__main__":
     if(D.loading)return;
     D.loading=true;
     _ghStat('loading');
+    // Global 25s timeout — if everything hangs, fall through to SABR immediately
+    const _loadTimeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('global timeout')),25000));
     try{
       // Load both assets in parallel: Deribit → Bybit → SABR
-      const [btcRaw, ethRaw] = await Promise.all([
-        _loadBestOptions('btc'),
-        _loadBestOptions('eth')
+      const [btcRaw, ethRaw] = await Promise.race([
+        Promise.all([_loadBestOptions('btc'), _loadBestOptions('eth')]),
+        _loadTimeout
       ]);
       // Also fetch Binance spot/ticker data for price display & mini charts
       const [bT, eT, bK, eK] = await Promise.all([
@@ -35246,7 +35250,17 @@ if __name__ == "__main__":
       const src = D.btc._src || 'sabr';
       _ghStat(src === 'deribit' ? 'live' : src === 'bybit' ? 'bybit' : 'sabr');
       _ghUpdateAll();
-    }catch(e){D.loading=false;_ghStat('err');}
+    }catch(e){
+      D.loading=false;
+      // On any failure/timeout: use SABR model so panel is never stuck loading
+      try{
+        const [btcSabr, ethSabr] = await Promise.all([_loadSABR('btc'), _loadSABR('eth')]);
+        D.btc = btcSabr; D.eth = ethSabr; D.ts=Date.now();
+        _computeSurfaceFromPts(D);
+        _ghStat('sabr');
+        _ghUpdateAll();
+      }catch(e2){ _ghStat('err'); }
+    }
   }
 
   function _computeSurfaceFromPts(D){
@@ -35585,6 +35599,7 @@ if __name__ == "__main__":
       }
       _VS.C[sym]=d;
       _vsDraw(sym);
+      if(typeof window._ghSidebarRender==='function') window._ghSidebarRender(sym);
     } catch(e){
       if(el){el.textContent='ERROR';el.style.color='#f44';}
     }
@@ -35665,32 +35680,75 @@ if __name__ == "__main__":
     else _vsLoad(sym);
   };
 
-  window.buildGHREPO=function(){
-    // Load Plotly if needed
-    if(!window.Plotly){
-      const s=document.createElement('script');
-      s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';
-      document.head.appendChild(s);
-    }
-    // Kick off data load after DOM settles
-    _VS.CUR='btc';
-    setTimeout(()=>_vsLoad('btc'),50);
-
-    return `<div style="width:100%;height:100%;background:#101114;position:relative;overflow:hidden">
-  <div style="position:absolute;top:14px;left:20px;z-index:10;pointer-events:none">
-    <div style="font-size:13px;font-weight:700;color:#eaeaec;letter-spacing:.3px;margin-bottom:6px">VOLATILITY SURFACE <span id="vs-status" style="font-size:9px;color:#555;font-weight:600;letter-spacing:.5px;margin-left:6px">LOADING…</span></div>
-    <div style="background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.05);padding:4px 10px;border-radius:4px;display:inline-block">
-      <span style="font-size:12px;font-weight:600;color:#00e6e6;letter-spacing:.5px">Spot: <span id="vs-spot">—</span></span>
-    </div>
-  </div>
-  <div style="position:absolute;top:14px;right:20px;z-index:10;display:flex;gap:5px;align-items:center">
-    <div id="vs-bb" onclick="vsGo('btc')" style="padding:4px 13px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #FF9900;color:#FF9900;background:rgba(255,153,0,.07);border-radius:3px">BTC</div>
-    <div id="vs-be" onclick="vsGo('eth')" style="padding:4px 13px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #222;color:#444;background:transparent;border-radius:3px">ETH</div>
-  </div>
-  <div id="vs-plot" style="position:absolute;inset:0;width:100%;height:100%"></div>
-</div>`;
+  // ── PATCHED buildGHREPO — Surface vlevo + Options sidebar vpravo ──
+window.buildGHREPO=function(){
+  if(!window.Plotly){
+    var ps=document.createElement('script');
+    ps.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';
+    document.head.appendChild(ps);
   }
-  window.fetchGHData=fetchGHData;
+  _VS.CUR='btc';
+  setTimeout(function(){
+    _vsLoad('btc');
+    setTimeout(function(){ _ghSidebarRender(_VS.CUR); }, 2500);
+  }, 50);
+  setInterval(function(){
+    if(document.getElementById('gh-sidebar')) _ghSidebarRender(_VS.CUR);
+  }, 5*60*1000);
+
+  var tabDefs = [
+    {id:'summary', label:'Summary'},
+    {id:'smile',   label:'Vol Smile'},
+    {id:'gex',     label:'GEX Profile'},
+    {id:'heatmap', label:'Heatmap'},
+    {id:'cryexc',  label:'CryExc'}
+  ];
+  var tabHtml = '';
+  for(var ti=0;ti<tabDefs.length;ti++){
+    var t=tabDefs[ti];
+    var active=ti===0;
+    var bl=ti>0?'border-left:none;':'';
+    tabHtml+='<span id="ghs-tab-'+t.id+'" onclick="window._ghsSetTab(\''+t.id+'\')"'
+      +' style="cursor:pointer;font-size:7px;padding:2px 8px;border:1px solid #1e2030;'+bl
+      +'color:'+(active?'#F39F41':'#444')+';background:'+(active?'#1a1500':'#0b0c0f')+'">'+t.label+'</span>';
+  }
+
+  return '<div style="width:100%;height:100%;background:#101114;display:flex;overflow:hidden">'
+
+    // LEFT — 3D Surface 63%
+    +'<div style="flex:0 0 63%;position:relative;overflow:hidden;border-right:1px solid #1e2030">'
+      +'<div style="position:absolute;top:10px;left:14px;z-index:10;pointer-events:none">'
+        +'<div style="font-size:11px;font-weight:700;color:#eaeaec;letter-spacing:.3px;margin-bottom:4px">'
+          +'VOL SURFACE <span id="vs-status" style="font-size:8px;color:#555;margin-left:5px">LOADING&#x2026;</span>'
+        +'</div>'
+        +'<div style="background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.06);padding:3px 8px;border-radius:3px;display:inline-block">'
+          +'<span style="font-size:11px;font-weight:600;color:#00e6e6">Spot: <span id="vs-spot">&#x2014;</span></span>'
+        +'</div>'
+      +'</div>'
+      +'<div style="position:absolute;top:10px;right:10px;z-index:10;display:flex;gap:4px">'
+        +'<div id="vs-bb" onclick="vsGo(\'btc\');setTimeout(function(){_ghSidebarRender(\'btc\');},2200)" style="padding:3px 10px;font-size:9px;font-weight:600;cursor:pointer;border:1px solid #FF9900;color:#FF9900;background:rgba(255,153,0,.07);border-radius:3px">BTC</div>'
+        +'<div id="vs-be" onclick="vsGo(\'eth\');setTimeout(function(){_ghSidebarRender(\'eth\');},2200)" style="padding:3px 10px;font-size:9px;font-weight:600;cursor:pointer;border:1px solid #222;color:#444;background:transparent;border-radius:3px">ETH</div>'
+      +'</div>'
+      +'<div id="vs-plot" style="position:absolute;inset:0;width:100%;height:100%"></div>'
+    +'</div>'
+
+    // RIGHT — Options sidebar 37%
+    +'<div id="gh-sidebar" style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#0b0c0f">'
+      +'<div style="background:#0f1014;border-bottom:1px solid #1e2030;padding:5px 8px;display:flex;align-items:center;gap:5px;flex-shrink:0">'
+        +'<span style="color:#F39F41;font-size:7px;font-weight:700;letter-spacing:1.5px">OPTIONS</span>'
+        +'<div style="display:flex;gap:0;margin-left:4px">'+tabHtml+'</div>'
+        +'<span id="ghs-spot" style="color:#00cc66;font-size:7.5px;font-weight:700;margin-left:auto;font-family:\'Roboto Mono\',monospace"></span>'
+      +'</div>'
+      +'<div id="ghs-body" style="flex:1;overflow:auto;min-height:0">'
+        +'<div style="padding:20px;color:#333;font-size:8px;text-align:center">Loading&#x2026;</div>'
+      +'</div>'
+    +'</div>'
+
+  +'</div>';
+};
+
+window.fetchGHData=fetchGHData;
+  window._VS = _VS;
 })();
 </script>
 
@@ -35704,9 +35762,29 @@ if __name__ == "__main__":
     <span style="font-size:12px;font-weight:600;color:#00e6e6;letter-spacing:.5px;">Spot: <span id="bbg-vs-spot">—</span></span>
   </div>
 
-  <!-- Plot — full screen -->
-  <div id="bbg-vs-plot" style="position:absolute;inset:0;width:100%;height:100%;"></div>
+  <!-- Status top right -->
+  <div style="position:absolute;top:14px;right:260px;z-index:20;pointer-events:none;">
+    <span id="bbg-vs-status" style="font-size:8px;color:#555;letter-spacing:1px;">LOADING…</span>
+  </div>
+
+  <!-- Toggle button for right panel -->
+  <div id="bbg-drawer-toggle" onclick="(function(){var d=document.getElementById('bbg-right-drawer');var plot=document.getElementById('bbg-vs-plot');var open=d.style.width==='240px';d.style.width=open?'0':'240px';plot.style.right=open?'0':'240px';document.getElementById('bbg-drawer-toggle').style.right=open?'8px':'248px';})()" style="position:absolute;top:12px;right:8px;z-index:30;cursor:pointer;background:#0f1014;border:1px solid #2a2030;padding:4px 8px;border-radius:3px;font-size:10px;color:#9966cc;letter-spacing:1px;user-select:none;">◧ INFO</div>
+
+  <!-- Right info drawer -->
+  <div id="bbg-right-drawer" style="position:absolute;top:0;right:0;bottom:0;width:0;overflow:hidden;transition:width 0.2s ease;background:#0b0c0f;border-left:1px solid #1e2030;z-index:20;flex-direction:column;display:flex;">
+    <!-- Drawer tabs -->
+    <div style="display:flex;background:#0f1014;border-bottom:1px solid #1e2030;flex-shrink:0;">
+      <span id="bbgd-tab-gamma" onclick="window._bbgdSetTab('gamma')" style="flex:1;text-align:center;padding:5px 2px;font-size:7px;letter-spacing:.8px;cursor:pointer;color:#F39F41;background:#1a1500;border-right:1px solid #1e2030;">GAMMA</span>
+      <span id="bbgd-tab-cryexc" onclick="window._bbgdSetTab('cryexc')" style="flex:1;text-align:center;padding:5px 2px;font-size:7px;letter-spacing:.8px;cursor:pointer;color:#444;background:#0b0c0f;">CRYEXC</span>
+    </div>
+    <!-- Drawer body -->
+    <div id="bbgd-body" style="flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;"></div>
+  </div>
+
+  <!-- Plot — full screen, shrinks when drawer open -->
+  <div id="bbg-vs-plot" style="position:absolute;inset:0;right:0;width:auto;height:100%;"></div>
 </div>
+
 
 <script>
 (function(){
@@ -35714,8 +35792,8 @@ if __name__ == "__main__":
   let _BCUR='btc';
 
   async function _bg(u){
-    try{ const r=await fetch(u,{signal:AbortSignal.timeout(8000)}); if(r.ok) return r.json(); }catch(e){}
-    try{ const r=await fetch('https://corsproxy.io/?url='+encodeURIComponent(u),{signal:AbortSignal.timeout(10000)}); if(r.ok) return r.json(); }catch(e2){}
+    try{ const r=await fetch(u,{signal:AbortSignal.timeout(5000)}); if(r.ok) return r.json(); }catch(e){}
+    try{ const r=await fetch('https://corsproxy.io/?url='+encodeURIComponent(u),{signal:AbortSignal.timeout(6000)}); if(r.ok) return r.json(); }catch(e2){}
     throw new Error('fetch failed: '+u);
   }
 
@@ -36064,6 +36142,1097 @@ if __name__ == "__main__":
   setTimeout(_bstartAutoRefresh, 3000);
 
 })();
+
+// ══ OVOL DRAWER — Gamma + CryExc info panel ══════════════════════════════
+(function(){
+  var _tab = 'gamma';
+
+  function row(label, val, col) {
+    return '<div style="display:flex;justify-content:space-between;padding:3px 8px;border-bottom:1px solid #0f1014">'
+      +'<span style="font-size:7px;color:#4a3820;letter-spacing:.3px">'+label+'</span>'
+      +'<span style="font-size:7.5px;font-family:Roboto Mono,monospace;color:'+(col||'#c8b060')+'">'+val+'</span>'
+      +'</div>';
+  }
+  function fmtN(v,d){ if(v==null||isNaN(v)) return '—'; return parseFloat(v).toFixed(d==null?2:d); }
+  function fmtM(v){ if(!v||isNaN(v)) return '—'; v=parseFloat(v); return v>=1e9?'$'+(v/1e9).toFixed(2)+'B':v>=1e6?'$'+(v/1e6).toFixed(1)+'M':v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+v.toFixed(0); }
+  function fmtPct(v){ if(v==null) return '—'; return (parseFloat(v)*100).toFixed(4)+'%'; }
+  function npdf(x){ return Math.exp(-x*x/2)/Math.sqrt(2*Math.PI); }
+  function d1(S,K,v,T){ if(T<=0||v<=0||S<=0||K<=0) return 0; return (Math.log(S/K)+0.5*v*v*T)/(v*Math.sqrt(T)); }
+  function gamma(S,K,v,T){ if(T<=0||v<=0||S<=0) return 0; return npdf(d1(S,K,v,T))/(S*v*Math.sqrt(T)); }
+
+  window._bbgdSetTab = function(tab){
+    _tab = tab;
+    ['gamma','cryexc'].forEach(function(t){
+      var el=document.getElementById('bbgd-tab-'+t); if(!el) return;
+      el.style.color    = t===tab?'#F39F41':'#444';
+      el.style.background = t===tab?'#1a1500':'#0b0c0f';
+    });
+    _bbgdRender();
+  };
+
+  window._bbgdRender = function(){
+    var cur = window._BCUR || 'btc';
+    if(_tab==='gamma') _bbgdGamma(cur);
+    else _bbgdCryexc(cur);
+  };
+
+  window._bbgdGamma = function(sym){
+    var body=document.getElementById('bbgd-body'); if(!body) return;
+    // Try _VS cache first, then _BC cache
+    var cache = (window._VS&&window._VS.C&&window._VS.C[sym]) || (window._BC&&window._BC[sym]);
+    if(!cache||!cache.pts||!cache.pts.length){
+      body.innerHTML='<div style="padding:14px 8px;color:#4a3820;font-size:7px">Waiting for vol surface data…</div>';
+      return;
+    }
+    var spot = cache.spot||0;
+    var pts  = cache.pts; // [{K,dte,iv}]
+
+    // Group by dte
+    var byDte={};
+    pts.forEach(function(p){ if(!byDte[p.dte]) byDte[p.dte]=[]; byDte[p.dte].push(p); });
+    var dtes=Object.keys(byDte).map(Number).sort(function(a,b){return a-b;}).slice(0,8);
+
+    // Build GEX per strike (gamma × S² × 0.01, aggregated across expiries)
+    var gmap={};
+    dtes.forEach(function(dte){
+      var T=Math.max(0.0001,dte/365);
+      byDte[dte].forEach(function(p){
+        if(p.K<spot*0.72||p.K>spot*1.35) return;
+        if(!gmap[p.K]) gmap[p.K]=0;
+        gmap[p.K]+=gamma(spot,p.K,p.iv/100,T)*spot*spot*0.01;
+      });
+    });
+    var strikes=Object.keys(gmap).map(Number).sort(function(a,b){return b-a;});
+    if(!strikes.length){ body.innerHTML='<div style="padding:14px 8px;color:#333;font-size:7px">No GEX data</div>'; return; }
+    var maxG=Math.max.apply(null,strikes.map(function(k){return gmap[k];})); if(!maxG) maxG=1;
+    var BW=150;
+
+    // ATM IV
+    var atmPts=pts.filter(function(p){return Math.abs(p.K-spot)<spot*0.04&&p.dte<=30;});
+    var atmIV=atmPts.length?atmPts.reduce(function(a,b){return a+b.iv;},0)/atmPts.length:0;
+    var T14=14/365;
+    var atmGamma=gamma(spot,spot,(atmIV||50)/100,T14);
+    var gex14=(atmGamma*spot*spot*0.01).toFixed(4);
+    var src=(cache._src||'SABR').toUpperCase();
+
+    // Cards
+    var cards='<div style="display:flex;gap:4px;padding:6px 6px 4px;flex-wrap:wrap">'
+      +'<div style="background:#0f1014;border:1px solid #1e2030;border-radius:3px;padding:4px 6px;flex:1;min-width:60px">'
+      +'<div style="font-size:6px;color:#3a3020;letter-spacing:.5px">ATM IV</div>'
+      +'<div style="font-size:12px;font-weight:700;color:#c8b060;font-family:monospace">'+(atmIV?atmIV.toFixed(1):'—')+'%</div>'
+      +'</div>'
+      +'<div style="background:#0f1014;border:1px solid #1e2030;border-radius:3px;padding:4px 6px;flex:1;min-width:60px">'
+      +'<div style="font-size:6px;color:#3a3020;letter-spacing:.5px">14D GAMMA</div>'
+      +'<div style="font-size:12px;font-weight:700;color:#00cc44;font-family:monospace">'+gex14+'</div>'
+      +'</div>'
+      +'</div>'
+      +'<div style="padding:2px 8px 4px;font-size:6px;color:#2a2010">SRC: '+src+' · S=$'+Math.round(spot).toLocaleString()+'</div>';
+
+    // GEX bars
+    var bars=strikes.map(function(k){
+      var isSpot=Math.abs(k-spot)<spot*0.015;
+      var bw=Math.round(gmap[k]/maxG*BW);
+      var sk=k>=1000?'$'+(k/1000).toFixed(0)+'K':'$'+k;
+      return '<div style="display:flex;align-items:center;gap:3px;margin-bottom:1px;'+(isSpot?'border-top:1px solid #F39F41;border-bottom:1px solid #F39F41;':'')+'">'
+        +'<div style="width:38px;text-align:right;font-size:6.5px;font-family:monospace;color:'+(isSpot?'#F39F41':'#4a3820')+'">'+sk+'</div>'
+        +'<div style="flex:1"><div style="height:8px;width:'+bw+'px;background:#00aa44;opacity:.85"></div></div>'
+        +'</div>';
+    }).join('');
+
+    body.innerHTML=
+      '<div style="padding:3px 8px;font-size:6px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">SURFACE DATA</div>'
+      +cards
+      +'<div style="padding:3px 8px;font-size:6px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">GEX / STRIKE</div>'
+      +'<div style="padding:4px 6px;overflow-y:auto">'+bars+'</div>'
+      +'<div style="padding:4px 8px;font-size:5.5px;color:#2a2010">γ = N\'(d₁)/(S·σ·√T) · S² · 0.01</div>';
+  };
+
+  window._bbgdCryexc = function(sym){
+    var body=document.getElementById('bbgd-body'); if(!body) return;
+    body.innerHTML='<div style="padding:10px 8px;color:#F39F41;font-size:7px;letter-spacing:1px">FETCHING&#x2026;</div>';
+    var base='http://localhost:8086';
+    var ticker=sym==='btc'?'BTCUSDT':'ETHUSDT';
+    Promise.all([
+      fetch(base+'/api/market-stats',{signal:AbortSignal.timeout(4000)}).then(function(r){return r.ok?r.json():[];}).catch(function(){return null;}),
+      fetch(base+'/klines?symbol='+ticker+'&interval=1h&limit=24',{signal:AbortSignal.timeout(4000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+    ]).then(function(res){
+      var stats=res[0], klines=res[1];
+      var connected=stats!==null;
+      var symUp=sym.toUpperCase();
+      var st=null;
+      if(Array.isArray(stats)) stats.forEach(function(s){if(s.symbol&&s.symbol.toUpperCase().startsWith(symUp)) st=s;});
+
+      // Sparkline
+      var spark='';
+      if(Array.isArray(klines)&&klines.length>1){
+        var closes=klines.map(function(k){return parseFloat(k[4]||k.close||0);}).filter(Boolean);
+        if(closes.length>1){
+          var minC=Math.min.apply(null,closes),maxC=Math.max.apply(null,closes);
+          var W=220,H=40,PL=3,PR=3,PT=3,PB=3;
+          var cx=function(i){return PL+i*(W-PL-PR)/(closes.length-1);};
+          var cy=function(v){return H-PB-(v-minC)/(maxC-minC+0.01)*(H-PT-PB);};
+          var pts=closes.map(function(v,i){return cx(i).toFixed(1)+','+cy(v).toFixed(1);}).join(' ');
+          var last=closes[closes.length-1],first=closes[0];
+          var col=last>=first?'#00cc44':'#ff3322';
+          spark='<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;background:#080a0e;border-bottom:1px solid #1e2030">'
+            +'<polyline points="'+pts+'" fill="none" stroke="'+col+'" stroke-width="1.1" opacity=".9"/>'
+            +'<text x="3" y="10" font-size="5.5" font-family="monospace" fill="#3a3020">'+ticker+' 24H</text>'
+            +'<text x="'+(W-PR)+'" y="10" font-size="6" font-family="monospace" fill="'+col+'" text-anchor="end">$'+Math.round(last).toLocaleString()+'</text>'
+            +'</svg>';
+        }
+      }
+
+      var conn='<span style="font-size:6px;color:'+(connected?'#00cc44':'#ff3322')+'">'+(connected?'● LIVE':'● OFFLINE')+'</span>';
+      var rowsHtml='';
+      if(st){
+        var fr=st.fundingRate!==undefined?st.fundingRate:(st.funding_rate!==undefined?st.funding_rate:null);
+        var oi=st.openInterest!==undefined?st.openInterest:(st.open_interest!==undefined?st.open_interest:null);
+        var vol24=st.quoteVolume||st.volume24h||null;
+        var lsR=st.longShortRatio||st.long_short_ratio||null;
+        var lastP=st.lastPrice||st.last_price||null;
+        var chg=st.priceChangePercent||st.price_change_percent||null;
+        var frCol=fr!=null?(parseFloat(fr)>0.0001?'#ff4422':parseFloat(fr)<-0.0001?'#00cc44':'#aa8833'):'#444';
+        var cCol=chg!=null?(parseFloat(chg)>0?'#00cc44':'#ff4422'):'#444';
+        rowsHtml=
+          row('Price', lastP?'$'+parseFloat(lastP).toLocaleString('en',{minimumFractionDigits:2}):'—','#eaeaec')
+         +row('24H Chg', chg!=null?(parseFloat(chg)>0?'+':'')+fmtN(chg,2)+'%':'—', cCol)
+         +row('Volume', fmtM(vol24),'#8899bb')
+         +row('Open Int', fmtM(oi),'#aabbcc')
+         +row('Funding', fr!=null?fmtPct(fr):'—', frCol);
+        if(lsR!=null) rowsHtml+=row('L/S', fmtN(lsR,3), parseFloat(lsR)>1?'#00cc44':'#ff4422');
+      } else if(connected){
+        rowsHtml='<div style="padding:10px 8px;font-size:7px;color:#4a3820">No data for '+symUp+'.<br>Add BTCUSDT to backend SYMBOLS.</div>';
+      } else {
+        rowsHtml='<div style="padding:10px 8px;font-size:7px;color:#442200">⚠ Offline.<br><span style="font-size:6px;color:#443322">python main.py (port 8086)</span></div>';
+      }
+
+      body.innerHTML=
+        '<div style="padding:3px 8px;display:flex;justify-content:space-between;font-size:6px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">'
+        +'<span>CRYEXC · BINANCE</span>'+conn+'</div>'
+        +spark
+        +'<div style="padding:3px 8px;font-size:6px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">FUTURES STATS</div>'
+        +rowsHtml;
+    }).catch(function(){
+      body.innerHTML='<div style="padding:10px 8px;color:#ff3322;font-size:7px">⚠ Fetch failed</div>';
+    });
+  };
+
+  // Auto-open drawer + load gamma when overlay opens
+  var _orig_display_observer = new MutationObserver(function(mutations){
+    mutations.forEach(function(m){
+      if(m.target.id==='bbg-chart-settings-overlay' && m.attributeName==='style'){
+        var ov=document.getElementById('bbg-chart-settings-overlay');
+        if(ov&&ov.style.display!=='none'){
+          // Auto-open drawer
+          setTimeout(function(){
+            var d=document.getElementById('bbg-right-drawer');
+            var plot=document.getElementById('bbg-vs-plot');
+            var tog=document.getElementById('bbg-drawer-toggle');
+            if(d&&d.style.width!=='240px'){
+              d.style.width='240px';
+              if(plot) plot.style.right='240px';
+              if(tog) tog.style.right='248px';
+            }
+            _bbgdRender();
+          }, 800);
+        }
+      }
+    });
+  });
+  document.addEventListener('DOMContentLoaded',function(){
+    var ov=document.getElementById('bbg-chart-settings-overlay');
+    if(ov) _orig_display_observer.observe(ov,{attributes:true});
+  });
+})();
+
+// ── OPTFLOW Panel ──
+// ════════════════════════════════════════════════════════════════════════
+//  OPTFLOW — Options Flow & GEX  (Deribit public API)
+//  Tabs: Summary | Vol Smile | GEX Profile | Strike×Expiry
+// ════════════════════════════════════════════════════════════════════════
+(function(){
+'use strict';
+
+window._optflow = { coin:'BTC', tab:'summary', data:{}, loading:false };
+var OF = window._optflow;
+
+// ── Register ─────────────────────────────────────────────────────────
+if(window._panelFns) window._panelFns['OPTFLOW'] = buildOPTFLOW;
+setTimeout(function(){
+  var orig = window.runCmd;
+  window.runCmd = function(cmd){
+    if((cmd||'').toUpperCase().trim()==='OPTFLOW'){ openPanel('OPTFLOW','OPTFLOW — OPTIONS FLOW & GEX'); return; }
+    if(orig) return orig(cmd);
+  };
+},3000);
+
+// ── Panel HTML ────────────────────────────────────────────────────────
+function buildOPTFLOW(){
+  setTimeout(function(){ _ofFetch(OF.coin); }, 100);
+  var coins = ['BTC','ETH'];
+  var tabs  = ['summary','smile','gex','heatmap'];
+  var tLabels = ['Summary','Vol Smile','GEX Profile','Strike×Expiry'];
+
+  var coinBtns = coins.map(function(c){
+    var active = c==='BTC';
+    return '<span id="ofcoin-'+c+'" onclick="window._ofSetCoin(\''+c+'\')" style="cursor:pointer;font-size:8px;padding:1px 7px;border:1px solid '+(active?'#ff8800':'#1a0e00')+';color:'+(active?'#ff8800':'#443322')+'">'+c+'</span>';
+  }).join('');
+
+  var tabBtns = tabs.map(function(t,i){
+    var active = t==='summary';
+    var borderR = i<3 ? 'border-right:none;' : '';
+    return '<span id="oftab-'+t+'" onclick="window._ofSetTab(\''+t+'\')" style="cursor:pointer;font-size:7.5px;padding:1px 9px;border:1px solid #1a0e00;'+borderR+'color:'+(active?'#ff8800':'#443322')+';background:'+(active?'#0a0500':'#000')+'">'+tLabels[i]+'</span>';
+  }).join('');
+
+  return '<div id="optflow-root" style="height:100%;background:#000;font-family:\'Courier New\',monospace;display:flex;flex-direction:column;overflow:hidden">'
+    +'<div style="background:#060400;border-bottom:1px solid #1a0e00;padding:4px 10px;display:flex;gap:10px;align-items:center;flex-shrink:0">'
+    +'<span style="color:#F39F41;font-size:8px;font-weight:700;letter-spacing:2px">OPTIONS FLOW</span>'
+    +'<div style="display:flex;gap:3px">'+coinBtns+'</div>'
+    +'<div style="display:flex;gap:0;margin-left:8px">'+tabBtns+'</div>'
+    +'<span id="of-spot" style="color:#00cc44;font-size:9px;font-weight:700;margin-left:auto;font-family:\'Roboto Mono\',monospace"></span>'
+    +'<span id="of-status" style="color:#443322;font-size:7px">DERIBIT</span>'
+    +'</div>'
+    +'<div id="optflow-body" style="flex:1;overflow:auto;min-height:0">'
+    +'<div style="padding:30px;text-align:center;color:#443322;font-size:9px">&#x27F3; LOADING DERIBIT OPTIONS DATA...</div>'
+    +'</div></div>';
+}
+
+// ── Fetch from Deribit ────────────────────────────────────────────────
+async function _ofFetch(coin){
+  if(OF.loading) return;
+  OF.loading = true;
+  _ofStatus('FETCHING...');
+  // Auto-reset loading flag after 20s maximum
+  var _loadingGuard = setTimeout(function(){ OF.loading = false; }, 20000);
+  try{
+    var ab = function(ms){ var c=new AbortController(); setTimeout(function(){c.abort();},ms); return c.signal; };
+
+    // Fetch instruments + index price in parallel (faster)
+    var [ir, pr] = await Promise.all([
+      fetch('https://www.deribit.com/api/v2/public/get_instruments?currency='+coin+'&kind=option&expired=false',{signal:ab(8000)}),
+      fetch('https://www.deribit.com/api/v2/public/get_index_price?index_name='+coin.toLowerCase()+'_usd',{signal:ab(5000)})
+    ]);
+    var id = await ir.json();
+    if(!id.result) throw new Error('no instruments');
+    var pd = await pr.json();
+    var spot = (pd.result && pd.result.index_price) || 0;
+
+    var now = Date.now();
+    var expiries = [];
+    var seen = {};
+    id.result.forEach(function(i){ if(i.expiration_timestamp>now && !seen[i.expiration_timestamp]){ seen[i.expiration_timestamp]=1; expiries.push(i.expiration_timestamp); } });
+    expiries.sort(function(a,b){return a-b;});
+    expiries = expiries.slice(0,10);
+
+    var sr = await fetch('https://www.deribit.com/api/v2/public/get_book_summary_by_currency?currency='+coin+'&kind=option',{signal:ab(10000)});
+    var sd = await sr.json();
+    var smap = {};
+    (sd.result||[]).forEach(function(s){ smap[s.instrument_name]=s; });
+
+    var byExpiry = {};
+    expiries.forEach(function(exp){
+      var insts = id.result.filter(function(i){ return i.expiration_timestamp===exp; });
+      var rows = [];
+      insts.forEach(function(inst){
+        var s = smap[inst.instrument_name];
+        if(!s) return;
+        var iv  = (s.mark_iv||0);
+        var oi  = (s.open_interest||0);
+        var T   = Math.max(0.0001,(exp-now)/31557600000);
+        var v   = iv/100;
+        rows.push({
+          name:   inst.instrument_name,
+          strike: inst.strike,
+          type:   inst.option_type,
+          iv:     iv,
+          markPx: (s.mark_price||0)*spot,
+          oi:     oi,
+          oiUsd:  oi*spot,
+          vol24h: (s.volume||0),
+          delta:  _bsDelta(spot,inst.strike,v,T,inst.option_type),
+          gamma:  _bsGamma(spot,inst.strike,v,T),
+          spot:   spot,
+          exp:    exp
+        });
+      });
+      if(rows.length){ rows.sort(function(a,b){return a.strike-b.strike;}); byExpiry[exp]=rows; }
+    });
+
+    OF.data[coin] = { expiries:expiries, byExpiry:byExpiry, spot:spot, ts:Date.now() };
+    _ofStatus('LIVE · DERIBIT');
+    _ofRender();
+  }catch(e){
+    _ofStatus('ERR: '+e.message.slice(0,30));
+    var b=document.getElementById('optflow-body');
+    if(b) b.innerHTML='<div style="padding:20px;color:#ff3333;font-size:8px">&#x26A0; Deribit unavailable — '+e.message.slice(0,60)+'<br><span style="color:#665533;margin-top:8px;display:block">Retry in 5 min or check network connection.</span></div>';
+  }
+  clearTimeout(_loadingGuard);
+  OF.loading = false;
+}
+
+// ── Greeks ────────────────────────────────────────────────────────────
+function _ncdf(x){ var t=1/(1+0.2316419*Math.abs(x)); var p=t*(0.31938153+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429)))); var n=Math.exp(-x*x/2)/Math.sqrt(2*Math.PI); return x>=0?1-n*p:n*p; }
+function _npdf(x){ return Math.exp(-x*x/2)/Math.sqrt(2*Math.PI); }
+function _d1(S,K,v,T){ if(T<=0||v<=0||S<=0||K<=0) return 0; return (Math.log(S/K)+0.5*v*v*T)/(v*Math.sqrt(T)); }
+function _bsDelta(S,K,v,T,type){ var d=_d1(S,K,v,T); return type==='call'?_ncdf(d):_ncdf(d)-1; }
+function _bsGamma(S,K,v,T){ if(T<=0||v<=0||S<=0) return 0; return _npdf(_d1(S,K,v,T))/(S*v*Math.sqrt(T)); }
+
+// ── Render ─────────────────────────────────────────────────────────────
+function _ofRender(){
+  var d = OF.data[OF.coin];
+  if(!d) return;
+  var sp = document.getElementById('of-spot');
+  if(sp) sp.textContent = '$'+Math.round(d.spot).toLocaleString('en');
+  if(OF.tab==='summary') _ofSummary(d);
+  else if(OF.tab==='smile')   _ofSmile(d);
+  else if(OF.tab==='gex')     _ofGex(d);
+  else if(OF.tab==='heatmap') _ofHeatmap(d);
+}
+
+// ── helpers ───────────────────────────────────────────────────────────
+function _fmtExp(ts){ var dt=new Date(ts); return dt.getDate()+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dt.getMonth()]+String(dt.getFullYear()).slice(2); }
+function _fmtM(v){ return v>=1e9?'$'+(v/1e9).toFixed(2)+'B':v>=1e6?'$'+(v/1e6).toFixed(1)+'M':v>=1e3?'$'+(v/1e3).toFixed(0)+'K':v.toFixed(0); }
+function _maxPain(rows){
+  var strikes=[]; var seen={};
+  rows.forEach(function(r){ if(!seen[r.strike]){seen[r.strike]=1;strikes.push(r.strike);} });
+  strikes.sort(function(a,b){return a-b;});
+  if(!strikes.length) return null;
+  var minP=Infinity,bestK=strikes[0];
+  strikes.forEach(function(K){
+    var pain=0;
+    rows.forEach(function(r){ if(r.type==='call'&&K>r.strike) pain+=r.oi*(K-r.strike); if(r.type==='put'&&K<r.strike) pain+=r.oi*(r.strike-K); });
+    if(pain<minP){minP=pain;bestK=K;}
+  });
+  return bestK;
+}
+
+// ── TAB: Summary ─────────────────────────────────────────────────────
+function _ofSummary(d){
+  var body=document.getElementById('optflow-body'); if(!body) return;
+  var now=Date.now();
+
+  // Term structure data
+  var termData=[];
+  d.expiries.forEach(function(exp){
+    var rows=d.byExpiry[exp]||[];
+    var dte=Math.round((exp-now)/86400000);
+    var atm=rows.filter(function(r){return Math.abs(r.strike-d.spot)<d.spot*0.03&&r.type==='call';});
+    if(!atm.length) return;
+    var atmIV=atm.reduce(function(a,b){return a+b.iv;},0)/atm.length;
+    var callOI=rows.filter(function(r){return r.type==='call';}).reduce(function(a,r){return a+r.oiUsd;},0);
+    var putOI=rows.filter(function(r){return r.type==='put';}).reduce(function(a,r){return a+r.oiUsd;},0);
+    var putIVs=rows.filter(function(r){return r.type==='put'&&Math.abs(r.strike-d.spot)<d.spot*0.03;}).map(function(r){return r.iv;});
+    var skew=putIVs.length?(atmIV-putIVs.reduce(function(a,b){return a+b;},0)/putIVs.length):0;
+    termData.push({exp:exp,dte:dte,atmIV:atmIV,callOI:callOI,putOI:putOI,totalOI:callOI+putOI,pc:callOI>0?putOI/callOI:0,skew:skew,maxPain:_maxPain(rows)});
+  });
+
+  // Term structure SVG
+  var W=560,H=100,P=30;
+  var ivs=termData.map(function(t){return t.atmIV;});
+  var minIV=Math.min.apply(null,ivs)-2, maxIV=Math.max.apply(null,ivs)+2;
+  var tx=function(i){return P+i*(W-P*2)/Math.max(1,termData.length-1);};
+  var ty=function(v){return H-P-(v-minIV)/(maxIV-minIV+0.01)*(H-P*2);};
+  var pts=termData.map(function(t,i){return tx(i).toFixed(1)+','+ty(t.atmIV).toFixed(1);}).join(' ');
+  var dots=termData.map(function(t,i){
+    return '<circle cx="'+tx(i).toFixed(1)+'" cy="'+ty(t.atmIV).toFixed(1)+'" r="3" fill="#F39F41"/>'
+    +'<text x="'+tx(i).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" fill="#554433" font-size="7" font-family="monospace">'+_fmtExp(t.exp)+'</text>'
+    +'<text x="'+tx(i).toFixed(1)+'" y="'+(ty(t.atmIV)-6).toFixed(1)+'" text-anchor="middle" fill="#e0d0a0" font-size="7.5" font-family="monospace">'+t.atmIV.toFixed(1)+'</text>';
+  }).join('');
+  var tsvg='<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;background:#040200">'
+    +'<polyline points="'+pts+'" fill="none" stroke="#e0d0a0" stroke-width="1.5" stroke-linejoin="round"/>'
+    +dots
+    +'<text x="4" y="12" fill="#554433" font-size="7" font-family="monospace">IV %</text>'
+    +'</svg>';
+
+  // GEX bar SVG
+  var gexMap={};
+  d.expiries.forEach(function(exp){
+    (d.byExpiry[exp]||[]).forEach(function(r){
+      if(r.strike<d.spot*0.75||r.strike>d.spot*1.25) return;
+      if(!gexMap[r.strike]) gexMap[r.strike]={s:r.strike,v:0};
+      var g=r.gamma*r.oi*d.spot*d.spot*0.01*(r.type==='call'?1:-1);
+      gexMap[r.strike].v+=g;
+    });
+  });
+  var gRows=Object.values(gexMap).sort(function(a,b){return a.s-b.s;});
+  var gW=560,gH=100,gP=26;
+  var maxG=Math.max.apply(null,gRows.map(function(g){return Math.abs(g.v);}));
+  if(!maxG) maxG=1;
+  var bW=Math.max(3,Math.floor((gW-gP*2)/Math.max(1,gRows.length))-1);
+  var midY=gH/2;
+
+  // Find spot index for vertical line
+  var spotI=0;
+  for(var si=0;si<gRows.length;si++){ if(gRows[si].s>=d.spot){spotI=si;break;} }
+  var spotX=(gP+spotI*(gW-gP*2)/gRows.length+bW/2).toFixed(1);
+
+  var bars=gRows.map(function(g,i){
+    var x=gP+i*(gW-gP*2)/gRows.length;
+    var bH=Math.abs(g.v)/maxG*(gH/2-4);
+    var y=g.v>=0?midY-bH:midY;
+    var col=g.v>=0?'#00bb44':'#ff4422';
+    var lbl='';
+    if(i%Math.max(1,Math.floor(gRows.length/8))===0){
+      var sk=g.s>=1000?(g.s/1000).toFixed(0)+'K':String(g.s);
+      lbl='<text x="'+(x+bW/2).toFixed(1)+'" y="'+(gH-2)+'" text-anchor="middle" fill="#443322" font-size="6" font-family="monospace">'+sk+'</text>';
+    }
+    return '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bW+'" height="'+Math.max(1,bH).toFixed(1)+'" fill="'+col+'" opacity="0.8"/>'+lbl;
+  }).join('');
+
+  var gsvg='<svg width="100%" viewBox="0 0 '+gW+' '+gH+'" style="display:block;background:#040200">'
+    +'<line x1="'+gP+'" y1="'+midY+'" x2="'+(gW-gP)+'" y2="'+midY+'" stroke="#1a0e00" stroke-width="0.8"/>'
+    +bars
+    +'<line x1="'+spotX+'" y1="0" x2="'+spotX+'" y2="'+gH+'" stroke="#F39F41" stroke-width="0.8" stroke-dasharray="3,2"/>'
+    +'<text x="4" y="12" fill="#554433" font-size="7" font-family="monospace">GEX</text>'
+    +'<text x="8" y="'+(gH-3)+'" fill="#00bb44" font-size="6.5" font-family="monospace">+GEX</text>'
+    +'</svg>';
+
+  // Expiry table
+  var thead='<tr style="background:#060300">'+
+    ['Expiry','DTE','ATM IV','Skew','P/C','OI','Max Pain'].map(function(h){
+      return '<th style="padding:3px 8px;color:#cc7722;font-weight:700;letter-spacing:.8px;text-align:left;border-bottom:1px solid #1a0e00;font-size:7.5px">'+h+'</th>';
+    }).join('')+'</tr>';
+
+  var trows=termData.map(function(t,i){
+    var bg=i%2?'#040200':'#000';
+    var skewCol=t.skew>2?'#00cc44':t.skew<-2?'#ff4422':'#cc8800';
+    var pcCol=t.pc>1.2?'#ff4422':t.pc<0.8?'#00cc44':'#cc8800';
+    var mp=t.maxPain?('$'+Math.round(t.maxPain).toLocaleString('en')):'—';
+    return '<tr style="background:'+bg+'" onmouseover="this.style.background=\'rgba(243,159,65,.06)\'" onmouseout="this.style.background=\''+bg+'\'">'
+      +'<td style="padding:3px 8px;color:#F39F41;font-weight:700">'+_fmtExp(t.exp)+'</td>'
+      +'<td style="padding:3px 8px;color:#887760;font-family:\'Roboto Mono\',monospace">'+t.dte+'</td>'
+      +'<td style="padding:3px 8px;color:#e0d0a0;font-family:\'Roboto Mono\',monospace">'+t.atmIV.toFixed(1)+'%</td>'
+      +'<td style="padding:3px 8px;color:'+skewCol+';font-family:\'Roboto Mono\',monospace">'+(t.skew>=0?'+':'')+t.skew.toFixed(1)+'</td>'
+      +'<td style="padding:3px 8px;color:'+pcCol+';font-family:\'Roboto Mono\',monospace">'+t.pc.toFixed(2)+'</td>'
+      +'<td style="padding:3px 8px;color:#cc8840;font-family:\'Roboto Mono\',monospace">'+_fmtM(t.totalOI)+'</td>'
+      +'<td style="padding:3px 8px;color:#887760;font-family:\'Roboto Mono\',monospace">'+mp+'</td>'
+      +'</tr>';
+  }).join('');
+
+  body.innerHTML=
+    '<div style="padding:3px 8px;color:#cc7722;font-size:7.5px;letter-spacing:1px;border-bottom:1px solid #0a0500;background:#030200">TERM STRUCTURE (ATM IV)</div>'
+    +tsvg
+    +'<div style="padding:3px 8px;color:#cc7722;font-size:7.5px;letter-spacing:1px;border-bottom:1px solid #0a0500;background:#030200;margin-top:1px">GAMMA EXPOSURE (GEX) · ALL EXPIRIES</div>'
+    +gsvg
+    +'<div style="padding:3px 8px;color:#cc7722;font-size:7.5px;letter-spacing:1px;border-bottom:1px solid #0a0500;background:#030200;margin-top:1px">EXPIRIES</div>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:8.5px">'+thead+trows+'</table>';
+}
+
+// ── TAB: Vol Smile ────────────────────────────────────────────────────
+function _ofSmile(d){
+  var body=document.getElementById('optflow-body'); if(!body) return;
+  var exps=d.expiries.slice(0,5);
+  var cols=['#4488ff','#44cc66','#ff4422','#cc44ff','#ff9900'];
+  var W=600,H=220,PL=40,PR=20,PT=15,PB=35;
+
+  var expData=exps.map(function(exp,ei){
+    var rows=(d.byExpiry[exp]||[]).filter(function(r){return r.type==='call'&&r.iv>0&&r.strike>=d.spot*0.7&&r.strike<=d.spot*1.3;});
+    return {exp:exp,rows:rows,col:cols[ei]};
+  });
+
+  var allIVs=expData.reduce(function(a,e){return a.concat(e.rows.map(function(r){return r.iv;}));},[] ).filter(function(v){return v>0&&v<200;});
+  var allStrikes=expData.reduce(function(a,e){return a.concat(e.rows.map(function(r){return r.strike;}));},[] );
+  if(!allStrikes.length){body.innerHTML='<div style="padding:20px;color:#443322">No data</div>';return;}
+  var minS=Math.min.apply(null,allStrikes), maxS=Math.max.apply(null,allStrikes);
+  var minIV=Math.max(0,Math.min.apply(null,allIVs)-3), maxIV=Math.min(200,Math.max.apply(null,allIVs)+5);
+  var xs=function(s){return PL+(s-minS)/(maxS-minS+0.01)*(W-PL-PR);};
+  var ys=function(v){return PT+(1-(v-minIV)/(maxIV-minIV+0.01))*(H-PT-PB);};
+
+  var grid='';
+  for(var gi=0;gi<=5;gi++){
+    var gv=minIV+gi*(maxIV-minIV)/5;
+    grid+='<line x1="'+PL+'" y1="'+ys(gv).toFixed(1)+'" x2="'+(W-PR)+'" y2="'+ys(gv).toFixed(1)+'" stroke="#0a0600" stroke-width="0.5"/>'
+      +'<text x="'+(PL-3)+'" y="'+(ys(gv)+3).toFixed(1)+'" text-anchor="end" fill="#443322" font-size="6.5" font-family="monospace">'+gv.toFixed(0)+'</text>';
+  }
+
+  var lines=expData.map(function(e){
+    if(!e.rows.length) return '';
+    var pts=e.rows.map(function(r){return xs(r.strike).toFixed(1)+','+ys(r.iv).toFixed(1);}).join(' ');
+    var dots=e.rows.map(function(r){return '<circle cx="'+xs(r.strike).toFixed(1)+'" cy="'+ys(r.iv).toFixed(1)+'" r="2.5" fill="'+e.col+'"/>';}).join('');
+    return '<polyline points="'+pts+'" fill="none" stroke="'+e.col+'" stroke-width="1.3" stroke-linejoin="round" opacity=".9"/>'+dots;
+  }).join('');
+
+  var spotX=xs(d.spot).toFixed(1);
+  var legend=expData.map(function(e,i){
+    return '<rect x="'+(PL+i*75)+'" y="2" width="10" height="8" fill="'+e.col+'" rx="1"/>'
+      +'<text x="'+(PL+i*75+13)+'" y="10" fill="'+e.col+'" font-size="7.5" font-family="monospace">'+_fmtExp(e.exp)+'</text>';
+  }).join('');
+
+  // x-axis
+  var step=Math.ceil((maxS-minS)/8/1000)*1000||1000;
+  var xAxis='';
+  for(var s=Math.ceil(minS/step)*step;s<=maxS;s+=step){
+    xAxis+='<text x="'+xs(s).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" fill="#443322" font-size="7" font-family="monospace">'+(s>=1000?(s/1000).toFixed(0)+'K':s)+'</text>';
+  }
+
+  body.innerHTML='<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;background:#040200;max-height:260px">'
+    +grid
+    +'<line x1="'+spotX+'" y1="'+PT+'" x2="'+spotX+'" y2="'+(H-PB)+'" stroke="#F39F41" stroke-width="0.8" stroke-dasharray="3,2"/>'
+    +'<text x="'+spotX+'" y="'+(H-PB-5)+'" text-anchor="middle" fill="#F39F41" font-size="6.5" font-family="monospace">Spot</text>'
+    +lines+xAxis+legend
+    +'<text x="8" y="'+(H/2)+'" fill="#554433" font-size="7" font-family="monospace" transform="rotate(-90,8,'+(H/2)+')">IV %</text>'
+    +'</svg>';
+}
+
+// ── TAB: GEX Profile ──────────────────────────────────────────────────
+function _ofGex(d){
+  var body=document.getElementById('optflow-body'); if(!body) return;
+  var gmap={};
+  d.expiries.forEach(function(exp){
+    (d.byExpiry[exp]||[]).forEach(function(r){
+      if(r.strike<d.spot*0.7||r.strike>d.spot*1.35) return;
+      if(!gmap[r.strike]) gmap[r.strike]={s:r.strike,call:0,put:0};
+      var g=r.gamma*r.oi*d.spot*d.spot*0.01;
+      if(r.type==='call') gmap[r.strike].call+=g; else gmap[r.strike].put+=g;
+    });
+  });
+  var rows=Object.values(gmap).sort(function(a,b){return b.s-a.s;});
+  var maxV=Math.max.apply(null,rows.map(function(r){return Math.max(r.call,r.put);}));
+  if(!maxV) maxV=1;
+  var BW=260;
+
+  var bars=rows.map(function(r){
+    var isSpot=Math.abs(r.s-d.spot)<d.spot*0.015;
+    var cW=Math.round(r.call/maxV*BW);
+    var pW=Math.round(r.put/maxV*BW);
+    var net=r.call-r.put;
+    var sk=r.s>=1000?'$'+(r.s/1000).toFixed(0)+'K':'$'+r.s;
+    return '<div style="display:flex;align-items:center;gap:4px;margin-bottom:1px;'+(isSpot?'border-top:1px solid #F39F41;border-bottom:1px solid #F39F41;':'')+'">'
+      +'<div style="width:'+BW+'px;display:flex;justify-content:flex-end"><div style="height:10px;width:'+pW+'px;background:#ff4422;opacity:.75"></div></div>'
+      +'<div style="width:62px;text-align:center;font-size:8px;font-family:\'Roboto Mono\',monospace;color:'+(isSpot?'#F39F41':'#887760')+';font-weight:'+(isSpot?700:400)+'">'+sk+'</div>'
+      +'<div style="width:'+BW+'px"><div style="height:10px;width:'+cW+'px;background:#00bb44;opacity:.8"></div></div>'
+      +'<div style="font-size:6.5px;color:#443322;font-family:\'Roboto Mono\',monospace;min-width:50px">'+(net>=0?'+':'-')+_fmtM(Math.abs(net))+'</div>'
+      +'</div>';
+  }).join('');
+
+  body.innerHTML='<div style="overflow:auto;height:100%;padding:6px 10px">'
+    +'<div style="display:flex;gap:16px;margin-bottom:6px;font-size:7.5px;color:#665840">'
+    +'<span><span style="display:inline-block;width:8px;height:8px;background:#00bb44;margin-right:3px"></span>Call GEX (resistance)</span>'
+    +'<span><span style="display:inline-block;width:8px;height:8px;background:#ff4422;margin-right:3px"></span>Put GEX (support)</span>'
+    +'</div>'+bars
+    +'<div style="margin-top:6px;font-size:6.5px;color:#332200">SOURCE: DERIBIT · GEX = &gamma; &times; OI &times; S&sup2; &times; 0.01</div>'
+    +'</div>';
+}
+
+// ── TAB: Strike×Expiry Heatmap ────────────────────────────────────────
+function _ofHeatmap(d){
+  var body=document.getElementById('optflow-body'); if(!body) return;
+  var exps=d.expiries.slice(0,8);
+
+  var strikeSet={};
+  exps.forEach(function(exp){
+    (d.byExpiry[exp]||[]).forEach(function(r){
+      if(r.strike>=d.spot*0.75&&r.strike<=d.spot*1.25) strikeSet[r.strike]=1;
+    });
+  });
+  var strikes=Object.keys(strikeSet).map(Number).sort(function(a,b){return b-a;});
+  if(!strikes.length){body.innerHTML='<div style="padding:20px;color:#443322">No data</div>';return;}
+
+  // Build grid
+  var grid={};
+  strikes.forEach(function(s){ grid[s]={}; exps.forEach(function(e){ grid[s][e]=0; }); });
+  exps.forEach(function(exp){
+    (d.byExpiry[exp]||[]).forEach(function(r){
+      if(grid[r.strike]&&grid[r.strike][exp]!==undefined){
+        var g=r.gamma*r.oi*d.spot*d.spot*0.01*(r.type==='call'?1:-1);
+        grid[r.strike][exp]+=g;
+      }
+    });
+  });
+
+  var allVals=strikes.reduce(function(a,s){return a.concat(exps.map(function(e){return grid[s][e];}));}, []);
+  var absMax=Math.max.apply(null,allVals.map(Math.abs));
+  if(!absMax) absMax=1;
+
+  function _col(v){
+    var t=Math.min(1,Math.abs(v)/absMax);
+    if(v>0){ return 'rgb('+Math.round(200-t*150)+','+Math.round(200+t*55)+','+Math.round(200-t*150)+')'; }
+    if(v<0){ return 'rgb('+Math.round(200+t*55)+','+Math.round(200-t*150)+','+Math.round(200-t*150)+')'; }
+    return 'rgb(240,238,235)';
+  }
+
+  var thead='<tr><th style="padding:2px 8px;color:#333;font-size:8px;min-width:60px">Strike</th>'
+    +exps.map(function(e){return '<th style="padding:2px 6px;color:#333;font-size:8px;text-align:center;min-width:70px">'+_fmtExp(e)+'</th>';}).join('')
+    +'</tr>';
+
+  var trows=strikes.map(function(s){
+    var isSpot=Math.abs(s-d.spot)<d.spot*0.015;
+    var sk=s>=1000?'$'+(s/1000).toFixed(0)+'K':'$'+s;
+    return '<tr><td style="padding:1px 8px;font-size:8px;font-weight:'+(isSpot?700:400)+';color:'+(isSpot?'#000':'#444')+';border-right:2px solid #ccc;white-space:nowrap;font-family:\'Roboto Mono\',monospace">'+sk+'</td>'
+      +exps.map(function(e){
+        var v=grid[s][e];
+        var col=_col(v);
+        var tc=Math.abs(v)/absMax>0.5?'#fff':'#333';
+        var lbl=Math.abs(v)>absMax*0.05?'<span style="font-size:7px;color:'+tc+'">'+(v>=0?'+':'')+( v/1e6).toFixed(1)+'M</span>':'';
+        return '<td style="padding:0;text-align:center;background:'+col+';height:14px;min-width:70px">'+lbl+'</td>';
+      }).join('')
+      +'</tr>';
+  }).join('');
+
+  body.innerHTML='<div style="overflow:auto;height:100%;padding:6px 10px;background:#f5f5f0">'
+    +'<table style="border-collapse:collapse;font-size:8px;font-family:\'Roboto Mono\',monospace">'+thead+trows+'</table>'
+    +'<div style="margin-top:8px;display:flex;gap:16px;font-size:7px;color:#555">'
+    +'<span><span style="display:inline-block;width:12px;height:8px;background:rgb(50,255,50);margin-right:3px"></span>+GEX dealer long gamma</span>'
+    +'<span><span style="display:inline-block;width:12px;height:8px;background:rgb(255,50,50);margin-right:3px"></span>-GEX dealer short gamma</span>'
+    +'</div></div>';
+}
+
+// ── Controls ───────────────────────────────────────────────────────────
+window._ofSetCoin=function(coin){
+  OF.coin=coin;
+  ['BTC','ETH'].forEach(function(c){
+    var el=document.getElementById('ofcoin-'+c);
+    if(el){el.style.color=c===coin?'#ff8800':'#443322';el.style.borderColor=c===coin?'#ff8800':'#1a0e00';}
+  });
+  if(OF.data[coin]) _ofRender(); else _ofFetch(coin);
+};
+window._ofSetTab=function(tab){
+  OF.tab=tab;
+  ['summary','smile','gex','heatmap'].forEach(function(t){
+    var el=document.getElementById('oftab-'+t);
+    if(el){el.style.color=t===tab?'#ff8800':'#443322';el.style.background=t===tab?'#0a0500':'#000';}
+  });
+  _ofRender();
+};
+function _ofStatus(msg){var el=document.getElementById('of-status');if(el)el.textContent=msg;}
+
+setInterval(function(){ if(document.getElementById('optflow-root')) _ofFetch(OF.coin); },5*60*1000);
+
+})();
+
+
+// ── GHREPO Sidebar Functions ──
+
+
+
+// ── GHREPO Sidebar Renderers ──
+window._ghsTab = 'summary';
+
+window._ghsSetTab = function(tab){
+  window._ghsTab = tab;
+  ['summary','smile','gex','heatmap','cryexc'].forEach(function(t){
+    var el=document.getElementById('ghs-tab-'+t);
+    if(!el) return;
+    el.style.color    = t===tab ? '#F39F41' : '#333';
+    el.style.background = t===tab ? '#1a1500' : '#0b0c0f';
+  });
+  _ghSidebarRender(_VS && _VS.CUR ? _VS.CUR : 'btc');
+};
+
+// ── Main sidebar renderer — pulls from _VS.C[sym].pts + spot ────────
+window._ghSidebarRender = function(sym){
+  var body = document.getElementById('ghs-body');
+  if(!body) return;
+  var cache = window._VS && window._VS.C && window._VS.C[sym];
+  if(!cache || !cache.pts || !cache.pts.length){
+    body.innerHTML='<div style="padding:20px;color:#333;font-size:8px;text-align:center">Waiting for data…</div>';
+    return;
+  }
+  var spot = cache.spot || 0;
+  var pts  = cache.pts;  // [{K, dte, iv, src}]
+  var now  = Date.now();
+
+  // Update spot badge
+  var spEl=document.getElementById('ghs-spot');
+  if(spEl) spEl.textContent='$'+Math.round(spot).toLocaleString('en');
+
+  // Group by expiry (dte)
+  var byDte = {};
+  pts.forEach(function(p){
+    if(!byDte[p.dte]) byDte[p.dte]=[]; 
+    byDte[p.dte].push(p);
+  });
+  var dtes = Object.keys(byDte).map(Number).sort(function(a,b){return a-b;}).slice(0,10);
+
+  var tab = window._ghsTab || 'summary';
+  if(tab==='summary') _ghsSummary(body, dtes, byDte, spot);
+  else if(tab==='smile')   _ghsSmile(body, dtes, byDte, spot);
+  else if(tab==='gex')     _ghsGex(body, dtes, byDte, spot);
+  else if(tab==='heatmap') _ghsHeatmap(body, dtes, byDte, spot);
+  else if(tab==='cryexc')  _ghsCryexc(body, (_VS&&_VS.CUR)?_VS.CUR:'btc');
+};
+
+// ── helpers ──────────────────────────────────────────────────────────
+function _ghFmtDte(dte){ var ms=Date.now()+dte*86400000; var dt=new Date(ms); return dt.getDate()+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dt.getMonth()]+String(dt.getFullYear()).slice(2); }
+function _ghFmtM(v){ return v>=1e9?'$'+(v/1e9).toFixed(1)+'B':v>=1e6?'$'+(v/1e6).toFixed(1)+'M':v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+v.toFixed(0); }
+function _ghNcdf(x){ var t=1/(1+0.2316419*Math.abs(x)); var p=t*(0.31938153+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429)))); var n=Math.exp(-x*x/2)/Math.sqrt(2*Math.PI); return x>=0?1-n*p:n*p; }
+function _ghNpdf(x){ return Math.exp(-x*x/2)/Math.sqrt(2*Math.PI); }
+function _ghD1(S,K,v,T){ if(T<=0||v<=0||S<=0||K<=0) return 0; return (Math.log(S/K)+0.5*v*v*T)/(v*Math.sqrt(T)); }
+function _ghGamma(S,K,v,T){ if(T<=0||v<=0||S<=0) return 0; return _ghNpdf(_ghD1(S,K,v,T))/(S*v*Math.sqrt(T)); }
+function _ghMaxPain(rows){
+  var ks=[]; rows.forEach(function(r){if(ks.indexOf(r.K)<0) ks.push(r.K);}); ks.sort(function(a,b){return a-b;});
+  if(!ks.length) return null;
+  var best=ks[0],bestP=Infinity;
+  ks.forEach(function(K){
+    var p=0;
+    rows.forEach(function(r){
+      if(r.type==='call'&&K>r.K) p+=(r.oi||1)*(K-r.K);
+      if(r.type==='put' &&K<r.K) p+=(r.oi||1)*(r.K-K);
+    });
+    if(p<bestP){bestP=p;best=K;}
+  });
+  return best;
+}
+
+// pts from _VS don't have type/oi — infer from instrument name suffix
+// _VS.C[sym].pts: {K,dte,iv} only. We reconstruct type from the raw book if possible.
+// If not available we use iv smile shape for GEX estimation.
+
+// ── TAB: Summary ─────────────────────────────────────────────────────
+function _ghsSummary(body, dtes, byDte, spot){
+  // Term structure
+  var W=320,H=90,PL=28,PR=8,PT=12,PB=22;
+  var ivs=dtes.map(function(d){ var r=byDte[d]; return r.reduce(function(a,b){return a+b.iv;},0)/r.length; });
+  var minIV=Math.min.apply(null,ivs)-2, maxIV=Math.max.apply(null,ivs)+2;
+  var tx=function(i){return PL+i*(W-PL-PR)/Math.max(1,dtes.length-1);};
+  var ty=function(v){return H-PB-(v-minIV)/(maxIV-minIV+0.01)*(H-PB-PT);};
+  var pts2=dtes.map(function(d,i){return tx(i).toFixed(1)+','+ty(ivs[i]).toFixed(1);}).join(' ');
+
+  var tsvg='<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;background:#0a0b0e;border-bottom:1px solid #1e2030">'
+    +'<polyline points="'+pts2+'" fill="none" stroke="#d4b060" stroke-width="1.5" stroke-linejoin="round"/>'
+    +dtes.map(function(d,i){
+      return '<circle cx="'+tx(i).toFixed(1)+'" cy="'+ty(ivs[i]).toFixed(1)+'" r="2.5" fill="#F39F41"/>'
+        +'<text x="'+tx(i).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle" fill="#3a3020" font-size="6" font-family="monospace">'+_ghFmtDte(d)+'</text>'
+        +'<text x="'+tx(i).toFixed(1)+'" y="'+(ty(ivs[i])-4).toFixed(1)+'" text-anchor="middle" fill="#c0a840" font-size="6.5" font-family="monospace">'+ivs[i].toFixed(1)+'</text>';
+    }).join('')
+    +'<text x="2" y="10" fill="#3a3020" font-size="6" font-family="monospace">ATM IV %</text>'
+    +'</svg>';
+
+  // GEX bar chart (approximate — use gamma from IV + strike distance proxy)
+  var gexMap={};
+  dtes.forEach(function(dte){
+    var T=Math.max(0.0001,dte/365);
+    byDte[dte].forEach(function(p){
+      if(p.K<spot*0.75||p.K>spot*1.25) return;
+      if(!gexMap[p.K]) gexMap[p.K]=0;
+      var g=_ghGamma(spot,p.K,p.iv/100,T)*spot*spot*0.01;
+      gexMap[p.K]+=g; // all positive (no type info) — show as total gamma
+    });
+  });
+  var gRows=Object.keys(gexMap).map(Number).sort(function(a,b){return a-b;});
+  var maxG=Math.max.apply(null,gRows.map(function(k){return gexMap[k];}));
+  if(!maxG) maxG=1;
+  var gW=320,gH=80,gPL=28,gPR=8,gPB=16;
+  var bW=Math.max(2,Math.floor((gW-gPL-gPR)/Math.max(1,gRows.length))-1);
+  var midY=gH-gPB;
+
+  // Find spot X
+  var sIdx=0; for(var si=0;si<gRows.length;si++){if(gRows[si]>=spot){sIdx=si;break;}}
+  var sX=(gPL+sIdx*(gW-gPL-gPR)/gRows.length+bW/2).toFixed(1);
+
+  var gbars=gRows.map(function(k,i){
+    var x=gPL+i*(gW-gPL-gPR)/gRows.length;
+    var bH=Math.max(1, gexMap[k]/maxG*(gH-gPB-4));
+    return '<rect x="'+x.toFixed(1)+'" y="'+(midY-bH).toFixed(1)+'" width="'+bW+'" height="'+bH.toFixed(1)+'" fill="#00aa44" opacity="0.8"/>';
+  }).join('');
+
+  var gsvg='<svg width="100%" viewBox="0 0 '+gW+' '+gH+'" style="display:block;background:#0a0b0e;border-bottom:1px solid #1e2030">'
+    +'<line x1="'+gPL+'" y1="'+midY+'" x2="'+(gW-gPR)+'" y2="'+midY+'" stroke="#1e2030" stroke-width="0.8"/>'
+    +gbars
+    +'<line x1="'+sX+'" y1="0" x2="'+sX+'" y2="'+(gH-gPB)+'" stroke="#F39F41" stroke-width="0.8" stroke-dasharray="3,2"/>'
+    +'<text x="2" y="10" fill="#3a3020" font-size="6" font-family="monospace">Gamma</text>'
+    +'</svg>';
+
+  // Expiry table
+  var thead='<tr>'
+    +['Exp','DTE','ATM IV','Skew'].map(function(h){return '<th style="padding:2px 5px;font-size:6.5px;color:#6a5830;font-weight:700;text-align:left;border-bottom:1px solid #1a1500;background:#0c0d10">'+h+'</th>';}).join('')
+    +'</tr>';
+
+  var trows=dtes.slice(0,8).map(function(dte,i){
+    var rows=byDte[dte];
+    var atmRows=rows.filter(function(r){return Math.abs(r.K-spot)<spot*0.04;});
+    var atmIV=atmRows.length?atmRows.reduce(function(a,b){return a+b.iv;},0)/atmRows.length:ivs[i];
+    var otmRows=rows.filter(function(r){return r.K<spot*0.95;});
+    var otmIV=otmRows.length?otmRows.reduce(function(a,b){return a+b.iv;},0)/otmRows.length:atmIV;
+    var skew=atmIV-otmIV;
+    var skewCol=skew>2?'#00cc66':skew<-2?'#ff4422':'#aa8833';
+    var bg=i%2?'#0a0b0e':'#0c0d10';
+    return '<tr style="background:'+bg+'">'
+      +'<td style="padding:2px 5px;color:#F39F41;font-size:7.5px;font-weight:700;font-family:monospace">'+_ghFmtDte(dte)+'</td>'
+      +'<td style="padding:2px 5px;color:#4a4030;font-size:7.5px;font-family:monospace">'+dte+'</td>'
+      +'<td style="padding:2px 5px;color:#c8b060;font-size:7.5px;font-family:monospace">'+atmIV.toFixed(1)+'%</td>'
+      +'<td style="padding:2px 5px;color:'+skewCol+';font-size:7.5px;font-family:monospace">'+(skew>=0?'+':'')+skew.toFixed(1)+'</td>'
+      +'</tr>';
+  }).join('');
+
+  body.innerHTML=
+    '<div style="padding:3px 8px;font-size:6.5px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">TERM STRUCTURE (ATM IV)</div>'
+    +tsvg
+    +'<div style="padding:3px 8px;font-size:6.5px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">TOTAL GAMMA / STRIKE</div>'
+    +gsvg
+    +'<div style="padding:3px 8px;font-size:6.5px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">EXPIRIES</div>'
+    +'<table style="width:100%;border-collapse:collapse">'+thead+trows+'</table>';
+}
+
+// ── TAB: Vol Smile ────────────────────────────────────────────────────
+function _ghsSmile(body, dtes, byDte, spot){
+  var exps=dtes.slice(0,5);
+  var cols=['#4488ff','#44cc66','#ff4422','#cc44ff','#ff9900'];
+  var W=320,H=200,PL=32,PR=8,PT=14,PB=28;
+
+  var allIVs=[],allStrikes=[];
+  exps.forEach(function(d){ byDte[d].forEach(function(p){ allIVs.push(p.iv); allStrikes.push(p.K); }); });
+  if(!allStrikes.length){ body.innerHTML='<div style="padding:20px;color:#333;font-size:8px">No data</div>'; return; }
+
+  var minS=Math.min.apply(null,allStrikes),maxS=Math.max.apply(null,allStrikes);
+  var minIV=Math.max(0,Math.min.apply(null,allIVs)-3),maxIV=Math.min(250,Math.max.apply(null,allIVs)+5);
+  var xs=function(s){return PL+(s-minS)/(maxS-minS+0.01)*(W-PL-PR);};
+  var ys=function(v){return PT+(1-(v-minIV)/(maxIV-minIV+0.01))*(H-PT-PB);};
+
+  var grid='';
+  for(var gi=0;gi<=4;gi++){
+    var gv=minIV+gi*(maxIV-minIV)/4;
+    grid+='<line x1="'+PL+'" y1="'+ys(gv).toFixed(1)+'" x2="'+(W-PR)+'" y2="'+ys(gv).toFixed(1)+'" stroke="#161820" stroke-width="0.5"/>'
+      +'<text x="'+(PL-3)+'" y="'+(ys(gv)+3).toFixed(1)+'" text-anchor="end" fill="#3a3020" font-size="6" font-family="monospace">'+gv.toFixed(0)+'</text>';
+  }
+
+  var lines=exps.map(function(dte,ei){
+    var rows=byDte[dte].filter(function(p){return p.K>=spot*0.7&&p.K<=spot*1.3&&p.iv>0;}).sort(function(a,b){return a.K-b.K;});
+    if(!rows.length) return '';
+    var pts=rows.map(function(p){return xs(p.K).toFixed(1)+','+ys(p.iv).toFixed(1);}).join(' ');
+    var dots=rows.map(function(p){return '<circle cx="'+xs(p.K).toFixed(1)+'" cy="'+ys(p.iv).toFixed(1)+'" r="2" fill="'+cols[ei]+'"/>';}).join('');
+    return '<polyline points="'+pts+'" fill="none" stroke="'+cols[ei]+'" stroke-width="1.2" stroke-linejoin="round" opacity=".9"/>'+dots;
+  }).join('');
+
+  var spotX=xs(spot).toFixed(1);
+  var legend=exps.map(function(dte,i){
+    return '<rect x="'+(PL+i*58)+'" y="2" width="8" height="7" fill="'+cols[i]+'" rx="1"/>'
+      +'<text x="'+(PL+i*58+11)+'" y="9" fill="'+cols[i]+'" font-size="6.5" font-family="monospace">'+_ghFmtDte(dte)+'</text>';
+  }).join('');
+
+  var step=Math.ceil((maxS-minS)/6/500)*500||500;
+  var xAxis='';
+  for(var sv=Math.ceil(minS/step)*step;sv<=maxS;sv+=step){
+    xAxis+='<text x="'+xs(sv).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" fill="#3a3020" font-size="6" font-family="monospace">'+(sv>=1000?(sv/1000).toFixed(0)+'K':sv)+'</text>';
+  }
+
+  body.innerHTML='<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;background:#0a0b0e">'
+    +grid
+    +'<line x1="'+spotX+'" y1="'+PT+'" x2="'+spotX+'" y2="'+(H-PB)+'" stroke="#F39F41" stroke-width="0.7" stroke-dasharray="3,2"/>'
+    +'<text x="'+spotX+'" y="'+(H-PB-4)+'" text-anchor="middle" fill="#F39F41" font-size="6" font-family="monospace">Spot</text>'
+    +lines+xAxis+legend
+    +'<text x="4" y="'+(H/2)+'" fill="#4a3a20" font-size="6" font-family="monospace" transform="rotate(-90,8,'+(H/2)+')">IV%</text>'
+    +'</svg>';
+}
+
+// ── TAB: GEX Profile ─────────────────────────────────────────────────
+function _ghsGex(body, dtes, byDte, spot){
+  var gmap={};
+  dtes.forEach(function(dte){
+    var T=Math.max(0.0001,dte/365);
+    byDte[dte].forEach(function(p){
+      if(p.K<spot*0.7||p.K>spot*1.35) return;
+      if(!gmap[p.K]) gmap[p.K]=0;
+      var g=_ghGamma(spot,p.K,p.iv/100,T)*spot*spot*0.01;
+      gmap[p.K]+=g;
+    });
+  });
+
+  var rows=Object.keys(gmap).map(Number).sort(function(a,b){return b-a;});
+  var maxV=Math.max.apply(null,rows.map(function(k){return gmap[k];}));
+  if(!maxV) maxV=1;
+  var BW=200;
+
+  body.innerHTML='<div style="overflow:auto;height:100%;padding:6px 8px">'
+    +'<div style="font-size:6.5px;color:#4a3a20;margin-bottom:5px">Total Gamma per Strike (all expiries)</div>'
+    +rows.map(function(k){
+      var isSpot=Math.abs(k-spot)<spot*0.015;
+      var bw=Math.round(gmap[k]/maxV*BW);
+      var sk=k>=1000?'$'+(k/1000).toFixed(0)+'K':'$'+k;
+      return '<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;'+(isSpot?'border-top:1px solid #F39F41;border-bottom:1px solid #F39F41;':'')+'">'
+        +'<div style="width:50px;text-align:right;font-size:7px;font-family:monospace;color:'+(isSpot?'#F39F41':'#5a4830')+'">'+sk+'</div>'
+        +'<div style="width:'+BW+'px"><div style="height:9px;width:'+bw+'px;background:#00aa44;opacity:.85;min-width:'+(bw>0?1:0)+'px"></div></div>'
+        +'</div>';
+    }).join('')
+    +'<div style="margin-top:6px;font-size:6px;color:#2a2010">Gamma ∝ γ×S²×0.01 — no OI data (IV only)</div>'
+    +'</div>';
+}
+
+// ── TAB: Strike×Expiry Heatmap ────────────────────────────────────────
+function _ghsHeatmap(body, dtes, byDte, spot){
+  var exps=dtes.slice(0,7);
+  var strikeSet={};
+  exps.forEach(function(d){
+    byDte[d].forEach(function(p){
+      if(p.K>=spot*0.8&&p.K<=spot*1.2) strikeSet[p.K]=1;
+    });
+  });
+  var strikes=Object.keys(strikeSet).map(Number).sort(function(a,b){return b-a;});
+  if(!strikes.length){ body.innerHTML='<div style="padding:20px;color:#333;font-size:8px">No data</div>'; return; }
+
+  // Grid: IV per strike/expiry
+  var grid={};
+  strikes.forEach(function(s){ grid[s]={}; exps.forEach(function(e){ grid[s][e]=null; }); });
+  exps.forEach(function(dte){
+    byDte[dte].forEach(function(p){
+      if(grid[p.K]&&grid[p.K][dte]!==undefined){
+        if(!grid[p.K][dte]) grid[p.K][dte]=p.iv;
+        else grid[p.K][dte]=(grid[p.K][dte]+p.iv)/2;
+      }
+    });
+  });
+
+  // ATM IV per expiry for normalization
+  var atmByDte={};
+  exps.forEach(function(d){
+    var atm=byDte[d].filter(function(p){return Math.abs(p.K-spot)<spot*0.03;});
+    atmByDte[d]=atm.length?atm.reduce(function(a,b){return a+b.iv;},0)/atm.length:50;
+  });
+
+  function _col(iv, atmIV){
+    if(iv===null) return '#0d0e12';
+    var diff=iv-atmIV; // positive = higher IV than ATM (wings)
+    var t=Math.min(1,Math.abs(diff)/20);
+    if(diff>0) return 'rgba(255,'+(100+Math.round(t*155))+',0,'+Math.min(1,0.3+t*0.7)+')'; // orange for skew/wings
+    return 'rgba(0,'+(100+Math.round(t*155))+','+(150+Math.round(t*105))+','+Math.min(1,0.3+t*0.7)+')'; // blue for low IV
+  }
+
+  var thead='<tr>'
+    +'<th style="padding:2px 4px;font-size:6px;color:#4a3a20;border-right:1px solid #1e2030;min-width:42px">Strike</th>'
+    +exps.map(function(d){return '<th style="padding:2px 4px;font-size:6px;color:#4a3a20;text-align:center;min-width:38px">'+_ghFmtDte(d)+'</th>';}).join('')
+    +'</tr>';
+
+  var trows=strikes.map(function(s){
+    var isSpot=Math.abs(s-spot)<spot*0.015;
+    var sk=s>=1000?'$'+(s/1000).toFixed(0)+'K':'$'+s;
+    return '<tr>'
+      +'<td style="padding:1px 4px;font-size:7px;color:'+(isSpot?'#F39F41':'#4a3a20')+';font-weight:'+(isSpot?700:400)+';border-right:1px solid #1e2030;font-family:monospace;white-space:nowrap">'+sk+'</td>'
+      +exps.map(function(d){
+        var iv=grid[s][d];
+        var col=_col(iv,atmByDte[d]);
+        var txt=iv!==null?'<span style="font-size:6.5px;color:'+(iv>atmByDte[d]+10?'#fff':'#ccc')+'">'+iv.toFixed(0)+'</span>':'';
+        return '<td style="padding:0;text-align:center;background:'+col+';height:13px">'+txt+'</td>';
+      }).join('')
+      +'</tr>';
+  }).join('');
+
+  body.innerHTML='<div style="overflow:auto;height:100%;padding:4px 6px;background:#0a0b0e">'
+    +'<table style="border-collapse:collapse;font-family:monospace">'+thead+trows+'</table>'
+    +'<div style="margin-top:6px;display:flex;gap:10px;font-size:6px;color:#3a3020">'
+    +'<span><span style="display:inline-block;width:10px;height:7px;background:rgba(255,200,0,.8);margin-right:2px"></span>High IV / skew</span>'
+    +'<span><span style="display:inline-block;width:10px;height:7px;background:rgba(0,200,255,.6);margin-right:2px"></span>Low IV</span>'
+    +'</div></div>';
+}
+
+// ── TAB: CryExc Market Stats ────────────────────────────────────────────
+function _ghsCryexc(body, sym) {
+  body.innerHTML = '<div style="padding:12px 10px;color:#F39F41;font-size:7px;letter-spacing:1px">FETCHING CRYEXC&#x2026;</div>';
+  var base = 'http://localhost:8086';
+  Promise.all([
+    fetch(base + '/api/market-stats', {signal: AbortSignal.timeout(4000)}).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return null; }),
+    fetch(base + '/klines?symbol=' + (sym==='btc'?'BTCUSDT':'ETHUSDT') + '&interval=1h&limit=24', {signal: AbortSignal.timeout(4000)}).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return null; })
+  ]).then(function(results) {
+    var stats = results[0], klines = results[1];
+    var connected = stats !== null;
+    var symUp = sym.toUpperCase();
+
+    var st = null;
+    if(Array.isArray(stats)) {
+      stats.forEach(function(s){ if(s.symbol && s.symbol.toUpperCase().startsWith(symUp)) st = s; });
+    }
+
+    // Mini sparkline
+    var sparkSvg = '';
+    if(Array.isArray(klines) && klines.length > 1) {
+      var closes = klines.map(function(k){ return parseFloat(k[4]||k.close||0); }).filter(Boolean);
+      if(closes.length > 1) {
+        var minC = Math.min.apply(null,closes), maxC = Math.max.apply(null,closes);
+        var W=300,H=44,PL=4,PR=4,PT=4,PB=4;
+        var cx = function(i){ return PL+i*(W-PL-PR)/(closes.length-1); };
+        var cy = function(v){ return H-PB-(v-minC)/(maxC-minC+0.01)*(H-PT-PB); };
+        var pts = closes.map(function(v,i){ return cx(i).toFixed(1)+','+cy(v).toFixed(1); }).join(' ');
+        var lastC = closes[closes.length-1], firstC = closes[0];
+        var col = lastC >= firstC ? '#00cc44' : '#ff3322';
+        sparkSvg = '<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;background:#080a0e;border-bottom:1px solid #1e2030">'
+          +'<polyline points="'+pts+'" fill="none" stroke="'+col+'" stroke-width="1.2" opacity=".9"/>'
+          +'<line x1="'+cx(closes.length-1).toFixed(1)+'" y1="0" x2="'+cx(closes.length-1).toFixed(1)+'" y2="'+H+'" stroke="'+col+'" stroke-width="0.5" stroke-dasharray="2,2" opacity=".5"/>'
+          +'<text x="4" y="11" font-size="6" font-family="monospace" fill="#3a3020">24H PRICE &#x00B7; '+symUp+'</text>'
+          +'<text x="'+(W-PR)+'" y="11" font-size="7" font-family="monospace" fill="'+col+'" text-anchor="end">$'+Math.round(lastC).toLocaleString('en')+'</text>'
+          +'</svg>';
+      }
+    }
+
+    function row(label, val, col) {
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 10px;border-bottom:1px solid #0f1014">'
+        +'<span style="font-size:7px;color:#4a3820;letter-spacing:.5px">'+label+'</span>'
+        +'<span style="font-size:8px;font-family:\'Roboto Mono\',monospace;color:'+(col||'#c8b060')+'">'+val+'</span>'
+        +'</div>';
+    }
+    function fmtN(v,dec){ if(v===undefined||v===null||isNaN(v)) return '—'; return parseFloat(v).toFixed(dec===undefined?2:dec); }
+    function fmtM(v){ if(!v) return '—'; v=parseFloat(v); return v>=1e9?'$'+(v/1e9).toFixed(2)+'B':v>=1e6?'$'+(v/1e6).toFixed(1)+'M':v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+v.toFixed(0); }
+    function fmtPct(v){ if(v===undefined||v===null) return '—'; return (parseFloat(v)*100).toFixed(4)+'%'; }
+
+    var conn_badge = connected
+      ? '<span style="color:#00cc44;font-size:7px">&#x25CF; CONNECTED</span>'
+      : '<span style="color:#ff3322;font-size:7px">&#x25CF; OFFLINE</span>';
+
+    var rows = '';
+    if(st) {
+      var fr   = st.fundingRate       !== undefined ? st.fundingRate       : (st.funding_rate         !== undefined ? st.funding_rate         : null);
+      var oi   = st.openInterest      !== undefined ? st.openInterest      : (st.open_interest        !== undefined ? st.open_interest        : null);
+      var vol24= st.quoteVolume       || st.volume24h || null;
+      var lsR  = st.longShortRatio    || st.long_short_ratio || null;
+      var lastP= st.lastPrice         || st.last_price || null;
+      var chg  = st.priceChangePercent|| st.price_change_percent || null;
+      var frCol= fr!==null?(parseFloat(fr)>0.0001?'#ff4422':parseFloat(fr)<-0.0001?'#00cc44':'#aa8833'):'#444';
+      var cCol = chg!==null?(parseFloat(chg)>0?'#00cc44':'#ff4422'):'#444';
+      rows +=
+        row('Symbol',      st.symbol||symUp+'USDT', '#F39F41')
+       +row('Last Price',  lastP?'$'+parseFloat(lastP).toLocaleString('en',{minimumFractionDigits:2}):'—', '#eaeaec')
+       +row('24H Change',  chg!==null?(parseFloat(chg)>0?'+':'')+fmtN(chg,2)+'%':'—', cCol)
+       +row('24H Volume',  fmtM(vol24), '#8899bb')
+       +row('Open Interest',fmtM(oi), '#aabbcc')
+       +row('Funding Rate',fr!==null?fmtPct(fr):'—', frCol);
+      if(lsR!==null) rows += row('L/S Ratio', fmtN(lsR,3), parseFloat(lsR)>1?'#00cc44':'#ff4422');
+    } else if(connected) {
+      rows = '<div style="padding:14px 10px;font-size:7.5px;color:#4a3820">No stats for '+symUp+' — check SYMBOLS in backend.</div>';
+    } else {
+      rows = '<div style="padding:14px 10px;font-size:7.5px;color:#442200">&#x26A0; Backend offline.<br><span style="color:#333;font-size:6.5px">Start: <code style="color:#665533">python main.py</code> (port 8086)</span></div>';
+    }
+
+    // Gamma infobox from VS cache
+    var gBox = '';
+    var cache = window._VS && window._VS.C && window._VS.C[sym];
+    if(cache && cache.pts && cache.pts.length) {
+      var spot = cache.spot || 0;
+      var atmPts = cache.pts.filter(function(p){ return Math.abs(p.K-spot)<spot*0.04 && p.dte<=30; });
+      if(atmPts.length) {
+        var avgIV = atmPts.reduce(function(a,b){return a+b.iv;},0)/atmPts.length/100;
+        var T = 14/365;
+        var g = _ghGamma(spot, spot, avgIV, T);
+        var gex = (g * spot * spot * 0.01).toFixed(4);
+        var src = (cache._src||'SABR').toUpperCase();
+        gBox = '<div style="padding:3px 10px;font-size:6.5px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-top:1px solid #1a1500;border-bottom:1px solid #1a1500">OPTIONS GREEKS (SURFACE CACHE)</div>'
+          +'<div style="padding:6px 10px;display:flex;gap:6px;flex-wrap:wrap">'
+          +'<div style="background:#0f1014;border:1px solid #1a1a20;border-radius:3px;padding:4px 8px;min-width:80px">'
+          +'<div style="font-size:6px;color:#3a3020;letter-spacing:.5px">ATM IV</div>'
+          +'<div style="font-size:11px;font-weight:700;color:#c8b060;font-family:monospace">'+(avgIV*100).toFixed(1)+'%</div>'
+          +'</div>'
+          +'<div style="background:#0f1014;border:1px solid #1a1a20;border-radius:3px;padding:4px 8px;min-width:80px">'
+          +'<div style="font-size:6px;color:#3a3020;letter-spacing:.5px">14D GAMMA</div>'
+          +'<div style="font-size:11px;font-weight:700;color:#00cc44;font-family:monospace">'+gex+'</div>'
+          +'</div>'
+          +'<div style="background:#0f1014;border:1px solid #1a1a20;border-radius:3px;padding:4px 8px;min-width:60px">'
+          +'<div style="font-size:6px;color:#3a3020;letter-spacing:.5px">SOURCE</div>'
+          +'<div style="font-size:9px;font-weight:700;color:#4488ff;font-family:monospace">'+src+'</div>'
+          +'</div>'
+          +'</div>';
+      }
+    }
+
+    body.innerHTML =
+      '<div style="padding:3px 10px;display:flex;justify-content:space-between;align-items:center;font-size:6.5px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">'
+      + '<span>CRYEXC &#x00B7; BINANCE FUTURES</span>' + conn_badge
+      + '</div>'
+      + sparkSvg
+      + '<div style="padding:3px 10px;font-size:6.5px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">MARKET STATS</div>'
+      + rows
+      + gBox;
+  }).catch(function(err) {
+    body.innerHTML = '<div style="padding:16px 10px;color:#442200;font-size:7.5px">&#x26A0; Error: '+err.message.slice(0,60)+'</div>';
+  });
+}
+
 </script>
 
 </body>
