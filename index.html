@@ -35755,34 +35755,48 @@ window.fetchGHData=fetchGHData;
 
 
 <!-- ══ CHART SETTINGS OVERLAY — volsurface-11 ══ -->
-<div id="bbg-chart-settings-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:#101114;font-family:'Inter','Segoe UI',Arial,sans-serif;width:100%;height:100%;">
+<div id="bbg-chart-settings-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:#101114;font-family:'Inter','Segoe UI',Arial,sans-serif;flex-direction:row;">
 
-  <!-- Spot — top left, floating -->
-  <div style="position:absolute;top:14px;left:24px;z-index:10;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.05);padding:5px 10px;border-radius:4px;pointer-events:none;">
-    <span style="font-size:12px;font-weight:600;color:#00e6e6;letter-spacing:.5px;">Spot: <span id="bbg-vs-spot">—</span></span>
-  </div>
-
-  <!-- Status top right -->
-  <div style="position:absolute;top:14px;right:260px;z-index:20;pointer-events:none;">
-    <span id="bbg-vs-status" style="font-size:8px;color:#555;letter-spacing:1px;">LOADING…</span>
-  </div>
-
-  <!-- Toggle button for right panel -->
-  <div id="bbg-drawer-toggle" onclick="(function(){var d=document.getElementById('bbg-right-drawer');var plot=document.getElementById('bbg-vs-plot');var open=d.style.width==='240px';d.style.width=open?'0':'240px';plot.style.right=open?'0':'240px';document.getElementById('bbg-drawer-toggle').style.right=open?'8px':'248px';})()" style="position:absolute;top:12px;right:8px;z-index:30;cursor:pointer;background:#0f1014;border:1px solid #2a2030;padding:4px 8px;border-radius:3px;font-size:10px;color:#9966cc;letter-spacing:1px;user-select:none;">◧ INFO</div>
-
-  <!-- Right info drawer -->
-  <div id="bbg-right-drawer" style="position:absolute;top:0;right:0;bottom:0;width:0;overflow:hidden;transition:width 0.2s ease;background:#0b0c0f;border-left:1px solid #1e2030;z-index:20;flex-direction:column;display:flex;">
-    <!-- Drawer tabs -->
-    <div style="display:flex;background:#0f1014;border-bottom:1px solid #1e2030;flex-shrink:0;">
-      <span id="bbgd-tab-gamma" onclick="window._bbgdSetTab('gamma')" style="flex:1;text-align:center;padding:5px 2px;font-size:7px;letter-spacing:.8px;cursor:pointer;color:#F39F41;background:#1a1500;border-right:1px solid #1e2030;">GAMMA</span>
-      <span id="bbgd-tab-cryexc" onclick="window._bbgdSetTab('cryexc')" style="flex:1;text-align:center;padding:5px 2px;font-size:7px;letter-spacing:.8px;cursor:pointer;color:#444;background:#0b0c0f;">CRYEXC</span>
+  <!-- LEFT: 3D chart area (flex:1) -->
+  <div style="flex:1;position:relative;min-width:0;overflow:hidden;">
+    <!-- Spot price top left -->
+    <div style="position:absolute;top:14px;left:24px;z-index:10;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.06);padding:5px 12px;border-radius:4px;pointer-events:none;">
+      <span style="font-size:12px;font-weight:600;color:#00e6e6;letter-spacing:.5px;">Spot: <span id="bbg-vs-spot">—</span></span>
     </div>
-    <!-- Drawer body -->
-    <div id="bbgd-body" style="flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;"></div>
+    <!-- Status badge top centre -->
+    <div style="position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:10;pointer-events:none;">
+      <span id="bbg-vs-status" style="font-size:8px;color:#555;letter-spacing:1px;background:rgba(0,0,0,0.4);padding:3px 8px;border-radius:3px;">LOADING…</span>
+    </div>
+    <!-- Plotly 3D surface -->
+    <div id="bbg-vs-plot" style="width:100%;height:100%;"></div>
   </div>
 
-  <!-- Plot — full screen, shrinks when drawer open -->
-  <div id="bbg-vs-plot" style="position:absolute;inset:0;right:0;width:auto;height:100%;"></div>
+  <!-- RIGHT: Info panel (220px, always visible) -->
+  <div id="bbg-info-panel" style="width:220px;flex-shrink:0;display:flex;flex-direction:column;background:#09090d;border-left:1px solid #1a1b22;overflow:hidden;">
+
+    <!-- Header: asset selector -->
+    <div style="display:flex;align-items:center;background:#0c0d10;border-bottom:1px solid #1a1b22;flex-shrink:0;padding:0 6px;">
+      <span style="font-size:6px;color:#2a2020;letter-spacing:2px;padding:5px 2px;flex:1;">VOL SURFACE</span>
+      <div id="bbgp-bb" onclick="window._bbgPanelSym('btc')" style="padding:3px 7px;font-size:8px;font-weight:700;cursor:pointer;border:1px solid #FF9900;color:#FF9900;background:rgba(255,153,0,.1);border-radius:3px;margin:4px 2px;transition:all .15s;">BTC</div>
+      <div id="bbgp-be" onclick="window._bbgPanelSym('eth')" style="padding:3px 7px;font-size:8px;font-weight:700;cursor:pointer;border:1px solid #222;color:#333;background:transparent;border-radius:3px;margin:4px 2px;transition:all .15s;">ETH</div>
+    </div>
+
+    <!-- Tab bar -->
+    <div style="display:flex;background:#0c0d10;border-bottom:1px solid #1a1b22;flex-shrink:0;">
+      <span id="bbgd-tab-gamma" onclick="window._bbgdSetTab('gamma')" style="flex:1;text-align:center;padding:6px 2px;font-size:7px;letter-spacing:1px;cursor:pointer;color:#F39F41;background:#110f07;border-right:1px solid #1a1b22;border-bottom:2px solid #F39F41;">GAMMA</span>
+      <span id="bbgd-tab-cryexc" onclick="window._bbgdSetTab('cryexc')" style="flex:1;text-align:center;padding:6px 2px;font-size:7px;letter-spacing:1px;cursor:pointer;color:#555;background:#09090d;border-bottom:2px solid transparent;">CRYEXC</span>
+    </div>
+
+    <!-- Content body -->
+    <div id="bbgd-body" style="flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;scrollbar-width:thin;scrollbar-color:#2a1800 #000;"></div>
+
+    <!-- Footer -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:#0c0d10;border-top:1px solid #1a1b22;flex-shrink:0;">
+      <span id="bbgp-src" style="font-size:6px;color:#333;letter-spacing:.5px;"></span>
+      <span onclick="document.getElementById('bbg-chart-settings-overlay').style.display='none';" style="font-size:9px;cursor:pointer;color:#554433;padding:2px 8px;border:1px solid #2a1a0a;border-radius:2px;letter-spacing:.5px;background:#0e0c09;">&#x2715; CLOSE</span>
+    </div>
+  </div>
+
 </div>
 
 
@@ -36143,207 +36157,302 @@ window.fetchGHData=fetchGHData;
 
 })();
 
-// ══ OVOL DRAWER — Gamma + CryExc info panel ══════════════════════════════
+// ══ OVOL DRAWER — Gamma + CryExc info panel ════════════════════════════
+
 (function(){
   var _tab = 'gamma';
 
+  // ---- Helpers ----
   function row(label, val, col) {
-    return '<div style="display:flex;justify-content:space-between;padding:3px 8px;border-bottom:1px solid #0f1014">'
-      +'<span style="font-size:7px;color:#4a3820;letter-spacing:.3px">'+label+'</span>'
+    return '<div style="display:flex;justify-content:space-between;padding:3px 8px;border-bottom:1px solid #0d0e12">'
+      +'<span style="font-size:7px;color:#3a3020;letter-spacing:.3px">'+label+'</span>'
       +'<span style="font-size:7.5px;font-family:Roboto Mono,monospace;color:'+(col||'#c8b060')+'">'+val+'</span>'
       +'</div>';
   }
-  function fmtN(v,d){ if(v==null||isNaN(v)) return '—'; return parseFloat(v).toFixed(d==null?2:d); }
-  function fmtM(v){ if(!v||isNaN(v)) return '—'; v=parseFloat(v); return v>=1e9?'$'+(v/1e9).toFixed(2)+'B':v>=1e6?'$'+(v/1e6).toFixed(1)+'M':v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+v.toFixed(0); }
-  function fmtPct(v){ if(v==null) return '—'; return (parseFloat(v)*100).toFixed(4)+'%'; }
+  function fmtN(v,d){ if(v==null||v===undefined||isNaN(Number(v))) return '\u2014'; return parseFloat(v).toFixed(d==null?2:d); }
+  function fmtM(v){ if(!v||isNaN(parseFloat(v))) return '\u2014'; v=parseFloat(v); return v>=1e9?'$'+(v/1e9).toFixed(2)+'B':v>=1e6?'$'+(v/1e6).toFixed(1)+'M':v>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+v.toFixed(0); }
+  function fmtPct(v){ if(v==null||v===undefined) return '\u2014'; return (parseFloat(v)*100).toFixed(4)+'%'; }
   function npdf(x){ return Math.exp(-x*x/2)/Math.sqrt(2*Math.PI); }
-  function d1(S,K,v,T){ if(T<=0||v<=0||S<=0||K<=0) return 0; return (Math.log(S/K)+0.5*v*v*T)/(v*Math.sqrt(T)); }
-  function gamma(S,K,v,T){ if(T<=0||v<=0||S<=0) return 0; return npdf(d1(S,K,v,T))/(S*v*Math.sqrt(T)); }
+  function d1fn(S,K,v,T){ if(T<=0||v<=0||S<=0||K<=0) return 0; return (Math.log(S/K)+0.5*v*v*T)/(v*Math.sqrt(T)); }
+  function gammaFn(S,K,v,T){ if(T<=0||v<=0||S<=0) return 0; return npdf(d1fn(S,K,v,T))/(S*v*Math.sqrt(T)); }
 
+  // ---- Tab switching ----
   window._bbgdSetTab = function(tab){
     _tab = tab;
     ['gamma','cryexc'].forEach(function(t){
       var el=document.getElementById('bbgd-tab-'+t); if(!el) return;
-      el.style.color    = t===tab?'#F39F41':'#444';
-      el.style.background = t===tab?'#1a1500':'#0b0c0f';
+      el.style.color       = t===tab ? '#F39F41' : '#555';
+      el.style.background  = t===tab ? '#110f07' : '#09090d';
+      el.style.borderBottom= t===tab ? '2px solid #F39F41' : '2px solid transparent';
     });
     _bbgdRender();
   };
 
   window._bbgdRender = function(){
     var cur = window._BCUR || 'btc';
-    if(_tab==='gamma') _bbgdGamma(cur);
-    else _bbgdCryexc(cur);
+    if(_tab==='gamma') window._bbgdGamma(cur);
+    else               window._bbgdCryexc(cur);
   };
 
+  // ---- Asset symbol switch ----
+  window._bbgPanelSym = function(sym){
+    var bb=document.getElementById('bbgp-bb'), be=document.getElementById('bbgp-be');
+    if(bb){
+      bb.style.borderColor = sym==='btc'?'#FF9900':'#222';
+      bb.style.color       = sym==='btc'?'#FF9900':'#333';
+      bb.style.background  = sym==='btc'?'rgba(255,153,0,.1)':'transparent';
+    }
+    if(be){
+      be.style.borderColor = sym==='eth'?'#627eea':'#222';
+      be.style.color       = sym==='eth'?'#627eea':'#333';
+      be.style.background  = sym==='eth'?'rgba(98,126,234,.1)':'transparent';
+    }
+    // Update global BCUR so the main IIFE picks it up on next render
+    window._BCUR_OVERRIDE = sym;
+    // Trigger surface load via the overlay mechanism
+    if(window._openChartSettings){
+      var ov = document.getElementById('bbg-chart-settings-overlay');
+      if(ov && ov.style.display !== 'none'){
+        // Patch _BCUR in-place by triggering a reload via vsGo equivalent
+        // The surface IIFE stores _BCUR locally; we communicate via data attr
+        ov.setAttribute('data-sym', sym);
+        // Try calling _bload if accessible (it's inside an IIFE, so likely not)
+        // Instead just re-render info panel for now
+      }
+    }
+    _bbgdRender();
+  };
+
+  // ---- GAMMA tab ----
   window._bbgdGamma = function(sym){
     var body=document.getElementById('bbgd-body'); if(!body) return;
-    // Try _VS cache first, then _BC cache
-    var cache = (window._VS&&window._VS.C&&window._VS.C[sym]) || (window._BC&&window._BC[sym]);
+
+    // Get data from _BC cache (used by the 3D surface IIFE)
+    var cache = (window._BC && window._BC[sym])
+             || (window._VS && window._VS.C && window._VS.C[sym]);
+
     if(!cache||!cache.pts||!cache.pts.length){
-      body.innerHTML='<div style="padding:14px 8px;color:#4a3820;font-size:7px">Waiting for vol surface data…</div>';
+      body.innerHTML='<div style="padding:16px 10px;color:#2a2010;font-size:7px;line-height:1.7">'
+        +'Surface data loading\u2026<br>'
+        +'<span style="color:#1a1a0a;font-size:6px">Appears when chart finishes loading.</span></div>';
+      // Retry after 2s
+      setTimeout(function(){ if(_tab==='gamma') window._bbgdGamma(sym); }, 2000);
       return;
     }
-    var spot = cache.spot||0;
-    var pts  = cache.pts; // [{K,dte,iv}]
 
-    // Group by dte
-    var byDte={};
+    var spot = cache.spot || 0;
+    var pts  = cache.pts;
+    var src  = (cache._src || 'SABR').toUpperCase();
+
+    // Update footer
+    var srcEl=document.getElementById('bbgp-src');
+    if(srcEl) srcEl.textContent = src + ' \u00b7 ' + sym.toUpperCase();
+
+    // ATM stats (strikes within 5% of spot, DTE <= 30)
+    var atmPts = pts.filter(function(p){ return Math.abs(p.K-spot)<spot*0.05 && p.dte<=30; });
+    var atmIV  = atmPts.length ? atmPts.reduce(function(a,b){return a+b.iv;},0)/atmPts.length : 0;
+    var T7  = 7/365, T14 = 14/365, T30 = 30/365;
+    var iv  = (atmIV||50)/100;
+    var gam7  = gammaFn(spot,spot,iv,T7);
+    var gam14 = gammaFn(spot,spot,iv,T14);
+    var gam30 = gammaFn(spot,spot,iv,T30);
+    var gex7  = (gam7 *spot*spot*0.01).toFixed(4);
+    var gex14 = (gam14*spot*spot*0.01).toFixed(4);
+    var gex30 = (gam30*spot*spot*0.01).toFixed(4);
+
+    // Card row
+    var cards = '<div style="display:flex;gap:4px;padding:6px;flex-wrap:wrap">'
+      + _card('ATM IV',  (atmIV?atmIV.toFixed(1):'--')+'%', '#c8b060')
+      + _card('7D \u0393',  gex7,  '#44aaff')
+      + _card('14D \u0393', gex14, '#00cc44')
+      + _card('30D \u0393', gex30, '#aaddaa')
+      + '</div>';
+
+    // Skew: 10d-delta call vs put IV
+    var dtes_u = [...new Set(pts.map(function(p){return p.dte;}))].sort(function(a,b){return a-b;});
+    var skewRows = '';
+    dtes_u.slice(0,6).forEach(function(dte){
+      var T = Math.max(0.0001, dte/365);
+      var dp = pts.filter(function(p){return p.dte===dte;}).sort(function(a,b){return a.K-b.K;});
+      if(dp.length < 3) return;
+      var putIV  = dp[Math.floor(dp.length*0.15)].iv;
+      var callIV = dp[Math.floor(dp.length*0.85)].iv;
+      var skew   = (putIV - callIV).toFixed(1);
+      var skewC  = parseFloat(skew)>0?'#ff9955':parseFloat(skew)<0?'#44aaff':'#888';
+      skewRows += '<div style="display:flex;justify-content:space-between;padding:2px 8px;border-bottom:1px solid #0d0e12">'
+        +'<span style="font-size:6.5px;color:#3a3020">'+dte+'d</span>'
+        +'<span style="font-size:6.5px;font-family:monospace;color:#666">put '+putIV.toFixed(1)+'% / call '+callIV.toFixed(1)+'%</span>'
+        +'<span style="font-size:6.5px;font-family:monospace;color:'+skewC+'">'+skew+'</span>'
+        +'</div>';
+    });
+
+    // GEX bar chart per strike
+    var byDte = {};
     pts.forEach(function(p){ if(!byDte[p.dte]) byDte[p.dte]=[]; byDte[p.dte].push(p); });
-    var dtes=Object.keys(byDte).map(Number).sort(function(a,b){return a-b;}).slice(0,8);
-
-    // Build GEX per strike (gamma × S² × 0.01, aggregated across expiries)
-    var gmap={};
-    dtes.forEach(function(dte){
-      var T=Math.max(0.0001,dte/365);
+    var dteSorted = Object.keys(byDte).map(Number).sort(function(a,b){return a-b;}).slice(0,10);
+    var gmap = {};
+    dteSorted.forEach(function(dte){
+      var T = Math.max(0.0001, dte/365);
       byDte[dte].forEach(function(p){
-        if(p.K<spot*0.72||p.K>spot*1.35) return;
+        if(p.K < spot*0.72 || p.K > spot*1.38) return;
         if(!gmap[p.K]) gmap[p.K]=0;
-        gmap[p.K]+=gamma(spot,p.K,p.iv/100,T)*spot*spot*0.01;
+        gmap[p.K] += gammaFn(spot, p.K, p.iv/100, T) * spot * spot * 0.01;
       });
     });
-    var strikes=Object.keys(gmap).map(Number).sort(function(a,b){return b-a;});
-    if(!strikes.length){ body.innerHTML='<div style="padding:14px 8px;color:#333;font-size:7px">No GEX data</div>'; return; }
-    var maxG=Math.max.apply(null,strikes.map(function(k){return gmap[k];})); if(!maxG) maxG=1;
-    var BW=150;
+    var strikes = Object.keys(gmap).map(Number).sort(function(a,b){return b-a;});
+    var maxG = strikes.length ? Math.max.apply(null, strikes.map(function(k){return gmap[k];})) : 1;
+    if(!maxG) maxG=1;
+    var BW = 110;
 
-    // ATM IV
-    var atmPts=pts.filter(function(p){return Math.abs(p.K-spot)<spot*0.04&&p.dte<=30;});
-    var atmIV=atmPts.length?atmPts.reduce(function(a,b){return a+b.iv;},0)/atmPts.length:0;
-    var T14=14/365;
-    var atmGamma=gamma(spot,spot,(atmIV||50)/100,T14);
-    var gex14=(atmGamma*spot*spot*0.01).toFixed(4);
-    var src=(cache._src||'SABR').toUpperCase();
-
-    // Cards
-    var cards='<div style="display:flex;gap:4px;padding:6px 6px 4px;flex-wrap:wrap">'
-      +'<div style="background:#0f1014;border:1px solid #1e2030;border-radius:3px;padding:4px 6px;flex:1;min-width:60px">'
-      +'<div style="font-size:6px;color:#3a3020;letter-spacing:.5px">ATM IV</div>'
-      +'<div style="font-size:12px;font-weight:700;color:#c8b060;font-family:monospace">'+(atmIV?atmIV.toFixed(1):'—')+'%</div>'
-      +'</div>'
-      +'<div style="background:#0f1014;border:1px solid #1e2030;border-radius:3px;padding:4px 6px;flex:1;min-width:60px">'
-      +'<div style="font-size:6px;color:#3a3020;letter-spacing:.5px">14D GAMMA</div>'
-      +'<div style="font-size:12px;font-weight:700;color:#00cc44;font-family:monospace">'+gex14+'</div>'
-      +'</div>'
-      +'</div>'
-      +'<div style="padding:2px 8px 4px;font-size:6px;color:#2a2010">SRC: '+src+' · S=$'+Math.round(spot).toLocaleString()+'</div>';
-
-    // GEX bars
-    var bars=strikes.map(function(k){
-      var isSpot=Math.abs(k-spot)<spot*0.015;
-      var bw=Math.round(gmap[k]/maxG*BW);
-      var sk=k>=1000?'$'+(k/1000).toFixed(0)+'K':'$'+k;
-      return '<div style="display:flex;align-items:center;gap:3px;margin-bottom:1px;'+(isSpot?'border-top:1px solid #F39F41;border-bottom:1px solid #F39F41;':'')+'">'
-        +'<div style="width:38px;text-align:right;font-size:6.5px;font-family:monospace;color:'+(isSpot?'#F39F41':'#4a3820')+'">'+sk+'</div>'
-        +'<div style="flex:1"><div style="height:8px;width:'+bw+'px;background:#00aa44;opacity:.85"></div></div>'
+    var bars = strikes.map(function(k){
+      var isSpot = Math.abs(k-spot) < spot*0.014;
+      var bw = Math.round(gmap[k]/maxG*BW);
+      var sk = k>=1000 ? '$'+(k/1000).toFixed(0)+'K' : '$'+k.toFixed(0);
+      return '<div style="display:flex;align-items:center;gap:2px;margin-bottom:1px;'+(isSpot?'background:rgba(255,160,0,.06);':'')+'padding:0 4px">'
+        +'<div style="width:36px;text-align:right;font-size:6px;font-family:monospace;color:'+(isSpot?'#F39F41':'#2a2010')+';flex-shrink:0">'+sk+'</div>'
+        +'<div style="height:7px;background:'+(isSpot?'#ffaa00':'#00aa44')+';opacity:.8;border-radius:1px;width:'+bw+'px;min-width:1px"></div>'
         +'</div>';
     }).join('');
 
-    body.innerHTML=
-      '<div style="padding:3px 8px;font-size:6px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">SURFACE DATA</div>'
-      +cards
-      +'<div style="padding:3px 8px;font-size:6px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">GEX / STRIKE</div>'
-      +'<div style="padding:4px 6px;overflow-y:auto">'+bars+'</div>'
-      +'<div style="padding:4px 8px;font-size:5.5px;color:#2a2010">γ = N\'(d₁)/(S·σ·√T) · S² · 0.01</div>';
+    body.innerHTML =
+      '<div style="padding:3px 8px;font-size:5.5px;color:#3a3020;letter-spacing:1.5px;background:#0c0d10;border-bottom:1px solid #1a1b22">GREEKS</div>'
+      + cards
+      + '<div style="padding:3px 8px;font-size:5.5px;color:#3a3020;letter-spacing:1.5px;background:#0c0d10;border-bottom:1px solid #1a1b22">TERM SKEW (PUT - CALL IV)</div>'
+      + (skewRows || '<div style="padding:6px 8px;font-size:6.5px;color:#222">--</div>')
+      + '<div style="padding:3px 8px;font-size:5.5px;color:#3a3020;letter-spacing:1.5px;background:#0c0d10;border-bottom:1px solid #1a1b22">GEX BY STRIKE \u00b7 '
+        +(isNaN(spot)?'--':'$'+Math.round(spot).toLocaleString())+'</div>'
+      + '<div style="padding:4px 4px">' + bars + '</div>'
+      + '<div style="padding:3px 8px;font-size:5px;color:#1a1510">'
+        + '\u0393 = N\'(d\u2081)/(S\u00b7\u03c3\u00b7\u221aT) \u00b7 S\u00b2 \u00b7 0.01'
+        + '</div>';
   };
 
+  function _card(label, val, col) {
+    return '<div style="background:#0e0f13;border:1px solid #1a1b22;border-radius:3px;padding:4px 6px;flex:1;min-width:55px;max-width:80px">'
+      +'<div style="font-size:5.5px;color:#2a2010;letter-spacing:.8px;margin-bottom:2px">'+label+'</div>'
+      +'<div style="font-size:12px;font-weight:700;color:'+(col||'#c8b060')+';font-family:monospace;line-height:1.1">'+val+'</div>'
+      +'</div>';
+  }
+
+  // ---- CRYEXC tab ----
   window._bbgdCryexc = function(sym){
     var body=document.getElementById('bbgd-body'); if(!body) return;
-    body.innerHTML='<div style="padding:10px 8px;color:#F39F41;font-size:7px;letter-spacing:1px">FETCHING&#x2026;</div>';
-    var base='http://localhost:8086';
-    var ticker=sym==='btc'?'BTCUSDT':'ETHUSDT';
+    body.innerHTML='<div style="padding:10px 8px;color:#F39F41;font-size:7px;letter-spacing:1px">FETCHING\u2026</div>';
+    var base = 'http://localhost:8086';
+    var ticker = sym==='btc' ? 'BTCUSDT' : 'ETHUSDT';
     Promise.all([
-      fetch(base+'/api/market-stats',{signal:AbortSignal.timeout(4000)}).then(function(r){return r.ok?r.json():[];}).catch(function(){return null;}),
-      fetch(base+'/klines?symbol='+ticker+'&interval=1h&limit=24',{signal:AbortSignal.timeout(4000)}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+      fetch(base+'/api/market-stats', {signal:AbortSignal.timeout(4000)})
+        .then(function(r){ return r.ok ? r.json() : []; })
+        .catch(function(){ return null; }),
+      fetch(base+'/klines?symbol='+ticker+'&interval=1h&limit=24', {signal:AbortSignal.timeout(4000)})
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .catch(function(){ return null; })
     ]).then(function(res){
-      var stats=res[0], klines=res[1];
-      var connected=stats!==null;
-      var symUp=sym.toUpperCase();
-      var st=null;
-      if(Array.isArray(stats)) stats.forEach(function(s){if(s.symbol&&s.symbol.toUpperCase().startsWith(symUp)) st=s;});
+      var stats   = res[0];
+      var klines  = res[1];
+      var online  = stats !== null;
+      var symUp   = sym.toUpperCase();
+      var st = null;
+      if(Array.isArray(stats)) stats.forEach(function(s){ if(s.symbol && s.symbol.toUpperCase().startsWith(symUp)) st=s; });
+
+      // Footer
+      var srcEl = document.getElementById('bbgp-src');
+      if(srcEl) srcEl.textContent = (online?'LIVE':'OFFLINE') + ' \u00b7 ' + ticker;
 
       // Sparkline
-      var spark='';
-      if(Array.isArray(klines)&&klines.length>1){
-        var closes=klines.map(function(k){return parseFloat(k[4]||k.close||0);}).filter(Boolean);
-        if(closes.length>1){
-          var minC=Math.min.apply(null,closes),maxC=Math.max.apply(null,closes);
-          var W=220,H=40,PL=3,PR=3,PT=3,PB=3;
-          var cx=function(i){return PL+i*(W-PL-PR)/(closes.length-1);};
-          var cy=function(v){return H-PB-(v-minC)/(maxC-minC+0.01)*(H-PT-PB);};
-          var pts=closes.map(function(v,i){return cx(i).toFixed(1)+','+cy(v).toFixed(1);}).join(' ');
-          var last=closes[closes.length-1],first=closes[0];
-          var col=last>=first?'#00cc44':'#ff3322';
-          spark='<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;background:#080a0e;border-bottom:1px solid #1e2030">'
-            +'<polyline points="'+pts+'" fill="none" stroke="'+col+'" stroke-width="1.1" opacity=".9"/>'
-            +'<text x="3" y="10" font-size="5.5" font-family="monospace" fill="#3a3020">'+ticker+' 24H</text>'
-            +'<text x="'+(W-PR)+'" y="10" font-size="6" font-family="monospace" fill="'+col+'" text-anchor="end">$'+Math.round(last).toLocaleString()+'</text>'
-            +'</svg>';
+      var spark = '';
+      if(Array.isArray(klines) && klines.length > 1){
+        var closes = klines.map(function(k){ return parseFloat(k[4]||k.close||0); }).filter(Boolean);
+        if(closes.length > 1){
+          var minC=Math.min.apply(null,closes), maxC=Math.max.apply(null,closes);
+          var W=198,H=40,PL=2,PR=2,PT=4,PB=4;
+          var cx=function(i){ return PL+i*(W-PL-PR)/(closes.length-1); };
+          var cy=function(v){ return H-PB-(v-minC)/(maxC-minC+0.01)*(H-PT-PB); };
+          var linePts = closes.map(function(v,i){ return cx(i).toFixed(1)+','+cy(v).toFixed(1); }).join(' ');
+          var last=closes[closes.length-1], first=closes[0];
+          var col = last>=first ? '#00cc44' : '#ff3322';
+          var fillPts = cx(0).toFixed(1)+','+(H-PB)+' '+linePts+' '+cx(closes.length-1).toFixed(1)+','+(H-PB);
+          spark = '<div style="padding:6px 6px 0">'
+            +'<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;background:#090a0e;border-radius:3px;border:1px solid #1a1b22">'
+            +'<defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">'
+            +'<stop offset="0%" stop-color="'+col+'" stop-opacity=".18"/>'
+            +'<stop offset="100%" stop-color="'+col+'" stop-opacity="0"/>'
+            +'</linearGradient></defs>'
+            +'<polygon points="'+fillPts+'" fill="url(#sg)"/>'
+            +'<polyline points="'+linePts+'" fill="none" stroke="'+col+'" stroke-width="1.3" opacity=".95"/>'
+            +'<text x="3" y="12" font-size="5.5" font-family="monospace" fill="#2a2010">'+ticker+' 24H</text>'
+            +'<text x="'+(W-PR)+'" y="12" font-size="6" font-family="monospace" fill="'+col+'" text-anchor="end">'
+            +'$'+Math.round(last).toLocaleString()+'</text>'
+            +'</svg></div>';
         }
       }
 
-      var conn='<span style="font-size:6px;color:'+(connected?'#00cc44':'#ff3322')+'">'+(connected?'● LIVE':'● OFFLINE')+'</span>';
-      var rowsHtml='';
+      // Stat rows
+      var rowsHtml = '';
       if(st){
-        var fr=st.fundingRate!==undefined?st.fundingRate:(st.funding_rate!==undefined?st.funding_rate:null);
-        var oi=st.openInterest!==undefined?st.openInterest:(st.open_interest!==undefined?st.open_interest:null);
-        var vol24=st.quoteVolume||st.volume24h||null;
-        var lsR=st.longShortRatio||st.long_short_ratio||null;
-        var lastP=st.lastPrice||st.last_price||null;
-        var chg=st.priceChangePercent||st.price_change_percent||null;
-        var frCol=fr!=null?(parseFloat(fr)>0.0001?'#ff4422':parseFloat(fr)<-0.0001?'#00cc44':'#aa8833'):'#444';
-        var cCol=chg!=null?(parseFloat(chg)>0?'#00cc44':'#ff4422'):'#444';
-        rowsHtml=
-          row('Price', lastP?'$'+parseFloat(lastP).toLocaleString('en',{minimumFractionDigits:2}):'—','#eaeaec')
-         +row('24H Chg', chg!=null?(parseFloat(chg)>0?'+':'')+fmtN(chg,2)+'%':'—', cCol)
-         +row('Volume', fmtM(vol24),'#8899bb')
-         +row('Open Int', fmtM(oi),'#aabbcc')
-         +row('Funding', fr!=null?fmtPct(fr):'—', frCol);
-        if(lsR!=null) rowsHtml+=row('L/S', fmtN(lsR,3), parseFloat(lsR)>1?'#00cc44':'#ff4422');
-      } else if(connected){
-        rowsHtml='<div style="padding:10px 8px;font-size:7px;color:#4a3820">No data for '+symUp+'.<br>Add BTCUSDT to backend SYMBOLS.</div>';
+        var fr   = st.fundingRate      !== undefined ? st.fundingRate      : (st.funding_rate      !== undefined ? st.funding_rate      : null);
+        var nfr  = st.nextFundingRate  !== undefined ? st.nextFundingRate  : (st.next_funding_rate !== undefined ? st.next_funding_rate : null);
+        var oi   = st.openInterest     !== undefined ? st.openInterest     : (st.open_interest     !== undefined ? st.open_interest    : null);
+        var oiV  = st.openInterestValue|| st.open_interest_value || null;
+        var vol  = st.quoteVolume      || st.volume24h  || null;
+        var ls   = st.longShortRatio   || st.long_short_ratio || null;
+        var lastP= st.lastPrice        || st.last_price || null;
+        var chg  = st.priceChangePercent || st.price_change_percent || null;
+        var hi   = st.highPrice        || st.high_price || null;
+        var lo   = st.lowPrice         || st.low_price  || null;
+        var frC  = fr!=null ? (parseFloat(fr)>0.0001?'#ff4422':parseFloat(fr)<-0.0001?'#00cc44':'#aa8833') : '#444';
+        var chgC = chg!=null ? (parseFloat(chg)>0?'#00cc44':'#ff4422') : '#444';
+        rowsHtml =
+           row('Price',    lastP ? '$'+parseFloat(lastP).toLocaleString('en',{minimumFractionDigits:2}) : '\u2014', '#dde4ee')
+          +row('24H Chg',  chg!=null ? (parseFloat(chg)>0?'+':'')+fmtN(chg,2)+'%' : '\u2014', chgC)
+          +row('24H High', hi ? '$'+parseFloat(hi).toLocaleString('en',{minimumFractionDigits:0}) : '\u2014', '#ccddcc')
+          +row('24H Low',  lo ? '$'+parseFloat(lo).toLocaleString('en',{minimumFractionDigits:0}) : '\u2014', '#ddcccc')
+          +row('Volume',   fmtM(vol),  '#8899bb')
+          +row('OI',       fmtM(oi),   '#99aabb')
+          +row('OI Value', fmtM(oiV),  '#8899aa')
+          +row('Funding',  fr!=null  ? fmtPct(fr)  : '\u2014', frC)
+          +(nfr!=null ? row('Next FR', fmtPct(nfr), '#aa8833') : '')
+          +(ls !=null ? row('L/S Ratio', fmtN(ls,3), parseFloat(ls)>1?'#00cc44':'#ff4422') : '');
+      } else if(online){
+        rowsHtml = '<div style="padding:12px 8px;font-size:7px;color:#3a3020">No data for '+symUp+'.'
+          +'<br><span style="font-size:6px;color:#222">Add '+ticker+' to backend SYMBOLS list.</span></div>';
       } else {
-        rowsHtml='<div style="padding:10px 8px;font-size:7px;color:#442200">⚠ Offline.<br><span style="font-size:6px;color:#443322">python main.py (port 8086)</span></div>';
+        rowsHtml = '<div style="padding:12px 8px;font-size:7px;color:#442200">&#x26A0; Backend offline.'
+          +'<br><span style="font-size:6px;color:#443322">Run: python main.py (port 8086)</span></div>';
       }
 
-      body.innerHTML=
-        '<div style="padding:3px 8px;display:flex;justify-content:space-between;font-size:6px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">'
-        +'<span>CRYEXC · BINANCE</span>'+conn+'</div>'
-        +spark
-        +'<div style="padding:3px 8px;font-size:6px;color:#6a5830;letter-spacing:1px;background:#0c0d10;border-bottom:1px solid #1a1500">FUTURES STATS</div>'
-        +rowsHtml;
+      var connBadge = '<span style="font-size:6px;color:'+(online?'#00cc44':'#555')+'">'+(online?'&#x25CF; LIVE':'&#x25CF; OFFLINE')+'</span>';
+      body.innerHTML =
+        '<div style="padding:3px 8px;display:flex;justify-content:space-between;align-items:center;'
+        +'font-size:5.5px;color:#3a3020;letter-spacing:1.5px;background:#0c0d10;border-bottom:1px solid #1a1b22">'
+        +'<span>BINANCE FUTURES</span>'+connBadge+'</div>'
+        + spark
+        +'<div style="padding:3px 8px;font-size:5.5px;color:#3a3020;letter-spacing:1.5px;background:#0c0d10;border-bottom:1px solid #1a1b22;margin-top:4px">MARKET STATS</div>'
+        + rowsHtml;
     }).catch(function(){
-      body.innerHTML='<div style="padding:10px 8px;color:#ff3322;font-size:7px">⚠ Fetch failed</div>';
+      body.innerHTML = '<div style="padding:12px 8px;color:#ff3322;font-size:7px">&#x26A0; Fetch failed</div>';
     });
   };
 
-  // Auto-open drawer + load gamma when overlay opens
-  var _orig_display_observer = new MutationObserver(function(mutations){
-    mutations.forEach(function(m){
-      if(m.target.id==='bbg-chart-settings-overlay' && m.attributeName==='style'){
-        var ov=document.getElementById('bbg-chart-settings-overlay');
-        if(ov&&ov.style.display!=='none'){
-          // Auto-open drawer
+  // ---- Auto-render on overlay open ----
+  document.addEventListener('DOMContentLoaded', function(){
+    var ov = document.getElementById('bbg-chart-settings-overlay');
+    if(!ov) return;
+    new MutationObserver(function(mutations){
+      mutations.forEach(function(m){
+        if(m.attributeName === 'style' && ov.style.display !== 'none'){
           setTimeout(function(){
-            var d=document.getElementById('bbg-right-drawer');
-            var plot=document.getElementById('bbg-vs-plot');
-            var tog=document.getElementById('bbg-drawer-toggle');
-            if(d&&d.style.width!=='240px'){
-              d.style.width='240px';
-              if(plot) plot.style.right='240px';
-              if(tog) tog.style.right='248px';
-            }
+            var sym = window._BCUR || ov.getAttribute('data-sym') || 'btc';
+            window._bbgPanelSym && window._bbgPanelSym(sym);
             _bbgdRender();
-          }, 800);
+          }, 700);
         }
-      }
-    });
+      });
+    }).observe(ov, {attributes:true});
   });
-  document.addEventListener('DOMContentLoaded',function(){
-    var ov=document.getElementById('bbg-chart-settings-overlay');
-    if(ov) _orig_display_observer.observe(ov,{attributes:true});
-  });
+
 })();
+
 
 // ── OPTFLOW Panel ──
 // ════════════════════════════════════════════════════════════════════════
