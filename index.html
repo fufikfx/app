@@ -11538,7 +11538,7 @@ function _patchEquityYtd(sym, px){
    Validation: cross-check, reject outliers >25%
 ════════════════════════════════════════════════════════════════════════ */
 const _EQ_PRICES = {};
-const _EQ_SRC_PRIO = {finnhub:1,yahoo:2,stooq:3,twelve:4};
+const _EQ_SRC_PRIO = {tradingview:0,finnhub:1,yahoo:2,stooq:3,twelve:4};
 
 function _eqUpdate(sym, px, src){
   if(!sym||!px||px<=0||isNaN(px)) return;
@@ -11671,6 +11671,144 @@ async function fetchTwelveData(){
       if(STKS[sym]){ const chg=parseFloat(v.percent_change); if(!isNaN(chg))STKS[sym].chg=chg; }
     });
   }catch(_){}
+}
+
+
+// ── TradingView Scanner API — real-time prices matching TradingView charts ──
+const TV_COMDTY_MAP = {
+  'TVC:GOLD':'XAU','TVC:SILVER':'XAG','TVC:PLATINUM':'XPT','TVC:PALLADIUM':'XPD',
+  'NYMEX:CL1!':'CL1','NYMEX:BZ1!':'CO1','NYMEX:NG1!':'NG1','COMEX:HG1!':'HG1',
+  'CBOT:ZW1!':'W1','CBOT:ZC1!':'C1','CBOT:ZS1!':'S1',
+  'ICEUS:CC1!':'CC1','ICEUS:KC1!':'KC1','ICEUS:CT1!':'CT1','ICEUS:SB1!':'SB1',
+  'CME:LE1!':'LC1','CME:HE1!':'LH1','ICEUS:OJ1!':'OJ1',
+  'COMEX:GC1!':'XAU','COMEX:SI1!':'XAG',
+  'NYMEX:RB1!':'RB1','NYMEX:HO1!':'HO1'
+};
+const TV_EQUITY_MAP = {
+  'NASDAQ:AAPL':'AAPL','NASDAQ:NVDA':'NVDA','NASDAQ:MSFT':'MSFT','NASDAQ:GOOGL':'GOOGL',
+  'NASDAQ:META':'META','NASDAQ:AMZN':'AMZN','NASDAQ:TSLA':'TSLA',
+  'NYSE:JPM':'JPM','NYSE:GS':'GS','NYSE:BAC':'BAC','NYSE:WFC':'WFC','NYSE:MS':'MS',
+  'NYSE:UNH':'UNH','NASDAQ:LLY':'LLY','NYSE:JNJ':'JNJ',
+  'NYSE:XOM':'XOM','NYSE:CVX':'CVX','NYSE:COP':'COP',
+  'NYSE:WMT':'WMT','NASDAQ:COST':'COST','NYSE:KO':'KO','NASDAQ:PEP':'PEP',
+  'NYSE:V':'V','NYSE:MA':'MA','NYSE:HD':'HD',
+  'NASDAQ:NFLX':'NFLX','NASDAQ:AMD':'AMD','NASDAQ:INTC':'INTC',
+  'NYSE:CRM':'CRM','NYSE:ORCL':'ORCL','NASDAQ:ADBE':'ADBE',
+  'NASDAQ:PYPL':'PYPL','NYSE:SHOP':'SHOP','NYSE:UBER':'UBER',
+  'NYSE:SPOT':'SPOT','NASDAQ:COIN':'COIN','NASDAQ:PLTR':'PLTR',
+  'NASDAQ:AVGO':'AVGO','NASDAQ:QCOM':'QCOM','NYSE:BA':'BA',
+  'NYSE:CAT':'CAT','NYSE:DIS':'DIS','NYSE:PFE':'PFE','NYSE:MRK':'MRK',
+  'NYSE:ABBV':'ABBV','NYSE:IBM':'IBM','NASDAQ:CSCO':'CSCO',
+  'NYSE:BRK.B':'BRK','NYSE:TMO':'TMO','NASDAQ:AMGN':'AMGN',
+  'NASDAQ:GILD':'GILD','NASDAQ:MU':'MU','NASDAQ:ARM':'ARM'
+};
+const TV_INDEX_MAP = {
+  'SP:SPX':'SPX','DJ:DJI':'DJIA','NASDAQ:NDX':'NDX','TVC:RUT':'RUT',
+  'CBOE:VIX':'VIX','INDEX:DAX':'DAX','TVC:UKX':'FTSE',
+  'TVC:CAC40':'CAC','INDEX:NKY':'NKY','HSI:HSI':'HSI',
+  'SSE:000001':'SHCOMP','TVC:KOSPI':'KOSPI','TWSE:TAIEX':'TWSE'
+};
+
+async function fetchTradingViewScanner(){
+  const scanUrl = 'https://scanner.tradingview.com/scan';
+
+  // Collect all TV symbols
+  const allSyms = [
+    ...Object.keys(TV_COMDTY_MAP),
+    ...Object.keys(TV_EQUITY_MAP),
+    ...Object.keys(TV_INDEX_MAP)
+  ];
+
+  const body = {
+    symbols: { tickers: allSyms },
+    columns: ['close','open','high','low','change','change_abs','volume']
+  };
+
+  try {
+    const r = await _fetchTimeout(scanUrl, 12000, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!r || !r.ok) {
+      // Fallback: try via CORS proxy
+      const r2 = await _fetchTimeout('https://corsproxy.io/?' + encodeURIComponent(scanUrl), 12000, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!r2 || !r2.ok) { window._layerStatus.tradingview = {ok:false, ts:Date.now()}; return; }
+      var d = await r2.json();
+    } else {
+      var d = await r.json();
+    }
+
+    if (!d || !d.data || !d.data.length) { window._layerStatus.tradingview = {ok:false, ts:Date.now()}; return; }
+
+    let updated = 0;
+    d.data.forEach(item => {
+      const sym = item.s; // e.g. "NYMEX:CL1!"
+      const [close, open, high, low, changePct, changeAbs, vol] = item.d;
+      if (!close || close <= 0) return;
+
+      // Commodities
+      if (TV_COMDTY_MAP[sym]) {
+        const cs = TV_COMDTY_MAP[sym];
+        const cd = COMDTY_DATA.find(x => x.s === cs);
+        if (cd) {
+          cd.px = close;
+          if (open > 0) cd.open = open;
+          if (high > 0) cd.hi = high;
+          if (low > 0) cd.lo = low;
+          if (changePct != null) cd.chg = changePct;
+          updated++;
+        }
+      }
+
+      // Equities
+      if (TV_EQUITY_MAP[sym]) {
+        const es = TV_EQUITY_MAP[sym];
+        if (STKS[es]) {
+          STKS[es].px = close;
+          if (open > 0) STKS[es].open = open;
+          if (high > 0) STKS[es].hi = high;
+          if (low > 0) STKS[es].lo = low;
+          if (changePct != null) STKS[es].chg = changePct;
+          _patchEquityYtd(es, close);
+          _eqUpdate(es, close, 'tradingview');
+          updated++;
+        }
+      }
+
+      // Indices
+      if (TV_INDEX_MAP[sym]) {
+        const is_ = TV_INDEX_MAP[sym];
+        if (MKT[is_]) {
+          MKT[is_].px = close;
+          if (open > 0) MKT[is_].open = open;
+          if (high > 0) MKT[is_].hi = high;
+          if (low > 0) MKT[is_].lo = low;
+          if (changePct != null) MKT[is_].chg = changePct;
+        }
+        const idxD = (typeof IDX_DATA !== 'undefined') ? IDX_DATA.find(x => x.s === is_) : null;
+        if (idxD) {
+          idxD.px = close; idxD.chg = changePct || idxD.chg;
+          if (open > 0) idxD.open = open;
+          if (high > 0) idxD.hi = high;
+          if (low > 0) idxD.lo = low;
+        }
+        updated++;
+      }
+    });
+
+    if (updated > 0) {
+      window._layerStatus.tradingview = {ok:true, ts:Date.now(), count:updated};
+      buildTicker(); refreshAllPanels();
+      setStat('TRADINGVIEW — ' + updated + ' symbols  |  ' + new Date().toLocaleTimeString('en-GB'));
+    }
+  } catch(e) {
+    window._layerStatus.tradingview = {ok:false, ts:Date.now(), err:e.message};
+  }
 }
 
 // ── ExchangeRate-API + Frankfurter — free FX ─────────────────────────────
@@ -16007,6 +16145,9 @@ async function fetchBinanceYTDOpen(){
   setInterval(fetchYahooQuotes,   30000);
   // Twelve Data — free fallback, rotates batches every 3min
   setTimeout(fetchTwelveData,  10000);
+  // TradingView Scanner — highest priority, matches TV charts
+  setTimeout(fetchTradingViewScanner, 500);
+  setInterval(fetchTradingViewScanner, 30000);
   setInterval(fetchTwelveData, 180000);
   // FX — ExchangeRate-API + Frankfurter fallback
   setTimeout(fetchExchangeRateFX, 6000);
@@ -33798,10 +33939,10 @@ var _srcLastTs={};
 function _markSrcLive(src){_srcLastTs[src]=Date.now();}
 function _srcAge(src){return _srcLastTs[src]?Date.now()-_srcLastTs[src]:Infinity;}
 
-['fetchBinance24hr','fetchCoinGecko','fetchStooq','fetchYahooQuotes','fetchFinnhubTradFi'].forEach(function(fname){
+['fetchBinance24hr','fetchCoinGecko','fetchStooq','fetchYahooQuotes','fetchFinnhubTradFi','fetchTradingViewScanner'].forEach(function(fname){
   var orig=window[fname];
   if(typeof orig!=='function')return;
-  var srcMap={fetchBinance24hr:'BINANCE',fetchCoinGecko:'COINGECKO',fetchStooq:'STOOQ',fetchYahooQuotes:'YAHOO',fetchFinnhubTradFi:'FINNHUB'};
+  var srcMap={fetchBinance24hr:'BINANCE',fetchCoinGecko:'COINGECKO',fetchStooq:'STOOQ',fetchYahooQuotes:'YAHOO',fetchFinnhubTradFi:'FINNHUB',fetchTradingViewScanner:'TRADINGVIEW'};
   window[fname]=async function(){
     try{var r=await orig.apply(this,arguments);_markSrcLive(srcMap[fname]);_updateAllPanelStatuses();return r;}
     catch(e){_updateAllPanelStatuses();throw e;}
