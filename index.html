@@ -1825,6 +1825,7 @@ const _bbgIndices = [
   {sym:'SPX Index',     name:'S&P 500 (Bybit Perp)'},
   {sym:'NDX Index',     name:'Nasdaq 100 (Bybit Perp)'},
   {sym:'DJI Index',     name:'Dow Jones (Bybit Perp)'},
+
   {sym:'NDX Index (Y)', name:'Nasdaq 100 Index (Yahoo)'},
   {sym:'NQ1! Futures',  name:'Nasdaq 100 E-mini Futures (CME)'},
   {sym:'DJI Index',     name:'Dow Jones Industrial (TVC)'},
@@ -27181,7 +27182,7 @@ window._setChartInterval = async function(interval) {
     };
     const tvSymMap = {
         // ── Global Indices ────────────────────────────────────────────────────
-        'SPX':'CBOE:SPX','NDX':'NASDAQ:NDX','DJI':'DJ:DJI','RUT':'TVC:RUT',
+        'SPX':'SPREADEX:SPX','NDX':'NASDAQ:NDX','DJI':'DJ:DJI','RUT':'TVC:RUT',
         'VIX':'TVC:VIX','VVIX':'CBOE:VVIX','DAX':'XETR:DAX','NI225':'TVC:NI225',
         'FTSE':'TVC:UKX','CAC':'TVC:CAC40','HSI':'TVC:HSI','NIFTY':'NSE:NIFTY',
         'ES1':'CME_MINI:ES1!','NQ1':'CME_MINI:NQ1!','YM1':'CME_MINI:YM1!',
