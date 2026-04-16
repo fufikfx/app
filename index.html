@@ -27404,6 +27404,7 @@ window._setChartInterval = async function(interval) {
     // ── Close old feeds ──
     if (window._currentBbgWs) { try{window._currentBbgWs.close();}catch(e){} window._currentBbgWs=null; }
     if (window._ovRefreshTimer) { clearInterval(window._ovRefreshTimer); window._ovRefreshTimer=null; }
+    if (window._startBbgLiveSync) { try { window._startBbgLiveSync(true); } catch(e){} }
     window._firstBbgPrice = 0; window._chigh = -Infinity; window._clow = Infinity; window._cvol = 0;
 
     // ── Formatters ──
@@ -28324,6 +28325,7 @@ window._initBbg = function() {
   window._closeChart = function() {
       if(window._currentBbgWs) { try{window._currentBbgWs.close();}catch(e){} window._currentBbgWs=null; }
       if(window._ovRefreshTimer) { clearInterval(window._ovRefreshTimer); window._ovRefreshTimer=null; }
+      if(window._stopBbgLiveSync) { try{ window._stopBbgLiveSync(); }catch(e){} }
       // Remove maximized FIRST — CSS .maximized has display:flex!important which overrides display:none
       if(panel) panel.classList.remove('maximized');
       const reg=window.PANEL_REGISTRY&&window.PANEL_REGISTRY[pnlId];
@@ -28536,6 +28538,156 @@ window._bbgInstantFill = function(sym) {
 window._bbgFmtP = function(v){ if(!v||isNaN(v)||v<=0)return'—'; return v>=1000?v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):v>=1?parseFloat(v.toFixed(4)).toString():parseFloat(v.toPrecision(5)).toString(); };
 window._bbgFmtV = function(v){ if(!v||isNaN(v)||v<=0)return'—'; return v>=1e9?(v/1e9).toFixed(2)+'B':v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e3?(v/1e3).toFixed(1)+'K':v.toFixed(2); };
 
+window._bbgResolveLiveQuote = function(sym){
+  if(!sym) return null;
+  var raw = String(sym).toUpperCase().replace('/', '').replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i, '').trim();
+  var aliasMap = {
+    'DJI':'INDU','US30':'INDU','SPX500':'SPX','NIKKEI':'NKY','NI225':'NKY','FTSE':'UKX',
+    'GOLD':'XAU','XAUUSD':'XAU','SILVER':'XAG','XAGUSD':'XAG','OIL':'WTI','WTI':'WTI',
+    'BRENT':'BRENT','GAS':'NG','NATGAS':'NG','COPPER':'HG','PLATINUM':'PT','PALLADIUM':'PA'
+  };
+  var cands = [raw];
+  if(aliasMap[raw] && cands.indexOf(aliasMap[raw]) === -1) cands.push(aliasMap[raw]);
+
+  var pick = function(entry, source){
+    if(!entry) return null;
+    var px = parseFloat(entry.px != null ? entry.px : entry.price);
+    if(!(px > 0)) return null;
+    return {
+      px: px,
+      open: parseFloat(entry.open != null ? entry.open : entry.op),
+      hi: parseFloat(entry.hi != null ? entry.hi : entry.high),
+      lo: parseFloat(entry.lo != null ? entry.lo : entry.low),
+      vol: parseFloat(entry.vol != null ? entry.vol : entry.volume),
+      chg: parseFloat(entry.chg != null ? entry.chg : entry.change),
+      source: source || ''
+    };
+  };
+
+  if(typeof CRYPTO !== 'undefined' && Array.isArray(CRYPTO)){
+    for(var i=0;i<cands.length;i++){
+      var cc = CRYPTO.find(function(c){
+        var sid = String(c.id || '').toUpperCase();
+        var ss = String(c.s || '').toUpperCase().replace('USDT','');
+        return sid === cands[i] || ss === cands[i];
+      });
+      var cq = pick(cc, 'CRYPTO');
+      if(cq) return cq;
+    }
+  }
+
+  if(typeof STKS !== 'undefined'){
+    for(var j=0;j<cands.length;j++){
+      var sq = pick(STKS[cands[j]], 'STKS');
+      if(sq) return sq;
+    }
+  }
+
+  if(typeof MKT !== 'undefined'){
+    for(var k=0;k<cands.length;k++){
+      var mk = MKT[cands[k]] || MKT[cands[k] + ' Index'] || MKT[cands[k] + ' Equity'] || MKT[cands[k] + ' Futures'];
+      var mq = pick(mk, 'MKT');
+      if(mq) return mq;
+    }
+  }
+
+  if(typeof IDX_DATA !== 'undefined' && Array.isArray(IDX_DATA)){
+    for(var m=0;m<cands.length;m++){
+      var ix = IDX_DATA.find(function(x){ return String(x.s || '').toUpperCase() === cands[m]; });
+      var iq = pick(ix, 'IDX');
+      if(iq) return iq;
+    }
+  }
+
+  if(typeof COMDTY_DATA !== 'undefined' && Array.isArray(COMDTY_DATA)){
+    for(var n=0;n<cands.length;n++){
+      var cm = COMDTY_DATA.find(function(x){ return String(x.s || '').toUpperCase() === cands[n]; });
+      var cmq = pick(cm, 'COMDTY');
+      if(cmq) return cmq;
+    }
+  }
+
+  if(typeof FXP !== 'undefined' && Array.isArray(FXP)){
+    for(var p=0;p<cands.length;p++){
+      var fx = FXP.find(function(x){ return String((x.p || '').replace('/','')).toUpperCase() === cands[p]; });
+      if(fx && parseFloat(fx.b) > 0){
+        return { px: parseFloat(fx.b), open: NaN, hi: NaN, lo: NaN, vol: NaN, chg: parseFloat(fx.c != null ? fx.c : fx.chg), source: 'FXP' };
+      }
+    }
+  }
+
+  if(window._l1Data){
+    var l1 = window._l1Data;
+    if(raw === 'SPX' && parseFloat(l1.sp) > 0) return { px: parseFloat(l1.sp), open: NaN, hi: NaN, lo: NaN, vol: NaN, chg: NaN, source: 'L1' };
+    if((raw === 'DJI' || raw === 'INDU') && parseFloat(l1.dji) > 0) return { px: parseFloat(l1.dji), open: NaN, hi: NaN, lo: NaN, vol: NaN, chg: NaN, source: 'L1' };
+    if(raw === 'NDX' && parseFloat(l1.ndx) > 0) return { px: parseFloat(l1.ndx), open: NaN, hi: NaN, lo: NaN, vol: NaN, chg: NaN, source: 'L1' };
+    if((raw === 'GOLD' || raw === 'XAU') && parseFloat(l1.gold) > 0) return { px: parseFloat(l1.gold), open: NaN, hi: NaN, lo: NaN, vol: NaN, chg: NaN, source: 'L1' };
+  }
+
+  return null;
+};
+
+window._bbgSyncActivePanelQuote = function(force){
+  var panel = document.getElementById('bbg-chart-panel');
+  if(!panel || panel.style.display === 'none') return;
+  var sym = window._bbgActiveSym || window._bbgCurrentSym;
+  if(!sym) return;
+  var quote = window._bbgResolveLiveQuote(sym);
+  if(!quote || !(quote.px > 0)) return;
+
+  var fmtP = window._bbgFmtP;
+  var fmtV = window._bbgFmtV;
+  var setEl = function(id, val){ if(val == null) return; var el = document.getElementById(id); if(el) el.innerText = val; };
+  var samePx = window._bbgLastSyncedPx === quote.px;
+  if(!force && samePx) {
+    var tOnly = document.getElementById('bbg-time');
+    if(tOnly){
+      var nowOnly = new Date();
+      tOnly.innerText = String(nowOnly.getHours()).padStart(2,'0') + ':' + String(nowOnly.getMinutes()).padStart(2,'0');
+    }
+    return;
+  }
+
+  window._bbgLastSyncedPx = quote.px;
+  var up = (isNaN(quote.chg) ? 0 : quote.chg) >= 0;
+  var col = up ? '#00cc44' : '#ff3d3d';
+  var now = new Date();
+  setEl('bbg-time', String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0'));
+  setEl('bbg-current-price', fmtP(quote.px));
+  setEl('bbg-close', fmtP(quote.px));
+  if(quote.open > 0) setEl('bbg-start', fmtP(quote.open));
+  if(quote.hi > 0) setEl('bbg-high', fmtP(quote.hi));
+  if(quote.lo > 0) setEl('bbg-low', fmtP(quote.lo));
+  if(quote.vol > 0) setEl('bbg-volume', fmtV(quote.vol));
+  if(!isNaN(quote.chg)){
+    var chgEl = document.getElementById('bbg-price-change');
+    if(chgEl){ chgEl.innerText = (quote.chg >= 0 ? '+' : '') + quote.chg.toFixed(2) + '%'; chgEl.style.color = col; }
+    var arrow = document.getElementById('bbg-price-arrow');
+    if(arrow){ arrow.innerText = up ? '↑' : '↓'; arrow.style.color = col; }
+    var ctnr = document.getElementById('bbg-current-price-container');
+    if(ctnr) ctnr.style.color = col;
+  }
+  if(quote.open > 0) setEl('ov-open', fmtP(quote.open));
+  setEl('ov-start', fmtP(quote.px));
+  setEl('ov-close', fmtP(quote.px));
+  if(quote.hi > 0) setEl('ov-high', fmtP(quote.hi));
+  if(quote.lo > 0) setEl('ov-low', fmtP(quote.lo));
+};
+
+window._startBbgLiveSync = function(force){
+  if(window._bbgLiveSyncTimer) clearInterval(window._bbgLiveSyncTimer);
+  try { window._bbgSyncActivePanelQuote(force !== false); } catch(e) {}
+  window._bbgLiveSyncTimer = setInterval(function(){
+    try { window._bbgSyncActivePanelQuote(false); } catch(e) {}
+  }, 700);
+};
+
+window._stopBbgLiveSync = function(){
+  if(window._bbgLiveSyncTimer) clearInterval(window._bbgLiveSyncTimer);
+  window._bbgLiveSyncTimer = null;
+  window._bbgLastSyncedPx = null;
+};
+
 
 
 /* ── Chart Settings Overlay ── */
@@ -28594,6 +28746,7 @@ window._openChartForSymbol = function(sym) {
 
     // Store raw symbol globally so _setChartInterval can use it directly
     window._bbgActiveSym = sym;
+    if(window._startBbgLiveSync) { try { window._startBbgLiveSync(true); } catch(e){} }
 
     // Update Titles
     var pairMap = {
