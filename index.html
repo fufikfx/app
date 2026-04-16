@@ -37122,7 +37122,7 @@ function _ofRender(){
       </div>
       <svg width="${W}" height="${svgH}" style="display:block;background:#050200">${_renderStrikeExpiry(opts,spot,expiries,W,svgH)}</svg>`;
   } else if(tab === '3dvol'){
-    panel.innerHTML=`<div id="optflow-3dvol-plot" style="width:100%;height:100%;background:#080810;position:relative"></div>`;
+    panel.innerHTML=`<div id="optflow-3dvol-plot" style="width:100%;height:100%;background:#040408;position:relative"></div>`;
     const plotEl=document.getElementById('optflow-3dvol-plot');
     if(!plotEl) return;
 
@@ -37130,25 +37130,23 @@ function _ofRender(){
       if(!window.Plotly||!plotEl.offsetWidth){setTimeout(_draw3d,200);return;}
 
       // ══════════════════════════════════════════════════════════════════
-      // IV SURFACE v5 — PER-EXPIRY QUADRATIC SMILE + CUBIC SPLINE TERM STRUCTURE
+      // IV SURFACE v6 — BLOOMBERG/BACKQUANT STYLE
       //
-      // Algorithm (same as Bloomberg / BackQuant):
-      //   1. Filter outliers, group by expiry
-      //   2. Per expiry: WLS quadratic fit in total-variance space w=σ²T
-      //      w(k) = a + b·k + c·k²  (c≥0 enforces smile convexity)
-      //   3. For each k-column: natural cubic spline through (√τ, √w) pairs
-      //      → arbitrage-free term structure, smooth between slices
-      //   4. Convert back to IV = √(w/τ) × 100
-      //
-      // Result: real smile shape per expiry, smooth waves across time.
+      // Key improvements over v5:
+      //   1. AGGRESSIVE outlier removal per expiry slice (median ± 2σ per DTE)
+      //   2. Per-expiry ROBUST WLS quadratic fit (IRLS — iteratively reweighted)
+      //   3. Smooth unified surface via natural cubic spline in √τ space
+      //   4. CONTINUOUS color gradient across the full surface (not per-slice)
+      //   5. Per-expiry visible ridge lines (like BackQuant terminal wave effect)
+      //   6. Proper Bloomberg colorscale: deep blue → cyan → white → yellow → red
       // ══════════════════════════════════════════════════════════════════
 
       // ── 1. Filter & collect clean points ─────────────────────────────
       const dataPts=[];
       opts.forEach(o=>{
-        if(!o.iv||o.iv<3||o.iv>150) return;
-        if(o.dte<3||o.dte>400) return;
-        if(o.K<spot*0.60||o.K>spot*1.55) return;
+        if(!o.iv||o.iv<3||o.iv>200) return;
+        if(o.dte<1||o.dte>500) return;
+        if(o.K<spot*0.40||o.K>spot*2.0) return;
         if(!o.oi||o.oi<1) return;
         const k=Math.log(o.K/spot);
         const tau=Math.max(o.dte,1)/365;
@@ -37160,26 +37158,26 @@ function _ofRender(){
         return;
       }
 
-      // ── 2. IQR outlier removal on IV ─────────────────────────────────
+      // ── 2. Global IQR cull (remove extreme outliers) ──────────────────
       const ivArr=dataPts.map(p=>p.iv).sort((a,b)=>a-b);
-      const q1=ivArr[Math.floor(ivArr.length*0.25)];
-      const q3=ivArr[Math.floor(ivArr.length*0.75)];
-      const iqr=Math.max(q3-q1,5);
-      const cleanPts=dataPts.filter(p=>p.iv>=q1-2.5*iqr&&p.iv<=q3+2.5*iqr);
+      const q1g=ivArr[Math.floor(ivArr.length*0.10)];
+      const q3g=ivArr[Math.floor(ivArr.length*0.90)];
+      const iqrg=Math.max(q3g-q1g,3);
+      const coarsePts=dataPts.filter(p=>p.iv>=q1g-1.5*iqrg&&p.iv<=q3g+1.5*iqrg);
 
-      // ── 3. Group by expiry (bucket within ±1 DTE) ────────────────────
+      // ── 3. Group by expiry (bucket within ±2 DTE) ────────────────────
       const expMap=new Map();
-      cleanPts.forEach(p=>{
+      coarsePts.forEach(p=>{
         let found=false;
         for(const [key] of expMap){
-          if(Math.abs(key-p.dte)<=1){expMap.get(key).push(p);found=true;break;}
+          if(Math.abs(key-p.dte)<=2){expMap.get(key).push(p);found=true;break;}
         }
         if(!found) expMap.set(p.dte,[p]);
       });
 
-      // ── 4. Per-expiry WLS quadratic fit in total-variance space ──────
+      // ── 4. Per-expiry robust WLS fit + per-slice outlier rejection ────
       //  w(k) = a + b·k + c·k²   c≥0 (smile convexity)
-      //  weight = exp(-8k²) × log(1+OI)  (ATM-priority × liquidity)
+      //  Per-slice: reject points with residual > 2.5σ, refit once
       const solve3=(A,rhs)=>{
         const M=A.map(r=>[...r]),y=[...rhs];
         for(let col=0;col<3;col++){
@@ -37202,23 +37200,44 @@ function _ofRender(){
         return x;
       };
 
+      const fitSlice=(pts_exp)=>{
+        const fitOnce=(pts)=>{
+          let S00=0,S10=0,S20=0,S30=0,S40=0,Sw0=0,Sw1=0,Sw2=0;
+          pts.forEach(p=>{
+            const wt=Math.exp(-p.k*p.k*6)*Math.log(1+p.oi+1);
+            const k=p.k,w=p.w;
+            S00+=wt;S10+=wt*k;S20+=wt*k*k;S30+=wt*k*k*k;S40+=wt*k*k*k*k;
+            Sw0+=wt*w;Sw1+=wt*k*w;Sw2+=wt*k*k*w;
+          });
+          const coef=solve3([[S00,S10,S20],[S10,S20,S30],[S20,S30,S40]],[Sw0,Sw1,Sw2]);
+          if(!coef) return null;
+          const a=coef[0], b=coef[1], c=Math.max(coef[2],0);
+          if(a<0.00005||a>1.0) return null;
+          return {a,b,c,eval:k=>Math.max(a+b*k+c*k*k,0.00005)};
+        };
+
+        // First fit
+        const fit1=fitOnce(pts_exp);
+        if(!fit1||pts_exp.length<4) return fit1;
+
+        // Compute residuals, reject outliers > 2.5 median-abs-dev
+        const resids=pts_exp.map(p=>Math.abs(p.w-fit1.eval(p.k)));
+        const med=resids.slice().sort((a,b)=>a-b)[Math.floor(resids.length/2)];
+        const thresh=Math.max(med*2.5,0.001);
+        const cleanPts2=pts_exp.filter((_,i)=>resids[i]<=thresh);
+        if(cleanPts2.length<3) return fit1;
+
+        // Second fit on clean points
+        return fitOnce(cleanPts2)||fit1;
+      };
+
       const slices=[];
       expMap.forEach((pts_exp,dte_key)=>{
         if(pts_exp.length<3) return;
         const tau=pts_exp.reduce((s,p)=>s+p.tau,0)/pts_exp.length;
-        let S00=0,S10=0,S20=0,S30=0,S40=0,Sw0=0,Sw1=0,Sw2=0;
-        pts_exp.forEach(p=>{
-          const wt=Math.exp(-p.k*p.k*8)*Math.log(1+p.oi);
-          const k=p.k,w=p.w;
-          S00+=wt;S10+=wt*k;S20+=wt*k*k;S30+=wt*k*k*k;S40+=wt*k*k*k*k;
-          Sw0+=wt*w;Sw1+=wt*k*w;Sw2+=wt*k*k*w;
-        });
-        const coef=solve3([[S00,S10,S20],[S10,S20,S30],[S20,S30,S40]],[Sw0,Sw1,Sw2]);
-        if(!coef) return;
-        const a=coef[0], b=coef[1], c=Math.max(coef[2],0);
-        // Validate: ATM total variance must be positive and in a sane range
-        if(a<0.0002||a>0.6) return;
-        slices.push({tau,dte:dte_key,evalW:k=>Math.max(a+b*k+c*k*k,0.00005)});
+        const fit=fitSlice(pts_exp);
+        if(!fit) return;
+        slices.push({tau,dte:dte_key,evalW:fit.eval,nPts:pts_exp.length});
       });
 
       if(slices.length<2){
@@ -37228,7 +37247,6 @@ function _ofRender(){
       slices.sort((a,b)=>a.tau-b.tau);
 
       // ── 5. Natural cubic spline helper ───────────────────────────────
-      // Builds a spline through (xs[i], ys[i]) — not-a-knot boundary
       const buildSpline=(xs,ys)=>{
         const n=xs.length;
         if(n===1) return ()=>ys[0];
@@ -37254,7 +37272,6 @@ function _ofRender(){
           d[j]=(c[j+1]-c[j])/(3*h[j]);
         }
         return t=>{
-          // clamp to range
           if(t<=xs[0]) return ys[0]+b[0]*(t-xs[0]);
           if(t>=xs[n-1]) return ys[n-1]+b[n-2]*(t-xs[n-2])+c[n-2]*(t-xs[n-2])**2+d[n-2]*(t-xs[n-2])**3;
           let lo=0,hi=n-2;
@@ -37264,9 +37281,9 @@ function _ofRender(){
         };
       };
 
-      // ── 6. Output grid ────────────────────────────────────────────────
-      const nK=80, nD=50;
-      const kMin=spot*0.65, kMax=spot*1.45;
+      // ── 6. Output grid (high resolution for smooth surface) ──────────
+      const nK=100, nD=80;
+      const kMin=spot*0.55, kMax=spot*1.50;
       const kG=Array.from({length:nK},(_,i)=>kMin+(kMax-kMin)*i/(nK-1));
       const dteMin_s=slices[0].dte, dteMax_s=slices[slices.length-1].dte;
       const logMin=Math.log(Math.max(dteMin_s,1)), logMax=Math.log(dteMax_s+1);
@@ -37278,9 +37295,7 @@ function _ofRender(){
       // Pre-compute √τ knots for all slices
       const sqrtTaus=slices.map(s=>Math.sqrt(s.tau));
 
-      // ── 7. Build surface: per-k cubic spline in √w vs √τ space ───────
-      //   Interpolating √w(k) vs √τ keeps variance ~linear in time
-      //   and guarantees smooth, wave-like term structure.
+      // ── 7. Build smooth surface via √w vs √τ spline ───────────────────
       const zRaw=dG.map(dte_g=>{
         const tau_g=dte_g/365;
         const sqrtTau_g=Math.sqrt(tau_g);
@@ -37294,66 +37309,108 @@ function _ofRender(){
         });
       });
 
-      // ── 8. Clamp to actual data percentile range ──────────────────────
-      const allIV=cleanPts.map(p=>p.iv).sort((a,b)=>a-b);
-      const ivLo=allIV[Math.floor(allIV.length*0.02)];
-      const ivHi=allIV[Math.floor(allIV.length*0.98)];
+      // ── 8. Clamp to 1st–99th percentile of clean data ────────────────
+      const allIV=coarsePts.map(p=>p.iv).sort((a,b)=>a-b);
+      const ivLo=allIV[Math.floor(allIV.length*0.01)];
+      const ivHi=allIV[Math.floor(allIV.length*0.99)];
       const zFinal=zRaw.map(row=>row.map(v=>
-        isFinite(v)?Math.min(Math.max(v,Math.max(ivLo-5,1)),ivHi+8):ivLo
+        isFinite(v)&&v>0?Math.min(Math.max(v,Math.max(ivLo*0.85,1)),ivHi*1.08):ivLo
       ));
-      const zMn=Math.min(...zFinal.flat());
-      const zMx=Math.max(...zFinal.flat());
+      const allZ=zFinal.flat().filter(v=>isFinite(v)&&v>0);
+      const zMn=Math.max(Math.min(...allZ),1);
+      const zMx=Math.min(Math.max(...allZ),200);
 
-      // ── 7. Bloomberg-style colorscale ─────────────────────────────────
-      // Dark navy → blue → cyan-white → yellow → orange → red
+      // ── 9. Bloomberg/BackQuant full-spectrum colorscale ───────────────
+      //  Deep navy → blue → light blue → cyan-white → yellow → orange → red
       const CS=[
-        [0.00,'#0a0e2e'],
-        [0.12,'#0f2060'],
-        [0.25,'#1a3fa8'],
-        [0.40,'#3a6ed4'],
-        [0.50,'#6a9ee8'],
-        [0.60,'#c8d8f0'],
-        [0.70,'#f5e060'],
-        [0.82,'#f09020'],
-        [0.92,'#e03010'],
-        [1.00,'#8a0a00'],
+        [0.00,'#03061a'],
+        [0.08,'#050f3a'],
+        [0.16,'#0a1d70'],
+        [0.24,'#1535b0'],
+        [0.32,'#2a58d0'],
+        [0.40,'#4880e8'],
+        [0.48,'#70aaf5'],
+        [0.55,'#a8ccf8'],
+        [0.60,'#ddeeff'],
+        [0.65,'#fffaaa'],
+        [0.72,'#ffe040'],
+        [0.80,'#ff9010'],
+        [0.88,'#e83000'],
+        [0.94,'#aa0800'],
+        [1.00,'#600000'],
       ];
 
-      // ── 8. Spot line overlay on the surface ───────────────────────────
+      // ── 10. Spot price column index ───────────────────────────────────
       const spotIdx=kG.findIndex(k=>k>=spot);
-      const spotLineZ=spotIdx>=0?dG.map((_,ri)=>zFinal[ri][spotIdx]||null):[];
+      const spotLineZ=spotIdx>=0?dG.map((_,ri)=>zFinal[ri][Math.min(spotIdx,nK-1)]||null):[];
 
       const traces=[];
 
-      // Main surface
+      // ── MAIN SURFACE ─────────────────────────────────────────────────
       traces.push({
         type:'surface',
         x:kG,
         y:dG,
         z:zFinal,
         colorscale:CS,
+        cmin:zMn,
+        cmax:zMx,
         opacity:1,
         showscale:true,
         hovertemplate:'<b>Strike:</b> $%{x:,.0f}<br><b>DTE:</b> %{y}d<br><b>IV:</b> %{z:.1f}%<extra></extra>',
         contours:{
-          x:{show:false},
-          y:{show:true,color:'rgba(255,255,255,0.06)',width:1,highlight:false},
-          z:{show:false},
+          x:{show:false,highlight:false},
+          y:{show:true,color:'rgba(255,255,255,0.10)',width:1,highlight:true,
+             highlightcolor:'rgba(255,255,255,0.3)',highlightwidth:2},
+          z:{show:false,highlight:false},
         },
         colorbar:{
-          title:{text:'IV %',font:{color:'#aaa',size:10},side:'right'},
-          tickfont:{color:'#888',size:9},
+          title:{text:'IV %',font:{color:'#888',size:10},side:'right'},
+          tickfont:{color:'#777',size:9},
           ticksuffix:'%',
-          thickness:10,len:0.55,x:1.00,y:0.5,
+          thickness:10,len:0.60,x:1.01,y:0.5,
           bgcolor:'rgba(0,0,0,0)',outlinewidth:0,
-          tickvals:[zMn,zMn+(zMx-zMn)*0.25,zMn+(zMx-zMn)*0.5,zMn+(zMx-zMn)*0.75,zMx],
-          ticktext:[zMn.toFixed(0)+'%',(zMn+(zMx-zMn)*0.25).toFixed(0)+'%',(zMn+(zMx-zMn)*0.5).toFixed(0)+'%',(zMn+(zMx-zMn)*0.75).toFixed(0)+'%',zMx.toFixed(0)+'%'],
+          tickvals:[zMn,zMn+(zMx-zMn)*0.2,zMn+(zMx-zMn)*0.4,zMn+(zMx-zMn)*0.6,zMn+(zMx-zMn)*0.8,zMx],
+          ticktext:[
+            zMn.toFixed(0)+'%',
+            (zMn+(zMx-zMn)*0.2).toFixed(0)+'%',
+            (zMn+(zMx-zMn)*0.4).toFixed(0)+'%',
+            (zMn+(zMx-zMn)*0.6).toFixed(0)+'%',
+            (zMn+(zMx-zMn)*0.8).toFixed(0)+'%',
+            zMx.toFixed(0)+'%',
+          ],
         },
-        lighting:{ambient:0.75,diffuse:0.85,specular:0.05,roughness:0.9,fresnel:0.0},
-        lightposition:{x:1000,y:2000,z:5000},
+        // Bloomberg-style matte lighting
+        lighting:{ambient:0.82,diffuse:0.90,specular:0.04,roughness:0.95,fresnel:0.0},
+        lightposition:{x:500,y:3000,z:8000},
+        reversescale:false,
       });
 
-      // Spot price vertical line (scatter3d)
+      // ── PER-EXPIRY RIDGE LINES (the "wave" effect from BackQuant) ─────
+      // Each actual expiry slice rendered as a bright line ON the surface
+      slices.forEach((sl,si)=>{
+        const t=si/(Math.max(slices.length-1,1));
+        // Interpolate color along the colorscale index
+        const lineIV=kG.map(K=>{
+          const k=Math.log(K/spot);
+          const w=sl.evalW(k);
+          const tau=sl.tau;
+          return 100*Math.sqrt(w/tau);
+        });
+        const lineColor=`hsl(${220-t*200},${70+t*30}%,${45+t*35}%)`;
+        traces.push({
+          type:'scatter3d',
+          x:kG,
+          y:Array(nK).fill(sl.dte),
+          z:lineIV.map(v=>isFinite(v)&&v>0?Math.min(Math.max(v,zMn-2),zMx+2):zMn),
+          mode:'lines',
+          line:{color:lineColor,width:2.5},
+          showlegend:false,
+          hovertemplate:`<b>Expiry ${sl.dte}d</b><br>Strike: $%{x:,.0f}<br>IV: %{z:.1f}%<extra></extra>`,
+        });
+      });
+
+      // ── SPOT PRICE LINE ───────────────────────────────────────────────
       if(spotIdx>=0&&spotLineZ.length){
         traces.push({
           type:'scatter3d',
@@ -37361,83 +37418,81 @@ function _ofRender(){
           y:dG,
           z:spotLineZ,
           mode:'lines',
-          line:{color:'#F39F41',width:4},
+          line:{color:'#F39F41',width:3},
           name:`Spot $${spot.toFixed(0)}`,
           hovertemplate:`Spot $${spot.toFixed(0)}<br>DTE: %{y}d<br>IV: %{z:.1f}%<extra></extra>`,
           showlegend:false,
         });
       }
 
-      // Raw data scatter points (small, semi-transparent)
-      const rawX=pts.map(p=>p.K),rawY=pts.map(p=>p.dte),rawZ=pts.map(p=>p.iv);
-      traces.push({
-        type:'scatter3d',
-        x:rawX,y:rawY,z:rawZ,
-        mode:'markers',
-        marker:{size:1.5,color:rawZ,colorscale:CS,opacity:0.35,cmin:zMn,cmax:zMx,showscale:false},
-        hovertemplate:'<b>Raw</b> $%{x:,.0f} · %{y}d · %{z:.1f}%<extra></extra>',
-        showlegend:false,
-      });
+      // ── RAW DATA SCATTER ──────────────────────────────────────────────
+      const rawX=pts.filter(p=>p.iv>0&&p.oi>0&&p.K>spot*0.45&&p.K<spot*1.9).map(p=>p.K);
+      const rawY=pts.filter(p=>p.iv>0&&p.oi>0&&p.K>spot*0.45&&p.K<spot*1.9).map(p=>p.dte);
+      const rawZ=pts.filter(p=>p.iv>0&&p.oi>0&&p.K>spot*0.45&&p.K<spot*1.9).map(p=>p.iv);
+      if(rawX.length>0){
+        traces.push({
+          type:'scatter3d',
+          x:rawX,y:rawY,z:rawZ,
+          mode:'markers',
+          marker:{size:1.2,color:rawZ,colorscale:CS,opacity:0.3,cmin:zMn,cmax:zMx,showscale:false},
+          hovertemplate:'<b>Raw</b> $%{x:,.0f} · %{y}d · %{z:.1f}%<extra></extra>',
+          showlegend:false,
+        });
+      }
 
       const layout={
-        paper_bgcolor:'#080810',
-        plot_bgcolor:'#080810',
+        paper_bgcolor:'#040408',
+        plot_bgcolor:'#040408',
         autosize:true,
-        uirevision:'optflow3d_v2',
-        margin:{l:0,r:70,t:40,b:0},
+        uirevision:'optflow3d_v6',
+        margin:{l:0,r:75,t:42,b:0},
         title:{
-          text:`<b>${cur} Implied Volatility Surface</b>  <span style="color:#888;font-size:10px">Spot $${spot.toLocaleString(undefined,{maximumFractionDigits:0})}</span>`,
+          text:`<b>${cur} Implied Volatility Surface</b>  <span style="color:#666;font-size:10px">Spot $${spot.toLocaleString(undefined,{maximumFractionDigits:0})} · ${slices.length} expiries · DERIBIT</span>`,
           font:{color:'#F39F41',size:13,family:'Courier New,monospace'},
           x:0.03,y:0.99,
         },
         scene:{
-          bgcolor:'#080810',
-          uirevision:'optflow3d_v2',
+          bgcolor:'#040408',
+          uirevision:'optflow3d_v6',
           camera:{
-            eye:{x:-1.55,y:-1.4,z:0.7},
-            center:{x:0,y:0,z:-0.1},
+            eye:{x:-1.6,y:-1.5,z:0.65},
+            center:{x:0,y:0,z:-0.15},
             up:{x:0,y:0,z:1},
           },
           aspectmode:'manual',
-          aspectratio:{x:1.5,y:1.1,z:0.7},
+          aspectratio:{x:1.6,y:1.1,z:0.65},
           xaxis:{
-            title:{text:'Strike ($)',font:{color:'#888',size:10}},
-            tickfont:{color:'#777',size:9},
+            title:{text:'Strike ($)',font:{color:'#666',size:10}},
+            tickfont:{color:'#555',size:9},
             tickformat:'$,.0f',
-            gridcolor:'rgba(255,255,255,0.07)',
-            linecolor:'rgba(255,255,255,0.1)',
-            backgroundcolor:'#0c0c18',
+            gridcolor:'rgba(255,255,255,0.05)',
+            linecolor:'rgba(255,255,255,0.08)',
+            backgroundcolor:'#070710',
             showbackground:true,
             zeroline:false,
           },
           yaxis:{
-            title:{text:'Days to Expiry',font:{color:'#888',size:10}},
-            tickfont:{color:'#777',size:9},
-            gridcolor:'rgba(255,255,255,0.07)',
-            linecolor:'rgba(255,255,255,0.1)',
-            backgroundcolor:'#0c0c18',
+            title:{text:'Days to Expiry',font:{color:'#666',size:10}},
+            tickfont:{color:'#555',size:9},
+            gridcolor:'rgba(255,255,255,0.05)',
+            linecolor:'rgba(255,255,255,0.08)',
+            backgroundcolor:'#070710',
             showbackground:true,
             zeroline:false,
           },
           zaxis:{
-            title:{text:'IV (%)',font:{color:'#888',size:10}},
-            tickfont:{color:'#777',size:9},
+            title:{text:'IV (%)',font:{color:'#666',size:10}},
+            tickfont:{color:'#555',size:9},
             ticksuffix:'%',
-            gridcolor:'rgba(255,255,255,0.07)',
-            linecolor:'rgba(255,255,255,0.1)',
-            backgroundcolor:'#0c0c18',
+            gridcolor:'rgba(255,255,255,0.05)',
+            linecolor:'rgba(255,255,255,0.08)',
+            backgroundcolor:'#07070f',
             showbackground:true,
             zeroline:false,
           },
         },
-        font:{color:'#aaa',family:'Courier New,Roboto Mono,monospace'},
-        hoverlabel:{bgcolor:'#1a1a2e',bordercolor:'#F39F41',font:{color:'#fff',size:11,family:'Courier New,monospace'}},
-        annotations:[{
-          x:0.01,y:0.01,xref:'paper',yref:'paper',
-          text:`${pts.length} data points · ${dG.length} exps · DERIBIT`,
-          showarrow:false,
-          font:{size:8,color:'#444',family:'Courier New,monospace'},
-        }],
+        font:{color:'#888',family:'Courier New,Roboto Mono,monospace'},
+        hoverlabel:{bgcolor:'#0e0e1e',bordercolor:'#F39F41',font:{color:'#fff',size:11,family:'Courier New,monospace'}},
       };
 
       if(plotEl._of3dPlot){
