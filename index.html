@@ -5911,15 +5911,12 @@ map.on('mousemove',e=>{document.getElementById('st-coord').textContent=`${e.latl
 map.on('click', function(){ closeAllMenus(); map.closePopup(); });
 function flyTo(c,z){map.flyTo(c,z,{duration:2.5, easeLinearity:0.05});}
 
-const LG={mkt:L.layerGroup().addTo(map),fx:L.layerGroup().addTo(map),news:L.layerGroup().addTo(map),lbl:L.layerGroup().addTo(map),cb:L.layerGroup().addTo(map),cables:L.layerGroup().addTo(map)};
-const LV={mkt:true,fx:true,news:true,lbl:true,cb:true,cables:true};
-const LYR_LABELS={mkt:'MKT',news:'NEWS',lbl:'LABELS',cb:'CENTRAL BANKS',cables:'POWER CABLES'};
+const LG={mkt:L.layerGroup().addTo(map),fx:L.layerGroup().addTo(map),news:L.layerGroup().addTo(map),lbl:L.layerGroup().addTo(map),cb:L.layerGroup().addTo(map)};
+const LV={mkt:true,fx:true,news:true,lbl:true,cb:true};
+const LYR_LABELS={mkt:'MKT',news:'NEWS',lbl:'LABELS',cb:'CENTRAL BANKS'};
 
-/* ═══════════════════════════════════════════════════════
-   UNDERGROUND POWER CABLES LAYER — OpenStreetMap/Overpass
-   Zdroj: OpenStreetMap · power=cable (podzemní vedení)
-═══════════════════════════════════════════════════════ */
-(function(){
+/* POWER CABLES LAYER REMOVED */
+(function(){ return; // disabled
   const CABLE_STYLE = {
     color:'#F39F41', weight:1.8, opacity:0.72,
     dashArray:'6,3', lineCap:'round', lineJoin:'round'
