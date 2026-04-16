@@ -28275,6 +28275,27 @@ window._initBbg = function() {
             chgEl.innerText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
             chgEl.style.color = chg >= 0 ? '#4caf50' : '#f44336';
           }
+          // ── Sync TV price back into MKT / ticker tape / _l1Data ──────────
+          // so the ticker ribbon & sidebar always show the SAME price as the chart
+          var activeSym = window._bbgActiveSym || window._bbgCurrentSym || '';
+          if (activeSym && typeof MKT !== 'undefined') {
+            // Update MKT entry for this symbol
+            var mktKey = activeSym;
+            if (MKT[mktKey]) { MKT[mktKey].px = lp; if (chg) MKT[mktKey].chg = chg; }
+            // Also update the "Index" variant (e.g. "SPX Index")
+            if (MKT[mktKey + ' Index']) { MKT[mktKey + ' Index'].px = lp; }
+            // Sync _l1Data fields for SPX / NDX / DJI
+            if (window._l1Data) {
+              if (mktKey === 'SPX')  window._l1Data.sp  = lp.toFixed(2);
+              if (mktKey === 'NDX')  window._l1Data.ndx = lp.toFixed(2);
+              if (mktKey === 'INDU') window._l1Data.dji = lp.toFixed(2);
+              if (mktKey === 'BTC')  window._l1Data.btc = lp;
+            }
+            // Push to ticker tape
+            if (typeof _tkUp === 'function')     _tkUp('m-' + mktKey, lp, chg || 0);
+            if (typeof updateCoin === 'function') updateCoin(mktKey, { px: lp, chg }, 'tv', 0);
+          }
+          // ─────────────────────────────────────────────────────────────────
         }
       }
     } catch(e){}
@@ -28782,7 +28803,221 @@ window.refreshLivePanels = function() {
 
 // 5s loop
 setInterval(masterUpdate, 5000);
-masterUpdate(); 
+masterUpdate();
+
+// ══════════════════════════════════════════════════════════════════
+//  TV LIVE QUOTES v2.0 — TradingView Real-Time WebSocket Bridge
+//  Subscribes to ALL terminal assets via TradingView's data feed.
+//  Injects every tick into: MKT · CRYPTO · FXP · COMDTY · ticker
+//  Same data source as TradingView charts — prices are identical.
+// ══════════════════════════════════════════════════════════════════
+(function() {
+  'use strict';
+
+  // ── Terminal symbol → TradingView symbol ──────────────────────────
+  const SYM_MAP = {
+    // Crypto (Binance spot — same feed as TV charts)
+    BTC:'BINANCE:BTCUSDT',   ETH:'BINANCE:ETHUSDT',   SOL:'BINANCE:SOLUSDT',
+    BNB:'BINANCE:BNBUSDT',   XRP:'BINANCE:XRPUSDT',   ADA:'BINANCE:ADAUSDT',
+    TRX:'BINANCE:TRXUSDT',   AVAX:'BINANCE:AVAXUSDT', NEAR:'BINANCE:NEARUSDT',
+    APT:'BINANCE:APTUSDT',   SUI:'BINANCE:SUIUSDT',   ICP:'BINANCE:ICPUSDT',
+    LINK:'BINANCE:LINKUSDT', DOT:'BINANCE:DOTUSDT',   UNI:'BINANCE:UNIUSDT',
+    LTC:'BINANCE:LTCUSDT',   XLM:'BINANCE:XLMUSDT',   ATOM:'BINANCE:ATOMUSDT',
+    ARB:'BINANCE:ARBUSDT',   OP:'BINANCE:OPUSDT',     INJ:'BINANCE:INJUSDT',
+    FTM:'BINANCE:FTMUSDT',   ALGO:'BINANCE:ALGOUSDT', VET:'BINANCE:VETUSDT',
+    AAVE:'BINANCE:AAVEUSDT', LDO:'BINANCE:LDOUSDT',   MKR:'BINANCE:MKRUSDT',
+    CRV:'BINANCE:CRVUSDT',   GMX:'BINANCE:GMXUSDT',   JUP:'BINANCE:JUPUSDT',
+    SEI:'BINANCE:SEIUSDT',   GRT:'BINANCE:GRTUSDT',   ENA:'BINANCE:ENAUSDT',
+    ONDO:'BINANCE:ONDOUSDT', TIA:'BINANCE:TIAUSDT',   PEPE:'BINANCE:PEPEUSDT',
+    WIF:'BINANCE:WIFUSDT',   BONK:'BINANCE:BONKUSDT', WLD:'BINANCE:WLDUSDT',
+    FET:'BINANCE:FETUSDT',   RENDER:'BINANCE:RENDERUSDT',
+    IMX:'BINANCE:IMXUSDT',   PYTH:'BINANCE:PYTHUSDT', JTO:'BINANCE:JTOUSDT',
+    STRK:'BINANCE:STRKUSDT', FIL:'BINANCE:FILUSDT',   KAS:'BINANCE:KASUSDT',
+    BCH:'BINANCE:BCHUSDT',   ZEC:'BINANCE:ZECUSDT',   ETC:'BINANCE:ETCUSDT',
+    TON:'BINANCE:TONUSDT',   DOGE:'BINANCE:DOGEUSDT', HYPE:'BINANCE:HYPEUSDT',
+    OM:'BINANCE:OMUSDT',
+    // US Indices
+    SPX:'SPREADEX:SPX',      NDX:'NASDAQ:NDX',        DJI:'DJ:DJI',
+    VIX:'TVC:VIX',           RUT:'TVC:RUT',           INDU:'DJ:DJI',
+    // Global Indices
+    DAX:'XETR:DAX',          NKY:'TVC:NI225',         HSI:'TVC:HSI',
+    UKX:'TVC:UKX',           CAC:'EURONEXT:PX1',      SX5E:'TVC:SX5E',
+    ASX200:'ASX:XJO',        KOSPI:'KRX:KOSPI',       SENSEX:'BSE:SENSEX',
+    IBOV:'BMFBOVESPA:IBOV',
+    // US Equities — Mag 7 + key stocks
+    AAPL:'NASDAQ:AAPL',  NVDA:'NASDAQ:NVDA',  MSFT:'NASDAQ:MSFT',
+    GOOGL:'NASDAQ:GOOGL',AMZN:'NASDAQ:AMZN',  META:'NASDAQ:META',
+    TSLA:'NASDAQ:TSLA',  BRK:'NYSE:BRK.B',    JPM:'NYSE:JPM',
+    V:'NYSE:V',          MA:'NYSE:MA',         UNH:'NYSE:UNH',
+    LLY:'NYSE:LLY',      NFLX:'NASDAQ:NFLX',  AMD:'NASDAQ:AMD',
+    INTC:'NASDAQ:INTC',  CRM:'NYSE:CRM',       ORCL:'NYSE:ORCL',
+    ADBE:'NASDAQ:ADBE',  UBER:'NYSE:UBER',     XOM:'NYSE:XOM',
+    CVX:'NYSE:CVX',      WMT:'NYSE:WMT',       COST:'NASDAQ:COST',
+    KO:'NYSE:KO',        HD:'NYSE:HD',         GS:'NYSE:GS',
+    BAC:'NYSE:BAC',      WFC:'NYSE:WFC',       MS:'NYSE:MS',
+    MSTR:'NASDAQ:MSTR',  COIN:'NASDAQ:COIN',   SPY:'AMEX:SPY',
+    QQQ:'NASDAQ:QQQ',    GLD:'AMEX:GLD',       PLTR:'NYSE:PLTR',
+    HOOD:'NASDAQ:HOOD',  IBIT:'NASDAQ:IBIT',   SOFI:'NASDAQ:SOFI',
+    UPST:'NASDAQ:UPST',  AFRM:'NASDAQ:AFRM',   SQ:'NYSE:SQ',
+    PYPL:'NASDAQ:PYPL',  SNOW:'NYSE:SNOW',     DDOG:'NASDAQ:DDOG',
+    NET:'NYSE:NET',      CRWD:'NASDAQ:CRWD',   AVGO:'NASDAQ:AVGO',
+    QCOM:'NASDAQ:QCOM',  MU:'NASDAQ:MU',       TXN:'NASDAQ:TXN',
+    LMT:'NYSE:LMT',      RTX:'NYSE:RTX',       NOC:'NYSE:NOC',
+    GD:'NYSE:GD',        BA:'NYSE:BA',
+    MRNA:'NASDAQ:MRNA',  REGN:'NASDAQ:REGN',   VRTX:'NASDAQ:VRTX',
+    AMGN:'NASDAQ:AMGN',  DIS:'NYSE:DIS',       NEM:'NYSE:NEM',
+    FCX:'NYSE:FCX',      JNJ:'NYSE:JNJ',       ABBV:'NYSE:ABBV',
+    PFE:'NASDAQ:PFE',    MRK:'NYSE:MRK',
+    // Forex
+    EURUSD:'FX:EURUSD',  GBPUSD:'FX:GBPUSD',  USDJPY:'FX:USDJPY',
+    AUDUSD:'FX:AUDUSD',  USDCAD:'FX:USDCAD',  USDCHF:'FX:USDCHF',
+    NZDUSD:'FX:NZDUSD',  EURGBP:'FX:EURGBP',  EURJPY:'FX:EURJPY',
+    GBPJPY:'FX:GBPJPY',  USDMXN:'FX:USDMXN',  USDBRL:'FX_IDC:USDBRL',
+    USDZAR:'FX:USDZAR',  USDTRY:'FX:USDTRY',  USDINR:'FX_IDC:USDINR',
+    // Commodities
+    GOLD:'TVC:GOLD',     SILVER:'TVC:SILVER',  OIL:'TVC:USOIL',
+    WTI:'TVC:USOIL',     BRENT:'TVC:UKOIL',    NATGAS:'TVC:NATURALGAS',
+    COPPER:'TVC:COPPER', WHEAT:'CBOT:ZW1!',    CORN:'CBOT:ZC1!',
+    PLATINUM:'TVC:PLATINUM', PALLADIUM:'TVC:PALLADIUM',
+    // Bonds
+    US10Y:'TVC:US10Y',   US2Y:'TVC:US02Y',     US30Y:'TVC:US30Y',
+    US5Y:'TVC:US05Y',
+    // Futures
+    ES1:'CME_MINI:ES1!', NQ1:'CME_MINI:NQ1!',  YM1:'CBOT_MINI:YM1!',
+  };
+
+  // Reverse: tvSym → terminalSym
+  const TV_TO_TERM = {};
+  for (const [t, tv] of Object.entries(SYM_MAP)) TV_TO_TERM[tv] = t;
+
+  // FX pairs that need FXP update
+  const FX_SYMS = new Set(['EURUSD','GBPUSD','USDJPY','AUDUSD','USDCAD',
+    'USDCHF','NZDUSD','EURGBP','EURJPY','GBPJPY','USDMXN','USDBRL','USDZAR','USDTRY','USDINR']);
+  // Commodity symbols
+  const COMDTY_KEY = {GOLD:'XAU',SILVER:'XAG',OIL:'WTI',WTI:'WTI',BRENT:'BRENT',
+    NATGAS:'NG',COPPER:'HG',PLATINUM:'PT',PALLADIUM:'PA'};
+
+  const WS_URL = 'wss://data.tradingview.com/socket.io/websocket?from=chart%2F&date=2024_03_v2';
+  const QS_ID  = 'qs_' + Math.random().toString(36).slice(2, 14);
+  let _ws = null, _ping = null, _recon = null;
+
+  // ── Message framing ────────────────────────────────────────────────
+  function frame(obj) { const s = JSON.stringify(obj); return '~m~' + s.length + '~m~' + s; }
+  function send(m)     { if (_ws && _ws.readyState === 1) _ws.send(m); }
+  function parseFrames(raw) {
+    const out = []; let i = 0;
+    while (i < raw.length) {
+      const a = raw.indexOf('~m~', i); if (a < 0) break;
+      const b = raw.indexOf('~m~', a+3); if (b < 0) break;
+      const len = parseInt(raw.slice(a+3, b), 10);
+      out.push(raw.slice(b+3, b+3+len));
+      i = b + 3 + len;
+    }
+    return out;
+  }
+
+  // ── Inject price into all terminal data structures ─────────────────
+  function inject(sym, lp, chp, hi, lo, op, vol) {
+    if (!lp || lp <= 0) return;
+
+    // 1. MKT (indices, equities, commodities)
+    if (window.MKT) {
+      if (MKT[sym]) { MKT[sym].px = lp; if (chp != null) MKT[sym].chg = chp; if (hi) MKT[sym].hi = hi; if (lo) MKT[sym].lo = lo; }
+      if (MKT[sym + ' Index']) { MKT[sym + ' Index'].px = lp; }
+      if (MKT[sym + ' Equity'])  { MKT[sym + ' Equity'].px = lp; }
+    }
+
+    // 2. CRYPTO array (crypto assets)
+    if (window.CRYPTO) {
+      const c = window.CRYPTO.find(x => x.s === sym || x.id === sym.toLowerCase() ||
+        (x.s && x.s.replace('USDT','') === sym));
+      if (c) { c.px = lp; if (chp != null) c.chg = chp; if (hi) c.hi = hi; if (lo) c.lo = lo; }
+    }
+
+    // 3. _l1Data (SPX/NDX/DJI/BTC for ribbon)
+    if (window._l1Data) {
+      if (sym === 'SPX' || sym === 'INDU' && false) window._l1Data.sp  = lp.toFixed(2);
+      if (sym === 'SPX')  window._l1Data.sp  = lp.toFixed(2);
+      if (sym === 'NDX')  window._l1Data.ndx = lp.toFixed(2);
+      if (sym === 'DJI' || sym === 'INDU') window._l1Data.dji = lp.toFixed(2);
+      if (sym === 'BTC')  window._l1Data.btc = lp;
+      if (sym === 'GOLD') window._l1Data.gold = lp.toFixed(2);
+    }
+
+    // 4. FXP (forex rates)
+    if (FX_SYMS.has(sym) && window.FXP) {
+      const pair = sym.slice(0,3) + '/' + sym.slice(3);
+      const f = window.FXP.find(x => x.p === pair);
+      if (f) { f.b = lp; if (chp != null) f.chg = chp; }
+    }
+
+    // 5. COMDTY_DATA
+    if (COMDTY_KEY[sym] && window.COMDTY_DATA) {
+      const c = window.COMDTY_DATA.find(x => x.s === COMDTY_KEY[sym]);
+      if (c) { c.px = lp; if (chp != null) c.chg = chp; }
+    }
+
+    // 6. Ticker tape + updateCoin (priority 0 = overrides Yahoo)
+    if (typeof _tkUp === 'function')     _tkUp('m-' + sym, lp, chp || 0);
+    if (typeof updateCoin === 'function') updateCoin(sym, { px: lp, chg: chp, hi, lo }, 'tv', 0);
+  }
+
+  // ── WebSocket connection ───────────────────────────────────────────
+  function connect() {
+    clearTimeout(_recon); clearInterval(_ping);
+    try { _ws = new WebSocket(WS_URL); } catch(e) { schedule(); return; }
+
+    _ws.onopen = function() {
+      // Handshake
+      send(frame({ m:'set_auth_token',      p:['unauthorized_user_token'] }));
+      send(frame({ m:'quote_create_session', p:[QS_ID] }));
+      send(frame({ m:'quote_set_fields',     p:[QS_ID,'lp','ch','chp','open','high','low','volume','prev_close_price'] }));
+
+      // Subscribe in batches of 20
+      const syms = Object.values(SYM_MAP);
+      for (let i = 0; i < syms.length; i += 20)
+        send(frame({ m:'quote_add_symbols', p:[QS_ID, ...syms.slice(i, i+20)] }));
+
+      // Keepalive
+      _ping = setInterval(() => send('~h~' + Math.floor(Date.now()/1000)), 20000);
+      console.log('[TV-QUOTES] ✓ Connected · ' + syms.length + ' symbols streaming from TradingView');
+    };
+
+    _ws.onmessage = function(ev) {
+      for (const raw of parseFrames(ev.data)) {
+        if (raw[0] !== '{') continue;
+        let obj; try { obj = JSON.parse(raw); } catch(_) { continue; }
+        if (obj.m !== 'qsd') continue;
+        const item = obj.p && obj.p[1];
+        if (!item || !item.n || !item.v) continue;
+        const sym = TV_TO_TERM[item.n];
+        if (!sym) continue;
+        const v = item.v;
+        inject(sym,
+          parseFloat(v.lp     || 0),
+          parseFloat(v.chp    || 0),
+          parseFloat(v.high   || 0) || undefined,
+          parseFloat(v.low    || 0) || undefined,
+          parseFloat(v.open   || 0) || undefined,
+          parseFloat(v.volume || 0) || undefined
+        );
+      }
+    };
+
+    _ws.onerror  = function() {};
+    _ws.onclose  = function() { clearInterval(_ping); schedule(); };
+  }
+
+  function schedule() { _recon = setTimeout(connect, 6000); }
+
+  // Boot after page settles
+  setTimeout(connect, 2000);
+
+  // Expose for debug
+  window._tvQuotes = { SYM_MAP, TV_TO_TERM, get ws() { return _ws; } };
+  console.log('[TV-QUOTES] Live Quotes module loaded — ' + Object.keys(SYM_MAP).length + ' symbols mapped');
+})();
+
 
 // ══════════════════════════════════════════════════════════════════
 //  BACKGROUND DATA BRIDGE v1.0
