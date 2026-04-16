@@ -4011,7 +4011,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <!-- PRICE LINE CANVAS OVERLAY -->
           <canvas id="bbg-line-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9500;"></canvas>
           <!-- OHLC left panel — exact design from v5-7 -->
-          <div id="ov-left-panel" style="position:absolute; top:20px; left:54px; z-index:9000; background:transparent; padding:4px 8px; font-family:'Roboto Mono',monospace; font-size:10px; color:#888; pointer-events:none;">
+          <div id="ov-left-panel" style="position:absolute; top:20px; left:14px; z-index:9000; background:transparent; padding:4px 8px; font-family:'Roboto Mono',monospace; font-size:10px; color:#888; pointer-events:none;">
               <div style="display:flex; align-items:center; gap:8px; line-height:1.6;">
                   <div style="display:flex; align-items:center; position:relative; width:12px; height:16px;">
                       <div style="position:absolute; left:2px; top:50%; width:1px; height:50%; background:#444;"></div>
@@ -5911,8 +5911,8 @@ map.on('mousemove',e=>{document.getElementById('st-coord').textContent=`${e.latl
 map.on('click', function(){ closeAllMenus(); map.closePopup(); });
 function flyTo(c,z){map.flyTo(c,z,{duration:2.5, easeLinearity:0.05});}
 
-const LG={mkt:L.layerGroup().addTo(map),fx:L.layerGroup().addTo(map),news:L.layerGroup().addTo(map),lbl:L.layerGroup().addTo(map),cb:L.layerGroup().addTo(map),cables:L.layerGroup()};
-const LV={mkt:true,fx:true,news:true,lbl:true,cb:true,cables:false};
+const LG={mkt:L.layerGroup().addTo(map),fx:L.layerGroup().addTo(map),news:L.layerGroup().addTo(map),lbl:L.layerGroup().addTo(map),cb:L.layerGroup().addTo(map),cables:L.layerGroup().addTo(map)};
+const LV={mkt:true,fx:true,news:true,lbl:true,cb:true,cables:true};
 const LYR_LABELS={mkt:'MKT',news:'NEWS',lbl:'LABELS',cb:'CENTRAL BANKS',cables:'POWER CABLES'};
 
 /* ═══════════════════════════════════════════════════════
@@ -27860,10 +27860,10 @@ window._updateTVChart = function(sym, interval) {
        + '[class*="copyright"]{display:none!important;height:0!important;}'
        + '[class*="bottomWidgetBar"]{display:none!important;height:0!important;}'
        + '#footer-chart-panel{display:none!important;}'
-       + '.layout__area--bottom{display:none!important;height:0!important;}'      + '[class*="notification"]{display:none!important;}'      + '[class*="Notification"]{display:none!important;}'      + '[class*="toast"]{display:none!important;}'      + '[class*="Toast"]{display:none!important;}'      + '[class*="alert-dialog"]{display:none!important;}'
-       + '.pane-legend,[class*="pane-legend"],[class*="legend-"],[class*="seriesTitle"],[class*="studyTitle"],[class*="legendMainSourceWrapper"],[data-name="legend"]{display:none!important;opacity:0!important;visibility:hidden!important;height:0!important;pointer-events:none!important;}'
-       + '</style>'
-       + '<script>'      + '(function(){'      + 'var _origOpen=XMLHttpRequest.prototype.open;'      + 'function killDialogs(){'      + '  var sel=['      + '    "[class*=notification]","[class*=Notification]",'      + '    ".tv-notification"'      + '  ];'      + '  sel.forEach(function(s){document.querySelectorAll(s).forEach(function(e){e.style.cssText="display:none!important;pointer-events:none!important;";});});'      + '}'      + 'new MutationObserver(killDialogs).observe(document.documentElement,{childList:true,subtree:true,attributes:true});'      + 'window.addEventListener("message",function(e){try{var d=JSON.parse(e.data||e);if(d&&(d.name==="notification"||d.name==="alert"||d.type==="notification"))e.stopImmediatePropagation();}catch(ex){}},{capture:true});'      + '})();'      + '<\/script>'      + '<script src="https://s3.tradingview.com/tv.js"><\/script>'
+       + '.layout__area--bottom{display:none!important;height:0!important;}'      + '[class*="dialog"]{display:none!important;}'      + '[class*="Dialog"]{display:none!important;}'      + '[class*="notification"]{display:none!important;}'      + '[class*="Notification"]{display:none!important;}'      + '[class*="modal"]{display:none!important;}'      + '[class*="Modal"]{display:none!important;}'      + '[class*="popup"]{display:none!important;}'      + '[class*="Popup"]{display:none!important;}'      + '[class*="toast"]{display:none!important;}'      + '[class*="Toast"]{display:none!important;}'      + '[class*="overlay"]{display:none!important;}'      + '[role="dialog"]{display:none!important;}'      + '[class*="alert-dialog"]{display:none!important;}'
+      + '.pane-legend,[class*="pane-legend"],[class*="legend-"],[class*="seriesTitle"],[class*="studyTitle"],[class*="legendMainSourceWrapper"],[data-name="legend"]{display:none!important;opacity:0!important;visibility:hidden!important;height:0!important;pointer-events:none!important;}'
+      + '</style>'
+      + '<script>'      + '(function(){'      + 'var _origOpen=XMLHttpRequest.prototype.open;'      + 'function killDialogs(){'      + '  var sel=['      + '    "[class*=dialog]","[class*=Dialog]","[class*=notification]","[class*=Notification]",'      + '    "[class*=modal]","[class*=Modal]","[role=dialog]","[role=alertdialog]",'      + '    "[class*=popup]","[class*=Popup]","[class*=overlay]","[class*=Overlay]",'      + '    ".tv-dialog",".js-dialog",".tv-notification"'      + '  ];'      + '  sel.forEach(function(s){document.querySelectorAll(s).forEach(function(e){e.style.cssText="display:none!important;pointer-events:none!important;";});});'      + '}'      + 'new MutationObserver(killDialogs).observe(document.documentElement,{childList:true,subtree:true,attributes:true});'      + 'window.addEventListener("message",function(e){try{var d=JSON.parse(e.data||e);if(d&&(d.name==="notification"||d.name==="alert"||d.type==="notification"))e.stopImmediatePropagation();}catch(ex){}},{capture:true});'      + '})();'      + '<\/script>'      + '<script src="https://s3.tradingview.com/tv.js"><\/script>'
       + '</head><body>'
       + '<div id="tv_chart"></div>'
       + '<script>'
@@ -27880,7 +27880,7 @@ window._updateTVChart = function(sym, interval) {
       + '  enable_publishing:false,'
       + '  hide_top_toolbar:true,'
       + '  hide_legend:true,'
-      + '  hide_side_toolbar:false,'
+      + '  hide_side_toolbar:true,'
       + '  allow_symbol_change:false,'
       + '  save_image:false,'
       + '  backgroundColor:"rgba(0,0,0,1)",'
@@ -27940,7 +27940,7 @@ window._updateTVChart = function(sym, interval) {
       + '    "rsi.showLegend":false'
       + '  },'
       + '  disabled_features:['
-      + '    "header_widget","header_symbol_search",'
+      + '    "left_toolbar","header_widget","header_symbol_search",'
       + '    "header_resolutions","header_chart_type","header_settings",'
       + '    "header_indicators","header_compare","header_undo_redo","header_screenshot",'
       + '    "legend_widget","edit_buttons_in_legend","header_fullscreen_button","border_around_the_chart",'
@@ -27948,10 +27948,10 @@ window._updateTVChart = function(sym, interval) {
       + '    "display_market_status","show_logo_on_all_charts","create_volume_indicator_by_default",'
       + '    "show_missing_notifications_icon","study_buttons_in_legend",'
       + '    "study_backtesting_buttons","pane_context_menu","legend_context_menu",'
-      + '    "main_series_scale_menu","pane_legend_render_options",'
+      + '    "main_series_scale_menu","property_pages","pane_legend_render_options",'
       + '    "source_selection_markers","chart_property_page_legend",'
       + '  ],'
-      + '  enabled_features:["items_favoriting"],'
+      + '  enabled_features:["hide_left_toolbar_by_default"],'
       + '  study_count_limit:50'
       + '});'
       + '(function(){'
@@ -28009,7 +28009,7 @@ window._initBbg = function() {
   // Create full-size iframe — TradingView Advanced Chart
   var iframe = document.createElement('iframe');
   iframe.id = 'bbg-tv-iframe';
-  iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:none;background:#000;display:block;';
+  iframe.style.cssText = 'position:absolute;top:0;left:-60px;width:calc(100% + 60px);height:100%;border:none;background:#000;display:block;';
   iframe.setAttribute('loading', 'eager');
   iframe.setAttribute('allowfullscreen', '');
   iframe.setAttribute('scrolling', 'no');
@@ -28032,7 +28032,7 @@ window._initBbg = function() {
   var eBot = document.createElement('div');
   eBot.style.cssText = edgeCss + 'bottom:0;left:0;right:0;height:3px;';
   var eLeft = document.createElement('div');
-  eLeft.style.cssText = edgeCss + 'top:0;left:0;bottom:0;width:0px;';
+  eLeft.style.cssText = edgeCss + 'top:0;left:0;bottom:0;width:3px;';
   var eRight = document.createElement('div');
   eRight.style.cssText = edgeCss + 'top:0;right:0;bottom:0;width:3px;';
   container.appendChild(eTop);
