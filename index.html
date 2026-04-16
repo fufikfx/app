@@ -1825,7 +1825,6 @@ const _bbgIndices = [
   {sym:'SPX Index',     name:'S&P 500 (Bybit Perp)'},
   {sym:'NDX Index',     name:'Nasdaq 100 (Bybit Perp)'},
   {sym:'DJI Index',     name:'Dow Jones (Bybit Perp)'},
-  {sym:'ES1! Futures',  name:'S&P 500 E-mini Futures (CME)'},
   {sym:'NDX Index (Y)', name:'Nasdaq 100 Index (Yahoo)'},
   {sym:'NQ1! Futures',  name:'Nasdaq 100 E-mini Futures (CME)'},
   {sym:'DJI Index',     name:'Dow Jones Industrial (TVC)'},
@@ -10374,7 +10373,6 @@ function sbRenderCMD(){
       {s:'CT1',n:'COTTON',px:65.84,chg:.24,u:'lb'}
     ]},
     {h:'EQUITY FUTURES',items:[
-      {s:'ES1',n:'S&P 500 FUT',px:5602.25,chg:-2.44,u:''},
       {s:'NQ1',n:'NASDAQ FUT',px:19248.5,chg:-3.24,u:''},
       {s:'YM1',n:'DOW FUT',px:41820,chg:-1.58,u:''},
       {s:'RTY1',n:'RUSSELL FUT',px:2042.4,chg:-2.84,u:''},
@@ -27032,7 +27030,8 @@ window._setChartInterval = async function(interval) {
     const tvInterval = tvIntervalMap[interval] || 'D';
     const binanceInterval = {'1m':'1m','5m':'5m','15m':'15m','30m':'30m','1h':'1h','3d':'1h','1d':'1d','6m_h':'1h','ytd':'1d','1y':'1d','5y':'1w','max':'1M'}[interval] || '1d';
 
-    let rawSym = ((window._bbgActiveSym || 'BTC').toUpperCase()).replace('/', '');
+    let rawSym = ((window._bbgActiveSym || 'BTC').toUpperCase()).replace('/', '')
+        .replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i, '').trim();
 
     // ── Symbol routing maps ──
     const cryptoMap = {
