@@ -1780,6 +1780,20 @@ const _bbgSecurities = [
 // ── EQUITIES ─────────────────────────────────────────────────────────────────
 const _bbgEquities = [
   {sym:'MSTR Equity',   name:'MicroStrategy (Binance Perp)'},
+  // ── Hyperliquid xyz: Equities ──
+  {sym:'BABA',      name:'Alibaba Group — Hyperliquid xyz:'},
+  {sym:'TSM',       name:'TSMC Taiwan Semi — Hyperliquid xyz:'},
+  {sym:'ORCL',      name:'Oracle Corp — Hyperliquid xyz:'},
+  {sym:'MU',        name:'Micron Technology — Hyperliquid xyz:'},
+  {sym:'CRWV',      name:'CoreWeave — Hyperliquid xyz:'},
+  {sym:'RIVN',      name:'Rivian Automotive — Hyperliquid xyz:'},
+  {sym:'CRCL',      name:'Circle Internet — Hyperliquid xyz:'},
+  {sym:'SBET',      name:'SharpLink Gaming — Hyperliquid xyz:'},
+  {sym:'XYZ100',    name:'XYZ100 Nasdaq Index — Hyperliquid xyz:'},
+  // ── Pre-IPO Valuation Perps ──
+  {sym:'SPACEX',    name:'SpaceX Pre-IPO Valuation — Ventuals/Hyperliquid'},
+  {sym:'OPENAI',    name:'OpenAI Pre-IPO Valuation — Ventuals/Hyperliquid'},
+  {sym:'ANTHROPIC', name:'Anthropic Pre-IPO Valuation — Ventuals/Hyperliquid'},
   {sym:'COIN Equity',   name:'Coinbase Global (Binance Perp)'},
   {sym:'SOFI Equity',   name:'SoFi Technologies (Binance Perp)'},
   {sym:'HOOD Equity',   name:'Robinhood Markets (Binance Perp)'},
@@ -3781,7 +3795,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div id="bbg-chart-ribbon" style="flex-shrink:0;">
           <!-- Row 1: Ticker & Last Price -->
           <div style="display:flex; align-items:flex-end; gap:16px; padding: 6px 10px 2px; font-family: 'Roboto Mono', monospace; font-size:18px; font-weight:700;">
-             <span style="color:#ffffff; font-size:15px;" id="bbg-chart-title">BTC/USDT</span>
+             <span style="color:#ffffff; font-size:15px;" id="bbg-chart-title">BTC/USDT</span><span id="bbg-source-tag" style="margin-left:6px;vertical-align:middle;"></span>
              <span id="bbg-current-price-container" style="color:#ffffff; font-size:15px;"><span id="bbg-price-arrow" style="font-size:13px;"></span> <span id="bbg-current-price">—</span></span>
              <span id="bbg-price-change" style="color:#ffffff; font-size:12px; font-weight:400; margin-bottom:1px;">—</span>
           </div>
@@ -4531,6 +4545,20 @@ const STKS={
   CLSK:{n:'CleanSpark',        px:null,open:null,hi:null,lo:null,  vol:'8.4M',  pe:0,   mc:'$1.4B', div:0,   beta:3.24,eps:-1.84,sec:'Crypto',     ytd:-44.4},
   CORZ:{n:'Core Scientific',   px:null,open:null,hi:null,lo:null, vol:'12.4M', pe:0,   mc:'$3.4B', div:0,   beta:3.44,eps:-0.84,sec:'Crypto',     ytd:-18.4},
   HUT:{n:'Hut 8 Corp',         px:null,open:null,hi:null,lo:null, vol:'4.4M',  pe:0,   mc:'$1.8B', div:0,   beta:3.84,eps:-1.44,sec:'Crypto',     ytd:-38.4},
+  // ── Hyperliquid xyz: Equities (HIP-3 trade.xyz) ──
+  BABA: {n:'Alibaba Group',        px:null,open:null,hi:null,lo:null,vol:'12.4M',pe:9.4, mc:'$239B', div:0,   beta:0.74,eps:9.44, sec:'Technology',ytd:-4.8, src:'HL_XYZ'},
+  TSM:  {n:'Taiwan Semi (TSMC)',   px:null,open:null,hi:null,lo:null,vol:'8.4M', pe:24.4,mc:'$848B', div:1.82,beta:1.14,eps:7.84, sec:'Technology',ytd:-18.4,src:'HL_XYZ'},
+  ORCL: {n:'Oracle Corp',          px:null,open:null,hi:null,lo:null,vol:'6.4M', pe:34.4,mc:'$464B', div:1.60,beta:0.88,eps:4.90, sec:'Technology',ytd:-4.8, src:'HL_XYZ'},
+  MU:   {n:'Micron Technology',    px:null,open:null,hi:null,lo:null,vol:'14.4M',pe:0,   mc:'$88B',  div:0.46,beta:1.64,eps:-2.14,sec:'Technology',ytd:-24.4,src:'HL_XYZ'},
+  CRWV: {n:'CoreWeave Inc',        px:null,open:null,hi:null,lo:null,vol:'4.4M', pe:0,   mc:'$58B',  div:0,   beta:2.44,eps:-4.84,sec:'AI',        ytd:null, src:'HL_XYZ'},
+  RIVN: {n:'Rivian Automotive',    px:null,open:null,hi:null,lo:null,vol:'18.4M',pe:0,   mc:'$16B',  div:0,   beta:2.84,eps:-4.84,sec:'EV',        ytd:-18.4,src:'HL_XYZ'},
+  CRCL: {n:'Circle Internet Grp',  px:null,open:null,hi:null,lo:null,vol:'3.4M', pe:0,   mc:'$8.4B', div:0,   beta:1.84,eps:-0.84,sec:'Fintech',  ytd:null, src:'HL_XYZ'},
+  SBET: {n:'SharpLink Gaming',     px:null,open:null,hi:null,lo:null,vol:'1.2M', pe:0,   mc:'$0.4B', div:0,   beta:3.84,eps:-0.42,sec:'Gaming',   ytd:null, src:'HL_XYZ'},
+  XYZ100:{n:'XYZ100 (Nasdaq Idx)', px:null,open:null,hi:null,lo:null,vol:'180M', pe:0,   mc:'N/A',   div:0,   beta:1.00,eps:0,    sec:'Index',     ytd:null, src:'HL_XYZ'},
+  // ── Pre-IPO Valuation Perps (Ventuals — synthetic, NOT equity) ──
+  SPACEX:    {n:'SpaceX (Pre-IPO)',    px:null,open:null,hi:null,lo:null,vol:'2.4M',pe:0,mc:'~$350B',div:0,beta:0,eps:0,sec:'Pre-IPO',ytd:null,src:'HL_XYZ',preipo:true},
+  OPENAI:    {n:'OpenAI (Pre-IPO)',    px:null,open:null,hi:null,lo:null,vol:'3.4M',pe:0,mc:'~$852B',div:0,beta:0,eps:0,sec:'Pre-IPO',ytd:null,src:'HL_XYZ',preipo:true},
+  ANTHROPIC: {n:'Anthropic (Pre-IPO)',px:null,open:null,hi:null,lo:null,vol:'1.4M',pe:0,mc:'~$380B',div:0,beta:0,eps:0,sec:'Pre-IPO',ytd:null,src:'HL_XYZ',preipo:true},
   HIVE:{n:'HIVE Digital',      px:null,open:null,hi:null,lo:null,  vol:'2.4M',  pe:0,   mc:'$0.4B', div:0,   beta:3.44,eps:-0.84,sec:'Crypto',     ytd:-44.4},
   // ── Fintech & Payments ──
   SOFI:{n:'SoFi Technologies', px:null,open:null,hi:null,lo:null, vol:'28.4M', pe:0,   mc:'$13B',  div:0,   beta:1.84,eps:-0.22,sec:'Fintech',    ytd:+8.4},
@@ -7408,6 +7436,8 @@ const YTD_OPEN_2026 = {
   VIRTUAL:1.68,KAS:0.158,  FLOKI:0.000215,PEPE:0.0000276,
   // Additional stocks v4
   MSTR:140.00,COIN:259.12,SOFI:14.82, HOOD:23.18, PLTR:76.78,
+  BABA:122,TSM:148,ORCL:172,MU:82,CRWV:52,RIVN:12,CRCL:29,
+  SPACEX:175,OPENAI:425,ANTHROPIC:190,XYZ100:462,
   UPST:68.40, AFRM:62.48, IBIT:54.12, SPY:586.12, QQQ:510.88, GLD:248.32,
   // FX
   'EUR/USD':1.0420,'GBP/USD':1.2520,'USD/JPY':157.80,'USD/CHF':0.9020,
@@ -7428,6 +7458,8 @@ const YTD_OPEN_2026 = {
   FXI:29.82,   EWJ:72.28,   VNQ:92.18,   IBIT:54.12,  FBTC:53.88,
   // New stocks added v4
   MSTR:140.00, COIN:259.12, SOFI:14.82,  HOOD:23.18,  UPST:68.40,
+  BABA:122, TSM:148, ORCL:172, MU:82, CRWV:52, RIVN:12, CRCL:29,
+  SPACEX:175, OPENAI:425, ANTHROPIC:190, XYZ100:462,
   AFRM:62.48,  PLTR:76.78,  RBLX:44.18,  SNOW:154.82, DDOG:148.22,
   NET:88.40,   CRWD:384.82, ZS:212.18,   OKTA:98.22,  MNDY:198.82,
   RIVN:14.22,  LCID:2.88,   NIO:4.12,    XPEV:8.82,   ENPH:98.22,
@@ -17078,6 +17110,20 @@ const _MCMDS = {
   USDCAD: {label:'USD / CAD Spot',   cat:'F', action:()=>_openChartForSymbol('USDCAD')},
   // v4 Extended Equity Universe
   MSTR:   {label:'MicroStrategy',     cat:'E', action:()=>_openChartForSymbol('MSTR')},
+  // ── Hyperliquid xyz: Equities ──
+  BABA:     {label:'Alibaba',           cat:'E', action:()=>_openChartForSymbol('BABA')},
+  TSM:      {label:'TSMC',              cat:'E', action:()=>_openChartForSymbol('TSM')},
+  ORCL:     {label:'Oracle',            cat:'E', action:()=>_openChartForSymbol('ORCL')},
+  MU:       {label:'Micron',            cat:'E', action:()=>_openChartForSymbol('MU')},
+  CRWV:     {label:'CoreWeave',         cat:'E', action:()=>_openChartForSymbol('CRWV')},
+  RIVN:     {label:'Rivian',            cat:'E', action:()=>_openChartForSymbol('RIVN')},
+  CRCL:     {label:'Circle Internet',   cat:'E', action:()=>_openChartForSymbol('CRCL')},
+  SBET:     {label:'SharpLink Gaming',  cat:'E', action:()=>_openChartForSymbol('SBET')},
+  XYZ100:   {label:'XYZ100 (Nasdaq)',   cat:'I', action:()=>_openChartForSymbol('XYZ100')},
+  // ── Pre-IPO Valuation ──
+  SPACEX:    {label:'SpaceX (Pre-IPO)', cat:'P', action:()=>_openChartForSymbol('SPACEX')},
+  OPENAI:    {label:'OpenAI (Pre-IPO)', cat:'P', action:()=>_openChartForSymbol('OPENAI')},
+  ANTHROPIC: {label:'Anthropic (Pre-IPO)',cat:'P',action:()=>_openChartForSymbol('ANTHROPIC')},
   COIN:   {label:'Coinbase Global',   cat:'E', action:()=>_openChartForSymbol('COIN')},
   SOFI:   {label:'SoFi Technologies', cat:'E', action:()=>_openChartForSymbol('SOFI')},
   HOOD:   {label:'Robinhood Markets', cat:'E', action:()=>_openChartForSymbol('HOOD')},
@@ -27532,9 +27578,25 @@ window._setChartInterval = async function(interval) {
             'PLTR':'PLTRUSDT','HOOD':'HOODUSDT','RIOT':'RIOTUSDT',
             'HYPE':'HYPEUSDT'
         };
+        // Hyperliquid HIP-3 xyz: equities & pre-IPO (trade.xyz / Ventuals)
+        // These use xyz:SYMBOL format on Hyperliquid — data via HL REST API
+        const hlXyzMap = {
+            // ── trade.xyz US Equities (HIP-3) ──
+            'META':'xyz:META','AMZN':'xyz:AMZN','AAPL':'xyz:AAPL',
+            'GOOGL':'xyz:GOOGL','MSFT':'xyz:MSFT','NVDA':'xyz:NVDA',
+            'TSLA':'xyz:TSLA','PLTR':'xyz:PLTR','COIN':'xyz:COIN',
+            'MSTR':'xyz:MSTR','AMD':'xyz:AMD','NFLX':'xyz:NFLX',
+            'HOOD':'xyz:HOOD','BABA':'xyz:BABA','TSM':'xyz:TSM',
+            'ORCL':'xyz:ORCL','INTC':'xyz:INTC','MU':'xyz:MU',
+            'CRWV':'xyz:CRWV','RIVN':'xyz:RIVN','CRCL':'xyz:CRCL',
+            'SBET':'xyz:SBET','XYZ100':'xyz:XYZ100',
+            // ── Ventuals Pre-IPO (valuation perps) ──
+            'SPACEX':'xyz:SPACEX','OPENAI':'xyz:OPENAI','ANTHROPIC':'xyz:ANTHROPIC',
+        };
         
         if (binanceMap[sym]) return { provider: 'BINANCE', ticker: binanceMap[sym], type: 'WS' };
         if (bybitMap[sym])   return { provider: 'BYBIT',   ticker: bybitMap[sym],   type: 'WS' };
+        if (hlXyzMap[sym])   return { provider: 'HL_XYZ',  ticker: hlXyzMap[sym],   type: 'POLL', hlSym: hlXyzMap[sym] };
         if (cryptoMap[sym])  return { provider: 'BINANCE', ticker: cryptoMap[sym],  type: 'WS' };
         
         return { provider: 'YAHOO', ticker: (yahooMap[sym] || sym), type: 'POLL' };
@@ -27546,8 +27608,25 @@ window._setChartInterval = async function(interval) {
     let tvSym = tvSymMap[rawSym];
     
     if (!tvSym) {
-        // Build interactive TV symbol based on provider
-        if (resolved.type === 'WS') {
+        if (resolved.provider === 'HL_XYZ') {
+            // xyz: equities — chart via TradingView (real exchange), data via Hyperliquid
+            const xyzTvMap = {
+                'META':'NASDAQ:META','AMZN':'NASDAQ:AMZN','AAPL':'NASDAQ:AAPL',
+                'GOOGL':'NASDAQ:GOOGL','MSFT':'NASDAQ:MSFT','NVDA':'NASDAQ:NVDA',
+                'TSLA':'NASDAQ:TSLA','PLTR':'NYSE:PLTR','COIN':'NASDAQ:COIN',
+                'MSTR':'NASDAQ:MSTR','AMD':'NASDAQ:AMD','NFLX':'NASDAQ:NFLX',
+                'HOOD':'NASDAQ:HOOD','BABA':'NYSE:BABA','TSM':'NYSE:TSM',
+                'ORCL':'NYSE:ORCL','INTC':'NASDAQ:INTC','MU':'NASDAQ:MU',
+                'CRWV':'NASDAQ:CRWV','RIVN':'NASDAQ:RIVN','CRCL':'NYSE:CRCL',
+                'SBET':'NASDAQ:SBET',
+                // Pre-IPO — no public exchange, use synthetic chart or XYZ100 as proxy
+                'SPACEX':'NASDAQ:TSLA', // proxy until IPO
+                'OPENAI':'NASDAQ:MSFT', // proxy until IPO
+                'ANTHROPIC':'NASDAQ:AMZN', // proxy until IPO
+                'XYZ100':'NASDAQ:QQQ',  // tracks Nasdaq-100
+            };
+            tvSym = xyzTvMap[rawSym] || ('NASDAQ:' + rawSym);
+        } else if (resolved.type === 'WS') {
             tvSym = resolved.provider + ':' + (resolved.provider === 'BYBIT' ? resolved.ticker + '.P' : resolved.ticker);
         } else {
             // Fallback to CryptoMap or raw symbol with NASDAQ/NYSE prefix if possible
@@ -27927,6 +28006,121 @@ window._setChartInterval = async function(interval) {
             }
         };
         _openUniversalWS();
+
+
+    } else if (resolved.provider === 'HL_XYZ') {
+        // ── HYPERLIQUID xyz: Equities & Pre-IPO ──
+        // Data via Hyperliquid allMids API, chart via TradingView real exchange
+        const hlSym = resolved.hlSym; // e.g. 'xyz:META'
+        const _isSymbolSwitchXyz = !window._bbgLastRenderedSym || window._bbgLastRenderedSym !== rawSym;
+        window._bbgLastRenderedSym = rawSym;
+
+        // Reset ribbon on TF switch
+        if (!_isSymbolSwitchXyz) {
+            setEl('bbg-high', '—'); setEl('bbg-low', '—'); setEl('bbg-start', '—');
+            setEl('ov-high',  '—'); setEl('ov-low',  '—'); setEl('ov-open',   '—');
+            window._firstBbgPrice = 0; window._chigh = -Infinity; window._clow = Infinity;
+        }
+
+        const fetchHlXyz = async () => {
+            try {
+                const r = await fetch('https://api.hyperliquid.xyz/info', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({type:'allMids'}),
+                    signal: AbortSignal.timeout(6000),
+                    cache: 'no-store'
+                });
+                if (!r.ok) throw new Error('HTTP '+r.status);
+                const mids = await r.json();
+                const px = parseFloat(mids[hlSym]);
+                if (px > 0) {
+                    // Get 24h data from metaAndAssetCtxs for hi/lo/vol
+                    try {
+                        const r2 = await fetch('https://api.hyperliquid.xyz/info', {
+                            method: 'POST',
+                            headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({type:'metaAndAssetCtxs'}),
+                            signal: AbortSignal.timeout(6000),
+                            cache: 'no-store'
+                        });
+                        if (r2.ok) {
+                            const [meta, ctxs] = await r2.json();
+                            const idx = (meta.universe || []).findIndex(a => a.name === hlSym);
+                            if (idx !== -1 && ctxs[idx]) {
+                                const ctx = ctxs[idx];
+                                const prevPx  = parseFloat(ctx.prevDayPx) || px;
+                                const markPx  = parseFloat(ctx.markPx)    || px;
+                                const chgPct  = prevPx > 0 ? ((markPx - prevPx) / prevPx * 100) : 0;
+                                const vol     = parseFloat(ctx.dayNtlVlm) || 0;
+                                // HL doesn't expose daily hi/lo directly — use mark vs prev as proxy
+                                const hi = Math.max(markPx, prevPx);
+                                const lo = Math.min(markPx, prevPx);
+                                window._chigh = hi; window._clow = lo; window._cvol = vol;
+                                window._firstBbgPrice = prevPx;
+                                _applyTick(markPx, chgPct, hi, lo, vol, prevPx);
+                                setEl('bbg-start',  fmtP(prevPx));
+                                setEl('bbg-high',   fmtP(hi));
+                                setEl('bbg-low',    fmtP(lo));
+                                setEl('bbg-volume', fmtV(vol));
+                                console.log('[HL-XYZ] ' + hlSym + ' px=' + markPx.toFixed(2) + ' chg=' + chgPct.toFixed(2) + '%');
+                                return;
+                            }
+                        }
+                    } catch(e2) {}
+                    // Fallback: just price, no hi/lo
+                    _applyTick(px, 0, 0, 0, 0, px);
+                    setEl('bbg-current-price', fmtP(px));
+                    setEl('bbg-close', fmtP(px));
+                }
+            } catch(e) {
+                console.warn('[HL-XYZ] fetch failed:', e.message);
+                // Fallback to Yahoo for public equities
+                const yFallback = {
+                    'META':'META','AMZN':'AMZN','AAPL':'AAPL','GOOGL':'GOOGL',
+                    'MSFT':'MSFT','NVDA':'NVDA','TSLA':'TSLA','PLTR':'PLTR',
+                    'COIN':'COIN','MSTR':'MSTR','AMD':'AMD','NFLX':'NFLX',
+                    'HOOD':'HOOD','BABA':'BABA','TSM':'TSM','ORCL':'ORCL',
+                    'INTC':'INTC','MU':'MU','CRWV':'CRWV','RIVN':'RIVN','CRCL':'CRCL'
+                }[rawSym];
+                if (yFallback) {
+                    const cbust = '&_t=' + Date.now();
+                    const urls = [
+                        'https://corsproxy.io/?' + encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/' + yFallback + '?interval=1d&range=2d' + cbust),
+                        'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/' + yFallback + '?interval=1d&range=2d')
+                    ];
+                    for (const url of urls) {
+                        try {
+                            const ry = await fetch(url, {signal: AbortSignal.timeout(5000), cache:'no-store'});
+                            const raw = await ry.text();
+                            let parsed = null;
+                            try { parsed = JSON.parse(raw); } catch(pe) {
+                                try { parsed = JSON.parse(JSON.parse(raw).contents); } catch(pe2) {}
+                            }
+                            if (parsed?.chart?.result?.[0]) {
+                                const meta = parsed.chart.result[0].meta;
+                                const price = meta.regularMarketPrice || meta.chartPreviousClose;
+                                if (price > 0) {
+                                    const prev = meta.chartPreviousClose || price;
+                                    const pct  = prev > 0 ? ((price - prev) / prev * 100) : 0;
+                                    _applyTick(price, pct, meta.regularMarketDayHigh || price,
+                                        meta.regularMarketDayLow || price, meta.regularMarketVolume || 0, prev);
+                                    setEl('bbg-start', fmtP(prev));
+                                    setEl('bbg-high',  fmtP(meta.regularMarketDayHigh || price));
+                                    setEl('bbg-low',   fmtP(meta.regularMarketDayLow  || price));
+                                    setEl('bbg-volume',fmtV(meta.regularMarketVolume  || 0));
+                                    break;
+                                }
+                            }
+                        } catch(ye) {}
+                    }
+                }
+            }
+        };
+
+        fetchHlXyz();
+        const _hlXyzTimer = setInterval(fetchHlXyz, 15000);
+        window._currentBbgWs = { close: () => clearInterval(_hlXyzTimer) };
 
     } else if (useYahoo) {
         // ── EQUITY / INDEX / FOREX / COMDTY: Yahoo Finance poll každých 15s ──
@@ -28672,6 +28866,33 @@ window._bbgInstantFill = function(sym) {
     var e = document.getElementById(id); if (e) e.innerText = '—';
   });
 
+  // Pre-IPO warning badge — show/hide based on symbol
+  var _preIPO = ['SPACEX','OPENAI','ANTHROPIC'];
+  var _symClean = (sym||'').toUpperCase().replace(/\s+(EQUITY|INDEX|COMDTY|CURNCY|GOVT)$/i,'').trim();
+  var _preIpoBadge = document.getElementById('bbg-preipo-badge');
+  if (!_preIpoBadge) {
+    _preIpoBadge = document.createElement('div');
+    _preIpoBadge.id = 'bbg-preipo-badge';
+    _preIpoBadge.style.cssText = 'display:none;position:absolute;top:28px;left:0;right:0;z-index:9999;background:rgba(255,120,0,0.15);border-bottom:1px solid #ff7800;padding:3px 12px;font-size:9px;color:#ff9933;letter-spacing:1px;text-align:center;';
+    _preIpoBadge.innerHTML = '⚠ SYNTHETIC VALUATION INSTRUMENT — NOT EQUITY OWNERSHIP — PRICE REFLECTS MARKET CONSENSUS ON PRIVate VALUATION — DATA VIA HYPERLIQUID VENTUALS';
+    var chartPnl = document.getElementById('bbg-chart-panel');
+    if (chartPnl) chartPnl.appendChild(_preIpoBadge);
+  }
+  _preIpoBadge.style.display = _preIPO.includes(_symClean) ? 'block' : 'none';
+
+  // HL_XYZ source badge
+  var _xyzBadge = document.getElementById('bbg-xyz-badge');
+  if (!_xyzBadge) {
+    _xyzBadge = document.createElement('div');
+    _xyzBadge.id = 'bbg-xyz-badge';
+    _xyzBadge.style.cssText = 'display:none;position:absolute;top:28px;right:12px;z-index:9998;background:rgba(0,180,120,0.12);border:1px solid #00cc88;padding:1px 6px;font-size:8px;color:#00cc88;letter-spacing:1px;';
+    _xyzBadge.innerHTML = '⬡ HYPERLIQUID xyz:';
+    var chartPnl2 = document.getElementById('bbg-chart-panel');
+    if (chartPnl2) chartPnl2.appendChild(_xyzBadge);
+  }
+  var _hlXyzSyms = ['META','AMZN','AAPL','GOOGL','MSFT','NVDA','TSLA','PLTR','COIN','MSTR','AMD','NFLX','HOOD','BABA','TSM','ORCL','INTC','MU','CRWV','RIVN','CRCL','SBET','XYZ100','SPACEX','OPENAI','ANTHROPIC'];
+  _xyzBadge.style.display = _hlXyzSyms.includes(_symClean) ? 'inline-block' : 'none';
+
   // 1) Try CRYPTO array (live Binance WS prices — fastest, most accurate)
   var crypto = null;
   if (typeof CRYPTO !== 'undefined') {
@@ -29029,6 +29250,9 @@ window._openChartForSymbol = function(sym) {
         'EURUSD':'Curncy', 'GBPUSD':'Curncy', 'USDJPY':'Curncy', 'AUDUSD':'Curncy', 'USDCAD':'Curncy',
         // US Equities
         'MSTR':'Equity','COIN':'Equity','SOFI':'Equity','HOOD':'Equity','PLTR':'Equity',
+        'BABA':'Equity','TSM':'Equity','ORCL':'Equity','MU':'Equity','CRWV':'Equity',
+        'RIVN':'Equity','CRCL':'Equity','SBET':'Equity','XYZ100':'Index',
+        'SPACEX':'Pre-IPO','OPENAI':'Pre-IPO','ANTHROPIC':'Pre-IPO',
         'TSLA':'Equity','NVDA':'Equity','AAPL':'Equity','AMZN':'Equity','MSFT':'Equity',
         'META':'Equity','GOOGL':'Equity','NFLX':'Equity','AMD':'Equity','INTC':'Equity',
         'UPST':'Equity','AFRM':'Equity','SQ':'Equity','PYPL':'Equity','IBIT':'Equity',
@@ -29062,6 +29286,18 @@ window._openChartForSymbol = function(sym) {
     
     var titleEl = document.getElementById('bbg-chart-title');
     if (titleEl) titleEl.innerText = displayPair;
+    // Update source badge (Pre-IPO / HL xyz:)
+    (function(){
+      var _pIPO = ['SPACEX','OPENAI','ANTHROPIC'];
+      var _xyzL = ['META','AMZN','AAPL','GOOGL','MSFT','NVDA','TSLA','PLTR','COIN','MSTR','AMD','NFLX','HOOD','BABA','TSM','ORCL','INTC','MU','CRWV','RIVN','CRCL','SBET','XYZ100','SPACEX','OPENAI','ANTHROPIC'];
+      var _sU = sym.toUpperCase().replace(/\s+(EQUITY|INDEX|COMDTY|CURNCY|GOVT)$/i,'').trim();
+      var _stag = document.getElementById('bbg-source-tag');
+      if (_stag) {
+        if (_pIPO.includes(_sU)) _stag.innerHTML = '<span style="color:#ff9933;font-size:8px;border:1px solid #ff7800;padding:1px 5px;vertical-align:middle;letter-spacing:1px;">⬡ PRE-IPO SYNTHETIC</span>';
+        else if (_xyzL.includes(_sU)) _stag.innerHTML = '<span style="color:#00cc88;font-size:8px;border:1px solid #00cc88;padding:1px 5px;vertical-align:middle;letter-spacing:1px;">⬡ HYPERLIQUID xyz:</span>';
+        else _stag.innerHTML = '';
+      }
+    })();
     var tbTitle = document.getElementById('bbg-toolbar-title');
     if (tbTitle) tbTitle.innerHTML = '<span>' + displayPair + '</span>';
 
@@ -29358,6 +29594,10 @@ masterUpdate();
     KO:'NYSE:KO',        HD:'NYSE:HD',         GS:'NYSE:GS',
     BAC:'NYSE:BAC',      WFC:'NYSE:WFC',       MS:'NYSE:MS',
     MSTR:'NASDAQ:MSTR',  COIN:'NASDAQ:COIN',   SPY:'AMEX:SPY',
+    BABA:'NYSE:BABA',    TSM:'NYSE:TSM',       ORCL:'NYSE:ORCL',
+    MU:'NASDAQ:MU',      CRWV:'NASDAQ:CRWV',   RIVN:'NASDAQ:RIVN',
+    CRCL:'NYSE:CRCL',    SBET:'NASDAQ:SBET',   XYZ100:'NASDAQ:QQQ',
+    SPACEX:'NASDAQ:TSLA',OPENAI:'NASDAQ:MSFT', ANTHROPIC:'NASDAQ:AMZN',
     QQQ:'NASDAQ:QQQ',    GLD:'AMEX:GLD',       PLTR:'NYSE:PLTR',
     HOOD:'NASDAQ:HOOD',  IBIT:'NASDAQ:IBIT',   SOFI:'NASDAQ:SOFI',
     UPST:'NASDAQ:UPST',  AFRM:'NASDAQ:AFRM',   SQ:'NYSE:SQ',
@@ -34133,7 +34373,9 @@ function _seedFallbackPrices(){
       SLV:29,TLT:87,HYG:77,XLK:224,XLF:47,XLE:86,XLV:146,IBIT:47,FBTC:47,
       GBTC:51,ETHA:16,TQQQ:47,SQQQ:8.6,MSTR:140,COIN:198,HOOD:37,RIOT:8.2,
       MARA:13.8,CLSK:8.8,CORZ:12,HUT:17.8,HIVE:3.3,CRCL:28,SOFI:12.6,
-      UPST:66,AFRM:43,PYPL:68,BX:150,APO:116,KKR:132
+      UPST:66,AFRM:43,PYPL:68,BX:150,APO:116,KKR:132,
+      BABA:122,TSM:148,ORCL:172,MU:82,CRWV:52,RIVN:12,CRCL:29,SBET:1.2,
+      SPACEX:175,OPENAI:425,ANTHROPIC:190,XYZ100:462
     };
     Object.keys(stksFallback).forEach(function(k){
       if(STKS[k]&&(STKS[k].px===null||STKS[k].px===undefined||STKS[k].px<=0)){
@@ -41081,6 +41323,76 @@ var IS_CRYPTO = {BTC:1,ETH:1,SOL:1,BNB:1,XRP:1,ADA:1,DOGE:1,AVAX:1,LINK:1,
                  ARB:1,OP:1,INJ:1,TIA:1,PEPE:1,WIF:1,BONK:1,TON:1,SHIB:1,
                  TRX:1,XLM:1,ATOM:1,ALGO:1,VET:1,OM:1,HBAR:1,KAS:1,SEI:1};
 var IS_HL     = {HYPE:1,PURR:1,FRIEND:1};
+var IS_HL_XYZ = {
+  META:1,AMZN:1,AAPL:1,GOOGL:1,MSFT:1,NVDA:1,TSLA:1,PLTR:1,COIN:1,
+  MSTR:1,AMD:1,NFLX:1,HOOD:1,BABA:1,TSM:1,ORCL:1,INTC:1,MU:1,
+  CRWV:1,RIVN:1,CRCL:1,SBET:1,XYZ100:1,
+  SPACEX:1,OPENAI:1,ANTHROPIC:1
+};
+var HL_XYZ_SYM = {
+  META:'xyz:META',AMZN:'xyz:AMZN',AAPL:'xyz:AAPL',GOOGL:'xyz:GOOGL',
+  MSFT:'xyz:MSFT',NVDA:'xyz:NVDA',TSLA:'xyz:TSLA',PLTR:'xyz:PLTR',
+  COIN:'xyz:COIN',MSTR:'xyz:MSTR',AMD:'xyz:AMD',NFLX:'xyz:NFLX',
+  HOOD:'xyz:HOOD',BABA:'xyz:BABA',TSM:'xyz:TSM',ORCL:'xyz:ORCL',
+  INTC:'xyz:INTC',MU:'xyz:MU',CRWV:'xyz:CRWV',RIVN:'xyz:RIVN',
+  CRCL:'xyz:CRCL',SBET:'xyz:SBET',XYZ100:'xyz:XYZ100',
+  SPACEX:'xyz:SPACEX',OPENAI:'xyz:OPENAI',ANTHROPIC:'xyz:ANTHROPIC'
+};
+
+// ── Hyperliquid xyz: fetch (HIP-3 equities + pre-IPO) ──────────────────────────
+async function _hlXyzFetch(sym) {
+  const hlSym = HL_XYZ_SYM[sym];
+  if (!hlSym) return null;
+  try {
+    const r = await fetch('https://api.hyperliquid.xyz/info', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({type:'allMids'}),
+      signal: (()=>{const c=new AbortController();setTimeout(()=>c.abort(),6000);return c.signal;})(),
+      cache: 'no-store'
+    });
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const mids = await r.json();
+    const px = parseFloat(mids[hlSym]);
+    if (!px || px <= 0) return null;
+    // Try to get hi/lo/vol from metaAndAssetCtxs
+    try {
+      const r2 = await fetch('https://api.hyperliquid.xyz/info', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({type:'metaAndAssetCtxs'}),
+        signal: (()=>{const c=new AbortController();setTimeout(()=>c.abort(),6000);return c.signal;})(),
+        cache: 'no-store'
+      });
+      if (r2.ok) {
+        const [meta, ctxs] = await r2.json();
+        const idx = (meta.universe||[]).findIndex(a => a.name === hlSym);
+        if (idx !== -1 && ctxs[idx]) {
+          const ctx = ctxs[idx];
+          const prevPx = parseFloat(ctx.prevDayPx) || px;
+          const markPx = parseFloat(ctx.markPx)    || px;
+          const chg    = prevPx > 0 ? ((markPx - prevPx) / prevPx * 100) : 0;
+          const vol    = parseFloat(ctx.dayNtlVlm)  || 0;
+          const result = { px: markPx, chg, hi: Math.max(markPx, prevPx), lo: Math.min(markPx, prevPx), vol, open: prevPx };
+        // Sync to STKS cache for sidebar/panels
+        if (window.STKS && window.STKS[sym]) {
+          window.STKS[sym].px  = markPx;
+          window.STKS[sym].chg = chg;
+          window.STKS[sym].hi  = result.hi;
+          window.STKS[sym].lo  = result.lo;
+          window.STKS[sym]._pxTs = Date.now();
+        }
+        return result;
+        }
+      }
+    } catch(e2) {}
+    // Sync basic price to STKS
+    if (window.STKS && window.STKS[sym]) { window.STKS[sym].px = px; window.STKS[sym]._pxTs = Date.now(); }
+    return { px, chg: 0, hi: 0, lo: 0, vol: 0, open: px };
+  } catch(e) {
+    return null;
+  }
+}
 
 // ── Master fetch: best source per asset class ────────────────────────────────
 async function _liveFetch(sym) {
@@ -41088,6 +41400,9 @@ async function _liveFetch(sym) {
 
   // Hyperliquid-native tokens
   if (IS_HL[sym]) return await _hlFetch(sym);
+
+  // Hyperliquid xyz: equities & pre-IPO (HIP-3)
+  if (IS_HL_XYZ[sym]) return await _hlXyzFetch(sym);
 
   // Crypto — Binance spot is most reliable
   if (IS_CRYPTO[sym]) {
@@ -41217,6 +41532,7 @@ async function _refreshComdtyBar() {
   // Also refresh STKS px for key equities in background
   var stksRefresh = [
     'MSTR','COIN','SOFI','HOOD','PLTR','MARA','RIOT','CLSK','CORZ',
+    'BABA','TSM','ORCL','MU','CRWV','RIVN','CRCL','SBET',
     'AAPL','NVDA','TSLA','META','AMZN','MSFT','GOOGL','NFLX','AMD',
     'UPST','AFRM','SQ','PYPL','SNOW','DDOG','NET','CRWD','PLTR'
   ];
