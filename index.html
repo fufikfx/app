@@ -35921,14 +35921,76 @@ if __name__ == "__main__":
   }
 
   // ── SABR model fallback (when all live sources fail) ─────────────────
+  // Mapping: our symbol → Binance pair (for crypto) or Yahoo ticker (for commodities/stocks)
+  const _SABR_BINANCE_MAP = {
+    BTC:'BTCUSDT', ETH:'ETHUSDT', SOL:'SOLUSDT', XRP:'XRPUSDT', BNB:'BNBUSDT',
+    MATIC:'MATICUSDT', ADA:'ADAUSDT', LTC:'LTCUSDT', DOGE:'DOGEUSDT', AVAX:'AVAXUSDT',
+    LINK:'LINKUSDT', ARB:'ARBUSDT', SUI:'SUIUSDT', TON:'TONUSDT', DOT:'DOTUSDT',
+    HYPE:'HYPEUSDT', NEAR:'NEARUSDT', PEPE:'PEPEUSDT', AAVE:'AAVEUSDT',
+    ATOM:'ATOMUSDT', FIL:'FILUSDT', BCH:'BCHUSDT',
+    GOLD:'XAUUSDT', SILVER:'XAGUSDT',
+  };
+  const _SABR_YAHOO_MAP = {
+    OIL:'CL=F', NATGAS:'NG=F', GAS:'NG=F', COPPER:'HG=F',
+    WHEAT:'ZW=F', CORN:'ZC=F', GOLD:'GC=F', SILVER:'SI=F',
+    MSTR:'MSTR', TSLA:'TSLA', NVDA:'NVDA', AAPL:'AAPL', MSFT:'MSFT', META:'META',
+    AMZN:'AMZN', GOOGL:'GOOGL', AMD:'AMD', COIN:'COIN',
+  };
+  const _SABR_SPOT_FALLBACK = {
+    OIL:70, NATGAS:3.5, GAS:3.5, GOLD:3200, SILVER:32, COPPER:4.5,
+    WHEAT:550, CORN:440, MSTR:350, TSLA:250, NVDA:900, AAPL:210,
+    MSFT:420, META:510, AMZN:190, GOOGL:170, AMD:160, COIN:220,
+    BTC:84000, ETH:1600, SOL:150, XRP:0.5, BNB:600,
+    HYPE:20, NEAR:3, ADA:0.4, LTC:85, DOGE:0.08,
+  };
+
   async function _loadSABR(sym) {
+    const symUP = sym.toUpperCase();
     let spot = 0, ticker = null, klines = null;
+    const yahooTicker = _SABR_YAHOO_MAP[symUP];
+    const binancePair = _SABR_BINANCE_MAP[symUP];
     try {
-      const bd = await _loadBinanceSpot(sym);
-      spot = bd.spot; ticker = bd.ticker; klines = bd.klines;
-      const cl = klines.map(k => parseFloat(k[4]));
-      spot = cl[cl.length - 1];
-    } catch(e) { spot = sym === 'btc' ? 84000 : 1600; }
+      if(binancePair && !yahooTicker) {
+        // Standard crypto via Binance
+        const bd = await _loadBinanceSpot(sym);
+        spot = bd.spot; ticker = bd.ticker; klines = bd.klines;
+        const cl = klines.map(k => parseFloat(k[4]));
+        spot = cl[cl.length - 1];
+      } else if(yahooTicker) {
+        // Commodity or stock — fetch spot from Yahoo Finance via proxy
+        try {
+          const proxies = [
+            `https://query1.finance.yahoo.com/v8/finance/chart/${yahooTicker}?interval=1d&range=60d`,
+            `https://corsproxy.io/?url=${encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+yahooTicker+'?interval=1d&range=60d')}`,
+          ];
+          let yj = null;
+          for(const pu of proxies) {
+            try {
+              const r = await fetch(pu, {signal: AbortSignal.timeout(8000)});
+              if(r.ok) { yj = await r.json(); break; }
+            } catch(e2){}
+          }
+          if(yj?.chart?.result?.[0]) {
+            const res = yj.chart.result[0];
+            const closes = res.indicators?.quote?.[0]?.close || [];
+            const validCloses = closes.filter(c => c != null && c > 0);
+            if(validCloses.length) {
+              spot = validCloses[validCloses.length - 1];
+              // Build synthetic klines from daily closes for HV calculation
+              klines = validCloses.map((c, i) => [0, 0, 0, 0, c.toString(), 0]);
+            }
+          }
+        } catch(ye){}
+        if(!spot || spot <= 0) spot = _SABR_SPOT_FALLBACK[symUP] || 100;
+      } else {
+        // Generic crypto — try Binance with guessed pair
+        const guessPair = symUP + 'USDT';
+        const bd = await _loadBinanceSpot(sym);
+        spot = bd.spot; ticker = bd.ticker; klines = bd.klines;
+        const cl = klines.map(k => parseFloat(k[4]));
+        spot = cl[cl.length - 1];
+      }
+    } catch(e) { spot = _SABR_SPOT_FALLBACK[symUP] || (sym === 'btc' ? 84000 : 1600); }
     const ret = klines ? klines.slice(-168).map((v,i,a) => i>0 ? Math.log(parseFloat(a[i][4])/parseFloat(a[i-1][4])) : 0).slice(1) : [];
     const hv = ret.length > 10 ? Math.sqrt(ret.reduce((s,r)=>s+r*r,0)/ret.length)*Math.sqrt(8760) : (sym==='btc'?0.65:0.75);
     const al = Math.max(0.3, hv), be = 0.7, ro = sym === 'btc' ? -0.15 : -0.20, nu = 0.35;
@@ -35959,19 +36021,146 @@ if __name__ == "__main__":
   }
 
   // ── MULTI-SOURCE LOADER: Deribit → Bybit → SABR ──────────────────────
+  // Asset routing table — which source to try first
+  const _DERIBIT_COINS = new Set(['BTC','ETH','SOL','XRP','BNB','MATIC','POL']);
+  const _OKX_COINS_SET = new Set(['HYPE','DOGE','AVAX','LINK','ARB','SUI','TON','DOT','ADA','LTC','NEAR','PEPE','AAVE','ATOM','FIL','BCH','UNI','APT','OP','INJ','SEI','WLD','TIA','JUP','PYTH']);
+  const _YAHOO_OPT_MAP = {
+    OIL:'CL=F', NATGAS:'NG=F', GAS:'NG=F', GOLD:'GC=F', SILVER:'SI=F',
+    COPPER:'HG=F', WHEAT:'ZW=F', CORN:'ZC=F',
+    MSTR:'MSTR', TSLA:'TSLA', NVDA:'NVDA', AAPL:'AAPL', MSFT:'MSFT',
+    META:'META', AMZN:'AMZN', GOOGL:'GOOGL', AMD:'AMD', COIN:'COIN',
+    SPY:'SPY', QQQ:'QQQ',
+  };
+
+  // Fetch Yahoo options and return pts array compatible with _vsDraw
+  async function _loadYahooOptions(sym) {
+    const CUR = sym.toUpperCase();
+    const yticker = _YAHOO_OPT_MAP[CUR];
+    if(!yticker) throw new Error('No Yahoo ticker for ' + CUR);
+    const proxies = [
+      `https://query1.finance.yahoo.com/v7/finance/options/${yticker}`,
+      `https://corsproxy.io/?url=${encodeURIComponent('https://query1.finance.yahoo.com/v7/finance/options/'+yticker)}`,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent('https://query1.finance.yahoo.com/v7/finance/options/'+yticker)}`,
+    ];
+    let yj = null;
+    for(const pu of proxies) {
+      try {
+        const r = await fetch(pu, {signal: AbortSignal.timeout(10000)});
+        if(r.ok) { yj = await r.json(); break; }
+      } catch(e) {}
+    }
+    if(!yj?.optionChain?.result?.[0]) throw new Error('Yahoo returned no data for ' + yticker);
+    const res = yj.optionChain.result[0];
+    const spot = res.quote?.regularMarketPrice || res.quote?.ask || 0;
+    if(!spot) throw new Error('Yahoo: no spot price');
+    const now = Date.now();
+    const pts = [];
+    const expTsArr = res.expirationDates || [];
+    // Process first expiry (already loaded) + fetch up to 11 more
+    const chainJobs = expTsArr.slice(0, 12).map(async (expTs, idx) => {
+      const expDate = new Date(expTs * 1000);
+      const dte = Math.round((expDate - now) / 86400000);
+      if(dte < 0 || dte > 365) return;
+      let calls = [], puts = [];
+      if(idx === 0) {
+        calls = res.options?.[0]?.calls || [];
+        puts  = res.options?.[0]?.puts  || [];
+      } else {
+        for(const pu of proxies) {
+          try {
+            const u = pu.includes('?') ? pu + '&date=' + expTs : pu + '?date=' + expTs;
+            const r = await fetch(u, {signal: AbortSignal.timeout(8000)});
+            if(r.ok) {
+              const ej = await r.json();
+              calls = ej?.optionChain?.result?.[0]?.options?.[0]?.calls || [];
+              puts  = ej?.optionChain?.result?.[0]?.options?.[0]?.puts  || [];
+              break;
+            }
+          } catch(e) {}
+        }
+      }
+      [...calls, ...puts].forEach(o => {
+        const K = o.strike;
+        const iv = (o.impliedVolatility || 0) * 100;
+        if(K > 0 && iv > 0.5 && iv < 500) {
+          pts.push({ K, dte, iv, src: 'yahoo' });
+        }
+      });
+    });
+    await Promise.allSettled(chainJobs);
+    if(pts.length < 10) throw new Error('Yahoo: insufficient option data (' + pts.length + ' pts)');
+    return { spot, pts, live: true, _src: 'yahoo' };
+  }
+
+  // Fetch OKX options and return pts array
+  async function _loadOKXOptions(sym) {
+    const CUR = sym.toUpperCase();
+    const _gO = async (u) => {
+      try { const r = await fetch(u, {signal:AbortSignal.timeout(9000)}); if(r.ok) return r.json(); } catch(e) {}
+      const r2 = await fetch('https://corsproxy.io/?url='+encodeURIComponent(u), {signal:AbortSignal.timeout(12000)});
+      if(!r2.ok) throw new Error('HTTP '+r2.status);
+      return r2.json();
+    };
+    const [okxInst, okxTicker, idxPrice] = await Promise.all([
+      _gO(`https://www.okx.com/api/v5/public/instruments?instType=OPTION&uly=${CUR}-USD`),
+      _gO(`https://www.okx.com/api/v5/market/tickers?instType=OPTION&uly=${CUR}-USD`),
+      _gO(`https://www.okx.com/api/v5/market/index-tickers?instId=${CUR}-USD`),
+    ]);
+    const spotRaw = parseFloat(idxPrice?.data?.[0]?.idxPx || '0');
+    const spot = spotRaw > 0 ? spotRaw : (window._liveData?.crypto?.[CUR]?.price || 0);
+    if(!spot) throw new Error('OKX: no spot price for ' + CUR);
+    const now = Date.now();
+    const tickMap = {};
+    (okxTicker?.data || []).forEach(t => { tickMap[t.instId] = t; });
+    const pts = [];
+    (okxInst?.data || []).forEach(inst => {
+      if(!inst.instId) return;
+      const p = inst.instId.split('-');
+      if(p.length < 5) return;
+      const K = parseFloat(p[3]);
+      const expRaw = p[2];
+      const exp = new Date('20'+expRaw.slice(0,2)+'-'+expRaw.slice(2,4)+'-'+expRaw.slice(4,6)+'T08:00:00Z');
+      const dte = Math.round((exp - now) / 86400000);
+      if(dte < 1 || dte > 365) return;
+      const tk = tickMap[inst.instId] || {};
+      const iv = parseFloat(tk.markVol || '0') * 100;
+      if(K > 0 && iv > 0.5 && iv < 600) pts.push({ K, dte, iv, src: 'okx' });
+    });
+    if(pts.length < 15) throw new Error('OKX: insufficient data (' + pts.length + ' pts)');
+    return { spot, pts, live: true, _src: 'okx' };
+  }
+
   async function _loadBestOptions(sym) {
     const CUR = sym.toUpperCase();
-    // Try Deribit first (most liquid, best IV data)
-    try {
-      const d = await _loadDeribit(CUR);
-      if (d.pts.length >= 30) return d;
-    } catch(e) { console.warn('Deribit failed for', sym, e.message); }
-    // Try Bybit second
-    try {
-      const d = await _loadBybit(CUR);
-      if (d.pts.length >= 20) return d;
-    } catch(e) { console.warn('Bybit failed for', sym, e.message); }
-    // Final fallback: SABR model seeded from Binance spot
+    // Route by asset class — don't waste time on Deribit for commodities/stocks/altcoins
+    if(_YAHOO_OPT_MAP[CUR]) {
+      // Commodities & stocks: try Yahoo Finance first, SABR fallback
+      try {
+        const d = await _loadYahooOptions(sym);
+        if(d.pts.length >= 10) return d;
+      } catch(e) { console.warn('Yahoo options failed for', CUR, e.message); }
+      return _loadSABR(sym);
+    }
+    if(_OKX_COINS_SET.has(CUR)) {
+      // Alt-coins: try OKX first, then SABR
+      try {
+        const d = await _loadOKXOptions(sym);
+        if(d.pts.length >= 15) return d;
+      } catch(e) { console.warn('OKX options failed for', CUR, e.message); }
+      return _loadSABR(sym);
+    }
+    // Major crypto: Deribit → Bybit → SABR
+    if(_DERIBIT_COINS.has(CUR)) {
+      try {
+        const d = await _loadDeribit(CUR);
+        if(d.pts.length >= 30) return d;
+      } catch(e) { console.warn('Deribit failed for', sym, e.message); }
+      try {
+        const d = await _loadBybit(CUR);
+        if(d.pts.length >= 20) return d;
+      } catch(e) { console.warn('Bybit failed for', sym, e.message); }
+    }
+    // Final fallback: SABR model
     return _loadSABR(sym);
   }
 
@@ -36296,8 +36485,8 @@ if __name__ == "__main__":
       
       // Update status text
       if(el){
-        const srcMap={deribit:'● DERIBIT LIVE',bybit:'● BYBIT LIVE',sabr:'● SABR MODEL'};
-        const colMap={deribit:'#3fb950',bybit:'#f7a635',sabr:'#F39F41'};
+        const srcMap={deribit:'● DERIBIT LIVE',bybit:'● BYBIT LIVE',okx:'● OKX LIVE',yahoo:'● YAHOO LIVE',sabr:'● SABR MODEL'};
+        const colMap={deribit:'#3fb950',bybit:'#f7a635',okx:'#0099FF',yahoo:'#7B68EE',sabr:'#F39F41'};
         const src=d._src||(d.live?'deribit':'sabr');
         el.textContent = srcMap[src] || '● LIVE';
         el.style.color = colMap[src] || '#3fb950';
@@ -36365,33 +36554,42 @@ if __name__ == "__main__":
 
     const stEl=document.getElementById('vs-status');
     if(stEl){
-      const srcMap={deribit:'● DERIBIT LIVE',bybit:'● BYBIT LIVE',sabr:'● SABR MODEL'};
-      const colMap={deribit:'#3fb950',bybit:'#f7a635',sabr:'#F39F41'};
+      const srcMap={deribit:'● DERIBIT LIVE',bybit:'● BYBIT LIVE',okx:'● OKX LIVE',yahoo:'● YAHOO LIVE',sabr:'● SABR MODEL'};
+      const colMap={deribit:'#3fb950',bybit:'#f7a635',okx:'#0099FF',yahoo:'#7B68EE',sabr:'#F39F41'};
       const src=d._src||(d.live?'deribit':'sabr');
       stEl.textContent=srcMap[src]||'● LIVE';
       stEl.style.color=colMap[src]||'#3fb950';
     }
   }
 
+  // All supported symbols by category
+  const _VS_ALL_SYMS = {
+    CRYPTO:      ['btc','eth','sol','xrp','bnb','doge','avax','link','ada','ltc'],
+    STOCKS:      ['nvda','tsla','mstr','aapl','msft','meta','amzn','googl','amd','coin'],
+    COMMODITIES: ['oil','gold','silver','natgas','copper','wheat','corn'],
+  };
+  const _VS_COLORS = {
+    btc:'#FF9900',eth:'#00B7EB',sol:'#5DF2D6',xrp:'#3399FF',bnb:'#F3BA2F',doge:'#C2A633',
+    avax:'#E84142',link:'#2A5ADA',ada:'#0033AD',ltc:'#A0A0A0',
+    nvda:'#76B900',tsla:'#E31937',mstr:'#F7931A',aapl:'#999999',msft:'#00A4EF',
+    meta:'#1877F2',amzn:'#FF9900',googl:'#4285F4',amd:'#ED1C24',coin:'#0052FF',
+    oil:'#4A90D9',gold:'#FFD700',silver:'#C0C0C0',natgas:'#FF6B35',
+    copper:'#B87333',wheat:'#DEB887',corn:'#FFE135',
+  };
+
   window.vsGo=function(sym){
     if(_VS.CUR===sym)return;
     _VS.CUR=sym;
-    
-    // Update button styles dynamically
-    const symbols = ['btc','eth','sol','xrp','bnb','doge'];
-    const colors = {btc:'#FF9900', eth:'#00B7EB', sol:'#5DF2D6', xrp:'#23292F', bnb:'#F3BA2F', doge:'#C2A633'};
-    
-    symbols.forEach(s => {
+    // Update ALL buttons across all categories
+    Object.values(_VS_ALL_SYMS).flat().forEach(s => {
       const btn = document.getElementById('vs-btn-' + s);
       if(!btn) return;
       const isActive = (sym === s);
-      const color = colors[s] || '#F39F41';
-      
-      btn.style.cssText = isActive 
-        ? `padding:4px 10px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid ${color};color:${color};background:rgba(${isActive?hexToRgb(color):'0,0,0'},.07);border-radius:3px`
-        : `padding:4px 10px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #222;color:#444;background:transparent;border-radius:3px`;
+      const color = _VS_COLORS[s] || '#F39F41';
+      btn.style.cssText = isActive
+        ? `padding:3px 9px;font-size:9px;font-weight:700;letter-spacing:.5px;cursor:pointer;border:1px solid ${color};color:${color};background:rgba(0,0,0,.15);border-radius:3px;white-space:nowrap`
+        : `padding:3px 9px;font-size:9px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #1e1e1e;color:#444;background:transparent;border-radius:3px;white-space:nowrap`;
     });
-
     if(_VS.C[sym]) _vsDraw(sym);
     else _vsLoad(sym);
   };
@@ -36412,56 +36610,54 @@ if __name__ == "__main__":
       s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';
       document.head.appendChild(s);
     }
-    
-    const symbols = ['btc','eth','sol','xrp','bnb','doge'];
-    const colors = {btc:'#FF9900', eth:'#00B7EB', sol:'#5DF2D6', xrp:'#133C63', bnb:'#F3BA2F', doge:'#C2A633'};
 
-    // Kick off data load after DOM settles
+    // Smart start: use active terminal symbol if we support it
+    const allSyms = Object.values(_VS_ALL_SYMS).flat();
     let startCur = 'btc';
     if(window._bbgActiveSym) {
-      let parsed = window._bbgActiveSym.replace(/\/.*/, '').replace(/USDT/i, '').replace(/USD/i, '').toLowerCase();
-      if(symbols.includes(parsed)) startCur = parsed;
+      const parsed = window._bbgActiveSym
+        .replace(/\/.*/, '').replace(/USDT/i,'').replace(/USD/i,'').toLowerCase();
+      if(allSyms.includes(parsed)) startCur = parsed;
     }
-    _VS.CUR=startCur;
-    setTimeout(()=>{ 
-      const btn=document.getElementById('vs-btn-' + startCur);
+    _VS.CUR = startCur;
+    setTimeout(()=>{
+      const btn = document.getElementById('vs-btn-' + startCur);
       if(btn) btn.click();
       else _vsLoad(startCur);
     }, 100);
 
-    // ── AUTO-REFRESH: reload current symbol every REFRESH_MS ──────────
-    // Clear any prior timer (panel could be re-opened multiple times)
-    if(window._vsRefreshTimer){
-      clearInterval(window._vsRefreshTimer);
-      window._vsRefreshTimer=null;
-    }
+    // AUTO-REFRESH
+    if(window._vsRefreshTimer){ clearInterval(window._vsRefreshTimer); window._vsRefreshTimer=null; }
     window._vsRefreshTimer=setInterval(()=>{
-      // If panel closed, kill the timer
-      if(!document.getElementById('vs-plot')){
-        clearInterval(window._vsRefreshTimer);
-        window._vsRefreshTimer=null;
-        return;
-      }
-      // Reload the currently selected symbol with fresh data
-      try{ _vsLoad(_VS.CUR); }catch(e){console.warn('vs auto-refresh failed:',e);}
+      if(!document.getElementById('vs-plot')){ clearInterval(window._vsRefreshTimer); window._vsRefreshTimer=null; return; }
+      try{ _vsLoad(_VS.CUR); }catch(e){}
     }, REFRESH_MS);
 
-    const btnHtml = symbols.map(s => {
-      const color = colors[s] || '#F39F41';
-      return `<div id="vs-btn-${s}" onclick="vsGo('${s}')" style="padding:4px 10px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #222;color:#444;background:transparent;border-radius:3px">${s.toUpperCase()}</div>`;
+    // Build categorized button rows
+    const catColors2 = {CRYPTO:'#3399ff',STOCKS:'#00cc44',COMMODITIES:'#f39f41'};
+    const btnRows = Object.entries(_VS_ALL_SYMS).map(([cat, syms]) => {
+      const btns = syms.map(s => {
+        return `<div id="vs-btn-${s}" onclick="vsGo('${s}')" style="padding:3px 9px;font-size:9px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #1e1e1e;color:#444;background:transparent;border-radius:3px;white-space:nowrap">${s.toUpperCase()}</div>`;
+      }).join('');
+      return `<div style="display:flex;align-items:center;gap:5px">
+        <span style="font-size:7px;font-weight:700;letter-spacing:.8px;color:${catColors2[cat]};min-width:68px;opacity:0.8">${cat}</span>
+        <div style="display:flex;gap:3px;flex-wrap:wrap">${btns}</div>
+      </div>`;
     }).join('');
 
-    return `<div style="width:100%;height:100%;background:#101114;position:relative;overflow:hidden">
-  <div style="position:absolute;top:14px;left:20px;z-index:10;pointer-events:none">
-    <div style="font-size:13px;font-weight:700;color:#eaeaec;letter-spacing:.3px;margin-bottom:6px">VOLATILITY SURFACE <span id="vs-status" style="font-size:9px;color:#555;font-weight:600;letter-spacing:.5px;margin-left:6px">LOADING…</span></div>
-    <div style="background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.05);padding:4px 10px;border-radius:4px;display:inline-block">
-      <span style="font-size:12px;font-weight:600;color:#00e6e6;letter-spacing:.5px">Spot: <span id="vs-spot">—</span></span>
+    return `<div style="width:100%;height:100%;background:#101114;position:relative;overflow:hidden;display:flex;flex-direction:column">
+  <div style="flex-shrink:0;padding:10px 16px 8px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid #1a1a1a;background:#0d0d10">
+    <div>
+      <div style="font-size:12px;font-weight:700;color:#eaeaec;letter-spacing:.3px;margin-bottom:4px">VOLATILITY SURFACE
+        <span id="vs-status" style="font-size:9px;color:#555;font-weight:600;letter-spacing:.5px;margin-left:8px">LOADING…</span>
+      </div>
+      <div style="background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.05);padding:3px 10px;border-radius:4px;display:inline-block">
+        <span style="font-size:11px;font-weight:600;color:#00e6e6;letter-spacing:.5px">Spot: <span id="vs-spot">—</span></span>
+      </div>
     </div>
+    <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0">${btnRows}</div>
   </div>
-  <div style="position:absolute;top:14px;right:20px;z-index:10;display:flex;gap:5px;align-items:center">
-    ${btnHtml}
-  </div>
-  <div id="vs-plot" style="position:absolute;inset:0;width:100%;height:100%"></div>
+  <div id="vs-plot" style="flex:1;min-height:0;width:100%"></div>
 </div>`;
   }
   window.fetchGHData=fetchGHData;
@@ -36913,8 +37109,136 @@ async function _ofFetch(cur){
       return r2.json();
     };
 
-    // Non-Deribit coins (HYPE, DOGE, AVAX, LINK, ARB) — try OKX options
-    const OKX_COINS = ['HYPE','DOGE','AVAX','LINK','ARB','SUI','TON','DOT'];
+    // ── Yahoo Finance handler — STOCKS and COMMODITIES ───────────────────
+    const YAHOO_ASSETS = {
+      OIL:'CL=F', NATGAS:'NG=F', GAS:'NG=F', GOLD:'GC=F', SILVER:'SI=F',
+      COPPER:'HG=F', WHEAT:'ZW=F', CORN:'ZC=F',
+      MSTR:'MSTR', TSLA:'TSLA', NVDA:'NVDA', AAPL:'AAPL', MSFT:'MSFT',
+      META:'META', AMZN:'AMZN', GOOGL:'GOOGL', AMD:'AMD', COIN:'COIN',
+      SPX:'%5ESPX', NDX:'%5ENDX', QQQ:'QQQ', SPY:'SPY',
+    };
+    // Inline mini BSM (const BSM defined later in function is not hoisted)
+    const _bsmY = (type, S, K, T, sigma) => {
+      if(T<=0||sigma<=0||S<=0||K<=0) return {delta:0,gamma:0,vega:0,theta:0,vanna:0,charm:0};
+      const sqT=Math.sqrt(T);
+      const d1=(Math.log(S/K)+0.5*sigma*sigma*T)/(sigma*sqT);
+      const d2=d1-sigma*sqT;
+      const nd=x=>0.5*(1+Math.sign(x)*(1-Math.exp(-0.785398*Math.abs(x)*(1+0.0958*Math.abs(x)*(1+0.00018*x*x)))));
+      const npdf=x=>Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI);
+      const Nd1=nd(d1),nd1v=npdf(d1);
+      const isCall=type==='C';
+      const delta=isCall?Nd1:Nd1-1;
+      const gamma=nd1v/(S*sigma*sqT);
+      const vega=S*nd1v*sqT/100;
+      const theta=-(S*nd1v*sigma)/(2*sqT*365);
+      const vanna=-nd1v*d2/sigma;
+      const charm=-nd1v/(2*T);
+      return {delta,gamma,vega,theta,vanna,charm};
+    };
+    if(YAHOO_ASSETS[cur]) {
+      try {
+        const yticker = YAHOO_ASSETS[cur];
+        const yProxies = [
+          `https://query1.finance.yahoo.com/v7/finance/options/${yticker}`,
+          `https://corsproxy.io/?url=${encodeURIComponent('https://query1.finance.yahoo.com/v7/finance/options/'+yticker)}`,
+          `https://api.allorigins.win/raw?url=${encodeURIComponent('https://query1.finance.yahoo.com/v7/finance/options/'+yticker)}`,
+        ];
+        let yj = null;
+        for(const pu of yProxies) {
+          try {
+            const r = await fetch(pu, {signal:AbortSignal.timeout(10000)});
+            if(r.ok) { yj = await r.json(); break; }
+          } catch(pe){}
+        }
+        if(yj?.optionChain?.result?.[0]) {
+          const res = yj.optionChain.result[0];
+          const spot = res.quote?.regularMarketPrice || res.quote?.ask || 0;
+          const now = Date.now();
+          const opts = [];
+          const expTsArr = res.expirationDates || [];
+          const chainFetches = expTsArr.slice(0,12).map(async expTs => {
+            const expDate = new Date(expTs*1000);
+            const dte = Math.round((expDate - now)/86400000);
+            if(dte < 0 || dte > 365) return;
+            const expStr = expDate.toISOString().slice(0,10).replace(/-/g,'');
+            let calls=[], puts=[];
+            if(expTs === expTsArr[0]) {
+              calls = res.options?.[0]?.calls||[];
+              puts  = res.options?.[0]?.puts||[];
+            } else {
+              try {
+                let ej=null;
+                for(const pu of yProxies) {
+                  try {
+                    const ru=pu.includes('?')? pu+'&date='+expTs : pu+'?date='+expTs;
+                    const r=await fetch(ru,{signal:AbortSignal.timeout(8000)});
+                    if(r.ok){ej=await r.json();break;}
+                  }catch(e2){}
+                }
+                calls = ej?.optionChain?.result?.[0]?.options?.[0]?.calls||[];
+                puts  = ej?.optionChain?.result?.[0]?.options?.[0]?.puts||[];
+              }catch(e2){}
+            }
+            [...calls.map(c=>({...c,type:'C'})), ...puts.map(p=>({...p,type:'P'}))].forEach(o=>{
+              const K=o.strike;
+              const iv=(o.impliedVolatility||0)*100;
+              const oi=o.openInterest||0;
+              const volume=o.volume||0;
+              const markPrice=((o.ask||0)+(o.bid||0))/2||o.lastPrice||0;
+              if(K>0&&iv>0) {
+                const g=_bsmY(o.type,spot,K,Math.max(dte,0.1)/365,Math.max(iv,1)/100);
+                opts.push({name:`${cur}-${expStr}-${K}-${o.type}`,K,type:o.type,dte,
+                  iv:Math.max(0,iv),oi:Math.max(0,oi),volume,markPrice,bidIv:0,askIv:0,
+                  expStr,exp:expDate.getTime(),...g});
+              }
+            });
+          });
+          await Promise.allSettled(chainFetches);
+          if(opts.length > 5) {
+            const expMap = {};
+            opts.forEach(o=>{expMap[o.expStr]=o.dte;});
+            const expiries=Object.entries(expMap).sort((a,b)=>a[1]-b[1]).map(([e,d])=>({exp:e,dte:d}));
+            const tsData=expiries.map(({exp,dte})=>{
+              const atm=opts.filter(o=>o.expStr===exp&&o.type==='C'&&o.iv>0).sort((a,b)=>Math.abs(a.K-spot)-Math.abs(b.K-spot))[0];
+              return {exp,dte,atmIV:atm?.iv||0,fwdIV:atm?.iv||0};
+            }).filter(d=>d.atmIV>0);
+            _OF.data[cur]={spot,opts,expiries,ts:now,histVol:[],tsData};
+            _OF.loading=false; _ofRender(); return;
+          }
+        }
+      } catch(ye){ console.warn('Yahoo options error for',cur,ye); }
+      // Yahoo failed — SABR model fallback for commodity/stock
+      try {
+        const sabrD = await _loadSABR(cur.toLowerCase());
+        const spotF = sabrD.spot||100;
+        const now=Date.now();
+        const opts=[];
+        sabrD.pts.forEach(p=>{
+          ['C','P'].forEach(tp=>{
+            const T=Math.max(p.dte,0.1)/365;
+            const g=_bsmY(tp,spotF,p.K,T,(p.iv||30)/100);
+            const expStr=String(p.dte).padStart(3,'0')+'D';
+            opts.push({name:`${cur}-${expStr}-${p.K}-${tp}`,K:p.K,type:tp,dte:p.dte,
+              iv:p.iv,oi:0,volume:0,markPrice:0,bidIv:0,askIv:0,
+              expStr,exp:now+p.dte*86400000,...g});
+          });
+        });
+        const expMap={};
+        opts.forEach(o=>{expMap[o.expStr]=o.dte;});
+        const expiries=Object.entries(expMap).sort((a,b)=>a[1]-b[1]).map(([e,d])=>({exp:e,dte:d}));
+        _OF.data[cur]={spot:spotF,opts,expiries,ts:now,histVol:[],tsData:[]};
+        _OF.loading=false; _ofRender(); return;
+      } catch(se){ console.warn('SABR fallback failed for',cur,se); }
+      _OF.err = `${cur} options not available (Yahoo Finance returned no data).`;
+      _OF.loading = false; _ofRender(); return;
+    }
+
+    // Non-Deribit coins — try OKX options (expanded coin list)
+    const OKX_COINS = [
+      'HYPE','DOGE','AVAX','LINK','ARB','SUI','TON','DOT',
+      'ADA','LTC','NEAR','PEPE','AAVE','ATOM','FIL','BCH',
+      'UNI','APT','OP','INJ','SEI','WLD','TIA','JUP','PYTH'
+    ];
     if(OKX_COINS.includes(cur)){
       try {
         const [okxInst, okxTicker, hypePrice] = await Promise.all([
@@ -36923,7 +37247,8 @@ async function _ofFetch(cur){
           _g(`https://www.okx.com/api/v5/market/index-tickers?instId=${cur}-USD`)
         ]);
         const spotRaw = parseFloat(hypePrice?.data?.[0]?.idxPx||'0');
-        const spot = spotRaw>0 ? spotRaw : (window._liveData?.crypto?.HYPE?.price||20);
+        const livePrice = window._liveData?.crypto?.[cur]?.price || 20;
+        const spot = spotRaw>0 ? spotRaw : livePrice;
         const now = Date.now();
         const opts = [];
         const tickMap = {};
@@ -36954,8 +37279,31 @@ async function _ofFetch(cur){
           _OF.data[cur] = {spot, opts, expiries, ts: Date.now()};
           _OF.loading = false; _ofRender(); return;
         }
-      } catch(e){ console.warn('OKX HYPE options error',e); }
-      _OF.err = `${cur} options not available on OKX at this time. Deribit supports BTC, ETH, SOL, XRP, BNB, MATIC.`;
+      } catch(e){ console.warn('OKX options error for',cur,e); }
+      // OKX had no data — SABR fallback
+      try {
+        const sabrFb = await _loadSABR(cur.toLowerCase());
+        if(sabrFb?.pts?.length) {
+          const sp=sabrFb.spot||100, now=Date.now();
+          const opts=[];
+          sabrFb.pts.forEach(p=>{
+            ['C','P'].forEach(tp=>{
+              const T=Math.max(p.dte,0.1)/365;
+              const g=_bsmY(tp,sp,p.K,T,(p.iv||50)/100);
+              const expStr=String(p.dte).padStart(3,'0')+'D';
+              opts.push({name:`${cur}-${expStr}-${p.K}-${tp}`,K:p.K,type:tp,dte:p.dte,
+                iv:p.iv,oi:0,volume:0,markPrice:0,bidIv:0,askIv:0,
+                expStr,exp:now+p.dte*86400000,...g});
+            });
+          });
+          const expMap={};
+          opts.forEach(o=>{expMap[o.expStr]=o.dte;});
+          const expiries=Object.entries(expMap).sort((a,b)=>a[1]-b[1]).map(([e,d])=>({exp:e,dte:d}));
+          _OF.data[cur]={spot:sp,opts,expiries,ts:now,histVol:[],tsData:[]};
+          _OF.loading=false; _ofRender(); return;
+        }
+      } catch(se){ console.warn('SABR fallback failed for',cur,se); }
+      _OF.err = `${cur} options not available. Try BTC, ETH, SOL, XRP, BNB or a major commodity/stock.`;
       _OF.loading = false; _ofRender(); return;
     }
 
