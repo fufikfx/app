@@ -27592,7 +27592,9 @@ window._setChartInterval = async function(interval) {
     };
 
     // ── CRYPTO: Shared Ribbon Prefill & Helper ──
-    const _cPreload = (typeof CRYPTO !== 'undefined') && CRYPTO.find(c => c.s === rawSym);
+    // Only prefill from cache on symbol switch (not TF switch) to avoid showing stale synthetic data
+    const _isSymSwitchForCrypto = !window._bbgLastRenderedSym || window._bbgLastRenderedSym !== rawSym;
+    const _cPreload = _isSymSwitchForCrypto && (typeof CRYPTO !== 'undefined') && CRYPTO.find(c => c.s === rawSym);
     if (_cPreload && _cPreload.px) {
         const _cp = _cPreload;
         setEl('bbg-current-price', fmtP(_cp.px));
@@ -27930,8 +27932,12 @@ window._setChartInterval = async function(interval) {
         // ── EQUITY / INDEX / FOREX / COMDTY: Yahoo Finance poll každých 15s ──
         const ticker = yahooTicker;
 
-        // ── Pre-fill ribbon instantly from static STKS cache (avoids blank state) ──
-        const _stksPreload = (typeof STKS !== 'undefined') && STKS[rawSym];
+        // ── Pre-fill ribbon from STKS cache only on first symbol load, NOT on timeframe switch ──
+        // _bbgActiveInterval was just set above; if this is a TF switch the symbol hasn't changed.
+        // We detect a TF switch by checking if a previous price is already displayed (live data exists).
+        const _isSymbolSwitch = !window._bbgLastRenderedSym || window._bbgLastRenderedSym !== rawSym;
+        window._bbgLastRenderedSym = rawSym;
+        const _stksPreload = _isSymbolSwitch && (typeof STKS !== 'undefined') && STKS[rawSym];
         if (_stksPreload && _stksPreload.px) {
             const _sp = _stksPreload;
             const _prc = _sp.px;
@@ -27956,6 +27962,18 @@ window._setChartInterval = async function(interval) {
             const ctnr = document.getElementById('bbg-current-price-container');
             if (ctnr) ctnr.style.color = _col;
             window._firstBbgPrice = _opn;
+        } else if (!_isSymbolSwitch) {
+            // Timeframe switch: reset Hi/Lo/Open to dashes so stale values aren't shown.
+            // Current price stays (it's live), but period-specific values reload from fetch.
+            setEl('bbg-high',  '—');
+            setEl('bbg-low',   '—');
+            setEl('bbg-start', '—');
+            setEl('ov-high',   '—');
+            setEl('ov-low',    '—');
+            setEl('ov-open',   '—');
+            window._firstBbgPrice = 0;
+            window._chigh = -Infinity;
+            window._clow  = Infinity;
         }
 
         const doFetch = async () => {
@@ -28895,6 +28913,8 @@ window._openChartForSymbol = function(sym) {
     idsToClose.forEach(function(id) { try { closePanel(id); } catch(e){} });
     
     // 0) Instant price fill from cache — before any async calls
+    // Reset TF-switch guard so STKS preload fires on new symbol load
+    window._bbgLastRenderedSym = null;
     window._bbgInstantFill(sym);
 
     // 1b) Close existing chart WebSocket before switching symbol
