@@ -25915,21 +25915,96 @@ function _renderOrderBook(sym){
 window._deribitData = {BTC:{},ETH:{}};
 let _deribitWS = null;
 
-async function fetchDeribitOptions(coin='BTC'){
+// Store all expiries per coin for selector
+window._deribitAllExpiries = window._deribitAllExpiries || {};
+window._deribitSelExpiry  = window._deribitSelExpiry  || {};
+
+async function fetchDeribitOptions(coin='BTC', selExpTs=null){
   try{
+    // Show loading
+    const contentEl = document.getElementById('crypto-opt-content');
+    const coinEl = document.getElementById('crypto-opt-'+coin.toLowerCase());
+    if(coinEl) coinEl.innerHTML='<div style="padding:20px;text-align:center;color:#998870;font-size:9px">⟳ LOADING DERIBIT OPTIONS...</div>';
+
+    // Check if coin needs OKX fallback (not on Deribit options)
+    const DERIBIT_COINS = ['BTC','ETH','SOL','XRP','BNB','MATIC','POL'];
+    if(!DERIBIT_COINS.includes(coin)){
+      // Try OKX for unsupported Deribit coins
+      const contentEl2 = document.getElementById('crypto-opt-content');
+      const coinEl2 = document.getElementById('crypto-opt-'+coin.toLowerCase());
+      try {
+        const [okxI,okxT,okxPx] = await Promise.all([
+          fetch(`https://www.okx.com/api/v5/public/instruments?instType=OPTION&uly=${coin}-USD`,{signal:(()=>{const c=new AbortController();setTimeout(()=>c.abort(),10000);return c.signal;})()}).then(r=>r.json()),
+          fetch(`https://www.okx.com/api/v5/market/tickers?instType=OPTION&uly=${coin}-USD`,{signal:(()=>{const c=new AbortController();setTimeout(()=>c.abort(),10000);return c.signal;})()}).then(r=>r.json()),
+          fetch(`https://www.okx.com/api/v5/market/index-tickers?instId=${coin}-USD`,{signal:(()=>{const c=new AbortController();setTimeout(()=>c.abort(),8000);return c.signal;})()}).then(r=>r.json())
+        ]);
+        const spotRaw2 = parseFloat(okxPx?.data?.[0]?.idxPx||'0');
+        const spotPrice2 = spotRaw2>0?spotRaw2:(window._liveData?.crypto?.[coin]?.price||100);
+        const now2 = Date.now();
+        const tickMap2 = {};
+        (okxT?.data||[]).forEach(t=>{tickMap2[t.instId]=t;});
+        const insts2 = [];
+        const allExpTs2 = [];
+        (okxI?.data||[]).forEach(inst=>{
+          const p=inst.instId.split('-');
+          if(p.length<5) return;
+          const K=parseFloat(p[3]), type=p[4];
+          const expRaw=p[2];
+          const exp=new Date('20'+expRaw.slice(0,2)+'-'+expRaw.slice(2,4)+'-'+expRaw.slice(4,6)+'T08:00:00Z');
+          const dte=Math.round((exp-now2)/86400000);
+          if(dte<0||dte>365) return;
+          const tk=tickMap2[inst.instId]||{};
+          const iv=parseFloat(tk.markVol||'0')*100;
+          const oi=parseFloat(inst.ctVal||'1')*parseFloat(tk.oi||'0');
+          if(K>0) insts2.push({instrument:{strike:K,option_type:type==='C'?'call':'put',instrument_name:inst.instId,expiration_timestamp:exp.getTime()},
+            mark_iv:Math.max(0,iv),open_interest:Math.max(0,oi),mark_price:parseFloat(tk.markPx||'0'),
+            best_bid_price:parseFloat(tk.bidPx||'0'),best_ask_price:parseFloat(tk.askPx||'0'),
+            greeks:{delta:0,gamma:0,vega:0,theta:0}});
+          const expTs=exp.getTime();
+          if(!allExpTs2.includes(expTs)) allExpTs2.push(expTs);
+        });
+        if(insts2.length>0){
+          const selTs2=selExpTs||allExpTs2.sort().find(e=>e>now2)||allExpTs2[0];
+          window._deribitAllExpiries=window._deribitAllExpiries||{};
+          window._deribitAllExpiries[coin]=allExpTs2.sort();
+          window._deribitSelExpiry=window._deribitSelExpiry||{};
+          window._deribitSelExpiry[coin]=selTs2;
+          const filtered2=insts2.filter(i=>i.instrument.expiration_timestamp===selTs2);
+          const dte2=Math.max(0,Math.round((selTs2-now2)/86400000));
+          const expLabel2=new Date(selTs2).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}).toUpperCase();
+          const atmC2=[...filtered2].filter(i=>i.instrument.option_type==='call').sort((a,b)=>Math.abs(a.instrument.strike-spotPrice2)-Math.abs(b.instrument.strike-spotPrice2))[0];
+          const atmIV2=atmC2?.mark_iv||0;
+          const em1_2=atmIV2>0?spotPrice2*(atmIV2/100)*Math.sqrt(dte2/365):0;
+          window._deribitData=window._deribitData||{};
+          window._deribitData[coin]={expiry:expLabel2,dte:dte2,atmIV:atmIV2,em1:em1_2.toFixed(0),em2:(em1_2*2).toFixed(0),straddle:'—',instruments:filtered2};
+          _renderCryptoOptions(coin);
+          return;
+        }
+      } catch(e2){ console.warn('OKX fallback error for '+coin,e2); }
+      const coinEl3=document.getElementById('crypto-opt-'+coin.toLowerCase());
+      if(coinEl3) coinEl3.innerHTML=`<div style="padding:20px;text-align:center;color:#ff4444;font-size:9px">${coin} options not available on Deribit or OKX</div>`;
+      return;
+    }
     const r = await fetch(`https://www.deribit.com/api/v2/public/get_instruments?currency=${coin}&kind=option&expired=false`,{
       signal:(()=>{const c=new AbortController();setTimeout(()=>c.abort(),10000);return c.signal;})()
     });
     const d = await r.json();
     if(!d.result) return;
-    // Get current expiry options only
+
     const now = Date.now();
-    const expiries = [...new Set(d.result.map(i=>i.expiration_timestamp))].sort();
-    const nearExp = expiries.find(e=>e > now) || expiries[0];
-    const instruments = d.result.filter(i=>i.expiration_timestamp===nearExp).slice(0,40);
-    
-    // Fetch ticker for each
-    const tickers = await Promise.allSettled(instruments.map(async inst=>{
+    // All future expiries sorted
+    const allExpTs = [...new Set(d.result.map(i=>i.expiration_timestamp))].sort().filter(e=>e>now-3600000);
+    window._deribitAllExpiries[coin] = allExpTs;
+
+    // Pick selected or nearest
+    const nearExp = selExpTs || allExpTs.find(e=>e>now) || allExpTs[0];
+    window._deribitSelExpiry[coin] = nearExp;
+
+    const instruments = d.result.filter(i=>i.expiration_timestamp===nearExp);
+
+    // Fetch tickers (limit to 60 strikes max for performance)
+    const limited = instruments.slice(0,60);
+    const tickers = await Promise.allSettled(limited.map(async inst=>{
       try{
         const r2 = await fetch(`https://www.deribit.com/api/v2/public/ticker?instrument_name=${inst.instrument_name}`,{
           signal:(()=>{const c=new AbortController();setTimeout(()=>c.abort(),5000);return c.signal;})()
@@ -25938,15 +26013,43 @@ async function fetchDeribitOptions(coin='BTC'){
         return {...d2.result, instrument:inst};
       }catch(e){return null;}
     }));
-    
+
     const valid = tickers.filter(t=>t.status==='fulfilled'&&t.value).map(t=>t.value);
+    const dte = Math.max(0,Math.round((nearExp-now)/86400000));
+    const expLabel = new Date(nearExp).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}).toUpperCase();
+
+    // Compute ATM IV + expected move from ATM call IV
+    const spotPrice = window._liveData?.crypto?.[coin]?.price || (coin==='BTC'?76000:1500);
+    const atm = valid.filter(i=>i.instrument?.option_type==='call').sort((a,b)=>Math.abs((a.instrument?.strike||0)-spotPrice)-Math.abs((b.instrument?.strike||0)-spotPrice))[0];
+    const atmIV = atm?.mark_iv || 0;
+    const dteFrac = dte/365;
+    const em1 = atmIV>0 ? spotPrice*atmIV/100*Math.sqrt(dteFrac) : 0;
+    const em2 = em1*2;
+    const straddleEst = atm ? ((atm.mark_price||0)*spotPrice*2).toFixed(0) : '—';
+
     window._deribitData[coin] = {
-      expiry: new Date(nearExp).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}).toUpperCase(),
+      expiry: expLabel,
+      dte,
+      atmIV,
+      em1: em1.toFixed(0),
+      em2: em2.toFixed(0),
+      straddle: straddleEst,
       instruments: valid
     };
     _renderCryptoOptions(coin);
-  }catch(e){}
+  }catch(e){ console.warn('fetchDeribitOptions error',e); }
 }
+
+// Auto-refresh CRYPTOOPT every 60s
+(function(){
+  if(window._cryptoOptTimer) return;
+  window._cryptoOptTimer = setInterval(()=>{
+    const el = document.getElementById('crypto-opt-btc') || document.getElementById('crypto-opt-eth');
+    if(!el) return;
+    const activeCoin = window._deribitActiveCoin || 'BTC';
+    fetchDeribitOptions(activeCoin, window._deribitSelExpiry[activeCoin]);
+  }, 60000);
+})();
 
 function _renderCryptoOptions(coin){
   const el = document.getElementById('crypto-opt-'+coin.toLowerCase());
@@ -25957,57 +26060,87 @@ function _renderCryptoOptions(coin){
     return;
   }
   const calls = data.instruments.filter(i=>i.instrument?.option_type==='call').sort((a,b)=>a.instrument.strike-b.instrument.strike);
-  const puts = data.instruments.filter(i=>i.instrument?.option_type==='put').sort((a,b)=>a.instrument.strike-b.instrument.strike);
-  
-  const spotPrice = window._liveData?.crypto?.[coin]?.price || (coin==='BTC'?83200:1924);
-  
+  const puts  = data.instruments.filter(i=>i.instrument?.option_type==='put').sort((a,b)=>a.instrument.strike-b.instrument.strike);
+  const spotPrice = window._liveData?.crypto?.[coin]?.price || (coin==='BTC'?76000:1500);
+
+  // Expiry selector buttons
+  const allExpTs = window._deribitAllExpiries[coin] || [];
+  const selTs    = window._deribitSelExpiry[coin] || 0;
+  const expBtns = allExpTs.slice(0,14).map(ts=>{
+    const lbl = new Date(ts).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}).toUpperCase();
+    const dte = Math.max(0,Math.round((ts-Date.now())/86400000));
+    const active = ts===selTs;
+    return `<span onclick="fetchDeribitOptions('${coin}',${ts})"
+      style="cursor:pointer;display:inline-block;padding:1px 6px;margin:0 2px;font-size:7px;
+      border:1px solid ${active?'#ff8800':'#1a0e00'};
+      background:${active?'#180800':'transparent'};
+      color:${active?'#ff8800':'#665840'};
+      border-radius:2px;white-space:nowrap"
+      title="${dte}d">${lbl}<span style="color:#444;font-size:6px"> ${dte}d</span></span>`;
+  }).join('');
+
+  // Stats row
+  const em1 = data.em1>0 ? `±$${parseInt(data.em1).toLocaleString()}` : '—';
+  const em2 = data.em2>0 ? `±$${parseInt(data.em2).toLocaleString()}` : '—';
+  const statsRow = `
+    <div style="display:flex;gap:16px;padding:3px 8px;background:#050300;border-bottom:1px solid #0a0600;flex-wrap:wrap">
+      <span style="color:#665840;font-size:7.5px">ATM IV: <b style="color:#F39F41">${data.atmIV?data.atmIV.toFixed(1)+'%':'—'}</b></span>
+      <span style="color:#665840;font-size:7.5px">1σ: <b style="color:#00cc44">${em1}</b></span>
+      <span style="color:#665840;font-size:7.5px">2σ: <b style="color:#00aa33">${em2}</b></span>
+      <span style="color:#665840;font-size:7.5px">STRADDLE≈: <b style="color:#00bbdd">$${data.straddle}</b></span>
+      <span style="color:#665840;font-size:7.5px">DTE: <b style="color:#998870">${data.dte}d</b></span>
+      <span style="color:#00cc44;font-size:7px;margin-left:auto">● LIVE</span>
+    </div>`;
+
   const optRow = (call,put)=>{
     if(!call&&!put) return '';
     const strike = call?.instrument?.strike || put?.instrument?.strike;
-    const itm = spotPrice >= strike;
-    const c_bid = call?.best_bid_price?.toFixed(4)||'—';
-    const c_ask = call?.best_ask_price?.toFixed(4)||'—';
-    const c_iv = call?.mark_iv?.toFixed(1)||'—';
-    const c_delta = call?.greeks?.delta?.toFixed(3)||'—';
-    const c_oi = call?.open_interest?.toFixed(0)||'—';
-    const p_bid = put?.best_bid_price?.toFixed(4)||'—';
-    const p_ask = put?.best_ask_price?.toFixed(4)||'—';
-    const p_iv = put?.mark_iv?.toFixed(1)||'—';
-    const p_delta = put?.greeks?.delta?.toFixed(3)||'—';
-    const p_oi = put?.open_interest?.toFixed(0)||'—';
-    return `<tr style="background:${itm?'#080500':'#040200'}">
-      <td style="padding:2px 6px;color:#00cc44;font-size:8.5px;text-align:right;font-family:'Roboto Mono',monospace">${c_bid}</td>
-      <td style="padding:2px 6px;color:#ff2222;font-size:8.5px;text-align:right;font-family:'Roboto Mono',monospace">${c_ask}</td>
-      <td style="padding:2px 6px;color:#665840;font-size:8px;text-align:right">${c_iv}%</td>
-      <td style="padding:2px 6px;color:#aa9980;font-size:8px;text-align:right">${c_delta}</td>
-      <td style="padding:2px 4px;color:#998870;font-size:7.5px;text-align:right">${c_oi}</td>
-      <td style="padding:2px 8px;color:${itm?'#00cc44':'#ff8800'};font-size:9px;font-weight:700;text-align:center;background:#0a0600;border-left:1px solid #1a0e00;border-right:1px solid #1a0e00">${strike?.toLocaleString()}</td>
-      <td style="padding:2px 4px;color:#998870;font-size:7.5px;text-align:left">${p_oi}</td>
-      <td style="padding:2px 6px;color:#aa9980;font-size:8px;text-align:left">${p_delta}</td>
-      <td style="padding:2px 6px;color:#665840;font-size:8px;text-align:left">${p_iv}%</td>
-      <td style="padding:2px 6px;color:#00cc44;font-size:8.5px;text-align:left;font-family:'Roboto Mono',monospace">${p_bid}</td>
-      <td style="padding:2px 6px;color:#ff2222;font-size:8.5px;text-align:left;font-family:'Roboto Mono',monospace">${p_ask}</td>
+    const isATM = Math.abs(strike-spotPrice)/spotPrice < 0.008;
+    const itm   = spotPrice >= strike;
+    const rowBg = isATM ? '#0d0800' : itm ? '#080500' : '#040200';
+    const strikeColor = isATM ? '#ffcc00' : itm ? '#00cc44' : '#ff8800';
+    const atmMark = isATM ? '★' : '';
+
+    const fmt4 = v => v!=null ? v.toFixed(4) : '—';
+    const fmt1 = v => v!=null ? v.toFixed(1)+'%' : '—';
+    const fmt3 = v => v!=null ? v.toFixed(3) : '—';
+    const fmtOI= v => v!=null ? Math.round(v).toLocaleString() : '—';
+
+    return `<tr style="background:${rowBg}${isATM?';outline:1px solid #2a1800':''}" title="${isATM?'ATM':''}">
+      <td style="padding:2px 6px;color:#00cc44;font-size:8.5px;text-align:right;font-family:'Roboto Mono',monospace">${fmt4(call?.best_bid_price)}</td>
+      <td style="padding:2px 6px;color:#ff2222;font-size:8.5px;text-align:right;font-family:'Roboto Mono',monospace">${fmt4(call?.best_ask_price)}</td>
+      <td style="padding:2px 6px;color:#665840;font-size:8px;text-align:right">${fmt1(call?.mark_iv)}</td>
+      <td style="padding:2px 6px;color:#aa9980;font-size:8px;text-align:right">${fmt3(call?.greeks?.delta)}</td>
+      <td style="padding:2px 4px;color:#998870;font-size:7.5px;text-align:right">${fmtOI(call?.open_interest)}</td>
+      <td style="padding:2px 8px;color:${strikeColor};font-size:9px;font-weight:700;text-align:center;background:#0a0600;border-left:1px solid #1a0e00;border-right:1px solid #1a0e00">${atmMark}${strike?.toLocaleString()}</td>
+      <td style="padding:2px 4px;color:#998870;font-size:7.5px;text-align:left">${fmtOI(put?.open_interest)}</td>
+      <td style="padding:2px 6px;color:#aa9980;font-size:8px;text-align:left">${fmt3(put?.greeks?.delta)}</td>
+      <td style="padding:2px 6px;color:#665840;font-size:8px;text-align:left">${fmt1(put?.mark_iv)}</td>
+      <td style="padding:2px 6px;color:#00cc44;font-size:8.5px;text-align:left;font-family:'Roboto Mono',monospace">${fmt4(put?.best_bid_price)}</td>
+      <td style="padding:2px 6px;color:#ff2222;font-size:8.5px;text-align:left;font-family:'Roboto Mono',monospace">${fmt4(put?.best_ask_price)}</td>
     </tr>`;
   };
-  
-  // Pair calls and puts by strike
+
   const allStrikes = [...new Set([...calls,...puts].map(i=>i.instrument?.strike))].sort((a,b)=>a-b);
   const rows = allStrikes.map(str=>{
     const call = calls.find(c=>c.instrument?.strike===str);
-    const put = puts.find(p=>p.instrument?.strike===str);
+    const put  = puts.find(p=>p.instrument?.strike===str);
     return optRow(call,put);
   }).join('');
-  
+
   el.innerHTML = `
-    <div style="background:#060400;padding:4px 8px;border-bottom:1px solid #1a0e00;display:flex;gap:12px;align-items:center;flex-wrap:wrap;position:sticky;top:0">
-      <span style="color:#F39F41;font-size:8px;font-weight:700;letter-spacing:2px">${coin} OPTIONS</span>
-      <span style="color:#665840;font-size:7.5px">EXP: ${data.expiry}</span>
-      <span style="color:#ff8800;font-size:8px">SPOT: <b>${spotPrice.toLocaleString()}</b></span>
-      <span style="color:#00cc44;font-size:7px">● DERIBIT LIVE</span>
+    <div style="background:#060400;padding:4px 8px;border-bottom:1px solid #1a0e00;display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:10">
+      <span style="color:#F39F41;font-size:8px;font-weight:700;letter-spacing:2px">${coin} OPTIONS CHAIN</span>
+      <span style="color:#ff8800;font-size:8px">SPOT: <b style="font-family:'Roboto Mono',monospace">$${spotPrice.toLocaleString(undefined,{maximumFractionDigits:0})}</b></span>
     </div>
-    <div style="overflow:auto;height:calc(100% - 26px)">
+    <div style="background:#040200;padding:4px 6px;border-bottom:1px solid #0a0500;overflow-x:auto;white-space:nowrap;position:sticky;top:26px;z-index:9">
+      ${expBtns}
+    </div>
+    ${statsRow}
+    <div style="overflow:auto;height:calc(100% - 80px)">
     <table style="width:100%;border-collapse:collapse">
-      <tr style="background:#0a0500;position:sticky;top:0">
+      <thead style="position:sticky;top:0;z-index:8">
+      <tr style="background:#0a0500">
         <th colspan="5" style="color:#00cc44;font-size:7px;letter-spacing:1px;padding:3px 6px;border-bottom:1px solid #1a0e00;text-align:center">── CALLS ──</th>
         <th style="color:#ff8800;font-size:7px;letter-spacing:1px;padding:3px 8px;border-bottom:1px solid #1a0e00;text-align:center">STRIKE</th>
         <th colspan="5" style="color:#ff2222;font-size:7px;letter-spacing:1px;padding:3px 6px;border-bottom:1px solid #1a0e00;text-align:center">── PUTS ──</th>
@@ -26015,7 +26148,8 @@ function _renderCryptoOptions(coin){
       <tr style="background:#080500">
         ${['BID','ASK','IV','Δ','OI','','OI','Δ','IV','BID','ASK'].map((h,i)=>`<th style="color:#ff9900;font-size:6.5px;padding:2px 6px;border-bottom:1px solid #1a0e00;text-align:${i<5?'right':i===5?'center':'left'}">${h}</th>`).join('')}
       </tr>
-      ${rows}
+      </thead>
+      <tbody>${rows}</tbody>
     </table>
     </div>`;
 }
@@ -26385,19 +26519,47 @@ function buildORDB(){
 
 // CRYPTO OPTIONS PANEL  
 function buildCRYPTOOPT(){
-  fetchDeribitOptions('BTC');
+  window._deribitActiveCoin = window._deribitActiveCoin || 'BTC';
+  const COINS_OPT = ['BTC','ETH','SOL','XRP','BNB','MATIC','DOGE','AVAX','LINK','ARB','HYPE','SUI','TON','DOT'];
+
+  // Fetch initial data
+  setTimeout(()=>{ fetchDeribitOptions('BTC'); }, 50);
+
+  // Auto-refresh all visible coins every 60s
+  if(!window._cryptoOptTimerV2){
+    window._cryptoOptTimerV2 = setInterval(()=>{
+      const el = document.getElementById('crypto-opt-content');
+      if(!el) return;
+      const ac = window._deribitActiveCoin || 'BTC';
+      fetchDeribitOptions(ac, window._deribitSelExpiry?.[ac]);
+    }, 60000);
+  }
+
   return `<div style="height:100%;background:#000;font-family:'Courier Prime',monospace;display:flex;flex-direction:column">
-  <div style="background:#060400;border-bottom:1px solid #1a0e00;padding:4px 10px;display:flex;gap:8px;align-items:center;flex-shrink:0">
+  <div style="background:#060400;border-bottom:1px solid #1a0e00;padding:3px 10px;display:flex;gap:6px;align-items:center;flex-shrink:0">
     <span style="color:#F39F41;font-size:8px;font-weight:700;letter-spacing:2px">CRYPTO OPTIONS CHAIN</span>
-    <div style="display:flex;gap:4px">
-      ${['BTC','ETH'].map(c=>`
-        <span onclick="fetchDeribitOptions('${c}');document.getElementById('crypto-opt-content').innerHTML='<div style=padding:20px;text-align:center;color:#998870;font-size:9px>⟳ LOADING...</div>'" 
-          style="cursor:pointer;color:${c==='BTC'?'#ff8800':'#443322'};font-size:8px;padding:1px 8px;border:1px solid ${c==='BTC'?'#ff6600':'#1a0e00'}">${c}</span>`).join('')}
+    <div id="cryptoopt-coin-tabs" style="display:flex;gap:3px">
+      ${COINS_OPT.map(c=>`
+        <span id="cryptoopt-tab-${c}"
+          onclick="(function(){
+            window._deribitActiveCoin='${c}';
+            ${JSON.stringify(COINS_OPT)}.forEach(x=>{
+              const t=document.getElementById('cryptoopt-tab-'+x);
+              if(t){t.style.color=x==='${c}'?'#ff8800':'#443322';t.style.borderColor=x==='${c}'?'#ff6600':'#1a0e00';t.style.background=x==='${c}'?'#180800':'transparent';}
+            });
+            const panel=document.getElementById('crypto-opt-content');
+            panel.innerHTML='<div id=\\'crypto-opt-${c.toLowerCase()}\\' style=\\'height:100%;overflow:auto\\'><div style=\\'padding:20px;text-align:center;color:#998870;font-size:9px\\'>⟳ LOADING ${c} OPTIONS...</div></div>';
+            fetchDeribitOptions('${c}');
+          })()"
+          style="cursor:pointer;color:${c==='BTC'?'#ff8800':'#443322'};font-size:8px;padding:1px 8px;
+                 border:1px solid ${c==='BTC'?'#ff6600':'#1a0e00'};
+                 background:${c==='BTC'?'#180800':'transparent'};
+                 border-radius:2px">${c}</span>`).join('')}
     </div>
-    <span style="color:#998870;font-size:7px;margin-left:auto">POWERED BY DERIBIT</span>
+    <span style="color:#998870;font-size:7px;margin-left:auto">DERIBIT LIVE · AUTO ⟳60s</span>
   </div>
-  <div id="crypto-opt-content" style="flex:1;overflow:auto">
-    <div id="crypto-opt-btc" style="height:100%">
+  <div id="crypto-opt-content" style="flex:1;overflow:hidden">
+    <div id="crypto-opt-btc" style="height:100%;overflow:auto">
       <div style="padding:20px;text-align:center;color:#998870;font-size:9px">⟳ LOADING DERIBIT OPTIONS...</div>
     </div>
   </div>
@@ -36677,7 +36839,16 @@ if __name__ == "__main__":
       + '.logo-text span{color:#e4e6eb!important;}'
       + /* up/down universal */
         '.up{color:#26c281!important;}.down{color:#e74c5c!important;}'
-      + '</style>';
+      + /* HIDE: ATM Line / Contours toggle buttons + Surface Data / LIVE DATA labels (functions stay active) */
+        'button[title*="ATM"],button[title*="Contour"],button[aria-label*="ATM"],button[aria-label*="Contour"]{display:none!important;}'
+      + '.surface-controls,.surface-toggles,.viz-toggles,.surface-meta,.live-data-badge,.live-badge,.data-status,.surface-data-label{display:none!important;}'
+      + /* Match by exact text content using :has where supported */
+        'button:has(> span:only-child),button{}'
+      + /* Generic: any small pill/badge containing "ATM Line", "Contours", "Surface Data", "LIVE DATA" */
+        '[data-label="ATM Line"],[data-label="Contours"],[data-label="Surface Data"],[data-label="LIVE DATA"]{display:none!important;}'
+      + '</style>'
+      + /* JS-based hiding for text-matched buttons that CSS can not target */
+        '<scr'+'ipt>(function(){function hideByText(){var sel="button,span,div,a,label";document.querySelectorAll(sel).forEach(function(el){if(el.children.length>0)return;var t=(el.textContent||"").trim();if(t==="ATM Line"||t==="Contours"||t==="Surface Data"||t==="LIVE DATA"){el.style.display="none";var p=el.parentElement;if(p&&p.children.length<=2&&(p.tagName==="DIV"||p.tagName==="SPAN")){var allHidden=Array.prototype.every.call(p.children,function(c){return c.style.display==="none";});if(allHidden)p.style.display="none";}}});}hideByText();var mo=new MutationObserver(hideByText);mo.observe(document.documentElement,{childList:true,subtree:true});setInterval(hideByText,2000);})();</'+'script>';
     var bgjs = '<scr'+'ipt>window.addEventListener("message", function(e){if(e.data&&e.data.type==="setAsset"){var bs=document.querySelectorAll(".asset-btn");for(var i=0;i<bs.length;i++){if(bs[i].dataset.asset===e.data.asset)bs[i].click();}}});</'+'script>';
     html = html.replace('</head>', injectedCss + bgjs + '</head>');
     iframe.srcdoc = html;
@@ -36741,6 +36912,53 @@ async function _ofFetch(cur){
       if(!r2.ok) throw new Error('HTTP '+r2.status);
       return r2.json();
     };
+
+    // Non-Deribit coins (HYPE, DOGE, AVAX, LINK, ARB) — try OKX options
+    const OKX_COINS = ['HYPE','DOGE','AVAX','LINK','ARB','SUI','TON','DOT'];
+    if(OKX_COINS.includes(cur)){
+      try {
+        const [okxInst, okxTicker, hypePrice] = await Promise.all([
+          _g(`https://www.okx.com/api/v5/public/instruments?instType=OPTION&uly=${cur}-USD`),
+          _g(`https://www.okx.com/api/v5/market/tickers?instType=OPTION&uly=${cur}-USD`),
+          _g(`https://www.okx.com/api/v5/market/index-tickers?instId=${cur}-USD`)
+        ]);
+        const spotRaw = parseFloat(hypePrice?.data?.[0]?.idxPx||'0');
+        const spot = spotRaw>0 ? spotRaw : (window._liveData?.crypto?.HYPE?.price||20);
+        const now = Date.now();
+        const opts = [];
+        const tickMap = {};
+        (okxTicker?.data||[]).forEach(t=>{ tickMap[t.instId]=t; });
+        (okxInst?.data||[]).forEach(inst=>{
+          if(!inst.instId) return;
+          const p = inst.instId.split('-');
+          if(p.length<5) return;
+          const K = parseFloat(p[3]);
+          const type = p[4]; // C or P
+          const expRaw = p[2]; // YYMMDD
+          const exp = new Date('20'+expRaw.slice(0,2)+'-'+expRaw.slice(2,4)+'-'+expRaw.slice(4,6)+'T08:00:00Z');
+          const dte = Math.round((exp - now) / 86400000);
+          if(dte < 0 || dte > 365) return;
+          const tk = tickMap[inst.instId]||{};
+          const iv = parseFloat(tk.markVol||'0')*100;
+          const oi = parseFloat(inst.ctVal||'1') * parseFloat(tk.oi||'0');
+          const markPrice = parseFloat(tk.markPx||'0');
+          if(K>0) opts.push({name:inst.instId, K, type:type==='C'?'C':'P', dte,
+            iv:Math.max(0,iv), oi:Math.max(0,oi),
+            volume:parseFloat(tk.vol24h||'0'), markPrice, bidIv:0, askIv:0,
+            expStr:expRaw, exp:exp.getTime()});
+        });
+        const expMap2 = {};
+        opts.forEach(o => { expMap2[o.expStr] = o.dte; });
+        const expiries = Object.entries(expMap2).sort((a,b)=>a[1]-b[1]).map(([e,d])=>({exp:e,dte:d}));
+        if(opts.length>0){
+          _OF.data[cur] = {spot, opts, expiries, ts: Date.now()};
+          _OF.loading = false; _ofRender(); return;
+        }
+      } catch(e){ console.warn('OKX HYPE options error',e); }
+      _OF.err = `${cur} options not available on OKX at this time. Deribit supports BTC, ETH, SOL, XRP, BNB, MATIC.`;
+      _OF.loading = false; _ofRender(); return;
+    }
+
     const [bk, ix] = await Promise.all([
       _g(`https://www.deribit.com/api/v2/public/get_book_summary_by_currency?currency=${cur}&kind=option`),
       _g(`https://www.deribit.com/api/v2/public/get_index_price?index_name=${cur.toLowerCase()}_usd`)
@@ -36765,13 +36983,69 @@ async function _ofFetch(cur){
       opts.push({name:b.instrument_name, K, type, dte, iv, oi, volume, markPrice, bidIv, askIv,
         expStr: p[1], exp: exp.getTime()});
     });
-    // Unique expiries sorted
     const expMap = {};
     opts.forEach(o => { expMap[o.expStr] = o.dte; });
     const expiries = Object.entries(expMap).sort((a,b)=>a[1]-b[1]).map(([e,d])=>({exp:e,dte:d}));
-    _OF.data[cur] = {spot, opts, expiries, ts: now};
+
+    // ── Fetch additional data for BackQuant-style analytics ──────────────
+    let histVol = [], dvolIndex = null;
+    try {
+      const [hvRes, perpRes] = await Promise.allSettled([
+        _g(`https://www.deribit.com/api/v2/public/get_historical_volatility?currency=${cur}`),
+        _g(`https://www.deribit.com/api/v2/public/get_index_price?index_name=${cur.toLowerCase()}_usd`)
+      ]);
+      // Historical vol: array of [timestamp, value] for 30d realized vol
+      if(hvRes.status==='fulfilled' && hvRes.value?.result){
+        histVol = hvRes.value.result.map(([ts,v])=>({ts, rv:v})).slice(-90);
+      }
+    } catch(e2){ console.warn('Extra data fetch error',e2); }
+
+    // ── Compute BSM greeks for all options ────────────────────────────────
+    const BSM = (type, S, K, T, sigma) => {
+      if(T<=0||sigma<=0||S<=0||K<=0) return {delta:0,gamma:0,vega:0,theta:0,vanna:0,charm:0};
+      const sqT = Math.sqrt(T);
+      const d1 = (Math.log(S/K) + 0.5*sigma*sigma*T) / (sigma*sqT);
+      const d2 = d1 - sigma*sqT;
+      const nd = x => 0.5*(1+Math.sign(x)*(1-Math.exp(-0.785398*Math.abs(x)*(1+0.0958*Math.abs(x)*(1+0.00018*x*x)))));
+      const npdf = x => Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI);
+      const Nd1=nd(d1), Nd2=nd(d2), nd1=npdf(d1);
+      const isCall = type==='C';
+      const delta = isCall ? Nd1 : Nd1-1;
+      const gamma = nd1/(S*sigma*sqT);
+      const vega  = S*nd1*sqT/100; // per 1% IV move
+      const theta = (-(S*nd1*sigma)/(2*sqT) + (isCall?-1:1)*0*(Nd2)) / 365;
+      const vanna = -nd1*d2/sigma;  // dDelta/dVol
+      const charm = -nd1*(2*(isCall?0:0)*sqT - d2*sigma*sqT) / (2*T*sqT*sigma); // dDelta/dTime approx
+      return {delta,gamma,vega,theta,vanna,charm};
+    };
+    opts.forEach(o => {
+      const T = Math.max(o.dte,0.1)/365;
+      const g = BSM(o.type, spot, o.K, T, (o.iv||1)/100);
+      o.delta=g.delta; o.gamma=g.gamma; o.vega=g.vega;
+      o.theta=g.theta; o.vanna=g.vanna; o.charm=g.charm;
+    });
+
+    // ── Build term structure (ATM IV + Forward IV) ────────────────────────
+    const tsData = expiries.map(({exp,dte}) => {
+      const expOpts = opts.filter(o=>o.expStr===exp);
+      const atm = expOpts.filter(o=>o.type==='C'&&o.iv>0)
+                         .sort((a,b)=>Math.abs(a.K-spot)-Math.abs(b.K-spot))[0];
+      const atmIV = atm?.iv||0;
+      return {exp,dte,atmIV};
+    }).filter(d=>d.atmIV>0);
+
+    // Compute forward IV (variance-weighted strip)
+    const fwdIVData = tsData.map((d,i)=>{
+      if(i===0) return {...d,fwdIV:d.atmIV};
+      const t1=tsData[i-1].dte/365, t2=d.dte/365;
+      const v1=tsData[i-1].atmIV/100, v2=d.atmIV/100;
+      const fwdVar = t2>t1 ? Math.max(0,(v2*v2*t2-v1*v1*t1)/(t2-t1)) : v2*v2;
+      return {...d,fwdIV:Math.sqrt(fwdVar)*100};
+    });
+
+    _OF.data[cur] = {spot, opts, expiries, ts:now, histVol, tsData:fwdIVData};
   } catch(e) {
-    _OF.err = 'Failed to load Deribit data: '+e.message;
+    _OF.err = 'Failed to load data: '+e.message;
   }
   _OF.loading = false;
   _ofRender();
@@ -36982,51 +37256,91 @@ function _renderStrikeExpiry(opts, spot, expiries, W, H){
 
 // ── Render Put/Call OI Expiry table (Summary) ──────────────────────────
 function _renderSummaryTable(opts, spot, expiries){
-  const rows = expiries.slice(0,12).map(({exp,dte})=>{
+  const fmtOI=v=>v>=1e6?(v/1e6).toFixed(2)+'M':v>=1000?(v/1000).toFixed(1)+'K':v.toFixed(0);
+  const fmtGex=v=>{
+    const s=v>=0?'+':'-';
+    const a=Math.abs(v);
+    return s+(a>=1e6?(a/1e6).toFixed(1)+'M':a>=1000?(a/1e3).toFixed(0)+'K':a.toFixed(0));
+  };
+  const rows = expiries.slice(0,15).map(({exp,dte})=>{
     const expOpts=opts.filter(o=>o.expStr===exp);
-    const callOI=expOpts.filter(o=>o.type==='C').reduce((a,b)=>a+b.oi,0);
-    const putOI=expOpts.filter(o=>o.type==='P').reduce((a,b)=>a+b.oi,0);
-    const pc=callOI>0?(putOI/callOI).toFixed(2):'—';
-    const atm=expOpts.filter(o=>o.type==='C'&&o.iv>0).sort((a,b)=>Math.abs(a.K-spot)-Math.abs(b.K-spot));
-    const iv=atm.length?atm[0].iv.toFixed(1)+'%':'—';
-    const skew=(() => {
-      const calls=expOpts.filter(o=>o.type==='C'&&o.iv>0).sort((a,b)=>Math.abs(a.K-spot)-Math.abs(b.K-spot));
-      if(calls.length<2) return '—';
-      const atmIv=calls[0].iv;
-      const otmCall=calls.find(o=>o.K>spot*1.05);
-      const otmPut=expOpts.filter(o=>o.type==='P'&&o.iv>0&&o.K<spot*0.95).sort((a,b)=>Math.abs(b.K-spot*0.95)-Math.abs(a.K-spot*0.95))[0];
-      if(!otmPut) return '—';
-      return (otmPut.iv - (otmCall?otmCall.iv:atmIv)).toFixed(1);
-    })();
-    const maxPain=(() => {
-      const strikes=[...new Set(expOpts.map(o=>o.K))];
-      let minPain=Infinity, maxPainK=0;
-      strikes.forEach(K=>{
-        const pain=expOpts.reduce((acc,o)=>{
-          const intrinsic=o.type==='C'?Math.max(0,K-o.K):Math.max(0,o.K-K);
-          return acc+intrinsic*o.oi;
-        },0);
-        if(pain<minPain){minPain=pain;maxPainK=K;}
-      });
-      return maxPainK>0?'$'+(maxPainK/1000).toFixed(0)+'K':'—';
-    })();
-    const pcCol=typeof pc==='string'&&pc!='—'?(parseFloat(pc)>1?'#ff5533':'#00aa44'):'#887760';
-    const skewCol=skew!='—'?(parseFloat(skew)>0?'#ff5533':'#00aa44'):'#887760';
-    return `<tr style="border-bottom:1px solid #0a0600">
-      <td style="padding:3px 6px;color:#c8bfaa;font-size:9px;white-space:nowrap">${exp}</td>
-      <td style="padding:3px 6px;color:#554;font-size:9px;text-align:right">${dte}</td>
-      <td style="padding:3px 6px;color:#F39F41;font-size:9px;text-align:right">${iv}</td>
-      <td style="padding:3px 6px;color:${skewCol};font-size:9px;text-align:right">${skew!='—'?(skew>0?'+':'')+skew:'—'}</td>
-      <td style="padding:3px 6px;color:${pcCol};font-size:9px;text-align:right;font-family:'Roboto Mono',monospace">${pc}</td>
-      <td style="padding:3px 6px;color:#887760;font-size:9px;text-align:right">${maxPain}</td>
+    const calls=expOpts.filter(o=>o.type==='C');
+    const puts =expOpts.filter(o=>o.type==='P');
+    const callOI=calls.reduce((a,b)=>a+(b.oi||0),0);
+    const putOI =puts.reduce((a,b)=>a+(b.oi||0),0);
+    const totalOI=callOI+putOI;
+    const pc=callOI>0?putOI/callOI:null;
+
+    // ATM IV
+    const atmCall=[...calls].filter(o=>o.iv>0).sort((a,b)=>Math.abs(a.K-spot)-Math.abs(b.K-spot))[0];
+    const atmIV=atmCall?.iv||0;
+    const tau=Math.max(dte,0.5)/365;
+    const sigSqrt=atmIV/100*Math.sqrt(tau);
+
+    // 25-delta approx (±0.6745σ from ATM in log-space)
+    const kC25=spot*Math.exp(+0.6745*sigSqrt);
+    const kP25=spot*Math.exp(-0.6745*sigSqrt);
+    const c25=[...calls].sort((a,b)=>Math.abs(a.K-kC25)-Math.abs(b.K-kC25))[0];
+    const p25=[...puts ].sort((a,b)=>Math.abs(a.K-kP25)-Math.abs(b.K-kP25))[0];
+    const skew25=c25&&p25&&c25.iv&&p25.iv?(c25.iv-p25.iv):null;
+    const rr25  =c25&&p25&&c25.iv&&p25.iv?(p25.iv-c25.iv):null;
+
+    // 10-delta approx (±1.2816σ)
+    const kC10=spot*Math.exp(+1.2816*sigSqrt);
+    const kP10=spot*Math.exp(-1.2816*sigSqrt);
+    const c10=[...calls].sort((a,b)=>Math.abs(a.K-kC10)-Math.abs(b.K-kC10))[0];
+    const p10=[...puts ].sort((a,b)=>Math.abs(a.K-kP10)-Math.abs(b.K-kP10))[0];
+    const skew10=c10&&p10&&c10.iv&&p10.iv?(c10.iv-p10.iv):null;
+
+    // Max Pain
+    const strikes=[...new Set(expOpts.map(o=>o.K))];
+    let minPain=Infinity, maxPainK=0;
+    strikes.forEach(K=>{
+      const pain=expOpts.reduce((acc,o)=>acc+(o.type==='C'?Math.max(0,K-o.K):Math.max(0,o.K-K))*(o.oi||0),0);
+      if(pain<minPain){minPain=pain;maxPainK=K;}
+    });
+
+    // Net GEX
+    let netGex=0;
+    expOpts.forEach(o=>{
+      if(!o.iv||o.iv<=0||!o.oi) return;
+      const s=o.iv/100, t=tau;
+      const d1=(Math.log(spot/o.K)+(0.5*s*s*t))/(s*Math.sqrt(t));
+      const g=Math.exp(-d1*d1/2)/(spot*s*Math.sqrt(2*Math.PI*t));
+      netGex+=(o.type==='C'?1:-1)*g*o.oi*spot*spot*0.01;
+    });
+
+    const isFront=dte<=1;
+    const rowBg=isFront?'#0a0700':'#040200';
+    const expCol=isFront?'#F39F41':'#887760';
+    const pcCol=pc==null?'#665':pc>1.2?'#ff5533':pc<0.8?'#00cc44':'#F39F41';
+    const skewC=v=>v==null?'#554':v>2?'#ff6633':v>0?'#F39F41':v<-2?'#33bbff':'#33ff88';
+    const rrC=v=>v==null?'#554':v>2?'#33ff88':v>0?'#00cc44':v<-2?'#ff4444':'#ff8833';
+    const fmt1=v=>v!=null?(v>0?'+':'')+v.toFixed(1)+'%':'—';
+    return `<tr style="background:${rowBg};border-bottom:1px solid #090600">
+      <td style="padding:3px 7px;color:${expCol};font-size:8.5px;white-space:nowrap;font-weight:${isFront?700:400}">
+        ${exp}${isFront?' <span style="color:#ff8800;font-size:6.5px;background:#150800;padding:0 3px;border-radius:1px">FRONT</span>':''}
+      </td>
+      <td style="padding:3px 7px;color:#554;font-size:8px;text-align:right">${dte}d</td>
+      <td style="padding:3px 7px;color:#F39F41;font-size:8.5px;font-weight:700;text-align:right">${atmIV>0?atmIV.toFixed(1)+'%':'—'}</td>
+      <td style="padding:3px 7px;color:${skewC(skew25)};font-size:8.5px;text-align:right">${fmt1(skew25)}</td>
+      <td style="padding:3px 7px;color:${rrC(rr25)};font-size:8.5px;text-align:right">${fmt1(rr25)}</td>
+      <td style="padding:3px 7px;color:${skewC(skew10)};font-size:8.5px;text-align:right">${fmt1(skew10)}</td>
+      <td style="padding:3px 7px;color:#F39F41;font-size:8px;text-align:right">${maxPainK>0?'$'+(maxPainK/1000).toFixed(0)+'K':'—'}</td>
+      <td style="padding:3px 7px;color:${netGex>=0?'#00cc44':'#ff4444'};font-size:8px;text-align:right">${fmtGex(netGex)}</td>
+      <td style="padding:3px 7px;color:${pcCol};font-size:8.5px;font-family:'Roboto Mono',monospace;text-align:right">${pc!=null?pc.toFixed(2):'—'}</td>
+      <td style="padding:3px 7px;color:#776655;font-size:8px;text-align:right">${totalOI>0?fmtOI(totalOI):'—'}</td>
+      <td style="padding:3px 7px;color:#00aa44;font-size:8px;text-align:right">${callOI>0?fmtOI(callOI):'—'}</td>
+      <td style="padding:3px 7px;color:#cc3333;font-size:8px;text-align:right">${putOI>0?fmtOI(putOI):'—'}</td>
     </tr>`;
   }).join('');
   return `<div style="overflow:auto;height:100%">
     <table style="width:100%;border-collapse:collapse">
-      <tr style="background:#060400;position:sticky;top:0;z-index:2">
-        ${['Expiry','Days','ATM IV','Skew','P/C OI','Max Pain'].map(h=>`<th style="color:#ff8800;font-size:8px;letter-spacing:1px;padding:4px 6px;border-bottom:1px solid #1a0e00;text-align:${h==='Expiry'?'left':'right'}">${h}</th>`).join('')}
-      </tr>
-      ${rows}
+      <thead><tr style="background:#060400;position:sticky;top:0;z-index:2">
+        ${['Expiry','DTE','ATM IV','25d Skew','25d RR','10d Skew','Max Pain','Net GEX','P/C','Total OI','Call OI','Put OI']
+          .map((h,i)=>`<th style="color:#ff8800;font-size:7px;letter-spacing:.8px;padding:3px 7px;border-bottom:1px solid #1a0e00;text-align:${i===0?'left':'right'};white-space:nowrap">${h}</th>`).join('')}
+      </tr></thead>
+      <tbody>${rows}</tbody>
     </table>
   </div>`;
 }
@@ -37040,7 +37354,7 @@ function _ofRender(){
   const d = _OF.data[cur];
 
   if(_OF.loading){
-    panel.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#443;font-size:11px;gap:8px"><span style="animation:spin 1s linear infinite;display:inline-block">⟳</span> Loading Deribit '+cur+' options...</div>';
+    panel.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#443;font-size:11px;gap:8px"><span style="animation:spin 1s linear infinite;display:inline-block">⟳</span> Loading ${cur} options from Deribit...</div>`;
     return;
   }
   if(_OF.err || !d){
@@ -37083,7 +37397,7 @@ function _ofRender(){
         ${tsSVG}
       </div>
       <div style="flex:1;overflow:auto">
-        <div style="padding:4px 10px;color:#887760;font-size:8px;font-weight:700;letter-spacing:1px;border-bottom:1px solid #0a0600;background:#040200">EXPIRIES · P/C · IV · SKEW</div>
+        <div style="padding:4px 10px;color:#887760;font-size:8px;font-weight:700;letter-spacing:1px;border-bottom:1px solid #0a0600;background:#040200">EXPIRIES · ATM IV · SKEW · RR · GEX · P/C · OI</div>
         ${_renderSummaryTable(opts, spot, expiries)}
       </div>`;
   } else if(tab === 'volsmile'){
@@ -37540,10 +37854,1551 @@ function _ofRender(){
     } else {
       setTimeout(_draw3d,60);
     }
+  } else if(tab === 'probsurface'){
+    // ── PROBABILITY SURFACE — 3D Strike × DTE × PDF ──────────────────
+    panel.innerHTML=`<div id="optflow-probsurf-plot" style="width:100%;height:100%;background:#040408;position:relative"></div>`;
+    const pEl=document.getElementById('optflow-probsurf-plot');
+    if(!pEl) return;
+
+    const _drawProb=()=>{
+      if(!window.Plotly||!pEl.offsetWidth){setTimeout(_drawProb,200);return;}
+
+      // Build per-expiry probability distributions using BSM log-normal PDF
+      const sliceMap={};
+      opts.forEach(o=>{
+        if(!o.iv||o.iv<5||o.iv>300||o.dte<1||o.dte>400) return;
+        if(o.K<spot*0.4||o.K>spot*2.2) return;
+        if(!o.oi||o.oi<1) return;
+        const dteKey=o.dte;
+        if(!sliceMap[dteKey]) sliceMap[dteKey]={dte:dteKey,ivByStrike:{},oiByStrike:{}};
+        if(!sliceMap[dteKey].ivByStrike[o.K]||o.oi>sliceMap[dteKey].oiByStrike[o.K]){
+          sliceMap[dteKey].ivByStrike[o.K]=o.iv;
+          sliceMap[dteKey].oiByStrike[o.K]=o.oi;
+        }
+      });
+
+      const slices=Object.values(sliceMap).sort((a,b)=>a.dte-b.dte).slice(0,20);
+      if(slices.length<2){pEl.innerHTML='<div style="padding:20px;color:#664;font-size:10px">Insufficient data</div>';return;}
+
+      // Dense strike grid for PDF
+      const kMin=spot*0.50, kMax=spot*1.60, nK=80;
+      const strikes=Array.from({length:nK},(_,i)=>kMin+(kMax-kMin)*i/(nK-1));
+
+      const X=[],Y=[],Z=[];
+      slices.forEach(sl=>{
+        const tau=Math.max(sl.dte,1)/365;
+        const strikeIVs=Object.entries(sl.ivByStrike).map(([k,v])=>({K:parseFloat(k),iv:v})).sort((a,b)=>a.K-b.K);
+        if(strikeIVs.length<3) return;
+
+        // Interpolate/extrapolate IV at each grid strike
+        const getIV=K=>{
+          const pts=strikeIVs;
+          if(K<=pts[0].K) return pts[0].iv;
+          if(K>=pts[pts.length-1].K) return pts[pts.length-1].iv;
+          let lo=0;
+          for(let i=0;i<pts.length-1;i++){if(K>=pts[i].K&&K<=pts[i+1].K){lo=i;break;}}
+          const t=(K-pts[lo].K)/(pts[lo+1].K-pts[lo].K);
+          return pts[lo].iv*(1-t)+pts[lo+1].iv*t;
+        };
+
+        // Log-normal PDF with local vol smile
+        const pdfRow=strikes.map(K=>{
+          const sigma=getIV(K)/100;
+          if(sigma<=0) return 0;
+          const d1=(Math.log(spot/K)+(0.5*sigma*sigma*tau))/(sigma*Math.sqrt(tau));
+          // Breeden-Litzenberger approximation via finite diff
+          const dK=spot*0.005;
+          const pdf_raw=Math.exp(-0.5*d1*d1)/(K*sigma*Math.sqrt(2*Math.PI*tau));
+          return Math.max(0, pdf_raw*0.01); // scale to %
+        });
+
+        // Normalise so area ≈ 100%
+        const sum=pdfRow.reduce((a,b)=>a+b,0)*(strikes[1]-strikes[0]);
+        const norm=sum>0?pdfRow.map(v=>v/sum*100):pdfRow;
+
+        X.push(...strikes.map(K=>K));
+        Y.push(...strikes.map(()=>sl.dte));
+        Z.push(...norm);
+      });
+
+      // Build surface grid
+      const dtesUniq=[...new Set(Y)].sort((a,b)=>a-b);
+      const surfX=strikes, surfY=dtesUniq;
+      const surfZ=surfY.map(dte=>{
+        const offset=X.findIndex((_,i)=>Y[i]===dte);
+        if(offset<0) return strikes.map(()=>0);
+        return strikes.map((_,ki)=>Z[offset+ki]||0);
+      });
+
+      const zMax=Math.max(...surfZ.flat().filter(v=>isFinite(v)))||0.04;
+      // BackQuant-style IV Surface colorscale: deep navy → cobalt → cyan → white → amber → orange → red
+      const CS=[
+        [0,   '#02050f'],  // Very deep navy (lowest IV)
+        [0.1, '#06152e'],  // Dark navy
+        [0.2, '#0d2660'],  // Deep cobalt blue
+        [0.3, '#1448a8'],  // Royal blue
+        [0.42,'#1a8fc8'],  // Cerulean / cyan-blue
+        [0.54,'#50c8d8'],  // Light cyan
+        [0.63,'#d8eef5'],  // Near-white / ice blue
+        [0.72,'#f5f0c0'],  // Pale yellow
+        [0.80,'#f5c842'],  // Amber / gold (ATM IV range)
+        [0.88,'#f07800'],  // Orange
+        [0.94,'#e02000'],  // Red-orange
+        [1,   '#aa0000']   // Deep red (highest IV)
+      ];
+
+      const traces=[{
+        type:'surface',
+        x:surfX, y:surfY, z:surfZ,
+        colorscale:CS,
+        cmin:0, cmax:zMax,
+        opacity:0.95,
+        showscale:true,
+        colorbar:{title:{text:'PDF (%)',font:{color:'#888',size:10}},tickfont:{color:'#666',size:8},thickness:12,len:0.7,x:1.02},
+        hovertemplate:'Strike $%{x:,.0f}<br>DTE %{y}d<br>PDF %{z:.4f}%<extra></extra>',
+        contours:{
+          z:{show:true,color:'rgba(255,255,255,0.12)',width:1.5},
+          x:{show:true,color:'rgba(255,255,255,0.06)',width:1},
+          y:{show:true,color:'rgba(255,255,255,0.06)',width:1}
+        },
+        lighting:{ambient:0.7,diffuse:0.8,specular:0.2},
+      }];
+
+      // Spot price plane (vertical line across DTE axis)
+      traces.push({
+        type:'scatter3d',
+        x:[spot,spot],y:[surfY[0],surfY[surfY.length-1]],z:[0,zMax*0.6],
+        mode:'lines',
+        line:{color:'#22ccdd',width:4,dash:'dot'},
+        name:'Spot',
+        hovertemplate:'Spot $'+spot.toFixed(0)+'<extra></extra>',
+      });
+
+      const layout={
+        paper_bgcolor:'#040408',
+        plot_bgcolor:'#040408',
+        autosize:true,
+        margin:{l:0,r:80,t:45,b:0},
+        title:{
+          text:`<b>${cur} Probability Surface</b>  <span style="color:#666;font-size:10px">Log-normal PDF · ${slices.length} expiries · Spot $${spot.toLocaleString(undefined,{maximumFractionDigits:0})}</span>`,
+          font:{color:'#c070ff',size:13,family:'Courier New,monospace'},
+          x:0.03,y:0.99,
+        },
+        scene:{
+          bgcolor:'#040408',
+          camera:{eye:{x:1.5,y:-2.0,z:1.1},center:{x:0,y:0,z:-0.15},up:{x:0,y:0,z:1}},
+          aspectmode:'manual',
+          aspectratio:{x:1.5,y:1.1,z:0.7},
+          xaxis:{title:{text:'Strike Price ($)',font:{color:'#666',size:10}},tickfont:{color:'#555',size:9},tickformat:'$,.0f',gridcolor:'rgba(255,255,255,0.12)',backgroundcolor:'#030408',showbackground:true,zeroline:false},
+          yaxis:{title:{text:'Days to Expiry',font:{color:'#666',size:10}},tickfont:{color:'#555',size:9},gridcolor:'rgba(255,255,255,0.12)',backgroundcolor:'#030408',showbackground:true,zeroline:false},
+          zaxis:{title:{text:'Probability (%)',font:{color:'#666',size:10}},tickfont:{color:'#555',size:9},ticksuffix:'%',gridcolor:'rgba(255,255,255,0.04)',backgroundcolor:'#040308',showbackground:true,zeroline:false},
+        },
+        font:{color:'#888',family:'Courier New,Roboto Mono,monospace'},
+        hoverlabel:{bgcolor:'#0e0820',bordercolor:'#c070ff',font:{color:'#fff',size:11,family:'Courier New,monospace'}},
+        showlegend:false,
+      };
+
+      if(pEl._probPlot){
+        Plotly.react(pEl,traces,layout,{responsive:true,displayModeBar:true,modeBarButtonsToRemove:['sendDataToCloud'],displaylogo:false});
+      } else {
+        Plotly.newPlot(pEl,traces,layout,{responsive:true,displayModeBar:true,modeBarButtonsToRemove:['sendDataToCloud'],displaylogo:false});
+        pEl._probPlot=true;
+      }
+    };
+
+    if(!window.Plotly){
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';
+      s.onload=()=>setTimeout(_drawProb,100);
+      document.head.appendChild(s);
+    } else {
+      setTimeout(_drawProb,60);
+    }
+
+  } else if(tab === 'probdensity'){
+    // ── PROBABILITY DENSITY + PROBABILITY ABOVE — per-expiry line charts ──
+    panel.innerHTML=`<div id="optflow-probdens-plot" style="width:100%;height:100%;background:#040408;position:relative;overflow:auto"></div>`;
+    const pdEl=document.getElementById('optflow-probdens-plot');
+    if(!pdEl) return;
+
+    const _drawProbDens=()=>{
+      if(!window.Plotly||!pdEl.offsetWidth){setTimeout(_drawProbDens,200);return;}
+
+      // Build per-expiry log-normal PDFs from IV smile
+      const sliceMap={};
+      opts.forEach(o=>{
+        if(!o.iv||o.iv<5||o.iv>300||o.dte<0||o.dte>400) return;
+        if(o.K<spot*0.4||o.K>spot*2.2) return;
+        const dk=o.dte;
+        if(!sliceMap[dk]) sliceMap[dk]={dte:dk,ivByStrike:{},oiByStrike:{}};
+        if(!sliceMap[dk].ivByStrike[o.K]||o.oi>(sliceMap[dk].oiByStrike[o.K]||0)){
+          sliceMap[dk].ivByStrike[o.K]=o.iv;
+          sliceMap[dk].oiByStrike[o.K]=o.oi;
+        }
+      });
+
+      // Pick up to 8 nearest expiries
+      const slices=Object.values(sliceMap).sort((a,b)=>a.dte-b.dte).slice(0,8);
+      if(slices.length<1){pdEl.innerHTML='<div style="padding:20px;color:#664;font-size:10px;font-family:monospace">Insufficient data</div>';return;}
+
+      const kMin=spot*0.50, kMax=spot*1.60, nK=120;
+      const strikes=Array.from({length:nK},(_,i)=>kMin+(kMax-kMin)*i/(nK-1));
+
+      // Color palette matching BackQuant (purple/cyan/green/yellow palette)
+      const palette=['#c96bff','#ffdd33','#ff6699','#33ddff','#ff8833','#44ff99','#ff4444','#aaaaff'];
+
+      const pdfTraces=[];
+      const cdfTraces=[];
+
+      slices.forEach((sl,idx)=>{
+        const tau=Math.max(sl.dte,0.5)/365;
+        const strikeIVs=Object.entries(sl.ivByStrike).map(([k,v])=>({K:parseFloat(k),iv:v})).sort((a,b)=>a.K-b.K);
+        if(strikeIVs.length<2) return;
+
+        const getIV=K=>{
+          const pts=strikeIVs;
+          if(K<=pts[0].K) return pts[0].iv;
+          if(K>=pts[pts.length-1].K) return pts[pts.length-1].iv;
+          let lo=0;
+          for(let i=0;i<pts.length-1;i++){if(K>=pts[i].K&&K<=pts[i+1].K){lo=i;break;}}
+          const t=(K-pts[lo].K)/(pts[lo+1].K-pts[lo].K);
+          return pts[lo].iv*(1-t)+pts[lo+1].iv*t;
+        };
+
+        // Compute PDF via Breeden-Litzenberger (finite diff of call price = risk-neutral PDF)
+        const dK=spot*0.003;
+        const callPrice=(K,sig)=>{
+          const s=sig/100;
+          if(s<=0||tau<=0) return Math.max(0,spot-K);
+          const d1=(Math.log(spot/K)+(0.5*s*s*tau))/(s*Math.sqrt(tau));
+          const d2=d1-s*Math.sqrt(tau);
+          const N=x=>0.5*(1+Math.sign(x)*Math.sqrt(1-Math.exp(-0.7978845608*Math.abs(x)*(0.7978845608*Math.abs(x)+0.2316419*(1.330274429-(1.821255978-(1.781477937-(0.356563782-1.330274429*Math.abs(x))*Math.abs(x))*Math.abs(x))*Math.abs(x))*Math.abs(x)))));
+          // Simple normal CDF via erfapprox
+          const nd=v=>{const t2=1/(1+0.3275911*Math.abs(v));const poly=t2*(0.254829592+t2*(-0.284496736+t2*(1.421413741+t2*(-1.453152027+t2*1.061405429))));return v>=0?1-poly*Math.exp(-v*v/2):poly*Math.exp(-v*v/2);};
+          return Math.max(0,spot*nd(d1)-K*nd(d2));
+        };
+
+        const pdfRaw=strikes.map(K=>{
+          const ivK=getIV(K)/100;
+          const ivUp=getIV(K+dK)/100;
+          const ivDn=getIV(K-dK)/100;
+          // Numerical second derivative of call w.r.t. strike
+          const cUp=callPrice(K+dK,ivUp*100);
+          const cMid=callPrice(K,ivK*100);
+          const cDn=callPrice(K-dK,ivDn*100);
+          const pdf2=(cUp-2*cMid+cDn)/(dK*dK);
+          return Math.max(0,pdf2);
+        });
+
+        // Normalise
+        const sum=pdfRaw.reduce((a,b)=>a+b,0)*(strikes[1]-strikes[0]);
+        const pdfNorm=sum>0?pdfRaw.map(v=>v/sum*100):pdfRaw.map(()=>0);
+
+        // CDF (prob above spot → P(S>K))
+        const cdfVals=pdfNorm.map((_,i)=>{
+          // Integrate from K[i] to end
+          let s=0;
+          for(let j=i;j<pdfNorm.length-1;j++) s+=(pdfNorm[j]+pdfNorm[j+1])/2*(strikes[j+1]-strikes[j]);
+          return Math.min(100,Math.max(0,s));
+        });
+
+        const label=`${sl.dte===0?'0d':sl.dte+'d'} · ${expiries.find(e=>e.dte===sl.dte)?.exp||''}`;
+        const col=palette[idx%palette.length];
+
+        pdfTraces.push({
+          x:strikes, y:pdfNorm, type:'scatter', mode:'lines',
+          name:label, line:{color:col,width:1.5},
+          hovertemplate:'$%{x:,.0f}<br>PDF %{y:.3f}%<extra>'+label+'</extra>',
+        });
+        cdfTraces.push({
+          x:strikes, y:cdfVals, type:'scatter', mode:'lines',
+          name:label, line:{color:col,width:1.5},
+          hovertemplate:'$%{x:,.0f}<br>P(S>K) %{y:.1f}%<extra>'+label+'</extra>',
+          showlegend:idx===0,
+          legendgroup:label,
+        });
+      });
+
+      // Add spot markers
+      const spotLine={type:'line',x0:spot,x1:spot,yref:'paper',y0:0,y1:1,line:{color:'rgba(255,200,80,0.5)',width:1,dash:'dot'}};
+      const spotAnnot={x:spot,yref:'paper',y:0.97,text:'Spot',showarrow:false,font:{color:'#F39F41',size:9},xanchor:'left'};
+
+      const commonLayout={
+        paper_bgcolor:'#040408',plot_bgcolor:'#040408',
+        font:{color:'#777',family:'Roboto Mono,Courier New,monospace',size:9},
+        margin:{l:55,r:15,t:32,b:40},
+        legend:{orientation:'h',x:0,y:-0.12,font:{size:8,color:'#666'},bgcolor:'rgba(0,0,0,0)'},
+        xaxis:{title:'Strike ($)',titlefont:{size:9,color:'#555'},tickfont:{size:8},gridcolor:'rgba(255,255,255,0.04)',tickformat:'$,.0f',color:'#555',zeroline:false},
+        shapes:[spotLine],
+        annotations:[spotAnnot],
+        hovermode:'x unified',
+        hoverlabel:{bgcolor:'#0e0820',bordercolor:'#c070ff',font:{color:'#fff',size:10}},
+      };
+
+      const H2=pdEl.offsetHeight||580;
+      const subH=Math.floor(H2/2)-8;
+
+      // Render both charts stacked
+      const pdfDiv=document.createElement('div');
+      pdfDiv.style.cssText=`width:100%;height:${subH}px;background:#040408;border-bottom:1px solid #0a0600`;
+      const cdfDiv=document.createElement('div');
+      cdfDiv.style.cssText=`width:100%;height:${subH}px;background:#040408`;
+
+      pdEl.innerHTML='';
+      pdEl.appendChild(pdfDiv);
+      pdEl.appendChild(cdfDiv);
+
+      Plotly.newPlot(pdfDiv,pdfTraces,{...commonLayout,
+        title:{text:`<b>${cur} Probability Density</b>  <span style="color:#555;font-size:9px">PDF by Expiry · Spot $${spot.toLocaleString(undefined,{maximumFractionDigits:0})}</span>`,font:{color:'#c96bff',size:11,family:'Courier New,monospace'},x:0.01,y:0.97},
+        yaxis:{title:'Probability Density (%)',titlefont:{size:9,color:'#555'},tickfont:{size:8},gridcolor:'rgba(255,255,255,0.04)',color:'#555',zeroline:false,ticksuffix:'%'},
+        showlegend:true,
+      },{responsive:true,displayModeBar:false});
+
+      Plotly.newPlot(cdfDiv,cdfTraces,{...commonLayout,
+        title:{text:`<b>${cur} Probability Above Strike</b>  <span style="color:#555;font-size:9px">P(Expiry > K) · 50% line at spot median</span>`,font:{color:'#33ddff',size:11,family:'Courier New,monospace'},x:0.01,y:0.97},
+        yaxis:{title:'P(Expiry Above) (%)',titlefont:{size:9,color:'#555'},tickfont:{size:8},gridcolor:'rgba(255,255,255,0.04)',color:'#555',zeroline:false,ticksuffix:'%',range:[0,100]},
+        shapes:[spotLine,{type:'line',x0:kMin,x1:kMax,yref:'y',y0:50,y1:50,line:{color:'rgba(255,255,255,0.15)',width:1,dash:'dash'}}],
+        showlegend:true,
+      },{responsive:true,displayModeBar:false});
+    };
+
+    if(!window.Plotly){
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';
+      s.onload=()=>setTimeout(_drawProbDens,100);
+      document.head.appendChild(s);
+    } else {
+      setTimeout(_drawProbDens,60);
+    }
+
+  } else if(tab === 'chainsum'){
+    // ── OPTIONS CHAIN SUMMARY — per-expiry metrics table ──
+    // Matches BackQuant "Options Chain Summary" with ATM IV, 25d Skew, RR, Max Pain, Net GEX, P/C, OI
+    const spotPrice = spot;
+
+    // Build per-expiry data
+    const expiryMap={};
+    opts.forEach(o=>{
+      const k=o.dte+'|'+o.expStr;
+      if(!expiryMap[k]) expiryMap[k]={dte:o.dte,expStr:o.expStr,calls:[],puts:[]};
+      if(o.type==='C') expiryMap[k].calls.push(o);
+      else expiryMap[k].puts.push(o);
+    });
+
+    const rows=Object.values(expiryMap).sort((a,b)=>a.dte-b.dte).slice(0,15).map(ex=>{
+      const {dte,expStr,calls,puts}=ex;
+      const allOpts=[...calls,...puts];
+      const totalCallOI=calls.reduce((a,b)=>a+(b.oi||0),0);
+      const totalPutOI=puts.reduce((a,b)=>a+(b.oi||0),0);
+      const totalOI=totalCallOI+totalPutOI;
+      const pcRatio=totalCallOI>0?(totalPutOI/totalCallOI):0;
+
+      // ATM IV = nearest call IV to spot
+      const sortedCalls=[...calls].sort((a,b)=>Math.abs(a.K-spotPrice)-Math.abs(b.K-spotPrice));
+      const atmIV=sortedCalls[0]?.iv||0;
+      const atmK=sortedCalls[0]?.K||spotPrice;
+
+      // 25-delta options: rough approx — delta≈0.25 for ~0.6-0.7 OTM
+      // Use strikes at ±(ATM_IV/100)*sqrt(dte/365)*0.6745 (0.25 quantile) from ATM in log space
+      const sigSqrt=atmIV/100*Math.sqrt(Math.max(dte,1)/365);
+      const kCall25=spotPrice*Math.exp(0.6745*sigSqrt);
+      const kPut25 =spotPrice*Math.exp(-0.6745*sigSqrt);
+
+      const nearest=(arr,K)=>arr.sort((a,b)=>Math.abs(a.K-K)-Math.abs(b.K-K))[0];
+      const c25=nearest([...calls],kCall25);
+      const p25=nearest([...puts],kPut25);
+      const skew25=c25&&p25?(c25.iv-p25.iv):null; // 25d call IV - put IV
+      const rr25=c25&&p25?(p25.iv-c25.iv):null;  // risk reversal = put - call
+
+      // 10d skew approx
+      const kCall10=spotPrice*Math.exp(1.2816*sigSqrt);
+      const kPut10 =spotPrice*Math.exp(-1.2816*sigSqrt);
+      const c10=nearest([...calls],kCall10);
+      const p10=nearest([...puts],kPut10);
+      const skew10=c10&&p10?(c10.iv-p10.iv):null;
+
+      // Max pain = strike where total option value is minimum
+      const allStrikes=[...new Set(allOpts.map(o=>o.K))].sort((a,b)=>a-b);
+      let minPain=Infinity, maxPainK=0;
+      allStrikes.forEach(K=>{
+        const pain=allOpts.reduce((a,o)=>a+(o.type==='C'?Math.max(0,K-o.K):Math.max(0,o.K-K))*(o.oi||0),0);
+        if(pain<minPain){minPain=pain;maxPainK=K;}
+      });
+
+      // Net GEX = sum of gamma*OI*spot^2*0.01 (calls+, puts-)
+      let netGex=0;
+      allOpts.forEach(o=>{
+        if(!o.iv||o.iv<=0) return;
+        const sig=o.iv/100, tau2=Math.max(dte,0.5)/365;
+        const d1=(Math.log(spotPrice/o.K)+(0.5*sig*sig*tau2))/(sig*Math.sqrt(tau2));
+        const gamma=Math.exp(-d1*d1/2)/(spotPrice*sig*Math.sqrt(2*Math.PI*tau2));
+        const gexVal=gamma*(o.oi||0)*spotPrice*spotPrice*0.01;
+        netGex+=(o.type==='C'?1:-1)*gexVal;
+      });
+
+      const fmt=(v,d=1)=>v!=null?v.toFixed(d):'—';
+      const fmtK=(v)=>v>0?'$'+(v/1000).toFixed(0)+'K':'—';
+      const fmtOI=(v)=>v>0?(v>=1000?(v/1000).toFixed(1)+'K':v.toFixed(0)):'—';
+      const fmtGex=(v)=>v!==0?(v>=0?'+':'')+((Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'K')):'—';
+      const isATM=dte<=1;
+      const rowBg=isATM?'#0a0700':'#040200';
+      const rowBorder=isATM?';outline:1px solid #2a1800':'';
+      const skewCol=v=>v==null?'#665840':v>2?'#ff6633':v>0?'#F39F41':v<-2?'#33bbff':'#33ff88';
+      const rrCol=v=>v==null?'#665840':v>2?'#33ff88':v>0?'#00cc44':v<-2?'#ff4444':'#ff8833';
+
+      return `<tr style="background:${rowBg}${rowBorder}">
+        <td style="padding:3px 8px;color:${isATM?'#F39F41':'#887760'};font-size:8.5px;font-weight:${isATM?'700':'400'};white-space:nowrap">
+          ${expStr||'—'} ${dte<=1?'<span style="color:#ff8800;font-size:7px;background:#180800;padding:0 3px;border-radius:1px">FRONT</span>':''}
+        </td>
+        <td style="padding:3px 8px;color:#665840;font-size:8px;text-align:right">${dte}d</td>
+        <td style="padding:3px 8px;color:#F39F41;font-size:8.5px;font-weight:700;text-align:right">${atmIV>0?atmIV.toFixed(1)+'%':'—'}</td>
+        <td style="padding:3px 8px;color:${skewCol(skew25)};font-size:8.5px;text-align:right">${skew25!=null?(skew25>0?'+':'')+skew25.toFixed(1)+'%':'—'}</td>
+        <td style="padding:3px 8px;color:${rrCol(rr25)};font-size:8.5px;text-align:right">${rr25!=null?(rr25>0?'+':'')+rr25.toFixed(1)+'%':'—'}</td>
+        <td style="padding:3px 8px;color:${skewCol(skew10)};font-size:8.5px;text-align:right">${skew10!=null?(skew10>0?'+':'')+skew10.toFixed(1)+'%':'—'}</td>
+        <td style="padding:3px 8px;color:#F39F41;font-size:8.5px;text-align:right">${fmtK(maxPainK)}</td>
+        <td style="padding:3px 8px;color:${netGex>=0?'#00cc44':'#ff4444'};font-size:8.5px;text-align:right">${fmtGex(netGex)}</td>
+        <td style="padding:3px 8px;color:${pcRatio>1.2?'#ff4444':pcRatio<0.8?'#00cc44':'#F39F41'};font-size:8.5px;text-align:right">${pcRatio>0?pcRatio.toFixed(2):'—'}</td>
+        <td style="padding:3px 8px;color:#887760;font-size:8.5px;text-align:right">${fmtOI(totalOI)}</td>
+        <td style="padding:3px 8px;color:#00cc44;font-size:8px;text-align:right">${fmtOI(totalCallOI)}</td>
+        <td style="padding:3px 8px;color:#ff4444;font-size:8px;text-align:right">${fmtOI(totalPutOI)}</td>
+      </tr>`;
+    }).join('');
+
+    // Distribution statistics (from entire options chain)
+    const allExpRich=Object.values(expiryMap).sort((a,b)=>a.dte-b.dte);
+    const totalOIAll=opts.reduce((a,b)=>a+(b.oi||0),0);
+    const totalCallAll=opts.filter(o=>o.type==='C').reduce((a,b)=>a+(b.oi||0),0);
+    const totalPutAll=opts.filter(o=>o.type==='P').reduce((a,b)=>a+(b.oi||0),0);
+
+    // Weighted ATM IV across nearest expiries
+    const nearEx=allExpRich.slice(0,3);
+    const wAtmIV=nearEx.length?nearEx.reduce((a,ex)=>{
+      const c=[...ex.calls].sort((a,b)=>Math.abs(a.K-spotPrice)-Math.abs(b.K-spotPrice))[0];
+      return a+(c?.iv||0);
+    },0)/nearEx.length:0;
+
+    // Compute weighted expected move (1σ, 30d) from near-term ATM IV
+    const nearestEx=allExpRich[0];
+    const nearCalls=nearestEx?[...nearestEx.calls].sort((a,b)=>Math.abs(a.K-spotPrice)-Math.abs(b.K-spotPrice)):[];
+    const nearAtmIV=(nearCalls[0]?.iv||0)/100;
+    const nearDte=nearestEx?.dte||7;
+    const em1Near=nearAtmIV>0?spotPrice*nearAtmIV*Math.sqrt(nearDte/365):0;
+
+    // Max pain across all expiries (weighted by OI)
+    const allStrikesGlobal=[...new Set(opts.map(o=>o.K))].sort((a,b)=>a-b);
+    let globalMinPain=Infinity,globalMaxPain=0;
+    allStrikesGlobal.forEach(K=>{
+      const p=opts.reduce((a,o)=>a+(o.type==='C'?Math.max(0,K-o.K):Math.max(0,o.K-K))*(o.oi||0),0);
+      if(p<globalMinPain){globalMinPain=p;globalMaxPain=K;}
+    });
+
+    // Global P/C
+    const pcGlobal=totalCallAll>0?totalPutAll/totalCallAll:0;
+
+    panel.innerHTML=`
+      <div style="overflow:auto;height:100%;background:#040200">
+        <div style="padding:4px 10px;background:#060400;border-bottom:1px solid #1a0e00;display:flex;align-items:center;gap:12px">
+          <span style="color:#F39F41;font-size:8px;font-weight:700;letter-spacing:1.5px">OPTIONS CHAIN SUMMARY</span>
+          <span style="color:#665840;font-size:7.5px">Per-Expiry Metrics</span>
+          <span style="color:#887760;font-size:7.5px;margin-left:auto">Spot: <b style="color:#F39F41;font-family:'Roboto Mono',monospace">$${spotPrice.toLocaleString(undefined,{maximumFractionDigits:0})}</b></span>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+          <tr style="background:#060400;position:sticky;top:0;z-index:5">
+            <th style="padding:3px 8px;color:#ff8800;font-size:7px;letter-spacing:1px;border-bottom:1px solid #1a0e00;text-align:left">EXPIRY</th>
+            <th style="padding:3px 8px;color:#ff8800;font-size:7px;letter-spacing:1px;border-bottom:1px solid #1a0e00;text-align:right">DTE</th>
+            <th style="padding:3px 8px;color:#ff8800;font-size:7px;letter-spacing:1px;border-bottom:1px solid #1a0e00;text-align:right">ATM IV</th>
+            <th style="padding:3px 8px;color:#ff8800;font-size:7px;letter-spacing:1px;border-bottom:1px solid #1a0e00;text-align:right">25d Skew</th>
+            <th style="padding:3px 8px;color:#ff8800;font-size:7px;letter-spacing:1px;border-bottom:1px solid #1a0e00;text-align:right">25d RR</th>
+            <th style="padding:3px 8px;color:#ff8800;font-size:7px;letter-spacing:1px;border-bottom:1px solid #1a0e00;text-align:right">10d Skew</th>
+            <th style="padding:3px 8px;color:#ff8800;font-size:7px;letter-spacing:1px;border-bottom:1px solid #1a0e00;text-align:right">Max Pain</th>
+            <th style="padding:3px 8px;color:#ff8800;font-size:7px;letter-spacing:1px;border-bottom:1px solid #1a0e00;text-align:right">Net GEX</th>
+            <th style="padding:3px 8px;color:#ff8800;font-size:7px;letter-spacing:1px;border-bottom:1px solid #1a0e00;text-align:right">P/C</th>
+            <th style="padding:3px 8px;color:#ff8800;font-size:7px;letter-spacing:1px;border-bottom:1px solid #1a0e00;text-align:right">Total OI</th>
+            <th style="padding:3px 8px;color:#00cc44;font-size:7px;letter-spacing:1px;border-bottom:1px solid #1a0e00;text-align:right">Call OI</th>
+            <th style="padding:3px 8px;color:#ff4444;font-size:7px;letter-spacing:1px;border-bottom:1px solid #1a0e00;text-align:right">Put OI</th>
+          </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+
+        <div style="padding:6px 10px;background:#040200;border-top:1px solid #1a0e00;margin-top:4px">
+          <div style="color:#F39F41;font-size:7.5px;font-weight:700;letter-spacing:1.5px;margin-bottom:6px">DISTRIBUTION STATISTICS <span style="color:#443322;font-weight:400">· Key Metrics</span></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+            <div style="background:#060300;border:1px solid #1a0e00;padding:6px 10px;border-radius:2px">
+              <div style="color:#665840;font-size:7px;letter-spacing:1px">ATM IV (Near)</div>
+              <div style="color:#F39F41;font-size:13px;font-weight:700;font-family:'Roboto Mono',monospace">${wAtmIV>0?wAtmIV.toFixed(1)+'%':'—'}</div>
+            </div>
+            <div style="background:#060300;border:1px solid #1a0e00;padding:6px 10px;border-radius:2px">
+              <div style="color:#665840;font-size:7px;letter-spacing:1px">1σ Expected Move</div>
+              <div style="color:#00cc44;font-size:13px;font-weight:700;font-family:'Roboto Mono',monospace">±$${em1Near>0?Math.round(em1Near).toLocaleString():'—'}</div>
+              <div style="color:#443322;font-size:7px">${nearDte}d expiry</div>
+            </div>
+            <div style="background:#060300;border:1px solid #1a0e00;padding:6px 10px;border-radius:2px">
+              <div style="color:#665840;font-size:7px;letter-spacing:1px">Global P/C Ratio</div>
+              <div style="color:${pcGlobal>1.2?'#ff4444':pcGlobal<0.8?'#00cc44':'#F39F41'};font-size:13px;font-weight:700;font-family:'Roboto Mono',monospace">${pcGlobal>0?pcGlobal.toFixed(2):'—'}</div>
+              <div style="color:#443322;font-size:7px">${pcGlobal>1?'MORE PUTS':'MORE CALLS'}</div>
+            </div>
+            <div style="background:#060300;border:1px solid #1a0e00;padding:6px 10px;border-radius:2px">
+              <div style="color:#665840;font-size:7px;letter-spacing:1px">Global Max Pain</div>
+              <div style="color:#F39F41;font-size:13px;font-weight:700;font-family:'Roboto Mono',monospace">$${globalMaxPain>0?(globalMaxPain/1000).toFixed(0)+'K':'—'}</div>
+              <div style="color:#443322;font-size:7px">${globalMaxPain>0?((globalMaxPain-spotPrice)/spotPrice*100).toFixed(1)+'% from spot':''}</div>
+            </div>
+            <div style="background:#060300;border:1px solid #1a0e00;padding:6px 10px;border-radius:2px">
+              <div style="color:#665840;font-size:7px;letter-spacing:1px">Total Call OI</div>
+              <div style="color:#00cc44;font-size:13px;font-weight:700;font-family:'Roboto Mono',monospace">${totalCallAll>0?(totalCallAll>=1000?(totalCallAll/1000).toFixed(1)+'K':totalCallAll.toFixed(0)):'—'}</div>
+            </div>
+            <div style="background:#060300;border:1px solid #1a0e00;padding:6px 10px;border-radius:2px">
+              <div style="color:#665840;font-size:7px;letter-spacing:1px">Total Put OI</div>
+              <div style="color:#ff4444;font-size:13px;font-weight:700;font-family:'Roboto Mono',monospace">${totalPutAll>0?(totalPutAll>=1000?(totalPutAll/1000).toFixed(1)+'K':totalPutAll.toFixed(0)):'—'}</div>
+            </div>
+            <div style="background:#060300;border:1px solid #1a0e00;padding:6px 10px;border-radius:2px">
+              <div style="color:#665840;font-size:7px;letter-spacing:1px">Total OI (All)</div>
+              <div style="color:#887760;font-size:13px;font-weight:700;font-family:'Roboto Mono',monospace">${totalOIAll>0?(totalOIAll>=1000?(totalOIAll/1000).toFixed(1)+'K':totalOIAll.toFixed(0)):'—'}</div>
+            </div>
+            <div style="background:#060300;border:1px solid #1a0e00;padding:6px 10px;border-radius:2px">
+              <div style="color:#665840;font-size:7px;letter-spacing:1px">Active Expiries</div>
+              <div style="color:#00bbdd;font-size:13px;font-weight:700;font-family:'Roboto Mono',monospace">${Object.keys(expiryMap).length}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+  } else if(tab === 'probheatmap'){
+    // ── PROBABILITY HEATMAP — Strike % from Spot × Expiry ────────────
+    // Canvas-based 2D heatmap matching BackQuant Probability Heatmap style
+    panel.innerHTML=`<div style="padding:6px 12px;background:#060400;border-bottom:1px solid #1a0e00;display:flex;align-items:center;gap:12px">
+      <span style="color:#F39F41;font-size:8px;font-weight:700;letter-spacing:1.5px">PROBABILITY HEATMAP</span>
+      <span style="color:#665840;font-size:7.5px">Strike × Expiry · P(reach strike)</span>
+      <span style="color:#887760;font-size:7.5px;margin-left:auto">Spot: <b style="color:#F39F41">$${spot.toLocaleString(undefined,{maximumFractionDigits:0})}</b></span>
+    </div>
+    <canvas id="optflow-heatmap-canvas" style="display:block;background:#040200"></canvas>
+    <div id="optflow-heatmap-legend" style="padding:4px 12px;background:#040200;border-top:1px solid #0a0600;display:flex;align-items:center;gap:8px;font-size:7.5px">
+      <span style="color:#443">Low</span>
+      <div id="optflow-heatmap-gradient" style="flex:1;max-width:200px;height:8px;border-radius:2px"></div>
+      <span style="color:#ff80ff">High</span>
+      <span style="color:#554;margin-left:16px">X-axis: Strike % from Spot &nbsp;|&nbsp; Y-axis: DTE</span>
+    </div>`;
+
+    const canvas=document.getElementById('optflow-heatmap-canvas');
+    const bodyH=panel.offsetHeight||600;
+    canvas.width=panel.offsetWidth||1060;
+    canvas.height=Math.max(bodyH-60,300);
+    const ctx=canvas.getContext('2d');
+
+    // Draw gradient legend
+    const lgEl=document.getElementById('optflow-heatmap-gradient');
+    if(lgEl){
+      const lg=document.createElement('canvas'); lg.width=200; lg.height=8;
+      const lgCtx=lg.getContext('2d');
+      const grad=lgCtx.createLinearGradient(0,0,200,0);
+      grad.addColorStop(0,'#040820');
+      grad.addColorStop(0.3,'#1a2080');
+      grad.addColorStop(0.55,'#6030c0');
+      grad.addColorStop(0.75,'#c040a0');
+      grad.addColorStop(0.9,'#ff80c0');
+      grad.addColorStop(1,'#ffffff');
+      lgCtx.fillStyle=grad; lgCtx.fillRect(0,0,200,8);
+      lgEl.innerHTML=''; lgEl.appendChild(lg);
+    }
+
+    // Build per-expiry log-normal PDF and compute P(touch K)
+    const sliceMap={};
+    opts.forEach(o=>{
+      if(!o.iv||o.iv<5||o.iv>400||o.dte<0||o.dte>400) return;
+      if(o.K<spot*0.3||o.K>spot*2.5) return;
+      const dk=o.dte;
+      if(!sliceMap[dk]) sliceMap[dk]={dte:dk,ivByK:{}};
+      if(!sliceMap[dk].ivByK[o.K]) sliceMap[dk].ivByK[o.K]=o.iv;
+    });
+    const slices=Object.values(sliceMap).sort((a,b)=>a.dte-b.dte);
+    if(slices.length<2){
+      ctx.fillStyle='#554'; ctx.font='11px monospace';
+      ctx.fillText('Insufficient data — reload or switch coin',20,40);
+      return;
+    }
+
+    // Strike grid: -28% to +28% in steps
+    const pctSteps=[];
+    for(let p=-28;p<=28;p+=1) pctSteps.push(p);
+    const nCols=pctSteps.length;
+    const nRows=slices.length;
+
+    // For each cell compute probability density (log-normal PDF at strike)
+    const heatData=[]; // [row][col]
+    slices.forEach((sl,ri)=>{
+      const tau=Math.max(sl.dte,0.5)/365;
+      const strikeIVs=Object.entries(sl.ivByK).map(([k,v])=>({K:parseFloat(k),iv:v})).sort((a,b)=>a.K-b.K);
+      const getIV=K=>{
+        if(strikeIVs.length===0) return 50;
+        if(K<=strikeIVs[0].K) return strikeIVs[0].iv;
+        if(K>=strikeIVs[strikeIVs.length-1].K) return strikeIVs[strikeIVs.length-1].iv;
+        let lo=0;
+        for(let i=0;i<strikeIVs.length-1;i++){if(K>=strikeIVs[i].K&&K<=strikeIVs[i+1].K){lo=i;break;}}
+        const t=(K-strikeIVs[lo].K)/(strikeIVs[lo+1].K-strikeIVs[lo].K);
+        return strikeIVs[lo].iv*(1-t)+strikeIVs[lo+1].iv*t;
+      };
+      const row=[];
+      pctSteps.forEach(pct=>{
+        const K=spot*(1+pct/100);
+        const sig=getIV(K)/100;
+        if(sig<=0){row.push(0);return;}
+        const d1=(Math.log(spot/K)+(0.5*sig*sig*tau))/(sig*Math.sqrt(tau));
+        const pdf=Math.exp(-0.5*d1*d1)/(K*sig*Math.sqrt(2*Math.PI*tau));
+        row.push(Math.max(0,pdf*spot*0.01)); // normalised
+      });
+      // Normalise row
+      const rowMax=Math.max(...row)||1;
+      heatData.push(row.map(v=>v/rowMax));
+    });
+
+    // Draw heatmap
+    const pad={l:55,r:20,t:10,b:35};
+    const cw=canvas.width-pad.l-pad.r;
+    const ch=canvas.height-pad.t-pad.b;
+    const cellW=cw/nCols, cellH=ch/nRows;
+
+    const heatColor=v=>{
+      // dark blue → purple → pink → white
+      const t=Math.max(0,Math.min(1,v));
+      if(t<0.0001) return [4,8,20];
+      if(t<0.3){const s=t/0.3; return [Math.round(4+s*22),Math.round(8+s*40),Math.round(20+s*108)];}
+      if(t<0.55){const s=(t-0.3)/0.25; return [Math.round(26+s*70),Math.round(48+s*0),Math.round(128+s*72)];}
+      if(t<0.75){const s=(t-0.55)/0.2; return [Math.round(96+s*96),Math.round(48+s*16-48*s),Math.round(200-s*40)];}
+      if(t<0.9){const s=(t-0.75)/0.15; return [Math.round(192+s*63),Math.round(16+s*112),Math.round(160+s*95)];}
+      const s=(t-0.9)/0.1; return [Math.round(255),Math.round(128+s*127),Math.round(255)];
+    };
+
+    for(let ri=0;ri<nRows;ri++){
+      for(let ci=0;ci<nCols;ci++){
+        const v=heatData[ri][ci]||0;
+        const [r,g,b]=heatColor(v);
+        ctx.fillStyle=`rgb(${r},${g},${b})`;
+        const x=pad.l+ci*cellW, y=pad.t+(nRows-1-ri)*cellH;
+        ctx.fillRect(Math.round(x),Math.round(y),Math.max(1,Math.ceil(cellW)),Math.max(1,Math.ceil(cellH)));
+      }
+    }
+
+    // Spot line (at 0%)
+    const spotCol=pctSteps.findIndex(p=>p===0);
+    if(spotCol>=0){
+      const sx=pad.l+spotCol*cellW+cellW/2;
+      ctx.strokeStyle='rgba(243,159,65,0.8)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(sx,pad.t); ctx.lineTo(sx,pad.t+ch); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='#F39F41'; ctx.font='8px Roboto Mono,monospace';
+      ctx.textAlign='center'; ctx.fillText('Spot',sx,pad.t+ch+12);
+    }
+
+    // X-axis labels (% from spot)
+    ctx.fillStyle='#443'; ctx.font='8px Roboto Mono,monospace'; ctx.textAlign='center';
+    [-28,-21,-14,-7,0,7,14,21,28].forEach(pct=>{
+      const ci=pctSteps.indexOf(pct);
+      if(ci<0) return;
+      const x=pad.l+ci*cellW+cellW/2;
+      ctx.fillStyle=pct===0?'#887760':'#443';
+      ctx.fillText(pct+'%',x,pad.t+ch+22);
+    });
+    ctx.fillStyle='#443'; ctx.font='7px Roboto Mono,monospace'; ctx.textAlign='center';
+    ctx.fillText('Strike (% from Spot)',canvas.width/2,pad.t+ch+32);
+
+    // Y-axis labels (DTE)
+    ctx.textAlign='right'; ctx.fillStyle='#443'; ctx.font='8px Roboto Mono,monospace';
+    slices.forEach((sl,ri)=>{
+      const y=pad.t+(nRows-1-ri)*cellH+cellH/2+3;
+      ctx.fillText(sl.dte+'d',pad.l-4,y);
+    });
+    ctx.save(); ctx.translate(11,pad.t+ch/2); ctx.rotate(-Math.PI/2);
+    ctx.textAlign='center'; ctx.fillStyle='#443'; ctx.font='7px Roboto Mono,monospace';
+    ctx.fillText('Expiry',0,0); ctx.restore();
   }
 }
 
-// ── Build panel HTML ───────────────────────────────────────────────────
+
+  } else if(tab === 'volcurves'){
+    // ── VOLATILITY CURVES — IV smile per expiry + Delta25 Skew Curve ─────
+    panel.innerHTML=`<div id="optflow-volcurves-plot" style="width:100%;height:100%;background:#040408;position:relative;display:flex;gap:0;overflow:hidden">
+      <div id="optflow-volc-left" style="flex:1;min-width:0;height:100%"></div>
+      <div id="optflow-volc-right" style="flex:1;min-width:0;height:100%;border-left:1px solid #0a0600"></div>
+    </div>`;
+    const vcLeft=document.getElementById('optflow-volc-left');
+    const vcRight=document.getElementById('optflow-volc-right');
+    if(!vcLeft||!vcRight) return;
+
+    const _drawVolCurves=()=>{
+      if(!window.Plotly||!vcLeft.offsetWidth){setTimeout(_drawVolCurves,200);return;}
+
+      // Build IV smile traces per expiry (up to 8 nearest)
+      const expMap={};
+      opts.forEach(o=>{
+        if(!o.iv||o.iv<5||o.iv>350||o.K<spot*0.4||o.K>spot*2.5) return;
+        const k=o.expStr||o.dte+'d';
+        if(!expMap[k]) expMap[k]={calls:[],puts:[],dte:o.dte,exp:o.expStr||o.dte+'d'};
+        if(o.type==='C') expMap[k].calls.push({K:o.K,iv:o.iv});
+        else expMap[k].puts.push({K:o.K,iv:o.iv});
+      });
+      const expList=Object.values(expMap).sort((a,b)=>a.dte-b.dte).slice(0,8);
+
+      // BackQuant palette: green gradient for near → purple for far
+      const palette=['#ccff33','#88ee22','#44cc44','#22aaaa','#4488ff','#8844ff','#cc44bb','#ff8844'];
+      const smileTraces=[];
+      expList.forEach((ex,i)=>{
+        const all=[...ex.calls,...ex.puts].sort((a,b)=>a.K-b.K);
+        const kArr=all.map(o=>o.K), ivArr=all.map(o=>o.iv);
+        if(kArr.length<3) return;
+        const label=`${ex.dte}d · ${ex.exp}`;
+        smileTraces.push({
+          x:kArr, y:ivArr, type:'scatter', mode:'lines',
+          name:label, line:{color:palette[i%palette.length],width:i===0?2.5:1.5},
+          hovertemplate:'$%{x:,.0f}<br>IV %{y:.1f}%<extra>'+label+'</extra>',
+        });
+      });
+
+      // Add spot vertical
+      smileTraces.push({
+        x:[spot,spot], y:[0,350], type:'scatter', mode:'lines', name:'Spot',
+        line:{color:'rgba(255,200,80,0.6)',width:1.5,dash:'dot'}, showlegend:false,
+        hovertemplate:'Spot $'+spot.toFixed(0)+'<extra></extra>',
+      });
+
+      const smileLayout={
+        paper_bgcolor:'#040408', plot_bgcolor:'#040408',
+        autosize:true, margin:{l:55,r:10,t:40,b:45},
+        title:{text:`<b>${cur} Volatility Curves</b>  <span style="color:#555;font-size:9px">IV smile across expiries</span>`,
+          font:{color:'#22ccff',size:11,family:'Courier New,monospace'},x:0.01,y:0.97},
+        xaxis:{title:'Strike ($)',titlefont:{size:9,color:'#555'},tickfont:{size:8},
+          gridcolor:'rgba(255,255,255,0.05)',tickformat:'$,.0f',color:'#555',zeroline:false},
+        yaxis:{title:'IV %',titlefont:{size:9,color:'#555'},tickfont:{size:8},
+          gridcolor:'rgba(255,255,255,0.05)',color:'#555',zeroline:false,ticksuffix:'%'},
+        legend:{orientation:'h',x:0,y:-0.12,font:{size:7.5,color:'#665840'},bgcolor:'rgba(0,0,0,0)'},
+        hovermode:'x unified',font:{color:'#777',family:'Roboto Mono,Courier New,monospace'},
+        hoverlabel:{bgcolor:'#0e0820',bordercolor:'#22ccff',font:{color:'#fff',size:10}},
+      };
+
+      // Δ25 Skew curve — 25d skew per expiry
+      const skewData=expList.map(ex=>{
+        const tau=Math.max(ex.dte,0.5)/365;
+        const allCalls=[...ex.calls].sort((a,b)=>a.K-b.K);
+        const allPuts=[...ex.puts].sort((a,b)=>a.K-b.K);
+        const atmCall=allCalls.sort((a,b)=>Math.abs(a.K-spot)-Math.abs(b.K-spot))[0];
+        const atmIV=(atmCall?.iv||40)/100;
+        const sigSqrt=atmIV*Math.sqrt(tau);
+        const kC25=spot*Math.exp(+0.6745*sigSqrt);
+        const kP25=spot*Math.exp(-0.6745*sigSqrt);
+        const c25=[...allCalls].sort((a,b)=>Math.abs(a.K-kC25)-Math.abs(b.K-kC25))[0];
+        const p25=[...allPuts].sort((a,b)=>Math.abs(a.K-kP25)-Math.abs(b.K-kP25))[0];
+        const skew=(c25?.iv&&p25?.iv)?c25.iv-p25.iv:null;
+        const rr=(c25?.iv&&p25?.iv)?p25.iv-c25.iv:null;
+        const kC10=spot*Math.exp(+1.2816*sigSqrt);
+        const kP10=spot*Math.exp(-1.2816*sigSqrt);
+        const c10=[...allCalls].sort((a,b)=>Math.abs(a.K-kC10)-Math.abs(b.K-kC10))[0];
+        const p10=[...allPuts].sort((a,b)=>Math.abs(a.K-kP10)-Math.abs(b.K-kP10))[0];
+        const skew10=(c10?.iv&&p10?.iv)?c10.iv-p10.iv:null;
+        return {label:`${ex.dte}d`, dte:ex.dte, skew25:skew, rr25:rr, skew10:skew10, atmIV:(atmIV*100)};
+      }).filter(d=>d.skew25!==null);
+
+      const skewTraces=[
+        {
+          x:skewData.map(d=>d.label), y:skewData.map(d=>d.skew25),
+          type:'scatter', mode:'lines+markers', name:'25d Skew',
+          line:{color:'#22ccdd',width:2.5}, marker:{size:6,color:'#22ccdd'},
+          hovertemplate:'%{x}<br>25d Skew %{y:+.1f}%<extra></extra>',
+        },
+        {
+          x:skewData.map(d=>d.label), y:skewData.map(d=>d.rr25),
+          type:'scatter', mode:'lines+markers', name:'25d RR',
+          line:{color:'rgba(255,200,80,0.7)',width:1.5,dash:'dot'}, marker:{size:4,color:'rgba(255,200,80,0.7)'},
+          hovertemplate:'%{x}<br>25d RR %{y:+.1f}%<extra></extra>',
+        },
+        {
+          x:skewData.map(d=>d.label), y:skewData.map(d=>d.skew10),
+          type:'scatter', mode:'lines+markers', name:'10d Skew',
+          line:{color:'rgba(255,255,255,0.45)',width:1.5,dash:'dash'}, marker:{size:4,color:'rgba(255,255,255,0.45)'},
+          hovertemplate:'%{x}<br>10d Skew %{y:+.1f}%<extra></extra>',
+        },
+        {
+          x:skewData.map(d=>d.label), y:skewData.map(d=>d.atmIV),
+          type:'scatter', mode:'lines', name:'ATM IV',
+          yaxis:'y2', line:{color:'rgba(180,100,255,0.5)',width:1.5,dash:'dot'},
+          hovertemplate:'%{x}<br>ATM IV %{y:.1f}%<extra></extra>',
+        },
+      ];
+      // Zero line
+      skewTraces.push({
+        x:skewData.map(d=>d.label), y:skewData.map(()=>0),
+        type:'scatter', mode:'lines', name:'', showlegend:false,
+        line:{color:'rgba(255,255,255,0.1)',width:1}, hoverinfo:'skip',
+      });
+
+      const skewLayout={
+        paper_bgcolor:'#040408', plot_bgcolor:'#040408',
+        autosize:true, margin:{l:55,r:55,t:40,b:45},
+        title:{text:`<b>Δ25 Skew Curve</b>  <span style="color:#555;font-size:9px">Delta-interpolated put-call skew</span>`,
+          font:{color:'#22ccdd',size:11,family:'Courier New,monospace'},x:0.01,y:0.97},
+        xaxis:{title:'',tickfont:{size:8},gridcolor:'rgba(255,255,255,0.05)',color:'#555',zeroline:false},
+        yaxis:{title:'Skew (IV%)',titlefont:{size:9,color:'#555'},tickfont:{size:8},
+          gridcolor:'rgba(255,255,255,0.05)',color:'#555',zeroline:false,ticksuffix:'%',side:'left'},
+        yaxis2:{title:'ATM IV',titlefont:{size:9,color:'rgba(180,100,255,0.7)'},tickfont:{size:8,color:'rgba(180,100,255,0.6)'},
+          overlaying:'y',side:'right',ticksuffix:'%',zeroline:false,showgrid:false},
+        legend:{orientation:'h',x:0,y:-0.12,font:{size:7.5,color:'#665840'},bgcolor:'rgba(0,0,0,0)'},
+        font:{color:'#777',family:'Roboto Mono,Courier New,monospace'},
+        hoverlabel:{bgcolor:'#0e0820',bordercolor:'#22ccdd',font:{color:'#fff',size:10}},
+        hovermode:'x unified',
+      };
+
+      if(vcLeft._vcPlot){
+        Plotly.react(vcLeft,smileTraces,smileLayout,{responsive:true,displayModeBar:false});
+      } else {
+        Plotly.newPlot(vcLeft,smileTraces,smileLayout,{responsive:true,displayModeBar:false});
+        vcLeft._vcPlot=true;
+      }
+      if(vcRight._vcPlot){
+        Plotly.react(vcRight,skewTraces,skewLayout,{responsive:true,displayModeBar:false});
+      } else {
+        Plotly.newPlot(vcRight,skewTraces,skewLayout,{responsive:true,displayModeBar:false});
+        vcRight._vcPlot=true;
+      }
+    };
+
+    if(!window.Plotly){
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';
+      s.onload=()=>setTimeout(_drawVolCurves,100);
+      document.head.appendChild(s);
+    } else {
+      setTimeout(_drawVolCurves,60);
+    }
+
+
+  } else if(tab === 'oiexpiry'){
+    // ── OI BY EXPIRY — Call/Put OI bars + CDF lines (BackQuant style) ─────
+    const W2=panel.offsetWidth||1060, H2=panel.offsetHeight||640;
+    // Build per-expiry OI
+    const expiryOI = expiries.map(({exp,dte})=>{
+      const eo=opts.filter(o=>o.expStr===exp);
+      const cOI=eo.filter(o=>o.type==='C').reduce((a,b)=>a+(b.oi||0),0);
+      const pOI=eo.filter(o=>o.type==='P').reduce((a,b)=>a+(b.oi||0),0);
+      return {exp,dte,cOI,pOI};
+    }).filter(d=>d.cOI+d.pOI>0).slice(0,15).reverse(); // reverse: oldest at top like BackQuant
+
+    const totalC=expiryOI.reduce((a,b)=>a+b.cOI,0)||1;
+    const totalP=expiryOI.reduce((a,b)=>a+b.pOI,0)||1;
+    // CDFs (cumulative from near to far)
+    const rev=[...expiryOI].reverse();
+    let cSum=0,pSum=0;
+    rev.forEach(d=>{cSum+=d.cOI;pSum+=d.pOI;d.cCDF=cSum/totalC*100;d.pCDF=pSum/totalP*100;});
+
+    const maxOI=Math.max(...expiryOI.map(d=>Math.max(d.cOI,d.pOI)))||1;
+    const pad={l:80,r:60,t:20,b:40};
+    const cw=W2-pad.l-pad.r, ch=H2-pad.t-pad.b;
+    const rowH=ch/expiryOI.length;
+    const barH=Math.max(2,rowH*0.6);
+    const mid=pad.l+cw/2;
+
+    let bars='',lines='',cdfPathC='',cdfPathP='',labels='',axes='';
+
+    // Info box
+    const totCK=totalC>=1000?(totalC/1000).toFixed(1)+'K':totalC.toFixed(0);
+    const totPK=totalP>=1000?(totalP/1000).toFixed(1)+'K':totalP.toFixed(0);
+
+    expiryOI.forEach((d,i)=>{
+      const y=pad.t+i*rowH+rowH/2;
+      const bH=barH;
+      // Calls: green bars to right
+      const cW=d.cOI/maxOI*(cw/2)*0.85;
+      bars+=`<rect x="${mid.toFixed(1)}" y="${(y-bH/2).toFixed(1)}" width="${cW.toFixed(1)}" height="${bH.toFixed(1)}" fill="rgba(0,220,100,0.75)" rx="1"/>`;
+      // Puts: red bars to left
+      const pW=d.pOI/maxOI*(cw/2)*0.85;
+      bars+=`<rect x="${(mid-pW).toFixed(1)}" y="${(y-bH/2).toFixed(1)}" width="${pW.toFixed(1)}" height="${bH.toFixed(1)}" fill="rgba(220,60,60,0.75)" rx="1"/>`;
+      // Y-axis label
+      labels+=`<text x="${(pad.l-4).toFixed(1)}" y="${(y+3.5).toFixed(1)}" text-anchor="end" fill="#665840" font-size="9" font-family="Roboto Mono,monospace">${d.exp}</text>`;
+    });
+
+    // CDF lines
+    const mapY=i=>pad.t+i*rowH+rowH/2;
+    const mapX_C=pct=>mid+pct/100*(cw/2)*0.85;
+    const mapX_P=pct=>mid-pct/100*(cw/2)*0.85;
+    const revD=[...expiryOI].reverse();
+    cdfPathC='M'+revD.map((d,i)=>`${mapX_C(d.cCDF).toFixed(1)},${mapY(expiryOI.length-1-i).toFixed(1)}`).join(' L');
+    cdfPathP='M'+revD.map((d,i)=>`${mapX_P(d.pCDF).toFixed(1)},${mapY(expiryOI.length-1-i).toFixed(1)}`).join(' L');
+
+    // Axes
+    [-60,-30,0,30,60].forEach(k=>{
+      const x=mid+k/maxOI*(cw/2)*850;
+      const lbl=Math.abs(k)>0?(Math.abs(k)+'K'):'0';
+      axes+=`<line x1="${x.toFixed(0)}" y1="${pad.t}" x2="${x.toFixed(0)}" y2="${(pad.t+ch).toFixed(0)}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
+      axes+=`<text x="${x.toFixed(0)}" y="${(pad.t+ch+14).toFixed(0)}" text-anchor="middle" fill="#443" font-size="8" font-family="Roboto Mono,monospace">${k<0?'-':k>0?'+':''}${lbl}</text>`;
+    });
+    axes+=`<text x="${(W2/2).toFixed(0)}" y="${(pad.t+ch+28).toFixed(0)}" text-anchor="middle" fill="#554" font-size="8" font-family="Roboto Mono,monospace">OI (Contracts)</text>`;
+
+    panel.innerHTML=`
+      <div style="padding:4px 10px;background:#060400;border-bottom:1px solid #1a0e00;display:flex;gap:16px;align-items:center;font-size:8px">
+        <span style="color:#F39F41;font-weight:700;letter-spacing:1.5px">OI BY EXPIRY</span>
+        <span style="color:#555">Call/Put OI with CDFs</span>
+        <span style="color:rgba(0,220,100,0.9);margin-left:auto">■ Call OI</span>
+        <span style="color:rgba(220,60,60,0.9)">■ Put OI</span>
+        <span style="color:#22eeaa">— Call CDF</span>
+        <span style="color:#ff6666">— Put CDF</span>
+        <div style="background:#080500;border:1px solid #1a0e00;padding:2px 8px;border-radius:2px;margin-left:8px">
+          <span style="color:#00cc44">Calls: ${totCK}</span>
+          <span style="color:#554;margin:0 4px">|</span>
+          <span style="color:#ff4444">Puts: ${totPK}</span>
+          <span style="color:#554;margin-left:4px">CDF</span>
+        </div>
+      </div>
+      <svg width="${W2}" height="${H2-30}" style="background:#050200;display:block">
+        ${axes}${bars}
+        <path d="${cdfPathC}" fill="none" stroke="#22eeaa" stroke-width="1.5" opacity="0.85"/>
+        <path d="${cdfPathP}" fill="none" stroke="#ff6666" stroke-width="1.5" opacity="0.85"/>
+        <line x1="${mid.toFixed(0)}" y1="${pad.t}" x2="${mid.toFixed(0)}" y2="${(pad.t+ch).toFixed(0)}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4,3"/>
+        ${labels}
+      </svg>`;
+
+  } else if(tab === 'expectedmove'){
+    // ── EXPECTED MOVE — Implied Probability Cone ──────────────────────────
+    const W2=panel.offsetWidth||1060, H2=panel.offsetHeight||640;
+    // Use nearest expiry ATM IV
+    const nearExp=expiries[0];
+    const nearOpts=opts.filter(o=>o.expStr===nearExp?.exp);
+    const atmCall=nearOpts.filter(o=>o.type==='C'&&o.iv>0)
+                          .sort((a,b)=>Math.abs(a.K-spot)-Math.abs(b.K-spot))[0];
+    const atmIV=(atmCall?.iv||40)/100;
+    const dte=nearExp?.dte||7;
+    const sqT=Math.sqrt(dte/365);
+    const em1=spot*atmIV*sqT;
+    const em2=em1*2;
+    const up1=spot+em1, dn1=spot-em1;
+    const up2=spot+em2, dn2=spot-em2;
+    const straddle=atmCall?(atmCall.markPrice*spot*2).toFixed(0):'—';
+
+    // Layout: left=stats box, right=cone chart
+    const pad={l:80,r:180,t:30,b:50};
+    const cw=W2-pad.l-pad.r, ch=H2-80-pad.t-pad.b;
+    const priceMin=dn2*0.97, priceMax=up2*1.03;
+    const mapY=p=>pad.t+(priceMax-p)/(priceMax-priceMin)*ch;
+    const nowX=pad.l+cw*0.18;
+    const expX=pad.l+cw*0.82;
+    const spotY=mapY(spot);
+
+    const fmtP=v=>'$'+Math.round(v).toLocaleString();
+    const lineY1=mapY(up1), lineY2=mapY(dn1);
+    const line2Y1=mapY(up2), line2Y2=mapY(dn2);
+
+    // Draw cone
+    let svg=`<svg width="${W2}" height="${H2-80}" style="background:#070410;display:block">`;
+    // Shaded 2σ cone
+    svg+=`<polygon points="${nowX},${spotY} ${expX},${line2Y1} ${expX},${line2Y2}" fill="rgba(80,40,180,0.35)" stroke="none"/>`;
+    // Shaded 1σ cone
+    svg+=`<polygon points="${nowX},${spotY} ${expX},${lineY1} ${expX},${lineY2}" fill="rgba(80,40,220,0.45)" stroke="none"/>`;
+    // Dashed outer cone lines (2σ)
+    svg+=`<line x1="${nowX}" y1="${spotY}" x2="${expX}" y2="${line2Y1}" stroke="rgba(150,100,255,0.7)" stroke-width="1.5" stroke-dasharray="6,3"/>`;
+    svg+=`<line x1="${nowX}" y1="${spotY}" x2="${expX}" y2="${line2Y2}" stroke="rgba(150,100,255,0.7)" stroke-width="1.5" stroke-dasharray="6,3"/>`;
+    // Solid inner cone lines (1σ)
+    svg+=`<line x1="${nowX}" y1="${spotY}" x2="${expX}" y2="${lineY1}" stroke="rgba(100,160,255,0.9)" stroke-width="2"/>`;
+    svg+=`<line x1="${nowX}" y1="${spotY}" x2="${expX}" y2="${lineY2}" stroke="rgba(100,160,255,0.9)" stroke-width="2"/>`;
+
+    // Price grid lines
+    [dn2,dn1,spot,up1,up2].forEach(p=>{
+      const y=mapY(p).toFixed(1);
+      svg+=`<line x1="${pad.l}" y1="${y}" x2="${W2-100}" y2="${y}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3,4"/>`;
+      svg+=`<text x="${(pad.l-5).toFixed(0)}" y="${(parseFloat(y)+3.5).toFixed(0)}" text-anchor="end" fill="#554" font-size="9" font-family="Roboto Mono,monospace">${fmtP(p)}</text>`;
+    });
+
+    // Spot dot and line
+    svg+=`<circle cx="${nowX}" cy="${spotY.toFixed(1)}" r="5" fill="#ffffff" stroke="#444" stroke-width="1"/>`;
+    svg+=`<line x1="${nowX}" y1="${spotY.toFixed(1)}" x2="${expX}" y2="${spotY.toFixed(1)}" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>`;
+    svg+=`<circle cx="${expX}" cy="${spotY.toFixed(1)}" r="4" fill="#ffffff"/>`;
+
+    // Labels at expiry
+    const lblX=expX+8;
+    svg+=`<text x="${lblX}" y="${(mapY(up2)+4).toFixed(0)}" fill="#9966ff" font-size="9" font-family="Roboto Mono,monospace">+2σ: ${fmtP(up2)}</text>`;
+    svg+=`<text x="${lblX}" y="${(mapY(up1)+4).toFixed(0)}" fill="#6699ff" font-size="9" font-family="Roboto Mono,monospace">+1σ: ${fmtP(up1)}</text>`;
+    svg+=`<text x="${lblX}" y="${(mapY(spot)+4).toFixed(0)}" fill="#ffffff" font-size="9" font-family="Roboto Mono,monospace">Spot: ${fmtP(spot)}</text>`;
+    svg+=`<text x="${lblX}" y="${(mapY(dn1)+4).toFixed(0)}" fill="#6699ff" font-size="9" font-family="Roboto Mono,monospace">-1σ: ${fmtP(dn1)}</text>`;
+    svg+=`<text x="${lblX}" y="${(mapY(dn2)+4).toFixed(0)}" fill="#9966ff" font-size="9" font-family="Roboto Mono,monospace">-2σ: ${fmtP(dn2)}</text>`;
+
+    // X axis labels
+    svg+=`<text x="${nowX}" y="${(pad.t+ch+20).toFixed(0)}" text-anchor="middle" fill="#554" font-size="9" font-family="Roboto Mono,monospace">Now</text>`;
+    svg+=`<text x="${expX}" y="${(pad.t+ch+20).toFixed(0)}" text-anchor="middle" fill="#554" font-size="9" font-family="Roboto Mono,monospace">Expiry (${dte}d)</text>`;
+    svg+='</svg>';
+
+    panel.innerHTML=`
+      <div style="padding:4px 10px;background:#060400;border-bottom:1px solid #1a0e00;display:flex;gap:8px;align-items:center;font-size:8px">
+        <span style="color:#F39F41;font-weight:700;letter-spacing:1.5px">EXPECTED MOVE</span>
+        <span style="color:#555">Implied Probability Cone · ${nearExp?.exp||'—'}</span>
+        <div style="background:#0a0418;border:1px solid #2a1060;padding:2px 8px;border-radius:2px;margin-left:auto;font-family:'Roboto Mono',monospace;font-size:8px;line-height:1.6">
+          <span style="color:#887760">IV:</span> <span style="color:#c8a0ff">${(atmIV*100).toFixed(1)}%</span>&nbsp;
+          <span style="color:#887760">1σ:</span> <span style="color:#6699ff">±${(atmIV*sqT*100).toFixed(1)}%</span>&nbsp;
+          <span style="color:#887760">2σ:</span> <span style="color:#9966ff">±${(atmIV*sqT*200).toFixed(1)}%</span>&nbsp;
+          <span style="color:#887760">Straddle:</span> <span style="color:#22ccdd">$${straddle}</span>
+        </div>
+      </div>
+      ${svg}`;
+
+  } else if(tab === 'termstruct'){
+    // ── IV TERM STRUCTURE — ATM Mark IV + Forward IV ──────────────────────
+    const tsData = _OF.data[cur]?.tsData || [];
+    if(!tsData.length){ panel.innerHTML='<div style="padding:20px;color:#443;font-size:10px">No data</div>'; return; }
+    const W2=panel.offsetWidth||1060, H2=panel.offsetHeight||640;
+
+    const _draw=()=>{
+      if(!window.Plotly||!panel.offsetWidth){setTimeout(_draw,200);return;}
+      const traces=[
+        {
+          x:tsData.map(d=>d.dte), y:tsData.map(d=>d.atmIV),
+          type:'scatter', mode:'lines+markers', name:'ATM Mark IV',
+          line:{color:'#22aacc',width:2.5}, marker:{size:7,color:'#22aacc'},
+          hovertemplate:'%{x}d<br>ATM IV: %{y:.1f}%<extra></extra>',
+        },
+        {
+          x:tsData.map(d=>d.dte), y:tsData.map(d=>d.fwdIV),
+          type:'scatter', mode:'lines+markers', name:'Forward IV',
+          line:{color:'#F39F41',width:2,dash:'dot'}, marker:{size:5,color:'#F39F41'},
+          hovertemplate:'%{x}d<br>Fwd IV: %{y:.1f}%<extra></extra>',
+        },
+      ];
+      const layout={
+        paper_bgcolor:'#040408', plot_bgcolor:'#040408',
+        autosize:true, margin:{l:55,r:20,t:40,b:50},
+        title:{text:`<b>${cur} IV Term Structure</b>  <span style="color:#555;font-size:9px">ATM Mark IV & Forward IV</span>`,
+          font:{color:'#22aacc',size:11,family:'Courier New,monospace'},x:0.01,y:0.97},
+        xaxis:{title:'Days to Expiry',titlefont:{size:9,color:'#555'},tickfont:{size:8},
+          gridcolor:'rgba(255,255,255,0.06)',color:'#555',zeroline:false},
+        yaxis:{title:'IV (%)',titlefont:{size:9,color:'#555'},tickfont:{size:8},
+          gridcolor:'rgba(255,255,255,0.06)',color:'#555',zeroline:false,ticksuffix:'%',rangemode:'tozero'},
+        legend:{orientation:'h',x:0,y:-0.15,font:{size:8,color:'#665840'},bgcolor:'rgba(0,0,0,0)'},
+        font:{color:'#777',family:'Roboto Mono,Courier New,monospace'},
+        hoverlabel:{bgcolor:'#0e0820',bordercolor:'#22aacc',font:{color:'#fff',size:10}},
+        hovermode:'x unified',
+      };
+      if(panel._tsPlot) Plotly.react(panel,traces,layout,{responsive:true,displayModeBar:false});
+      else { Plotly.newPlot(panel,traces,layout,{responsive:true,displayModeBar:false}); panel._tsPlot=true; }
+    };
+    if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_draw,100);document.head.appendChild(s);}
+    else setTimeout(_draw,60);
+
+  } else if(tab === 'ivrv'){
+    // ── IV VS RV + VARIANCE RISK PREMIUM ─────────────────────────────────
+    const histVol = _OF.data[cur]?.histVol || [];
+    const tsData = _OF.data[cur]?.tsData || [];
+    const nearIV = tsData.length ? tsData[0].atmIV : 0;
+
+    const _draw=()=>{
+      if(!window.Plotly||!panel.offsetWidth){setTimeout(_draw,200);return;}
+      panel.innerHTML='<div style="display:flex;height:100%;gap:0"><div id="ofiv-left" style="flex:1;height:100%"></div><div id="ofiv-right" style="flex:1;height:100%;border-left:1px solid #0a0600"></div></div>';
+      const L=document.getElementById('ofiv-left'), R=document.getElementById('ofiv-right');
+
+      // IV vs RV chart
+      const rvDates=histVol.map(d=>new Date(d.ts).toLocaleDateString('en-GB',{day:'2-digit',month:'numeric'}));
+      const rvVals=histVol.map(d=>d.rv);
+      // Use ATM IV from term structure as proxy IV (flat line for current IV)
+      const ivLine=histVol.map(()=>nearIV);
+      const spreadLast=nearIV-rvVals[rvVals.length-1] || 0;
+
+      const ivrvTraces=[
+        {x:rvDates,y:ivLine,type:'scatter',mode:'lines',name:'IV (DVOL)',line:{color:'#9944ff',width:2},hovertemplate:'%{x}<br>IV: %{y:.1f}%<extra></extra>'},
+        {x:rvDates,y:rvVals,type:'scatter',mode:'lines',name:'RV (30d)',line:{color:'#00cc66',width:2},hovertemplate:'%{x}<br>RV: %{y:.1f}%<extra></extra>'},
+      ];
+      const ivBox=`IV: ${nearIV.toFixed(1)}%\nRV: ${rvVals[rvVals.length-1]?.toFixed(1)||'—'}%\nSpread: ${spreadLast>0?'+':''}${spreadLast.toFixed(1)}%`;
+      const ivrvLayout={
+        paper_bgcolor:'#040408',plot_bgcolor:'#040408',autosize:true,margin:{l:50,r:10,t:40,b:45},
+        title:{text:`<b>IV vs RV</b>  <span style="color:#555;font-size:9px">Implied vs Realized Volatility</span>`,font:{color:'#9944ff',size:10,family:'Courier New,monospace'},x:0.01,y:0.97},
+        xaxis:{tickfont:{size:7},gridcolor:'rgba(255,255,255,0.05)',color:'#555',zeroline:false,tickangle:-45},
+        yaxis:{title:'',tickfont:{size:8},gridcolor:'rgba(255,255,255,0.05)',color:'#555',zeroline:false,ticksuffix:'%',rangemode:'tozero'},
+        legend:{orientation:'h',x:0,y:-0.18,font:{size:8,color:'#665840'},bgcolor:'rgba(0,0,0,0)'},
+        font:{color:'#777',family:'Roboto Mono,Courier New,monospace'},
+        annotations:[{x:0.98,y:0.98,xref:'paper',yref:'paper',text:ivBox,showarrow:false,
+          font:{color:'#cc88ff',size:8.5,family:'Roboto Mono,monospace'},align:'left',
+          bgcolor:'rgba(40,10,60,0.85)',bordercolor:'#6633aa',borderwidth:1}],
+        hoverlabel:{bgcolor:'#0e0820',bordercolor:'#9944ff',font:{color:'#fff',size:10}},hovermode:'x unified',
+      };
+
+      // Variance Risk Premium (IV - RV bars)
+      const vrpVals=histVol.map((d,i)=>(nearIV-d.rv));
+      const vrpColors=vrpVals.map(v=>v>0?'rgba(255,80,80,0.8)':'rgba(0,200,100,0.8)');
+      const lastVRP=vrpVals[vrpVals.length-1]||0;
+      const vrpLabel=lastVRP>0?'OPTIONS EXPENSIVE':'OPTIONS CHEAP';
+      const vrpTraces=[{x:rvDates,y:vrpVals,type:'bar',name:'VRP',marker:{color:vrpColors},
+        hovertemplate:'%{x}<br>VRP: %{y:+.2f}%<extra></extra>'}];
+      const vrpLayout={
+        paper_bgcolor:'#040408',plot_bgcolor:'#040408',autosize:true,margin:{l:50,r:10,t:40,b:45},
+        title:{text:`<b>Variance Risk Premium</b>  <span style="color:#555;font-size:9px">VRP = IV − RV</span>`,font:{color:'#cc3333',size:10,family:'Courier New,monospace'},x:0.01,y:0.97},
+        xaxis:{tickfont:{size:7},gridcolor:'rgba(255,255,255,0.05)',color:'#555',zeroline:false,tickangle:-45},
+        yaxis:{title:'',tickfont:{size:8},gridcolor:'rgba(255,255,255,0.05)',color:'#555',zeroline:true,zerolinecolor:'rgba(255,255,255,0.15)',ticksuffix:'%'},
+        legend:{show:false},shapes:[{type:'line',x0:0,x1:1,xref:'paper',y0:0,y1:0,line:{color:'rgba(255,255,255,0.2)',width:1}}],
+        annotations:[{x:0.98,y:0.98,xref:'paper',yref:'paper',
+          text:`${vrpLabel}\nVRP: ${lastVRP>0?'+':''}${lastVRP.toFixed(2)}%`,
+          showarrow:false,font:{color:lastVRP>0?'#ff4444':'#00cc44',size:8.5,family:'Roboto Mono,monospace'},
+          align:'right',bgcolor:lastVRP>0?'rgba(40,5,5,0.85)':'rgba(5,30,10,0.85)',bordercolor:lastVRP>0?'#aa2222':'#008833',borderwidth:1}],
+        font:{color:'#777',family:'Roboto Mono,Courier New,monospace'},
+        hoverlabel:{bgcolor:'#0e0820',bordercolor:'#cc3333',font:{color:'#fff',size:10}},hovermode:'x unified',
+        bargap:0.05,
+      };
+
+      if(histVol.length<3){
+        L.innerHTML='<div style="padding:20px;color:#443;font-size:9px;font-family:monospace">Historical vol data loading — try refreshing in a moment</div>';
+        R.innerHTML='<div style="padding:20px;color:#443;font-size:9px;font-family:monospace">Loading...</div>';
+        return;
+      }
+
+      Plotly.newPlot(L,ivrvTraces,ivrvLayout,{responsive:true,displayModeBar:false});
+      Plotly.newPlot(R,vrpTraces,vrpLayout,{responsive:true,displayModeBar:false});
+    };
+    panel.innerHTML='<div id="ofiv-left" style="float:left;width:50%;height:100%"></div><div id="ofiv-right" style="float:left;width:50%;height:100%"></div>';
+    if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_draw,100);document.head.appendChild(s);}
+    else setTimeout(_draw,60);
+
+  } else if(tab === 'greeks'){
+    // ── GREEKS — Vanna/Theta/Charm/Vega/DEX by Strike ────────────────────
+    const W2=panel.offsetWidth||1060, H2=panel.offsetHeight||640;
+
+    const _draw=()=>{
+      if(!window.Plotly||!panel.offsetWidth){setTimeout(_draw,200);return;}
+
+      // Aggregate greeks by strike (across all expiries)
+      const greekMap={};
+      opts.forEach(o=>{
+        if(!o.K||!o.oi||!o.iv) return;
+        const K=o.K;
+        if(!greekMap[K]) greekMap[K]={K,netDelta:0,netGamma:0,netVanna:0,netTheta:0,netCharm:0,netVega:0};
+        const sign=o.type==='C'?1:-1;
+        const oi=o.oi||0;
+        greekMap[K].netDelta  += sign * (o.delta||0) * oi * spot;
+        greekMap[K].netGamma  += (o.gamma||0) * oi * spot * spot * 0.01 * (o.type==='C'?1:-1);
+        greekMap[K].netVanna  += sign * (o.vanna||0) * oi;
+        greekMap[K].netTheta  += sign * (o.theta||0) * oi * spot;
+        greekMap[K].netCharm  += sign * (o.charm||0) * oi * spot;
+        greekMap[K].netVega   += (o.vega||0) * oi * spot;
+      });
+      const strikes=Object.values(greekMap)
+        .filter(d=>d.K>=spot*0.55&&d.K<=spot*1.55)
+        .sort((a,b)=>a.K-b.K);
+      if(strikes.length<3){panel.innerHTML='<div style="padding:20px;color:#443;font-size:9px;font-family:monospace">Not enough data — refresh</div>';return;}
+
+      const fmtK=v=>'$'+Math.round(v/1000)+'K';
+      const palette={DEX:'#22eeaa',Gamma:'#22aaff',Vanna:'#ff44aa',Theta:'#aa44ff',Charm:'rgba(255,120,60,0.8)',Vega:'#8844ff'};
+
+      const makeBar=(vals,kArr,color,name,xTitle)=>({
+        x:vals, y:kArr.map(d=>'$'+Math.round(d.K/1000)*1000),
+        type:'bar', orientation:'h', name,
+        marker:{color:vals.map(v=>v>=0?color:color.replace('0.8','0.5')||color),opacity:0.85},
+        hovertemplate:`$%{y:,.0f}<br>${name} %{x:,.0f}<extra></extra>`,
+      });
+
+      const kArr=strikes;
+      const subW=Math.floor(W2/3), subH=H2-30;
+
+      panel.innerHTML=`<div style="display:flex;height:100%;overflow:hidden">
+        <div id="gk-dex" style="flex:1;height:100%;border-right:1px solid #0a0600"></div>
+        <div id="gk-vanna" style="flex:1;height:100%;border-right:1px solid #0a0600"></div>
+        <div id="gk-vega" style="flex:1;height:100%"></div>
+      </div>`;
+
+      const commonLayout=(title,xTitle,color)=>({
+        paper_bgcolor:'#040408',plot_bgcolor:'#040408',autosize:true,
+        margin:{l:65,r:8,t:35,b:35},
+        title:{text:`<b>${title}</b>`,font:{color,size:9.5,family:'Courier New,monospace'},x:0.02,y:0.98},
+        xaxis:{title:{text:xTitle,font:{size:7,color:'#444'}},tickfont:{size:7},gridcolor:'rgba(255,255,255,0.05)',color:'#554',zeroline:true,zerolinecolor:'rgba(255,255,255,0.15)'},
+        yaxis:{tickfont:{size:7.5},gridcolor:'rgba(255,255,255,0.04)',color:'#554',zeroline:false},
+        font:{color:'#666',family:'Roboto Mono,Courier New,monospace',size:8},
+        shapes:[{type:'line',y0:'$'+Math.round(spot/1000)*1000,y1:'$'+Math.round(spot/1000)*1000,
+          x0:0,x1:1,xref:'paper',line:{color:'rgba(243,159,65,0.6)',width:1,dash:'dot'}}],
+        hoverlabel:{bgcolor:'#0a0a1a',font:{color:'#eee',size:9}},
+        bargap:0.15,
+      });
+
+      setTimeout(()=>{
+        const dEl=document.getElementById('gk-dex');
+        const vEl=document.getElementById('gk-vanna');
+        const veEl=document.getElementById('gk-vega');
+        if(!dEl||!vEl||!veEl) return;
+
+        Plotly.newPlot(dEl,
+          [makeBar(kArr.map(d=>d.netDelta/1e6),kArr,'#22eeaa','DEX','Net DEX ($M)')],
+          commonLayout('DEX by Strike','Net DEX ($M)','#22eeaa'),
+          {responsive:true,displayModeBar:false});
+
+        Plotly.newPlot(vEl,
+          [makeBar(kArr.map(d=>d.netVanna/1e6),kArr,'#ff44aa','Vanna','Net Vanna ($M)')],
+          commonLayout('Vanna by Strike','Net Vanna ($M)','#ff44aa'),
+          {responsive:true,displayModeBar:false});
+
+        Plotly.newPlot(veEl,
+          [makeBar(kArr.map(d=>d.netVega/1e6),kArr,'#8844ff','Vega','Net Vega ($M)')],
+          commonLayout('Vega by Strike','Net Vega ($M)','#8844ff'),
+          {responsive:true,displayModeBar:false});
+      },80);
+    };
+    panel.innerHTML='<div style="padding:20px;color:#443;font-size:9px;font-family:monospace;animation:spin 1s linear infinite;display:inline-block">⟳</div><span style="color:#443;font-size:9px;font-family:monospace"> Computing greeks from BSM...</span>';
+    if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_draw,100);document.head.appendChild(s);}
+    else setTimeout(_draw,60);
+
+  } else if(tab === 'charmsurf'){
+    // ── CHARM EXPOSURE SURFACE — 2D heatmap: Time × Price with charm values ──
+    panel.innerHTML='<div id="charmsurf-plot" style="width:100%;height:100%;background:#040408;position:relative"><div style="padding:20px;color:#443;font-size:9px">⟳ Computing charm surface...</div></div>';
+    const _draw=()=>{
+      if(!window.Plotly||!panel.offsetWidth){setTimeout(_draw,200);return;}
+      const plotEl=document.getElementById('charmsurf-plot');
+      if(!plotEl) return;
+
+      // Group by DTE buckets and strike
+      const dteSet=[...new Set(opts.map(o=>o.dte))].sort((a,b)=>a-b).filter(d=>d>=0&&d<=60);
+      if(dteSet.length<2){plotEl.innerHTML='<div style="padding:20px;color:#664;font-size:10px">Not enough expiry data for charm surface</div>';return;}
+
+      // Strike range near spot
+      const minK=spot*0.85, maxK=spot*1.15;
+      const strikeStep = spot < 100 ? 1 : spot < 1000 ? 5 : spot < 10000 ? 50 : 250;
+      const strikeGrid=[];
+      for(let k=minK;k<=maxK;k+=strikeStep) strikeGrid.push(Math.round(k/strikeStep)*strikeStep);
+
+      // Build charm matrix
+      const z=[], xLabels=[], yLabels=strikeGrid.map(k=>'$'+k.toLocaleString());
+      dteSet.forEach(dte=>{
+        xLabels.push(dte+'d');
+        const row=[];
+        strikeGrid.forEach(K=>{
+          // Sum charm for options near this strike and DTE
+          let charmSum=0;
+          opts.forEach(o=>{
+            if(Math.abs(o.dte-dte)>1) return;
+            if(Math.abs(o.K-K)>strikeStep*0.6) return;
+            const sign=o.type==='C'?1:-1;
+            charmSum += sign*(o.charm||0)*(o.oi||0)*spot;
+          });
+          row.push(charmSum);
+        });
+        z.push(row);
+      });
+
+      // Transpose so strikes are Y, DTE is X
+      const zT=[];
+      for(let si=0;si<strikeGrid.length;si++){
+        const row=[];
+        for(let di=0;di<dteSet.length;di++) row.push(z[di][si]);
+        zT.push(row);
+      }
+
+      // Find spot index for annotation
+      const spotIdx = strikeGrid.reduce((best,k,i)=>Math.abs(k-spot)<Math.abs(strikeGrid[best]-spot)?i:best,0);
+
+      Plotly.newPlot(plotEl,[{
+        z:zT, x:xLabels, y:yLabels, type:'heatmap',
+        colorscale:[[0,'#00ccaa'],[0.3,'#004433'],[0.5,'#111'],[0.7,'#440011'],[1,'#ff2266']],
+        zmin:-Math.max(...zT.flat().map(Math.abs))*0.8,
+        zmax: Math.max(...zT.flat().map(Math.abs))*0.8,
+        colorbar:{title:{text:'Charm',font:{color:'#887760',size:9}},tickfont:{color:'#665',size:8},len:0.5,thickness:12,x:1.02},
+        hovertemplate:'Strike: %{y}<br>DTE: %{x}<br>Charm: %{z:,.0f}<extra></extra>'
+      }],{
+        title:{text:'Charm Exposure Surface · Time × Price',font:{color:'#F39F41',size:12},x:0.02,y:0.98},
+        paper_bgcolor:'#040408', plot_bgcolor:'#060610',
+        font:{family:'Courier Prime,monospace',color:'#887760',size:9},
+        xaxis:{title:'',color:'#665',gridcolor:'#111',tickfont:{size:8}},
+        yaxis:{title:'',color:'#665',gridcolor:'#111',tickfont:{size:8}},
+        margin:{l:70,r:60,t:30,b:40},
+        shapes:[{type:'line',x0:0,x1:1,xref:'paper',y0:spotIdx,y1:spotIdx,
+          line:{color:'#00ccff',width:1.5,dash:'dot'},
+          label:{text:'Spot $'+spot.toLocaleString(),font:{color:'#00ccff',size:8}}}]
+      },{responsive:true,displayModeBar:false});
+    };
+    if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_draw,100);document.head.appendChild(s);}
+    else setTimeout(_draw,60);
+
+  } else if(tab === 'premtide'){
+    // ── PREMIUM TIDE — Net Call vs Put Premium Flow (simulated from OI×price) ──
+    panel.innerHTML='<div id="premtide-plot" style="width:100%;height:100%;background:#040408;position:relative"><div style="padding:20px;color:#443;font-size:9px">⟳ Computing premium tide...</div></div>';
+    const _draw=()=>{
+      if(!window.Plotly||!panel.offsetWidth){setTimeout(_draw,200);return;}
+      const plotEl=document.getElementById('premtide-plot');
+      if(!plotEl) return;
+
+      // Group into ODTE (dte<=1) and Weekly (dte<=7) buckets
+      const odte=opts.filter(o=>o.dte<=1);
+      const weekly=opts.filter(o=>o.dte<=7);
+
+      const calcTide=(bucket)=>{
+        // Sort by strike, compute cumulative premium by strike
+        const calls=bucket.filter(o=>o.type==='C').sort((a,b)=>a.K-b.K);
+        const puts=bucket.filter(o=>o.type==='P').sort((a,b)=>a.K-b.K);
+        const strikes=[...new Set([...calls,...puts].map(o=>o.K))].sort((a,b)=>a-b);
+        let cumCall=0, cumPut=0, cumNet=0;
+        const data=[];
+        strikes.forEach(K=>{
+          const cOpts=calls.filter(o=>o.K===K);
+          const pOpts=puts.filter(o=>o.K===K);
+          const cPrem=cOpts.reduce((s,o)=>{
+            const px=(o.markPrice||0)*(o.markPrice<1?spot:1);
+            return s+px*(o.oi||0);
+          },0);
+          const pPrem=pOpts.reduce((s,o)=>{
+            const px=(o.markPrice||0)*(o.markPrice<1?spot:1);
+            return s+px*(o.oi||0);
+          },0);
+          cumCall+=cPrem; cumPut+=pPrem; cumNet+=(cPrem-pPrem);
+          data.push({K,cumCall,cumPut,cumNet});
+        });
+        return data;
+      };
+
+      const odteData=calcTide(odte);
+      const weeklyData=calcTide(weekly);
+
+      const makeTraces=(data,prefix)=>[
+        {x:data.map(d=>d.K),y:data.map(d=>d.cumCall),name:prefix+' Call Premium',type:'scatter',mode:'lines',
+         line:{color:'#22cc66',width:1.5},fill:'tozeroy',fillcolor:'rgba(34,204,102,0.08)'},
+        {x:data.map(d=>d.K),y:data.map(d=>d.cumPut),name:prefix+' Put Premium',type:'scatter',mode:'lines',
+         line:{color:'#ff4444',width:1.5},fill:'tozeroy',fillcolor:'rgba(255,68,68,0.08)'},
+        {x:data.map(d=>d.K),y:data.map(d=>d.cumNet),name:prefix+' Net Premium',type:'scatter',mode:'lines',
+         line:{color:'#4488ff',width:2}}
+      ];
+
+      const layout=(title,domain)=>({
+        title:{text:title,font:{color:'#eee',size:11},x:0.02},
+        paper_bgcolor:'#040408', plot_bgcolor:'#060610',
+        font:{family:'Courier Prime,monospace',color:'#887760',size:9},
+        xaxis:{title:'Strike',color:'#665',gridcolor:'#111',tickfont:{size:8},
+               tickprefix:'$',tickformat:',.0f',domain:[0,1]},
+        yaxis:{title:'Cum. Premium ($)',color:'#665',gridcolor:'#111',tickfont:{size:8},
+               tickprefix:'$',tickformat:',.0s'},
+        legend:{font:{color:'#887760',size:8},bgcolor:'transparent',x:0.02,y:0.98},
+        margin:{l:60,r:20,t:30,b:40},
+        shapes:[{type:'line',x0:spot,x1:spot,y0:0,y1:1,yref:'paper',
+          line:{color:'#F39F41',width:1,dash:'dot'}}]
+      });
+
+      // Two subplots side by side
+      plotEl.innerHTML='<div style="display:flex;height:100%"><div id="prem-odte" style="flex:1;height:100%"></div><div id="prem-weekly" style="flex:1;height:100%"></div></div>';
+      setTimeout(()=>{
+        const odteEl=document.getElementById('prem-odte');
+        const weekEl=document.getElementById('prem-weekly');
+        if(!odteEl||!weekEl) return;
+
+        if(odteData.length>0){
+          Plotly.newPlot(odteEl,makeTraces(odteData,''),layout('ODTE Premium Tide · Net Call vs Put Premium Flow'),{responsive:true,displayModeBar:false});
+        } else {
+          odteEl.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#664;font-size:10px">No 0DTE options available</div>';
+        }
+
+        if(weeklyData.length>0){
+          Plotly.newPlot(weekEl,makeTraces(weeklyData,''),layout('Weekly Premium Tide · Net Call vs Put Premium Flow (7d expiry)'),{responsive:true,displayModeBar:false});
+        } else {
+          weekEl.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#664;font-size:10px">No weekly options available</div>';
+        }
+      },80);
+    };
+    if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_draw,100);document.head.appendChild(s);}
+    else setTimeout(_draw,60);
+
+  } else if(tab === 'oichange'){
+    // ── OI CHANGE — Open Interest change heatmap (simulated: shows current OI distribution) ──
+    panel.innerHTML='<div id="oichange-plot" style="width:100%;height:100%;background:#040408;position:relative"><div style="padding:20px;color:#443;font-size:9px">⟳ Computing OI distribution...</div></div>';
+    const _draw=()=>{
+      if(!window.Plotly||!panel.offsetWidth){setTimeout(_draw,200);return;}
+      const plotEl=document.getElementById('oichange-plot');
+      if(!plotEl) return;
+
+      // Build heatmap: Strike vs Expiry, colored by net OI (call OI - put OI)
+      const dteVals=[...new Set(opts.map(o=>o.dte))].sort((a,b)=>a-b).filter(d=>d>=0&&d<=180);
+      const strikeStep = spot < 100 ? 1 : spot < 1000 ? 5 : spot < 10000 ? 50 : 250;
+      const minK=spot*0.8, maxK=spot*1.2;
+      const strikeGrid=[];
+      for(let k=minK;k<=maxK;k+=strikeStep) strikeGrid.push(Math.round(k/strikeStep)*strikeStep);
+
+      const z=[];
+      strikeGrid.forEach(K=>{
+        const row=[];
+        dteVals.forEach(dte=>{
+          let callOI=0, putOI=0;
+          opts.forEach(o=>{
+            if(Math.abs(o.dte-dte)>1||Math.abs(o.K-K)>strikeStep*0.6) return;
+            if(o.type==='C') callOI+=o.oi||0;
+            else putOI+=o.oi||0;
+          });
+          row.push(callOI-putOI);
+        });
+        z.push(row);
+      });
+
+      const maxAbs=Math.max(...z.flat().map(Math.abs))||1;
+      Plotly.newPlot(plotEl,[{
+        z, x:dteVals.map(d=>d+'d'), y:strikeGrid.map(k=>'$'+k.toLocaleString()),
+        type:'heatmap',
+        colorscale:[[0,'#0066ff'],[0.4,'#001133'],[0.5,'#0a0a0a'],[0.6,'#330011'],[1,'#ff0044']],
+        zmin:-maxAbs*0.8, zmax:maxAbs*0.8,
+        colorbar:{title:{text:'Net OI (C-P)',font:{color:'#887760',size:9}},tickfont:{color:'#665',size:8},len:0.5,thickness:12},
+        hovertemplate:'Strike: %{y}<br>DTE: %{x}<br>Net OI: %{z:,.0f}<extra></extra>'
+      }],{
+        title:{text:'Open Interest Distribution · Call-Put Net OI by Strike × Expiry',font:{color:'#F39F41',size:12},x:0.02,y:0.98},
+        paper_bgcolor:'#040408', plot_bgcolor:'#060610',
+        font:{family:'Courier Prime,monospace',color:'#887760',size:9},
+        xaxis:{color:'#665',gridcolor:'#111',tickfont:{size:8}},
+        yaxis:{color:'#665',gridcolor:'#111',tickfont:{size:8}},
+        margin:{l:70,r:60,t:30,b:40}
+      },{responsive:true,displayModeBar:false});
+    };
+    if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_draw,100);document.head.appendChild(s);}
+    else setTimeout(_draw,60);
+
+  } else if(tab === 'maxpain'){
+    // ── MAX PAIN per Expiry — visual chart ──
+    panel.innerHTML='<div id="maxpain-plot" style="width:100%;height:100%;background:#040408;position:relative"><div style="padding:20px;color:#443;font-size:9px">⟳ Computing max pain...</div></div>';
+    const _draw=()=>{
+      if(!window.Plotly||!panel.offsetWidth){setTimeout(_draw,200);return;}
+      const plotEl=document.getElementById('maxpain-plot');
+      if(!plotEl) return;
+
+      // For the front expiry, show pain by strike
+      const frontExp=expiries[0];
+      if(!frontExp){plotEl.innerHTML='<div style="padding:20px;color:#664;font-size:10px">No expiry data</div>';return;}
+      const expOpts=opts.filter(o=>o.expStr===frontExp.exp);
+      const strikes=[...new Set(expOpts.map(o=>o.K))].sort((a,b)=>a-b);
+
+      const painByK=strikes.map(K=>{
+        const pain=expOpts.reduce((s,o)=>{
+          if(o.type==='C') return s+Math.max(0,K-o.K)*o.oi;
+          else return s+Math.max(0,o.K-K)*o.oi;
+        },0);
+        return {K,pain};
+      });
+      const minPain=Math.min(...painByK.map(p=>p.pain));
+      const maxPainK=painByK.find(p=>p.pain===minPain)?.K||0;
+
+      // Also compute per-expiry max pain
+      const expMaxPain=expiries.slice(0,12).map(({exp,dte})=>{
+        const eo=opts.filter(o=>o.expStr===exp);
+        const ks=[...new Set(eo.map(o=>o.K))];
+        let minP=Infinity, mpK=0;
+        ks.forEach(K=>{
+          const p=eo.reduce((s,o)=>s+(o.type==='C'?Math.max(0,K-o.K):Math.max(0,o.K-K))*o.oi,0);
+          if(p<minP){minP=p;mpK=K;}
+        });
+        return {exp,dte,maxPain:mpK};
+      });
+
+      plotEl.innerHTML='<div style="display:flex;height:100%"><div id="mp-front" style="flex:1.2;height:100%"></div><div id="mp-expiries" style="flex:0.8;height:100%"></div></div>';
+      setTimeout(()=>{
+        const fEl=document.getElementById('mp-front');
+        const eEl=document.getElementById('mp-expiries');
+        if(!fEl||!eEl) return;
+
+        // Front expiry pain curve
+        Plotly.newPlot(fEl,[{
+          x:painByK.map(d=>d.K), y:painByK.map(d=>d.pain),
+          type:'scatter', mode:'lines', fill:'tozeroy',
+          line:{color:'#F39F41',width:1.5}, fillcolor:'rgba(243,159,65,0.08)',
+          name:'Total Pain'
+        }],{
+          title:{text:`Max Pain · ${frontExp.exp} (${frontExp.dte}d) · $${maxPainK.toLocaleString()}`,
+            font:{color:'#F39F41',size:11},x:0.02},
+          paper_bgcolor:'#040408', plot_bgcolor:'#060610',
+          font:{family:'Courier Prime,monospace',color:'#887760',size:9},
+          xaxis:{title:'Strike',color:'#665',gridcolor:'#111',tickfont:{size:8},tickprefix:'$',tickformat:',.0f'},
+          yaxis:{title:'Pain Value',color:'#665',gridcolor:'#111',tickfont:{size:8},tickformat:',.0s'},
+          margin:{l:60,r:20,t:30,b:40},
+          shapes:[{type:'line',x0:maxPainK,x1:maxPainK,y0:0,y1:1,yref:'paper',line:{color:'#ff4444',width:2,dash:'dash'}},
+                  {type:'line',x0:spot,x1:spot,y0:0,y1:1,yref:'paper',line:{color:'#00ccff',width:1,dash:'dot'}}],
+          annotations:[{x:maxPainK,y:1,yref:'paper',text:'MAX PAIN',font:{color:'#ff4444',size:9},showarrow:false,yanchor:'bottom'},
+                       {x:spot,y:0.95,yref:'paper',text:'SPOT',font:{color:'#00ccff',size:8},showarrow:false}]
+        },{responsive:true,displayModeBar:false});
+
+        // Per-expiry max pain bars
+        Plotly.newPlot(eEl,[{
+          x:expMaxPain.map(d=>d.exp+' ('+d.dte+'d)'),
+          y:expMaxPain.map(d=>d.maxPain),
+          type:'bar', marker:{color:expMaxPain.map(d=>d.maxPain>spot?'#22cc66':'#ff4444'),opacity:0.8},
+          text:expMaxPain.map(d=>'$'+d.maxPain.toLocaleString()),
+          textposition:'outside', textfont:{color:'#887760',size:8}
+        }],{
+          title:{text:'Max Pain by Expiry',font:{color:'#eee',size:11},x:0.02},
+          paper_bgcolor:'#040408', plot_bgcolor:'#060610',
+          font:{family:'Courier Prime,monospace',color:'#887760',size:9},
+          xaxis:{color:'#665',tickfont:{size:7},tickangle:-45},
+          yaxis:{title:'Max Pain ($)',color:'#665',gridcolor:'#111',tickfont:{size:8},tickprefix:'$',tickformat:',.0f'},
+          margin:{l:60,r:20,t:30,b:70},
+          shapes:[{type:'line',x0:-0.5,x1:expMaxPain.length-0.5,y0:spot,y1:spot,
+            line:{color:'#00ccff',width:1,dash:'dot'}}]
+        },{responsive:true,displayModeBar:false});
+      },80);
+    };
+    if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_draw,100);document.head.appendChild(s);}
+    else setTimeout(_draw,60);
+
+  } else if(tab === 'putcall'){
+    // ── PUT/CALL RATIO — OI-based P/C ratio over time (by expiry) + current OI bars ──
+    panel.innerHTML='<div id="putcall-plot" style="width:100%;height:100%;background:#040408;position:relative"><div style="padding:20px;color:#443;font-size:9px">⟳ Computing P/C...</div></div>';
+    const _draw=()=>{
+      if(!window.Plotly||!panel.offsetWidth){setTimeout(_draw,200);return;}
+      const plotEl=document.getElementById('putcall-plot');
+      if(!plotEl) return;
+
+      // OI by strike: call vs put bars
+      const strikes=[...new Set(opts.map(o=>o.K))].sort((a,b)=>a-b).filter(k=>k>=spot*0.7&&k<=spot*1.3);
+      const callOI=strikes.map(K=>opts.filter(o=>o.type==='C'&&o.K===K).reduce((s,o)=>s+(o.oi||0),0));
+      const putOI=strikes.map(K=>-opts.filter(o=>o.type==='P'&&o.K===K).reduce((s,o)=>s+(o.oi||0),0));
+
+      // P/C ratio per expiry
+      const pcData=expiries.slice(0,15).map(({exp,dte})=>{
+        const eo=opts.filter(o=>o.expStr===exp);
+        const coi=eo.filter(o=>o.type==='C').reduce((s,o)=>s+(o.oi||0),0);
+        const poi=eo.filter(o=>o.type==='P').reduce((s,o)=>s+(o.oi||0),0);
+        return {exp,dte,pc:coi>0?(poi/coi):0};
+      });
+
+      const totalC=opts.filter(o=>o.type==='C').reduce((s,o)=>s+(o.oi||0),0);
+      const totalP=opts.filter(o=>o.type==='P').reduce((s,o)=>s+(o.oi||0),0);
+      const globalPC=totalC>0?(totalP/totalC):0;
+      const moreLabel=globalPC>1?'MORE PUTS':'MORE CALLS';
+      const moreColor=globalPC>1?'#ff4444':'#22cc66';
+
+      plotEl.innerHTML='<div style="display:flex;height:100%"><div id="pc-oi" style="flex:1.2;height:100%"></div><div id="pc-ratio" style="flex:0.8;height:100%"></div></div>';
+      setTimeout(()=>{
+        const oiEl=document.getElementById('pc-oi');
+        const rEl=document.getElementById('pc-ratio');
+        if(!oiEl||!rEl) return;
+
+        Plotly.newPlot(oiEl,[
+          {x:strikes,y:callOI,type:'bar',name:'Call OI',marker:{color:'rgba(34,204,102,0.7)'}},
+          {x:strikes,y:putOI,type:'bar',name:'Put OI',marker:{color:'rgba(255,68,68,0.7)'}}
+        ],{
+          title:{text:'Options Open Interest · Total OI (Calls + Puts)',font:{color:'#eee',size:11},x:0.02},
+          paper_bgcolor:'#040408', plot_bgcolor:'#060610',
+          font:{family:'Courier Prime,monospace',color:'#887760',size:9},
+          xaxis:{title:'Strike',color:'#665',gridcolor:'#111',tickfont:{size:8},tickprefix:'$',tickformat:',.0f'},
+          yaxis:{color:'#665',gridcolor:'#111',tickfont:{size:8},tickformat:',.0s',zeroline:true,zerolinecolor:'#333'},
+          barmode:'relative', bargap:0.1,
+          margin:{l:60,r:20,t:30,b:40},
+          legend:{font:{color:'#887760',size:8},bgcolor:'transparent'},
+          shapes:[{type:'line',x0:spot,x1:spot,y0:0,y1:1,yref:'paper',line:{color:'#F39F41',width:1,dash:'dot'}}],
+          annotations:[{x:0.98,y:0.98,xref:'paper',yref:'paper',text:`<b>${moreLabel}</b><br>Ratio: ${globalPC.toFixed(3)}`,
+            font:{color:moreColor,size:10},showarrow:false,align:'right',
+            bgcolor:'rgba(0,0,0,0.6)',bordercolor:moreColor,borderwidth:1,borderpad:4}]
+        },{responsive:true,displayModeBar:false});
+
+        Plotly.newPlot(rEl,[{
+          x:pcData.map(d=>d.exp+' ('+d.dte+'d)'),
+          y:pcData.map(d=>d.pc),
+          type:'bar',
+          marker:{color:pcData.map(d=>d.pc>1?'rgba(255,68,68,0.7)':'rgba(34,204,102,0.7)')},
+          text:pcData.map(d=>d.pc.toFixed(2)),
+          textposition:'outside', textfont:{color:'#887760',size:8}
+        }],{
+          title:{text:'Put/Call Ratio by Expiry',font:{color:'#eee',size:11},x:0.02},
+          paper_bgcolor:'#040408', plot_bgcolor:'#060610',
+          font:{family:'Courier Prime,monospace',color:'#887760',size:9},
+          xaxis:{color:'#665',tickfont:{size:7},tickangle:-45},
+          yaxis:{color:'#665',gridcolor:'#111',tickfont:{size:8}},
+          margin:{l:40,r:20,t:30,b:70},
+          shapes:[{type:'line',x0:-0.5,x1:pcData.length-0.5,y0:1,y1:1,
+            line:{color:'#F39F41',width:1,dash:'dash'}}]
+        },{responsive:true,displayModeBar:false});
+      },80);
+    };
+    if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_draw,100);document.head.appendChild(s);}
+    else setTimeout(_draw,60);
+
+  }
+}
+
+
 window.buildOPTFLOW = function(){
   const tabs=[
     {id:'summary',label:'Summary'},
@@ -37551,7 +39406,22 @@ window.buildOPTFLOW = function(){
     {id:'gex',label:'GEX'},
     {id:'gexprofile',label:'GEX Profile'},
     {id:'strikeexpiry',label:'Strike×Expiry'},
-    {id:'3dvol',label:'3D Vol'},
+    {id:'3dvol',label:'3D IV Surface'},
+    {id:'probsurface',label:'Prob Surface'},
+    {id:'probdensity',label:'Prob Density'},
+    {id:'probheatmap',label:'Prob Heatmap'},
+    {id:'volcurves',label:'Vol Curves'},
+    {id:'oiexpiry',label:'OI by Expiry'},
+    {id:'expectedmove',label:'Expected Move'},
+    {id:'termstruct',label:'IV Term Struct'},
+    {id:'ivrv',label:'IV vs RV'},
+    {id:'greeks',label:'Greeks'},
+    {id:'charmsurf',label:'Charm Surface'},
+    {id:'premtide',label:'Premium Tide'},
+    {id:'oichange',label:'OI Distribution'},
+    {id:'maxpain',label:'Max Pain'},
+    {id:'putcall',label:'P/C Ratio'},
+    {id:'chainsum',label:'Chain Summary'},
   ];
   const tabBar = tabs.map(({id,label})=>
     `<span id="optflow-tab-${id}" onclick="window._ofSetTab('${id}')"
@@ -37560,9 +39430,10 @@ window.buildOPTFLOW = function(){
              color:${_OF.tab===id?'#F39F41':'#665840'}">${label}</span>`
   ).join('');
 
-  const coinBar = ['BTC','ETH','SOL','XRP'].map(c=>
+  const ALL_COINS = ['BTC','ETH','SOL','XRP','BNB','MATIC','AVAX','HYPE','DOGE','LINK','ARB','SUI','TON','DOT'];
+  const coinBar = ALL_COINS.map(c=>
     `<span onclick="window._ofSetCoin('${c}')"
-      style="cursor:pointer;padding:1px 8px;font-size:8px;font-weight:700;
+      style="cursor:pointer;padding:1px 7px;font-size:8px;font-weight:700;
              border:1px solid ${_OF.cur===c?'#F39F41':'#1a0e00'};
              color:${_OF.cur===c?'#F39F41':'#443322'};background:${_OF.cur===c?'rgba(243,159,65,0.1)':'transparent'}">${c}</span>`
   ).join('');
@@ -37570,18 +39441,18 @@ window.buildOPTFLOW = function(){
   // Read active sym
   if(window._bbgActiveSym) {
     let parsed = window._bbgActiveSym.replace(/\/.*/, '').replace(/USDT/i, '').replace(/USD/i, '').toUpperCase();
-    if(['BTC','ETH','SOL','XRP'].includes(parsed)) _OF.cur = parsed;
+    if(ALL_COINS.includes(parsed)) _OF.cur = parsed;
   }
   // Trigger data load
   setTimeout(()=>{
     if(!_OF.data[_OF.cur] && !_OF.loading) _ofFetch(_OF.cur);
     else _ofRender();
-    // Auto-refresh every 3 min
+    // Auto-refresh every 60s
     if(_OF.refreshTimer) clearInterval(_OF.refreshTimer);
     _OF.refreshTimer = setInterval(()=>{
       if(document.getElementById('optflow-body')) _ofFetch(_OF.cur);
       else clearInterval(_OF.refreshTimer);
-    }, 3*60*1000);
+    }, 60*1000);
   }, 50);
 
   return `<div style="height:100%;background:#000;font-family:'Courier Prime',monospace;display:flex;flex-direction:column">
@@ -37605,7 +39476,7 @@ window.buildOPTFLOW = function(){
 window._ofSetTab = function(id){
   _OF.tab = id;
   // Update tab styles
-  ['summary','volsmile','gex','gexprofile','strikeexpiry','3dvol'].forEach(t=>{
+  ['summary','volsmile','gex','gexprofile','strikeexpiry','3dvol','probsurface','probdensity','chainsum','probheatmap','volcurves','oiexpiry','expectedmove','termstruct','ivrv','greeks','charmsurf','premtide','oichange','maxpain','putcall'].forEach(t=>{
     const el=document.getElementById('optflow-tab-'+t);
     if(el){
       el.style.borderBottom = t===id?'2px solid #F39F41':'2px solid transparent';
@@ -37616,6 +39487,15 @@ window._ofSetTab = function(id){
 };
 window._ofSetCoin = function(c){
   _OF.cur = c;
+  // Update coin tab styles
+  ['BTC','ETH','SOL','XRP','BNB','MATIC','AVAX','HYPE','DOGE','LINK','ARB','SUI','TON','DOT'].forEach(x=>{
+    const el=document.querySelector(`[onclick*="_ofSetCoin('${x}')"]`);
+    if(el){
+      el.style.borderColor=x===c?'#F39F41':'#1a0e00';
+      el.style.color=x===c?'#F39F41':'#443322';
+      el.style.background=x===c?'rgba(243,159,65,0.1)':'transparent';
+    }
+  });
   if(!_OF.data[c] && !_OF.loading) _ofFetch(c);
   else _ofRender();
 };
