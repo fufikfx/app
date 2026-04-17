@@ -4523,7 +4523,7 @@ const STKS={
   CRM:{n:'Salesforce',         px:null,open:304.20,hi:306.40,lo:297.40,vol:'4.4M',  pe:44.4,mc:'$289B', div:0,   beta:1.14,eps:6.72, sec:'Technology',  ytd:-8.4},
   // ── Crypto Native & Miners ──
   CRCL:{n:'Circle Internet',   px:null,open:29.50, hi:31.20, lo:28.40, vol:'8.4M',  pe:0,   mc:'$8.2B', div:0,   beta:2.14,eps:-0.84,sec:'Crypto',     ytd:null},
-  MSTR:{n:'MicroStrategy',     px:null,open:314.20,hi:322.40,lo:298.80,vol:'18.4M', pe:0,   mc:'$62B',  div:0,   beta:3.84,eps:-8.42,sec:'Crypto',     ytd:-42.8},
+  MSTR:{n:'Strategy Inc',      px:null,open:140.00,hi:148.00,lo:132.00,vol:'20.0M', pe:0,   mc:'$49B',  div:0,   beta:3.84,eps:-8.42,sec:'Crypto',     ytd:-57.0},
   COIN:{n:'Coinbase Global',   px:null,open:204.20,hi:208.40,lo:192.80,vol:'8.4M',  pe:0,   mc:'$48B',  div:0,   beta:2.84,eps:-2.18,sec:'Crypto',     ytd:-18.4},
   HOOD:{n:'Robinhood Markets', px:null,open:38.40, hi:39.20, lo:36.80, vol:'12.4M', pe:0,   mc:'$34B',  div:0,   beta:2.44,eps:-0.18,sec:'Crypto',     ytd:+22.4},
   RIOT:{n:'Riot Platforms',    px:null,open:8.40,  hi:8.80,  lo:7.80,  vol:'18.4M', pe:0,   mc:'$1.6B', div:0,   beta:3.84,eps:-2.04,sec:'Crypto',     ytd:-42.4},
@@ -7407,7 +7407,7 @@ const YTD_OPEN_2026 = {
   PYTH:0.62,  BONK:0.000048, WIF:2.84,  BERA:8.40,  MOVE:0.72,
   VIRTUAL:1.68,KAS:0.158,  FLOKI:0.000215,PEPE:0.0000276,
   // Additional stocks v4
-  MSTR:339.45,COIN:259.12,SOFI:14.82, HOOD:23.18, PLTR:76.78,
+  MSTR:140.00,COIN:259.12,SOFI:14.82, HOOD:23.18, PLTR:76.78,
   UPST:68.40, AFRM:62.48, IBIT:54.12, SPY:586.12, QQQ:510.88, GLD:248.32,
   // FX
   'EUR/USD':1.0420,'GBP/USD':1.2520,'USD/JPY':157.80,'USD/CHF':0.9020,
@@ -7427,7 +7427,7 @@ const YTD_OPEN_2026 = {
   VXX:14.82,   SQQQ:6.12,   TQQQ:82.18,  EEM:44.82,   EFA:80.28,
   FXI:29.82,   EWJ:72.28,   VNQ:92.18,   IBIT:54.12,  FBTC:53.88,
   // New stocks added v4
-  MSTR:339.45, COIN:259.12, SOFI:14.82,  HOOD:23.18,  UPST:68.40,
+  MSTR:140.00, COIN:259.12, SOFI:14.82,  HOOD:23.18,  UPST:68.40,
   AFRM:62.48,  PLTR:76.78,  RBLX:44.18,  SNOW:154.82, DDOG:148.22,
   NET:88.40,   CRWD:384.82, ZS:212.18,   OKTA:98.22,  MNDY:198.82,
   RIVN:14.22,  LCID:2.88,   NIO:4.12,    XPEV:8.82,   ENPH:98.22,
@@ -27807,9 +27807,10 @@ window._setChartInterval = async function(interval) {
                 };
 
                 // SOURCE 1: Yahoo v8/chart (more reliable endpoint) via multiple proxies
-                const yahooChartUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=5d&includePrePost=false';
-                const yahooChartUrl2 = 'https://query2.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=5d';
-                const yahooQuoteUrl  = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + encodeURIComponent(ticker) + '&fields=regularMarketPrice,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketVolume,regularMarketChangePercent,regularMarketPreviousClose';
+                const _cbust = '&_t=' + Math.floor(Date.now()/60000); // cache-bust per minute
+                const yahooChartUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=5d&includePrePost=false' + _cbust;
+                const yahooChartUrl2 = 'https://query2.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=5d' + _cbust;
+                const yahooQuoteUrl  = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + encodeURIComponent(ticker) + '&fields=regularMarketPrice,regularMarketOpen,regularMarketDayHigh,regularMarketDayLow,regularMarketVolume,regularMarketChangePercent,regularMarketPreviousClose' + _cbust;
 
                 const proxySources = [
                     'https://corsproxy.io/?' + encodeURIComponent(yahooChartUrl),
@@ -27831,9 +27832,24 @@ window._setChartInterval = async function(interval) {
                     // v8/chart response
                     if(parsed.chart?.result?.[0]) {
                         const meta = parsed.chart.result[0].meta;
-                        const price = meta.regularMarketPrice || meta.chartPreviousClose;
+                        // Extract closes from historical data (proxy-cache-resistant)
+                        let priceFromData = null, prevFromData = null;
+                        try {
+                            const closes = parsed.chart.result[0].indicators?.quote?.[0]?.close;
+                            if(closes && closes.length >= 1) {
+                                const validCloses = closes.filter(c => c !== null && !isNaN(c));
+                                if(validCloses.length >= 1) priceFromData = validCloses[validCloses.length - 1];
+                                if(validCloses.length >= 2) prevFromData  = validCloses[validCloses.length - 2];
+                            }
+                        } catch(e2) {}
+                        // Prefer live regularMarketPrice if it reasonably matches historical data,
+                        // otherwise use the historical close (less prone to proxy staleness)
+                        const metaPrice = meta.regularMarketPrice || meta.chartPreviousClose;
+                        const price = (metaPrice && priceFromData &&
+                                       Math.abs(metaPrice - priceFromData) / priceFromData < 0.30)
+                                      ? metaPrice : (priceFromData || metaPrice);
                         if(!price) throw new Error('no price');
-                        const prev = meta.previousClose || meta.chartPreviousClose || price;
+                        const prev = prevFromData || meta.chartPreviousClose || meta.previousClose || price;
                         const pct  = prev > 0 ? ((price - prev) / prev * 100) : 0;
                         return { quoteResponse: { result: [{
                             regularMarketPrice: price,
@@ -27956,6 +27972,12 @@ window._setChartInterval = async function(interval) {
                 setEl('ov-high',  fmtP(high));
                 setEl('ov-low',   fmtP(low));
                 setEl('ov-close', fmtP(prevClose));
+                // Update High/Low date labels (were stuck at --/--/--)
+                const _tM = String(now.getMonth()+1).padStart(2,'0');
+                const _tD = String(now.getDate()).padStart(2,'0');
+                const _tY = String(now.getFullYear()).slice(2);
+                setEl('ov-date-high', 'High on ' + _tM + '/' + _tD + '/' + _tY);
+                setEl('ov-date-low',  'Low on '  + _tM + '/' + _tD + '/' + _tY);
                 
                 // Master Sync Hook
                 if(typeof _applyTick === 'function') _applyTick(price, pct, high, low, vol, open);
@@ -28293,7 +28315,7 @@ window._initBbg = function() {
           // ── ov-left-panel live update ──
           var _sOv = function(id,v){var e=document.getElementById(id);if(e)e.innerText=v;};
           _sOv('ov-start', fmtP(price));
-          _sOv('ov-close', fmtP(price));
+          // ov-close intentionally NOT updated here — previous close is set by refreshDailyOHLC
           if (parseFloat(d.h) > 0) _sOv('ov-high', fmtP(parseFloat(d.h)));
           if (parseFloat(d.l) > 0) _sOv('ov-low',  fmtP(parseFloat(d.l)));
         } catch(e){}
@@ -33923,7 +33945,7 @@ function _seedFallbackPrices(){
       SONY:18,TM:186,BABA:122,BIDU:95,TCEHY:56,NOK:4.1,O:51,AMT:175,
       SPY:552,QQQ:462,IWM:194,VOO:506,VTI:224,DIA:414,ARKK:43,GLD:280,
       SLV:29,TLT:87,HYG:77,XLK:224,XLF:47,XLE:86,XLV:146,IBIT:47,FBTC:47,
-      GBTC:51,ETHA:16,TQQQ:47,SQQQ:8.6,MSTR:308,COIN:198,HOOD:37,RIOT:8.2,
+      GBTC:51,ETHA:16,TQQQ:47,SQQQ:8.6,MSTR:140,COIN:198,HOOD:37,RIOT:8.2,
       MARA:13.8,CLSK:8.8,CORZ:12,HUT:17.8,HIVE:3.3,CRCL:28,SOFI:12.6,
       UPST:66,AFRM:43,PYPL:68,BX:150,APO:116,KKR:132
     };
