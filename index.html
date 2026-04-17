@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BLOOMBERG TERMINAL — PROFESSIONAL SYSTEM</title>
-<!-- v11-live-data-patch — OIL/SOFI/BRENT/GAS live via Yahoo+Bybit+OKX+HL -->
+<!-- v20260321-v14-AIS-enhanced -->
 <!-- Preconnect to key external resources for faster startup -->
 <link rel="preconnect" href="https://api.binance.com" crossorigin>
 <link rel="preconnect" href="https://stream.binance.com" crossorigin>
@@ -4533,7 +4533,7 @@ const STKS={
   HUT:{n:'Hut 8 Corp',         px:null,open:18.40, hi:19.20, lo:17.40, vol:'4.4M',  pe:0,   mc:'$1.8B', div:0,   beta:3.84,eps:-1.44,sec:'Crypto',     ytd:-38.4},
   HIVE:{n:'HIVE Digital',      px:null,open:3.40,  hi:3.60,  lo:3.10,  vol:'2.4M',  pe:0,   mc:'$0.4B', div:0,   beta:3.44,eps:-0.84,sec:'Crypto',     ytd:-44.4},
   // ── Fintech & Payments ──
-  SOFI:{n:'SoFi Technologies', px:11.50,open:11.50,hi:11.80, lo:11.20, vol:'28.4M', pe:0,   mc:'$13B',  div:0,   beta:1.84,eps:-0.22,sec:'Fintech',    ytd:+8.4},
+  SOFI:{n:'SoFi Technologies', px:null,open:12.84, hi:13.12, lo:12.24, vol:'28.4M', pe:0,   mc:'$13B',  div:0,   beta:1.84,eps:-0.22,sec:'Fintech',    ytd:+8.4},
   UPST:{n:'Upstart Holdings',  px:null,open:68.40, hi:70.20, lo:65.80, vol:'4.4M',  pe:0,   mc:'$6B',   div:0,   beta:2.84,eps:-1.28,sec:'Fintech',    ytd:+18.4},
   AFRM:{n:'Affirm Holdings',   px:null,open:44.80, hi:46.20, lo:42.40, vol:'8.4M',  pe:0,   mc:'$14B',  div:0,   beta:2.24,eps:-0.84,sec:'Fintech',    ytd:-12.4},
   PYPL:{n:'PayPal',            px:null,open:70.20, hi:70.80, lo:67.80, vol:'12.4M', pe:14.4,mc:'$72B',  div:0,   beta:1.44,eps:4.74, sec:'Fintech',    ytd:-4.8},
@@ -4767,7 +4767,7 @@ const COMDTY_DATA=[
   {s:'XAG',n:'SILVER',      px:null,      u:'oz',  chg:-.84, open:32.410, hi:32.68,lo:31.92,ytd:8.4},
   {s:'XPT',n:'PLATINUM',    px:null, u:'oz',  chg:-.44, open:978.80, hi:984,lo:968, ytd:4.2},
   {s:'XPD',n:'PALLADIUM',   px:null,  u:'oz',  chg:-.28, open:945.40, hi:952, lo:936,  ytd:-2.4},
-  {s:'CL1',n:'WTI CRUDE',   px:62.50, u:'bbl', chg:0.00,open:62.50,  hi:63.00,lo:62.00,ytd:-15.0},
+  {s:'CL1',n:'WTI CRUDE',   px:null,  u:'bbl', chg:+2.27,open:96.14,  hi:99.40,lo:95.80,ytd:+36.8},
   {s:'CO1',n:'BRENT CRUDE', px:null, u:'bbl', chg:+3.26,open:108.65, hi:113.40,lo:107.80,ytd:+49.2},
   {s:'NG1',n:'NAT. GAS',    px:null,  u:'MMBtu',chg:1.24,open:3.934,  hi:4.06,lo:3.88,ytd:28.4},
   {s:'HG1',n:'COPPER',      px:null,  u:'lb',  chg:.44,  open:4.608,  hi:4.662,lo:4.588,ytd:8.2},
@@ -4791,7 +4791,7 @@ const COMDTY_DATA=[
   {s:'OJ1', n:'ORANGE JUICE',px:null,u:'lb',  chg:1.24, open:442.80, hi:452,lo:440, ytd:32.4},
   {s:'LB1', n:'LUMBER',     px:null, u:'bf',  chg:-.84, open:488.20, hi:492,lo:480, ytd:-14.8},
   {s:'RB1', n:'RBOB GAS',   px:null,  u:'gal', chg:-1.44,open:2.216,  hi:2.228,lo:2.168,ytd:-8.4},
-  {s:'HO1', n:'HEATING OIL',px:2.180, u:'gal', chg:0.00, open:2.180, hi:2.200,lo:2.160,ytd:-6.8},
+  {s:'HO1', n:'HEATING OIL',px:null,  u:'gal', chg:-1.24,open:2.312,  hi:2.324,lo:2.268,ytd:-6.8},
   {s:'RS1', n:'CANOLA',     px:null, u:'t',   chg:.44,  open:646.20, hi:652,lo:644, ytd:4.2},
   {s:'RR1', n:'ROUGH RICE', px:null,  u:'cwt', chg:-.28, open:16.88,  hi:17.04,lo:16.72,ytd:-2.4},
   {s:'LE1', n:'FEEDER CATTLE',px:null,u:'lb', chg:.34,  open:267.80, hi:269.4,lo:267.0,ytd:6.8},
@@ -27519,21 +27519,17 @@ window._setChartInterval = async function(interval) {
     const _resolveBestDataSource = (sym) => {
         // High-speed WebSocket sources for Ribbon data
         const binanceMap = {
-            // NOTE: OIL/WTI/BRENT/GAS removed — Binance has no crude oil futures.
-            // These now fall through to Yahoo Finance (CL=F, BZ=F, NG=F) via yahooMap.
+            // OIL/WTI removed — Binance has no crude oil futures (routes to Yahoo CL=F)
             'GOLD':'XAUUSDT', 'SILVER':'XAGUSDT',
             'BTC':'BTCUSDT', 'ETH':'ETHUSDT', 'SOL':'SOLUSDT', 'BNB':'BNBUSDT'
         };
         const bybitMap = {
-            // Indices perps
             'SPX':'SPXUSD', 'NDX':'NDXUSD', 'DJI':'DJIUSD', 'VIX':'VIXUSD',
-            // US Equity perps on Bybit
             'MSTR':'MSTRUSDT', 'COIN':'COINUSDT', 'SOFI':'SOFIUSDT',
             'TSLA':'TSLAUSDT', 'NVDA':'NVDAUSDT', 'AAPL':'AAPLUSDT',
-            'AMZN':'AMZNUSDT', 'GOOGL':'GOOGLUSDT', 'META':'METAUSDT',
-            'MSFT':'MSFTUSDT', 'NFLX':'NFLXUSDT', 'AMD':'AMDUSDT',
-            'PLTR':'PLTRUSDT', 'HOOD':'HOODUSDT', 'RIOT':'RIOTUSDT',
-            // Crypto
+            'AMZN':'AMZNUSDT','GOOGL':'GOOGLUSDT','META':'METAUSDT',
+            'MSFT':'MSFTUSDT','NFLX':'NFLXUSDT','AMD':'AMDUSDT',
+            'PLTR':'PLTRUSDT','HOOD':'HOODUSDT','RIOT':'RIOTUSDT',
             'HYPE':'HYPEUSDT'
         };
         
@@ -27706,10 +27702,7 @@ window._setChartInterval = async function(interval) {
             } catch(e) {}
         }
         
-        // 1b. Bybit REST — fires when resolved.provider === 'BYBIT' (equities/indices perps)
-        //     OR when TV chart is on Bybit exchange.
-        //     Previously only triggered for tvEx==='BYBIT', which missed SOFI, SPX, TSLA etc.
-        //     because their TV charts use NASDAQ:/NYSE:/SPREADEX: prefixes.
+        // 1b. Bybit REST — also fires when resolved.provider=BYBIT (equity perps on NASDAQ/NYSE charts)
         if (symBybit && (resolved.provider === 'BYBIT' || tvEx === 'BYBIT')) {
             const fetchBybit = async () => {
                 const url = 'https://api.bybit.com/v5/market/tickers?category=linear&symbol='+symBybit;
@@ -40781,472 +40774,469 @@ if (document.readyState === 'loading') {
 
 
 // ═══════════════════════════════════════════════════════════════════════════
-// BLOOMBERG v11 — LIVE DATA PATCH
-// Fixes: OIL/BRENT/GAS (wrong Binance routing) + SOFI/equities (Bybit REST)
-// Sources: Yahoo Finance (commodities/equities), Bybit REST, OKX REST,
-//          Hyperliquid (HYPE), Binance Futures (crypto)
+//  BLOOMBERG v12 — UNIVERSAL LIVE DATA ENGINE
+//  Every asset gets real live prices — no static fallbacks shown to user.
+//
+//  Strategy:
+//    US Equities  → Yahoo Finance (primary, polling 10s)
+//    Commodities  → Yahoo Finance (CL=F / BZ=F / NG=F etc.)
+//    Indices      → Yahoo Finance + Bybit perps (after-hours)
+//    Crypto       → Binance WS (native, already works)
+//    HYPE/HL-only → Hyperliquid REST
+//
+//  Key fix: watchdog NO LONGER checks _headerEmpty().
+//           It ALWAYS fetches live data for equities/commodities/indices
+//           and force-overwrites whatever stale static value is showing.
 // ═══════════════════════════════════════════════════════════════════════════
-(function() {
+(function () {
 'use strict';
 
-// ── Helper: set element text if not already populated ─────────────────────
-function _patchSet(id, val) {
-  var el = document.getElementById(id);
-  if (el && (el.innerText === '—' || el.innerText === '' || el.innerText === '--')) {
-    el.innerText = val;
-  }
-}
-function _forceSet(id, val) {
-  var el = document.getElementById(id);
-  if (el) el.innerText = val;
-}
-
-// ── Formatters ─────────────────────────────────────────────────────────────
-function _fmtP(v) {
-  if (!v || isNaN(v)) return '—';
+// ── Formatters ──────────────────────────────────────────────────────────────
+function _fP(v) {
+  if (!v || isNaN(v) || v <= 0) return null;
   if (v >= 10000) return v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
   if (v >= 100)   return v.toFixed(2);
   if (v >= 1)     return parseFloat(v.toFixed(4)).toString();
   return parseFloat(v.toPrecision(5)).toString();
 }
-function _fmtV(v) {
-  if (!v || isNaN(v) || v <= 0) return '—';
+function _fV(v) {
+  if (!v || isNaN(v) || v <= 0) return null;
   if (v >= 1e9) return (v/1e9).toFixed(2) + 'B';
   if (v >= 1e6) return (v/1e6).toFixed(2) + 'M';
   if (v >= 1e3) return (v/1e3).toFixed(1) + 'K';
   return v.toFixed(0);
 }
-function _applyHeader(px, chgPct, hi, lo, vol, op) {
+function _setEl(id, val) {
+  if (!val && val !== 0) return;
+  var e = document.getElementById(id);
+  if (e) e.innerText = val;
+}
+
+// ── Apply live tick to all header elements (always force-overwrite) ─────────
+function _applyLiveTick(px, chgPct, hi, lo, vol, op, sym) {
   if (!px || isNaN(px) || px <= 0) return;
-  var up  = chgPct >= 0;
+  var up  = (chgPct || 0) >= 0;
   var col = up ? '#00cc44' : '#ff3d3d';
   var now = new Date();
-  var hh  = String(now.getHours()).padStart(2,'0');
-  var mm  = String(now.getMinutes()).padStart(2,'0');
+  var ts  = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
 
-  _forceSet('bbg-current-price', _fmtP(px));
-  _forceSet('bbg-close',  _fmtP(px));
-  if (hi  > 0) _forceSet('bbg-high',   _fmtP(hi));
-  if (lo  > 0) _forceSet('bbg-low',    _fmtP(lo));
-  if (vol > 0) _forceSet('bbg-volume', _fmtV(vol));
-  if (op  > 0) _forceSet('bbg-start',  _fmtP(op));
-  _patchSet('bbg-time', hh + ':' + mm);
+  _setEl('bbg-current-price', _fP(px));
+  _setEl('bbg-close',  _fP(px));
+  _setEl('bbg-time',   ts);
+  if (hi  > 0) _setEl('bbg-high',   _fP(hi));
+  if (lo  > 0) _setEl('bbg-low',    _fP(lo));
+  if (vol > 0) _setEl('bbg-volume', _fV(vol));
+  if (op  > 0) _setEl('bbg-start',  _fP(op));
 
   var chgEl = document.getElementById('bbg-price-change');
-  if (chgEl) {
-    chgEl.innerText = (up ? '+' : '') + chgPct.toFixed(2) + '%';
-    chgEl.style.color = col;
-  }
+  if (chgEl) { chgEl.innerText = (up?'+':'') + (chgPct||0).toFixed(2) + '%'; chgEl.style.color = col; }
   var arrEl = document.getElementById('bbg-price-arrow');
   if (arrEl) { arrEl.innerText = up ? '↑' : '↓'; arrEl.style.color = col; }
-  var ctnr = document.getElementById('bbg-current-price-container');
-  if (ctnr) ctnr.style.color = col;
+  var ctnr  = document.getElementById('bbg-current-price-container');
+  if (ctnr)  ctnr.style.color = col;
 
-  // Sync overlay panel
-  _forceSet('ov-start', _fmtP(op || px));
-  _forceSet('ov-open',  _fmtP(op || px));
-  if (hi > 0) _forceSet('ov-high', _fmtP(hi));
-  if (lo > 0) _forceSet('ov-low',  _fmtP(lo));
-  _forceSet('ov-close', _fmtP(px));
+  // Overlay panel sync
+  if (op > 0) { _setEl('ov-open', _fP(op)); _setEl('ov-start', _fP(op)); }
+  if (hi > 0)  _setEl('ov-high', _fP(hi));
+  if (lo > 0)  _setEl('ov-low',  _fP(lo));
+  _setEl('ov-close', _fP(px));
 
-  // Also push into global data structures
-  var sym = (window._bbgActiveSym || '').toUpperCase();
-  if (sym && window.COMDTY_DATA) {
-    var comdtyKey = {OIL:'CL1', WTI:'CL1', BRENT:'CO1', GAS:'NG1', NATGAS:'NG1',
-                     GOLD:'XAU', SILVER:'XAG', COPPER:'HG1', WHEAT:'W1', CORN:'C1'};
-    var ck = comdtyKey[sym];
-    if (ck) {
-      var cd = window.COMDTY_DATA.find(function(c){return c.s === ck;});
-      if (cd) { cd.px = px; if (chgPct != null) cd.chg = chgPct; }
+  // Push into global data stores
+  if (sym) {
+    var s = sym.toUpperCase();
+    // STKS update
+    if (window.STKS && window.STKS[s]) {
+      window.STKS[s].px = px;
+      if (chgPct != null) window.STKS[s].chg = chgPct;
+      if (hi > 0) window.STKS[s].hi = hi;
+      if (lo > 0) window.STKS[s].lo = lo;
+    }
+    // MKT update
+    if (window.MKT && window.MKT[s]) {
+      window.MKT[s].px = px;
+      if (chgPct != null) window.MKT[s].chg = chgPct;
+    }
+    // COMDTY_DATA update
+    var comdtyAlias = {OIL:'CL1',WTI:'CL1',BRENT:'CO1',GAS:'NG1',NATGAS:'NG1',
+                       GOLD:'XAU',SILVER:'XAG',COPPER:'HG1',WHEAT:'W1',CORN:'C1',
+                       PLATINUM:'XPT',PALLADIUM:'XPD'};
+    var ck = comdtyAlias[s];
+    if (ck && window.COMDTY_DATA) {
+      var cd = window.COMDTY_DATA.find(function(c){return c.s===ck;});
+      if (cd) { cd.px=px; if(chgPct!=null)cd.chg=chgPct; if(hi>0)cd.hi=hi; if(lo>0)cd.lo=lo; }
     }
   }
-  if (sym && window.MKT && window.MKT[sym]) {
-    window.MKT[sym].px = px;
-    if (chgPct != null) window.MKT[sym].chg = chgPct;
-  }
+
+  window._v12LiveTs = Date.now();
+  console.log('[v12-LIVE] ' + (sym||'?') + ' → ' + _fP(px) + ' (' + (chgPct||0).toFixed(2) + '%)');
 }
 
-// ── Check if header is still empty ─────────────────────────────────────────
-function _headerEmpty() {
-  var el = document.getElementById('bbg-current-price');
-  return !el || !el.innerText || el.innerText === '—' || el.innerText === '' || el.innerText === '--';
-}
-
-// ── Yahoo Finance fetch (commodity + equity + FX) ─────────────────────────
-var YAHOO_MAP = {
-  // Commodities
-  'OIL':'CL=F', 'WTI':'CL=F', 'BRENT':'BZ=F', 'GAS':'NG=F', 'NATGAS':'NG=F',
-  'COPPER':'HG=F', 'WHEAT':'ZW=F', 'CORN':'ZC=F', 'SOYBEAN':'ZS=F',
-  'COFFEE':'KC=F', 'COCOA':'CC=F', 'SUGAR':'SB=F', 'COTTON':'CT=F',
-  'PLATINUM':'PL=F', 'PALLADIUM':'PA=F', 'ALUMINUM':'ALI=F',
-  'LUMBER':'LBR=F', 'CATTLE':'LE=F', 'HOGS':'HE=F',
-  // Indices
-  'SPX':'^GSPC', 'NDX':'^NDX', 'DJI':'^DJI', 'VIX':'^VIX', 'RUT':'^RUT',
-  'DAX':'^GDAXI', 'NI225':'^N225', 'FTSE':'^FTSE', 'CAC':'^FCHI',
-  'HSI':'^HSI', 'KOSPI':'^KS11', 'ASX200':'^AXJO', 'SENSEX':'^BSESN',
-  // Equities (fallback)
-  'SOFI':'SOFI', 'HOOD':'HOOD', 'MSTR':'MSTR', 'COIN':'COIN',
-  'PLTR':'PLTR', 'AAPL':'AAPL', 'NVDA':'NVDA', 'TSLA':'TSLA',
-  'AMZN':'AMZN', 'GOOGL':'GOOGL', 'META':'META', 'MSFT':'MSFT',
-  // Bonds
-  'US10Y':'^TNX', 'US2Y':'^IRX', 'US30Y':'^TYX',
-  // FX
-  'EURUSD':'EURUSD=X', 'GBPUSD':'GBPUSD=X', 'USDJPY':'USDJPY=X',
-  'AUDUSD':'AUDUSD=X', 'USDCAD':'USDCAD=X', 'USDCHF':'USDCHF=X',
+// ── Yahoo Finance fetch ──────────────────────────────────────────────────────
+// Full Yahoo ticker map — covers commodities, indices, equities, FX, bonds
+var YH = {
+  // ── Commodities ──
+  OIL:'CL=F', WTI:'CL=F', BRENT:'BZ=F', GAS:'NG=F', NATGAS:'NG=F',
+  COPPER:'HG=F', WHEAT:'ZW=F', CORN:'ZC=F', SOYBEAN:'ZS=F',
+  COFFEE:'KC=F', COCOA:'CC=F', SUGAR:'SB=F', COTTON:'CT=F',
+  PLATINUM:'PL=F', PALLADIUM:'PA=F', ALUMINUM:'ALI=F',
+  LUMBER:'LBR=F', CATTLE:'LE=F', HOGS:'HE=F', URANIUM:'URA',
+  GOLD:'GC=F', SILVER:'SI=F',
+  // ── US Indices ──
+  SPX:'^GSPC', NDX:'^NDX', DJI:'^DJI', VIX:'^VIX', RUT:'^RUT',
+  MID:'^MID', ES1:'ES=F', NQ1:'NQ=F', YM1:'YM=F',
+  // ── Global Indices ──
+  DAX:'^GDAXI', NI225:'^N225', FTSE:'^FTSE', CAC:'^FCHI',
+  HSI:'^HSI', KOSPI:'^KS11', ASX200:'^AXJO', SENSEX:'^BSESN',
+  IBOV:'^BVSP', TSX:'^GSPTSE', AEX:'^AEX', SMI:'^SSMI',
+  // ── Bonds ──
+  US10Y:'^TNX', US2Y:'^IRX', US30Y:'^TYX', US5Y:'^FVX',
+  TLT:'TLT', SHY:'SHY', IEF:'IEF', HYG:'HYG', LQD:'LQD',
+  // ── FX ──
+  EURUSD:'EURUSD=X', GBPUSD:'GBPUSD=X', USDJPY:'USDJPY=X',
+  AUDUSD:'AUDUSD=X', USDCAD:'USDCAD=X', USDCHF:'USDCHF=X',
+  NZDUSD:'NZDUSD=X', EURGBP:'EURGBP=X', EURJPY:'EURJPY=X',
+  GBPJPY:'GBPJPY=X', USDMXN:'MXN=X', USDBRL:'BRL=X',
+  USDZAR:'ZAR=X', USDTRY:'TRY=X', USDINR:'INR=X',
+  // ── Mega-cap Tech ──
+  AAPL:'AAPL', NVDA:'NVDA', MSFT:'MSFT', GOOGL:'GOOGL', GOOG:'GOOG',
+  META:'META', AMZN:'AMZN', TSLA:'TSLA', AVGO:'AVGO', ORCL:'ORCL',
+  NFLX:'NFLX', CRM:'CRM', ADBE:'ADBE', INTC:'INTC', AMD:'AMD',
+  QCOM:'QCOM', MU:'MU', AMAT:'AMAT', TXN:'TXN', ARM:'ARM',
+  NOW:'NOW', TEAM:'TEAM', WDAY:'WDAY', ZM:'ZM', CSCO:'CSCO',
+  IBM:'IBM', HPQ:'HPQ', HPE:'HPE', DELL:'DELL', SMCI:'SMCI',
+  // ── Crypto-adjacent equities ──
+  MSTR:'MSTR', COIN:'COIN', HOOD:'HOOD', SOFI:'SOFI', PLTR:'PLTR',
+  RIOT:'RIOT', MARA:'MARA', CLSK:'CLSK', CORZ:'CORZ', HUT:'HUT',
+  HIVE:'HIVE', UPST:'UPST', AFRM:'AFRM', SQ:'SQ', PYPL:'PYPL',
+  IBIT:'IBIT', FBTC:'FBTC', BITB:'BITB', ARKB:'ARKB',
+  // ── Finance ──
+  JPM:'JPM', GS:'GS', BAC:'BAC', WFC:'WFC', MS:'MS', C:'C',
+  BLK:'BLK', V:'V', MA:'MA', AXP:'AXP', SCHW:'SCHW',
+  CME:'CME', ICE:'ICE', CBOE:'CBOE', BX:'BX', APO:'APO', KKR:'KKR',
+  // ── AI/Cloud/Cyber ──
+  SNOW:'SNOW', DDOG:'DDOG', NET:'NET', CRWD:'CRWD', ZS:'ZS',
+  OKTA:'OKTA', PANW:'PANW', SOUN:'SOUN', RDDT:'RDDT', DUOL:'DUOL',
+  // ── Healthcare ──
+  JNJ:'JNJ', UNH:'UNH', LLY:'LLY', ABBV:'ABBV', MRK:'MRK',
+  PFE:'PFE', AMGN:'AMGN', GILD:'GILD', REGN:'REGN', VRTX:'VRTX',
+  MRNA:'MRNA', BNTX:'BNTX',
+  // ── Energy ──
+  XOM:'XOM', CVX:'CVX', COP:'COP', SLB:'SLB', EOG:'EOG',
+  // ── Consumer/Retail ──
+  WMT:'WMT', COST:'COST', TGT:'TGT', HD:'HD', KO:'KO',
+  PEP:'PEP', NKE:'NKE', MCD:'MCD', SBUX:'SBUX',
+  // ── ETFs ──
+  SPY:'SPY', QQQ:'QQQ', IWM:'IWM', DIA:'DIA', GLD:'GLD', SLV:'SLV',
+  USO:'USO', UNG:'UNG', XLK:'XLK', XLF:'XLF', XLE:'XLE',
+  ARKK:'ARKK', TQQQ:'TQQQ', SQQQ:'SQQQ',
 };
 
-async function _fetchYahoo(ticker) {
+async function _yahooFetch(ticker) {
   var url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1m&range=1d';
   var proxies = [
     'https://corsproxy.io/?url=' + encodeURIComponent(url),
     'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
     'https://corsproxy.io/?url=' + encodeURIComponent(url.replace('query1','query2')),
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1m&range=1d'),
   ];
   for (var i = 0; i < proxies.length; i++) {
     try {
-      var r = await fetch(proxies[i], {signal: AbortSignal.timeout(7000), cache:'no-store'});
+      var r = await fetch(proxies[i], {signal:AbortSignal.timeout(8000), cache:'no-store'});
       if (!r.ok) continue;
       var d = await r.json();
-      var meta = d && d.chart && d.chart.result && d.chart.result[0] && d.chart.result[0].meta;
-      if (!meta) continue;
-      var px  = meta.regularMarketPrice;
-      if (!px || isNaN(px) || px <= 0) continue;
-      var prev = meta.previousClose || meta.chartPreviousClose || px;
+      var res = d && d.chart && d.chart.result && d.chart.result[0];
+      if (!res) continue;
+      var meta = res.meta;
+      var px   = parseFloat(meta.regularMarketPrice || 0);
+      if (!px || px <= 0) continue;
+      var prev = parseFloat(meta.previousClose || meta.chartPreviousClose || px);
       var pct  = prev > 0 ? ((px - prev) / prev * 100) : 0;
       return {
         px:   px,
         chg:  pct,
-        open: meta.regularMarketOpen  || prev,
-        hi:   meta.regularMarketDayHigh || px,
-        lo:   meta.regularMarketDayLow  || px,
-        vol:  meta.regularMarketVolume  || 0,
+        open: parseFloat(meta.regularMarketOpen      || prev),
+        hi:   parseFloat(meta.regularMarketDayHigh   || px),
+        lo:   parseFloat(meta.regularMarketDayLow    || px),
+        vol:  parseFloat(meta.regularMarketVolume    || 0),
+        prev: prev,
       };
     } catch(e) {}
   }
   return null;
 }
 
-// ── Bybit REST (linear + inverse) ─────────────────────────────────────────
-var BYBIT_MAP = {
-  'SPX':'SPXUSD','NDX':'NDXUSD','DJI':'DJIUSD','VIX':'VIXUSD',
-  'SOFI':'SOFIUSDT','MSTR':'MSTRUSDT','COIN':'COINUSDT',
-  'TSLA':'TSLAUSDT','NVDA':'NVDAUSDT','AAPL':'AAPLUSDT',
-  'AMZN':'AMZNUSDT','GOOGL':'GOOGLUSDT','META':'METAUSDT',
-  'MSFT':'MSFTUSDT','NFLX':'NFLXUSDT','AMD':'AMDUSDT',
-  'PLTR':'PLTRUSDT','HOOD':'HOODUSDT','RIOT':'RIOTUSDT',
-  'HYPE':'HYPEUSDT',
+// ── Bybit REST (for equity perps + indices — works 24/7) ───────────────────
+var BB = {
+  SPX:'SPXUSD', NDX:'NDXUSD', DJI:'DJIUSD', VIX:'VIXUSD',
+  MSTR:'MSTRUSDT', COIN:'COINUSDT', SOFI:'SOFIUSDT',
+  TSLA:'TSLAUSDT', NVDA:'NVDAUSDT', AAPL:'AAPLUSDT',
+  AMZN:'AMZNUSDT', GOOGL:'GOOGLUSDT', META:'METAUSDT',
+  MSFT:'MSFTUSDT', NFLX:'NFLXUSDT', AMD:'AMDUSDT',
+  PLTR:'PLTRUSDT', HOOD:'HOODUSDT', RIOT:'RIOTUSDT',
+  HYPE:'HYPEUSDT',
 };
-// Inverse symbols (USD-settled) use 'inverse' category
-var BYBIT_INVERSE = {'SPXUSD':1,'NDXUSD':1,'DJIUSD':1,'VIXUSD':1};
+var BB_INV = {SPXUSD:1, NDXUSD:1, DJIUSD:1, VIXUSD:1};
 
-async function _fetchBybit(symbol) {
-  var cat = BYBIT_INVERSE[symbol] ? 'inverse' : 'linear';
+async function _bybitFetch(symbol) {
+  var cat = BB_INV[symbol] ? 'inverse' : 'linear';
   var url = 'https://api.bybit.com/v5/market/tickers?category=' + cat + '&symbol=' + symbol;
   var proxies = [
     'https://corsproxy.io/?' + encodeURIComponent(url),
     'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-    url, // direct attempt last
+    url,
   ];
   for (var i = 0; i < proxies.length; i++) {
     try {
-      var r = await fetch(proxies[i], {signal: AbortSignal.timeout(6000), cache:'no-store'});
+      var r = await fetch(proxies[i], {signal:AbortSignal.timeout(7000), cache:'no-store'});
       if (!r.ok) continue;
       var d = await r.json();
-      if (d.retCode === 0 && d.result && d.result.list && d.result.list[0]) {
-        var tk = d.result.list[0];
-        var px  = parseFloat(tk.lastPrice);
-        if (!px || isNaN(px) || px <= 0) continue;
-        var hi  = parseFloat(tk.highPrice24h  || 0);
-        var lo  = parseFloat(tk.lowPrice24h   || 0);
-        var vol = parseFloat(tk.volume24h     || 0);
-        var chg = parseFloat(tk.price24hPcnt  || 0) * 100;
-        var op  = parseFloat(tk.prevPrice24h  || px);
-        return {px:px, chg:chg, open:op, hi:hi, lo:lo, vol:vol};
-      }
-    } catch(e) {}
-  }
-  return null;
-}
-
-// ── OKX REST ───────────────────────────────────────────────────────────────
-var OKX_MAP = {
-  'BTC':'BTC-USDT-SWAP','ETH':'ETH-USDT-SWAP','SOL':'SOL-USDT-SWAP',
-  'OIL':'OIL-USDT','WTI':'OIL-USDT',
-};
-async function _fetchOKX(instId) {
-  var url = 'https://www.okx.com/api/v5/market/ticker?instId=' + instId;
-  var proxies = [
-    'https://corsproxy.io/?' + encodeURIComponent(url),
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-  ];
-  for (var i = 0; i < proxies.length; i++) {
-    try {
-      var r = await fetch(proxies[i], {signal: AbortSignal.timeout(6000), cache:'no-store'});
-      if (!r.ok) continue;
-      var d = await r.json();
-      if (d.code === '0' && d.data && d.data[0]) {
-        var tk  = d.data[0];
-        var px  = parseFloat(tk.last);
-        if (!px || isNaN(px) || px <= 0) continue;
-        var op  = parseFloat(tk.open24h  || px);
-        var hi  = parseFloat(tk.high24h  || px);
-        var lo  = parseFloat(tk.low24h   || px);
-        var vol = parseFloat(tk.vol24h   || 0);
-        var chg = op > 0 ? ((px - op) / op * 100) : 0;
-        return {px:px, chg:chg, open:op, hi:hi, lo:lo, vol:vol};
-      }
+      if (d.retCode !== 0 || !d.result || !d.result.list || !d.result.list[0]) continue;
+      var tk = d.result.list[0];
+      var px = parseFloat(tk.lastPrice || 0);
+      if (!px || px <= 0) continue;
+      var op  = parseFloat(tk.prevPrice24h || px);
+      var chg = parseFloat(tk.price24hPcnt || 0) * 100;
+      return {
+        px:   px,
+        chg:  chg,
+        open: op,
+        hi:   parseFloat(tk.highPrice24h  || px),
+        lo:   parseFloat(tk.lowPrice24h   || px),
+        vol:  parseFloat(tk.volume24h     || 0),
+      };
     } catch(e) {}
   }
   return null;
 }
 
 // ── Hyperliquid REST ────────────────────────────────────────────────────────
-async function _fetchHL(coin) {
+async function _hlFetch(coin) {
   try {
     var r = await fetch('https://api.hyperliquid.xyz/info', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({type:'metaAndAssetCtxs'}),
-      signal: AbortSignal.timeout(6000),
+      signal:AbortSignal.timeout(7000)
     });
     if (!r.ok) return null;
     var data = await r.json();
-    var meta = data[0].universe;
-    var ctxs = data[1];
-    var idx  = meta.findIndex(function(a){return a.name === coin;});
+    var idx = data[0].universe.findIndex(function(a){return a.name===coin;});
     if (idx === -1) return null;
-    var ctx = ctxs[idx];
+    var ctx = data[1][idx];
     var px  = parseFloat(ctx.markPx || ctx.midPx || 0);
     if (!px) return null;
-    var prevDay = parseFloat(ctx.prevDayPx || px);
-    var chg = prevDay > 0 ? ((px - prevDay) / prevDay * 100) : 0;
-    return {
-      px:  px,
-      chg: chg,
-      open: prevDay,
-      hi:  parseFloat(ctx.dayHigh  || px),
-      lo:  parseFloat(ctx.dayLow   || px),
-      vol: parseFloat(ctx.dayNtlVlm || 0),
-    };
+    var prev = parseFloat(ctx.prevDayPx || px);
+    var chg  = prev > 0 ? ((px-prev)/prev*100) : 0;
+    return {px:px, chg:chg, open:prev,
+            hi: parseFloat(ctx.dayHigh||px), lo:parseFloat(ctx.dayLow||px),
+            vol:parseFloat(ctx.dayNtlVlm||0)};
   } catch(e) { return null; }
 }
 
-// ── Binance Spot/Futures ticker ─────────────────────────────────────────────
-async function _fetchBinance(symbol) {
+// ── Binance spot ticker (crypto) ────────────────────────────────────────────
+async function _binanceFetch(pair) {
   try {
-    var r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=' + symbol, {
-      signal: AbortSignal.timeout(5000), cache:'no-store'
-    });
+    var r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol='+pair,
+                        {signal:AbortSignal.timeout(5000), cache:'no-store'});
     if (!r.ok) return null;
     var d = await r.json();
-    var px = parseFloat(d.lastPrice);
-    if (!px || isNaN(px) || px <= 0) return null;
-    return {
-      px:  px,
-      chg: parseFloat(d.priceChangePercent || 0),
-      open: parseFloat(d.openPrice || px),
-      hi:  parseFloat(d.highPrice  || px),
-      lo:  parseFloat(d.lowPrice   || px),
-      vol: parseFloat(d.quoteVolume || 0),
-    };
+    var px = parseFloat(d.lastPrice||0);
+    if (!px||px<=0) return null;
+    return {px:px, chg:parseFloat(d.priceChangePercent||0),
+            open:parseFloat(d.openPrice||px), hi:parseFloat(d.highPrice||px),
+            lo:parseFloat(d.lowPrice||px), vol:parseFloat(d.quoteVolume||0)};
   } catch(e) { return null; }
 }
 
-// ── MASTER RESOLVER: pick best source for each symbol ─────────────────────
-var COMMODITY_SYMS = {
-  'OIL':1,'WTI':1,'BRENT':1,'GAS':1,'NATGAS':1,
-  'COPPER':1,'WHEAT':1,'CORN':1,'SOYBEAN':1,'COFFEE':1,
-  'COCOA':1,'SUGAR':1,'COTTON':1,'PLATINUM':1,'PALLADIUM':1,
-  'LUMBER':1,'CATTLE':1,'HOGS':1,'ALUMINUM':1,
-};
-var INDEX_SYMS = {
-  'SPX':1,'NDX':1,'DJI':1,'DAX':1,'NI225':1,'FTSE':1,'CAC':1,
-  'HSI':1,'KOSPI':1,'ASX200':1,'SENSEX':1,'VIX':1,'RUT':1,
-};
+// ── Category classifiers ─────────────────────────────────────────────────────
+var IS_COMDTY = {OIL:1,WTI:1,BRENT:1,GAS:1,NATGAS:1,GOLD:1,SILVER:1,
+                 COPPER:1,WHEAT:1,CORN:1,SOYBEAN:1,COFFEE:1,COCOA:1,
+                 SUGAR:1,COTTON:1,PLATINUM:1,PALLADIUM:1,LUMBER:1,
+                 CATTLE:1,HOGS:1,ALUMINUM:1,URANIUM:1};
+var IS_IDX    = {SPX:1,NDX:1,DJI:1,VIX:1,RUT:1,MID:1,ES1:1,NQ1:1,YM1:1,
+                 DAX:1,NI225:1,FTSE:1,CAC:1,HSI:1,KOSPI:1,ASX200:1,SENSEX:1,IBOV:1};
+var IS_BOND   = {US10Y:1,US2Y:1,US30Y:1,US5Y:1,TLT:1,SHY:1,IEF:1,HYG:1,LQD:1};
+var IS_FX     = {EURUSD:1,GBPUSD:1,USDJPY:1,AUDUSD:1,USDCAD:1,USDCHF:1,
+                 NZDUSD:1,EURGBP:1,EURJPY:1,GBPJPY:1,USDMXN:1,USDBRL:1,USDZAR:1,USDTRY:1};
+var IS_CRYPTO = {BTC:1,ETH:1,SOL:1,BNB:1,XRP:1,ADA:1,DOGE:1,AVAX:1,LINK:1,
+                 DOT:1,LTC:1,BCH:1,UNI:1,AAVE:1,FTM:1,NEAR:1,APT:1,SUI:1,
+                 ARB:1,OP:1,INJ:1,TIA:1,PEPE:1,WIF:1,BONK:1,TON:1,SHIB:1,
+                 TRX:1,XLM:1,ATOM:1,ALGO:1,VET:1,OM:1,HBAR:1,KAS:1,SEI:1};
+var IS_HL     = {HYPE:1,PURR:1,FRIEND:1};
 
-async function _resolveAndFetch(sym) {
+// ── Master fetch: best source per asset class ────────────────────────────────
+async function _liveFetch(sym) {
   sym = sym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
 
-  // 1. Hyperliquid perps (HYPE etc.)
-  if (sym === 'HYPE' || sym === 'PURR') {
-    return await _fetchHL(sym);
+  // Hyperliquid-native tokens
+  if (IS_HL[sym]) return await _hlFetch(sym);
+
+  // Crypto — Binance spot is most reliable
+  if (IS_CRYPTO[sym]) {
+    var bPair = sym + 'USDT';
+    return await _binanceFetch(bPair);
   }
 
-  // 2. Commodities → Yahoo Finance primary, OKX fallback
-  if (COMMODITY_SYMS[sym] && YAHOO_MAP[sym]) {
-    var yResult = await _fetchYahoo(YAHOO_MAP[sym]);
-    if (yResult && yResult.px > 0) return yResult;
-    // OKX fallback for OIL (OKX has OIL-USDT futures)
-    if (OKX_MAP[sym]) {
-      var okxR = await _fetchOKX(OKX_MAP[sym]);
-      if (okxR && okxR.px > 0) return okxR;
-    }
+  // Commodities → Yahoo Finance (authoritative CME/NYMEX data)
+  if (IS_COMDTY[sym] && YH[sym]) return await _yahooFetch(YH[sym]);
+
+  // Indices → Yahoo primary, Bybit secondary (for 24h)
+  if (IS_IDX[sym]) {
+    var yRes = YH[sym] ? await _yahooFetch(YH[sym]) : null;
+    if (yRes && yRes.px > 0) return yRes;
+    if (BB[sym]) return await _bybitFetch(BB[sym]);
     return null;
   }
 
-  // 3. Indices — Bybit perps primary (24h, no market hours limit), Yahoo fallback
-  if (INDEX_SYMS[sym]) {
-    if (BYBIT_MAP[sym]) {
-      var bbR = await _fetchBybit(BYBIT_MAP[sym]);
-      if (bbR && bbR.px > 0) return bbR;
+  // Bonds / FX → Yahoo Finance
+  if ((IS_BOND[sym] || IS_FX[sym]) && YH[sym]) return await _yahooFetch(YH[sym]);
+
+  // US Equities — try Bybit perp first (24/7), then Yahoo (market hours)
+  if (BB[sym]) {
+    var bbRes = await _bybitFetch(BB[sym]);
+    if (bbRes && bbRes.px > 0) {
+      // Sanity check: Bybit price should be within 20% of Yahoo to avoid bad data
+      if (YH[sym]) {
+        var yRes2 = await _yahooFetch(YH[sym]);
+        if (yRes2 && yRes2.px > 0) {
+          var diff = Math.abs(bbRes.px - yRes2.px) / yRes2.px;
+          // If close enough, use Yahoo (more accurate for % change)
+          return diff < 0.20 ? yRes2 : bbRes;
+        }
+      }
+      return bbRes;
     }
-    if (YAHOO_MAP[sym]) {
-      return await _fetchYahoo(YAHOO_MAP[sym]);
-    }
-    return null;
   }
 
-  // 4. US Equity perps on Bybit (SOFI, TSLA, NVDA etc.)
-  if (BYBIT_MAP[sym]) {
-    var bbR2 = await _fetchBybit(BYBIT_MAP[sym]);
-    if (bbR2 && bbR2.px > 0) return bbR2;
-    // Yahoo Finance fallback (real stock price)
-    if (YAHOO_MAP[sym]) {
-      return await _fetchYahoo(YAHOO_MAP[sym]);
-    }
-    return null;
-  }
-
-  // 5. Crypto — Binance spot
-  var binanceCryptoMap = {
-    'BTC':'BTCUSDT','ETH':'ETHUSDT','SOL':'SOLUSDT','BNB':'BNBUSDT',
-    'XRP':'XRPUSDT','ADA':'ADAUSDT','DOGE':'DOGEUSDT','AVAX':'AVAXUSDT',
-    'LINK':'LINKUSDT','DOT':'DOTUSDT','MATIC':'MATICUSDT','UNI':'UNIUSDT',
-    'AAVE':'AAVEUSDT','LTC':'LTCUSDT','BCH':'BCHUSDT','FTM':'FTMUSDT',
-    'NEAR':'NEARUSDT','APT':'APTUSDT','SUI':'SUIUSDT','ARB':'ARBUSDT',
-    'OP':'OPUSDT','INJ':'INJUSDT','TIA':'TIAUSDT','PEPE':'PEPEUSDT',
-    'WIF':'WIFUSDT','BONK':'BONKUSDT','TON':'TONUSDT','SHIB':'SHIBUSDT',
-    'GOLD':'XAUUSDT','SILVER':'XAGUSDT',
-  };
-  if (binanceCryptoMap[sym]) {
-    return await _fetchBinance(binanceCryptoMap[sym]);
-  }
-
-  // 6. Generic Yahoo fallback
-  if (YAHOO_MAP[sym]) {
-    return await _fetchYahoo(YAHOO_MAP[sym]);
-  }
+  // Generic Yahoo fallback for all other equities
+  if (YH[sym]) return await _yahooFetch(YH[sym]);
 
   return null;
 }
 
-// ── WATCHDOG: fires after chart switch, fills missing header data ──────────
-window._v11Watchdog = async function(sym) {
-  if (!sym) return;
-  // Wait 2.5s for native feeds to populate
-  await new Promise(function(r){setTimeout(r, 2500);});
+// ── Per-symbol polling manager ──────────────────────────────────────────────
+var _v12Polls = {};   // sym → intervalId
 
-  // Check if we're still on same symbol
-  var activeSym = (window._bbgActiveSym || '').toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
-  var checkSym  = sym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
-  if (activeSym !== checkSym) return; // user switched to different symbol
+function _v12StopPoll(sym) {
+  if (_v12Polls[sym]) { clearInterval(_v12Polls[sym]); delete _v12Polls[sym]; }
+}
 
-  if (!_headerEmpty()) return; // native feeds worked, nothing to do
-  console.log('[v11-WATCHDOG] Header empty for', sym, '— fetching from fallback sources...');
+function _v12StopAll() {
+  Object.keys(_v12Polls).forEach(function(s){ _v12StopPoll(s); });
+}
 
-  var data = await _resolveAndFetch(checkSym);
-  if (data && data.px > 0) {
-    console.log('[v11-WATCHDOG] Got data for', sym, '→', data.px, data.chg && data.chg.toFixed(2)+'%');
-    _applyHeader(data.px, data.chg || 0, data.hi || 0, data.lo || 0, data.vol || 0, data.open || data.px);
-  } else {
-    console.warn('[v11-WATCHDOG] No data found for', sym);
-  }
-};
+// Returns true if sym needs our live polling (crypto handled by native WS)
+function _needsPoll(sym) {
+  sym = sym.toUpperCase();
+  if (IS_CRYPTO[sym]) return false; // Binance WS handles these natively
+  return !!(IS_COMDTY[sym] || IS_IDX[sym] || IS_BOND[sym] || IS_FX[sym] ||
+            IS_HL[sym] || YH[sym] || BB[sym]);
+}
 
-// ── POLLING: keep updating every 12s while chart is open ──────────────────
-var _v11PollTimer = null;
+// Start polling loop for a given symbol
+function _v12StartPoll(rawSym) {
+  var sym = rawSym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
+  if (!_needsPoll(sym)) return;
 
-window._v11StartPoll = async function(sym) {
-  if (_v11PollTimer) { clearInterval(_v11PollTimer); _v11PollTimer = null; }
-  var cleanSym = sym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
+  _v12StopAll(); // kill any old polls
 
-  var _doFetch = async function() {
-    var activeSym = (window._bbgActiveSym || '').toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
-    if (activeSym !== cleanSym) { clearInterval(_v11PollTimer); _v11PollTimer = null; return; }
-    var data = await _resolveAndFetch(cleanSym);
+  var _fetch = async function() {
+    // Guard: only update if this is still the active chart symbol
+    var active = (window._bbgActiveSym || '').toUpperCase()
+                   .replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
+    if (active !== sym) { _v12StopPoll(sym); return; }
+
+    var data = await _liveFetch(sym);
     if (data && data.px > 0) {
-      _applyHeader(data.px, data.chg || 0, data.hi || 0, data.lo || 0, data.vol || 0, data.open || data.px);
+      _applyLiveTick(data.px, data.chg||0, data.hi||0, data.lo||0, data.vol||0, data.open||data.px, sym);
     }
   };
 
-  // Needs polling for commodity/index/equity (no native WS feed for these in v10)
-  var needsPoll = COMMODITY_SYMS[cleanSym] || INDEX_SYMS[cleanSym] || BYBIT_MAP[cleanSym];
-  if (needsPoll) {
-    _v11PollTimer = setInterval(_doFetch, 12000);
-    console.log('[v11-POLL] Polling started for', cleanSym, 'every 12s');
-  }
-};
+  // Run immediately, then every 10s
+  _fetch();
+  _v12Polls[sym] = setInterval(_fetch, 10000);
+  console.log('[v12-POLL] Started for ' + sym + ' (10s interval)');
+}
 
-// ── Hook into _openChartForSymbol ──────────────────────────────────────────
+// ── Patch _openChartForSymbol ───────────────────────────────────────────────
 var _origOpen = window._openChartForSymbol;
 window._openChartForSymbol = function(sym) {
   if (_origOpen) _origOpen.apply(this, arguments);
   if (!sym) return;
-  // Run watchdog + start poll
-  window._v11Watchdog(sym);
-  setTimeout(function(){ window._v11StartPoll(sym); }, 1000);
+  // Small delay so native _bbgInstantFill + _setChartInterval run first
+  // then we overwrite with live data
+  setTimeout(function() { _v12StartPoll(sym); }, 1500);
 };
 
-// ── Also hook into _setChartInterval (called on interval change) ──────────
+// ── Patch _setChartInterval (interval change) ───────────────────────────────
 var _origSetInterval = window._setChartInterval;
 window._setChartInterval = async function(interval) {
   if (_origSetInterval) await _origSetInterval.apply(this, arguments);
   var sym = window._bbgActiveSym || '';
-  if (sym) {
-    window._v11Watchdog(sym);
-    setTimeout(function(){ window._v11StartPoll(sym); }, 1000);
-  }
+  if (sym) setTimeout(function() { _v12StartPoll(sym); }, 1500);
 };
 
-// ── Status bar prices: ensure OIL, BRENT, GAS always show ────────────────
-async function _refreshStatusBarComdty() {
+// ── Status-bar commodity prices refresh ─────────────────────────────────────
+// Runs every 90s and patches COMDTY_DATA with Yahoo data
+async function _refreshComdtyBar() {
   if (!window.COMDTY_DATA) return;
-  var fetchMap = [
-    {ys: 'CL=F',  key:'CL1'},
-    {ys: 'BZ=F',  key:'CO1'},
-    {ys: 'NG=F',  key:'NG1'},
-    {ys: 'GC=F',  key:'XAU'},
-    {ys: 'SI=F',  key:'XAG'},
-    {ys: 'HG=F',  key:'HG1'},
-    {ys: 'ZW=F',  key:'W1'},
-    {ys: 'ZC=F',  key:'C1'},
+  var map = [
+    {k:'CL1', y:'CL=F'}, {k:'CO1', y:'BZ=F'}, {k:'NG1', y:'NG=F'},
+    {k:'XAU', y:'GC=F'}, {k:'XAG', y:'SI=F'}, {k:'HG1', y:'HG=F'},
+    {k:'W1',  y:'ZW=F'}, {k:'C1',  y:'ZC=F'}, {k:'XPT', y:'PL=F'},
+    {k:'XPD', y:'PA=F'},
   ];
-  for (var i = 0; i < fetchMap.length; i++) {
-    var entry = fetchMap[i];
-    var cd = window.COMDTY_DATA.find(function(c){return c.s === entry.key;});
-    if (!cd || (cd.px && cd.px > 0)) continue; // already has data
-    var data = await _fetchYahoo(entry.ys);
-    if (data && data.px > 0) {
-      cd.px  = data.px;
-      cd.chg = data.chg;
-      cd.open= data.open;
-      cd.hi  = data.hi;
-      cd.lo  = data.lo;
-      console.log('[v11-COMDTY] Patched', entry.key, '→', data.px);
+  for (var i = 0; i < map.length; i++) {
+    var entry = map[i];
+    var cd = window.COMDTY_DATA.find(function(c){return c.s===entry.k;});
+    if (!cd) continue;
+    var d = await _yahooFetch(entry.y);
+    if (d && d.px > 0) {
+      cd.px=d.px; cd.chg=d.chg; cd.open=d.open; cd.hi=d.hi; cd.lo=d.lo;
+      console.log('[v12-COMDTY] ' + entry.k + ' → ' + d.px.toFixed(2));
     }
   }
-  // Trigger ticker/panel refresh
-  if (typeof window.buildTicker === 'function') { try { window.buildTicker(); } catch(e){} }
-  if (typeof window.refreshLivePanels === 'function') { try { window.refreshLivePanels(); } catch(e){} }
-  if (typeof window._updateStatPrices === 'function') { try { window._updateStatPrices(); } catch(e){} }
+  // Also refresh STKS px for key equities in background
+  var stksRefresh = [
+    'MSTR','COIN','SOFI','HOOD','PLTR','MARA','RIOT','CLSK','CORZ',
+    'AAPL','NVDA','TSLA','META','AMZN','MSFT','GOOGL','NFLX','AMD',
+    'UPST','AFRM','SQ','PYPL','SNOW','DDOG','NET','CRWD','PLTR'
+  ];
+  for (var j = 0; j < stksRefresh.length; j++) {
+    var sk = stksRefresh[j];
+    if (!window.STKS || !window.STKS[sk]) continue;
+    if (window.STKS[sk].px > 0) continue; // already live
+    if (!YH[sk]) continue;
+    var sd = await _yahooFetch(YH[sk]);
+    if (sd && sd.px > 0) {
+      window.STKS[sk].px  = sd.px;
+      window.STKS[sk].chg = sd.chg;
+      window.STKS[sk].hi  = sd.hi;
+      window.STKS[sk].lo  = sd.lo;
+      if (window.MKT && window.MKT[sk]) { window.MKT[sk].px=sd.px; window.MKT[sk].chg=sd.chg; }
+    }
+  }
+  // Trigger panel + ticker refresh
+  try { if(typeof buildTicker==='function') buildTicker(); } catch(e){}
+  try { if(typeof refreshLivePanels==='function') refreshLivePanels(); } catch(e){}
+  try { if(typeof window._updateStatPrices==='function') window._updateStatPrices(); } catch(e){}
 }
 
-// Run commodity status bar patch 4s after load, then every 60s
-setTimeout(function() {
-  _refreshStatusBarComdty();
-  setInterval(_refreshStatusBarComdty, 60000);
+// Boot: commodity bar refresh at 5s, then every 90s
+setTimeout(function(){
+  _refreshComdtyBar();
+  setInterval(_refreshComdtyBar, 90000);
+}, 5000);
+
+// If chart is already open on page load (e.g. after refresh), start polling
+setTimeout(function(){
+  var sym = window._bbgActiveSym || window._bbgCurrentSym;
+  if (sym) _v12StartPoll(sym);
 }, 4000);
 
-// ── If chart is already open on load (e.g. page refresh), trigger watchdog ─
-setTimeout(function() {
-  var sym = window._bbgActiveSym || window._bbgCurrentSym;
-  if (sym) {
-    window._v11Watchdog(sym);
-    window._v11StartPoll(sym);
-  }
-}, 3500);
+// Expose for debug
+window._v12 = { liveFetch:_liveFetch, startPoll:_v12StartPoll, stopAll:_v12StopAll, YH:YH, BB:BB };
 
-console.log('[v11-PATCH] Live data patch loaded — Yahoo/Bybit/OKX/HL fallback active');
+console.log('[v12-ENGINE] Universal Live Data Engine loaded — Yahoo/Bybit/HL/Binance');
 })();
 
 
