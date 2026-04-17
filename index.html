@@ -35659,6 +35659,7 @@ if __name__ == "__main__":
     } catch(e2) {}
     throw new Error('fetch failed: ' + url);
   };
+  const _vsG = _apiFetch; // Alias for compatibility
 
   // ── DERIBIT: real options IV surface ─────────────────────────────────
   async function _loadDeribit(cur) {
@@ -35970,6 +35971,7 @@ if __name__ == "__main__":
   }
 
   // ── 3D SURFACE RENDER — volsurface-11 quality ───────────────────────
+  window._VS = window._VS || { CUR: 'btc', C: {} };
   const _ghAnimState={};
   const _ghAnimRAF={};
 
@@ -36079,84 +36081,33 @@ if __name__ == "__main__":
   }
 
 
-  async function _vsLoadSABR(sym){
-    const b=sym.toUpperCase()+'USDT';
-    let spot=0, kl=null;
-    try{
-      const [tk,_kl]=await Promise.all([
-        _vsG(`https://api.binance.com/api/v3/ticker/24hr?symbol=${b}`),
-        _vsG(`https://api.binance.com/api/v3/klines?symbol=${b}&interval=1h&limit=720`)
-      ]);
-      kl=_kl;
-      const cl=kl.map(k=>parseFloat(k[4])); spot=cl[cl.length-1];
-    }catch(e){ spot=sym==='btc'?84000:1600; }
-    const cl=kl?kl.map(k=>parseFloat(k[4])):[];
-    const ret=cl.length>1?cl.slice(-168).map((v,i,a)=>i>0?Math.log(v/a[i-1]):0).slice(1):[];
-    const hv=ret.length>5?Math.sqrt(ret.reduce((s,r)=>s+r*r,0)/ret.length)*Math.sqrt(8760):(sym==='btc'?0.65:0.75);
-    const al=Math.max(0.3,hv),be=0.7,ro=sym==='btc'?-0.15:-0.20,nu=0.35;
-    const DT=[1,3,5,7,10,14,21,30,45,60,90,120], NK=25, pts=[];
-    DT.forEach(dte=>{
-      const tau=dte/365;
-      for(let i=0;i<NK;i++){
-        const pct=-0.40+i*0.80/(NK-1), K=spot*(1+pct), F=spot;
-        let iv;
-        if(Math.abs(pct)<1e-4){ iv=al/Math.pow(F,1-be)*100; }
-        else {
-          const z=(nu/al)*Math.pow(F*K,(1-be)/2)*Math.log(F/K);
-          const chi=Math.abs(z)<1e-8?1:Math.log((Math.sqrt(1-2*ro*z+z*z)+z-ro)/(1-ro))/z;
-          const t1=al/(Math.pow(F*K,(1-be)/2)*(1+((1-be)*Math.log(F/K))**2/24+((1-be)*Math.log(F/K))**4/1920));
-          const t2=1+((1-be)**2/24*al**2/Math.pow(F*K,1-be)+ro*be*nu*al/(4*Math.pow(F*K,(1-be)/2))+nu**2*(2-3*ro**2)/24)*tau;
-          iv=Math.max(10,t1*(z/chi)*t2*100);
-        }
-        pts.push({K,dte,iv,src:'sabr'});
-      }
-    });
-    return {spot,pts,live:false,_src:'sabr'};
-  }
+  // [Redundant older loaders removed - using unified _loadBestOptions pipeline]
 
-  // Bybit options IV for volsurface panel
-  async function _vsLoadBybit(sym){
-    const CUR=sym.toUpperCase();
-    const [tkData,spotData]=await Promise.all([
-      _vsG(`https://api.bybit.com/v5/market/tickers?category=option&baseCoin=${CUR}&limit=500`),
-      _vsG(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${CUR}USDT`)
-    ]);
-    const spot=parseFloat(spotData?.result?.list?.[0]?.lastPrice||0);
-    if(!spot) throw new Error('Bybit no spot');
-    const now=Date.now(), pts=[], seen=new Set();
-    (tkData?.result?.list||[]).forEach(t=>{
-      try{
-        if(!t.symbol||!t.markIv)return;
-        const iv=parseFloat(t.markIv)*100;
-        if(!(iv>1&&iv<600))return;
-        const parts=t.symbol.split('-'); if(parts.length<4)return;
-        const K=parseFloat(parts[2]); if(!K||K<=0)return;
-        const expStr=parts[1].replace(/(\d+)([A-Z]+)(\d+)/,'$1 $2 20$3')+' 08:00 UTC';
-        const dte=Math.round((new Date(expStr)-now)/86400000);
-        if(dte<1||dte>365)return;
-        if(spot>0&&(K<spot*0.40||K>spot*1.70))return;
-        const key=`${K}_${dte}`; if(seen.has(key))return; seen.add(key);
-        pts.push({K,dte,iv,src:'bybit'});
-      }catch(e){}
-    });
-    if(pts.length<20) throw new Error('bybit insufficient: '+pts.length);
-    return {spot,pts,live:true,_src:'bybit'};
-  }
 
   async function _vsLoad(sym){
     const el=document.getElementById('vs-status');
     if(el){el.textContent='LOADING…';el.style.color='#555';}
     try {
       let d;
-      // Deribit → Bybit → SABR cascade
-      try { d=await _vsLoadDeribit(sym==='btc'?'BTC':'ETH'); if(!d.pts||d.pts.length<20) throw 0; }
-      catch(e){
-        try { d=await _vsLoadBybit(sym); if(!d.pts||d.pts.length<15) throw 0; }
-        catch(e2){ d=await _vsLoadSABR(sym); }
-      }
+      const CUR = sym.toUpperCase();
+      // Use global loaders (defined around 35777)
+      d = await _loadBestOptions(CUR);
+      
+      if(!d || !d.pts || d.pts.length < 15) throw new Error('Insufficient data');
+      
       _VS.C[sym]=d;
       _vsDraw(sym);
+      
+      // Update status text
+      if(el){
+        const srcMap={deribit:'● DERIBIT LIVE',bybit:'● BYBIT LIVE',sabr:'● SABR MODEL'};
+        const colMap={deribit:'#3fb950',bybit:'#f7a635',sabr:'#F39F41'};
+        const src=d._src||(d.live?'deribit':'sabr');
+        el.textContent = srcMap[src] || '● LIVE';
+        el.style.color = colMap[src] || '#3fb950';
+      }
     } catch(e){
+      console.error('_vsLoad failed for', sym, e);
       if(el){el.textContent='ERROR';el.style.color='#f44';}
     }
   }
@@ -36229,12 +36180,34 @@ if __name__ == "__main__":
   window.vsGo=function(sym){
     if(_VS.CUR===sym)return;
     _VS.CUR=sym;
-    const bb=document.getElementById('vs-bb'), be=document.getElementById('vs-be');
-    if(bb) bb.style.cssText=sym==='btc'?'padding:4px 13px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #FF9900;color:#FF9900;background:rgba(255,153,0,.07);border-radius:3px':'padding:4px 13px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #222;color:#444;background:transparent;border-radius:3px';
-    if(be) be.style.cssText=sym==='eth'?'padding:4px 13px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #00B7EB;color:#00B7EB;background:rgba(0,183,235,.07);border-radius:3px':'padding:4px 13px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #222;color:#444;background:transparent;border-radius:3px';
+    
+    // Update button styles dynamically
+    const symbols = ['btc','eth','sol','xrp','bnb','doge'];
+    const colors = {btc:'#FF9900', eth:'#00B7EB', sol:'#5DF2D6', xrp:'#23292F', bnb:'#F3BA2F', doge:'#C2A633'};
+    
+    symbols.forEach(s => {
+      const btn = document.getElementById('vs-btn-' + s);
+      if(!btn) return;
+      const isActive = (sym === s);
+      const color = colors[s] || '#F39F41';
+      
+      btn.style.cssText = isActive 
+        ? `padding:4px 10px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid ${color};color:${color};background:rgba(${isActive?hexToRgb(color):'0,0,0'},.07);border-radius:3px`
+        : `padding:4px 10px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #222;color:#444;background:transparent;border-radius:3px`;
+    });
+
     if(_VS.C[sym]) _vsDraw(sym);
     else _vsLoad(sym);
   };
+
+  // Helper for background rgba
+  function hexToRgb(hex) {
+    hex = hex.replace('#','');
+    var r = parseInt(hex.substring(0,2), 16);
+    var g = parseInt(hex.substring(2,4), 16);
+    var b = parseInt(hex.substring(4,6), 16);
+    return r + ',' + g + ',' + b;
+  }
 
   window.buildGHREPO=function(){
     // Load Plotly if needed
@@ -36243,9 +36216,27 @@ if __name__ == "__main__":
       s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';
       document.head.appendChild(s);
     }
+    
+    const symbols = ['btc','eth','sol','xrp','bnb','doge'];
+    const colors = {btc:'#FF9900', eth:'#00B7EB', sol:'#5DF2D6', xrp:'#133C63', bnb:'#F3BA2F', doge:'#C2A633'};
+
     // Kick off data load after DOM settles
-    _VS.CUR='btc';
-    setTimeout(()=>_vsLoad('btc'),50);
+    let startCur = 'btc';
+    if(window._bbgActiveSym) {
+      let parsed = window._bbgActiveSym.replace(/\/.*/, '').replace(/USDT/i, '').replace(/USD/i, '').toLowerCase();
+      if(symbols.includes(parsed)) startCur = parsed;
+    }
+    _VS.CUR=startCur;
+    setTimeout(()=>{ 
+      const btn=document.getElementById('vs-btn-' + startCur);
+      if(btn) btn.click();
+      else _vsLoad(startCur);
+    }, 100);
+
+    const btnHtml = symbols.map(s => {
+      const color = colors[s] || '#F39F41';
+      return `<div id="vs-btn-${s}" onclick="vsGo('${s}')" style="padding:4px 10px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #222;color:#444;background:transparent;border-radius:3px">${s.toUpperCase()}</div>`;
+    }).join('');
 
     return `<div style="width:100%;height:100%;background:#101114;position:relative;overflow:hidden">
   <div style="position:absolute;top:14px;left:20px;z-index:10;pointer-events:none">
@@ -36255,8 +36246,7 @@ if __name__ == "__main__":
     </div>
   </div>
   <div style="position:absolute;top:14px;right:20px;z-index:10;display:flex;gap:5px;align-items:center">
-    <div id="vs-bb" onclick="vsGo('btc')" style="padding:4px 13px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #FF9900;color:#FF9900;background:rgba(255,153,0,.07);border-radius:3px">BTC</div>
-    <div id="vs-be" onclick="vsGo('eth')" style="padding:4px 13px;font-size:10px;font-weight:600;letter-spacing:.5px;cursor:pointer;border:1px solid #222;color:#444;background:transparent;border-radius:3px">ETH</div>
+    ${btnHtml}
   </div>
   <div id="vs-plot" style="position:absolute;inset:0;width:100%;height:100%"></div>
 </div>`;
@@ -36509,9 +36499,19 @@ if __name__ == "__main__":
     } catch(e){ console.error('bq decode failed', e); return; }
     var iframe = document.getElementById('bq-iframe');
     if(!iframe) return;
-    // Inject CSS: hide topbar + Bloomberg Terminal Professional look (deep slate, clean hierarchy)
+    // Inject extra assets: SOL, XRP, BNB, DOGE
+    html = html.replace(
+      '<button class="asset-btn" data-asset="ETH">ETH</button>',
+      '<button class="asset-btn" data-asset="ETH">ETH</button>' +
+      '<button class="asset-btn" data-asset="SOL">SOL</button>' +
+      '<button class="asset-btn" data-asset="XRP">XRP</button>' +
+      '<button class="asset-btn" data-asset="BNB">BNB</button>' +
+      '<button class="asset-btn" data-asset="DOGE">DOGE</button>'
+    );
+    // Inject CSS: display topbar but hide logo + Bloomberg Terminal Professional look
     var injectedCss = '<style>'
       + '.topbar{display:none!important;}'
+      + '.logo{display:none!important;}'
       + '.container{padding-top:16px!important;padding-bottom:24px!important;max-width:100%!important;padding-left:20px!important;padding-right:20px!important;}'
       + /* Bloomberg Pro palette: deep slate/charcoal, never pure black, never blue-ish */
         ':root{'
@@ -36627,7 +36627,8 @@ if __name__ == "__main__":
       + /* up/down universal */
         '.up{color:#26c281!important;}.down{color:#e74c5c!important;}'
       + '</style>';
-    html = html.replace('</head>', injectedCss + '</head>');
+    var bgjs = '<scr'+'ipt>window.addEventListener("message", function(e){if(e.data&&e.data.type==="setAsset"){var bs=document.querySelectorAll(".asset-btn");for(var i=0;i<bs.length;i++){if(bs[i].dataset.asset===e.data.asset)bs[i].click();}}});</'+'script>';
+    html = html.replace('</head>', injectedCss + bgjs + '</head>');
     iframe.srcdoc = html;
     _bqLoaded = true;
   }
@@ -36642,6 +36643,15 @@ if __name__ == "__main__":
     if(!el) return;
     el.classList.add('active');
     _loadBq();
+    if(window._bbgActiveSym) {
+      setTimeout(function() {
+        var iframe = document.getElementById('bq-iframe');
+        var asset = window._bbgActiveSym.replace(/\/.*/, '').replace(/USDT/i, '').replace(/USD/i, '').toUpperCase();
+        if(['BTC','ETH','SOL','XRP','BNB','DOGE'].includes(asset) && iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({type:'setAsset', asset:asset}, '*');
+        }
+      }, 150);
+    }
   };
   // ESC closes overlay
   document.addEventListener('keydown', function(e){
@@ -37499,13 +37509,18 @@ window.buildOPTFLOW = function(){
              color:${_OF.tab===id?'#F39F41':'#665840'}">${label}</span>`
   ).join('');
 
-  const coinBar = ['BTC','ETH'].map(c=>
+  const coinBar = ['BTC','ETH','SOL','XRP'].map(c=>
     `<span onclick="window._ofSetCoin('${c}')"
       style="cursor:pointer;padding:1px 8px;font-size:8px;font-weight:700;
              border:1px solid ${_OF.cur===c?'#F39F41':'#1a0e00'};
              color:${_OF.cur===c?'#F39F41':'#443322'};background:${_OF.cur===c?'rgba(243,159,65,0.1)':'transparent'}">${c}</span>`
   ).join('');
 
+  // Read active sym
+  if(window._bbgActiveSym) {
+    let parsed = window._bbgActiveSym.replace(/\/.*/, '').replace(/USDT/i, '').replace(/USD/i, '').toUpperCase();
+    if(['BTC','ETH','SOL','XRP'].includes(parsed)) _OF.cur = parsed;
+  }
   // Trigger data load
   setTimeout(()=>{
     if(!_OF.data[_OF.cur] && !_OF.loading) _ofFetch(_OF.cur);
