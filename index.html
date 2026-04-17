@@ -39395,6 +39395,323 @@ function _ofRender(){
     if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_draw,100);document.head.appendChild(s);}
     else setTimeout(_draw,60);
 
+  } else if(tab === 'priceoi'){
+    // ── PRICE (5m CANDLES) + OPEN INTEREST side-by-side ───────────────────
+    panel.innerHTML = `<div style="display:flex;height:100%;gap:0;overflow:hidden">
+      <div id="poi-left" style="flex:1;height:100%;border-right:1px solid #0a0600;position:relative">
+        <div style="position:absolute;top:6px;left:10px;color:#F39F41;font-size:8.5px;font-weight:700;letter-spacing:1.5px;z-index:10">PRICE (5m CANDLES)</div>
+        <div id="poi-price-chart" style="width:100%;height:100%"></div>
+      </div>
+      <div id="poi-right" style="flex:1;height:100%;position:relative">
+        <div style="position:absolute;top:6px;left:10px;color:#22ccaa;font-size:8.5px;font-weight:700;letter-spacing:1.5px;z-index:10">OPEN INTEREST</div>
+        <div id="poi-oi-chart" style="width:100%;height:100%"></div>
+      </div>
+    </div>`;
+
+    const _drawPriceOI = async () => {
+      if(!window.Plotly || !document.getElementById('poi-price-chart')){setTimeout(_drawPriceOI,200);return;}
+      try {
+        const binSym = cur + 'USDT';
+        const [klRes, fundRes] = await Promise.allSettled([
+          fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${binSym}&interval=5m&limit=288`).then(r=>r.json()),
+          fetch(`https://fapi.binance.com/futures/data/openInterestHist?symbol=${binSym}&period=5m&limit=288`).then(r=>r.json())
+        ]);
+        const kl = klRes.status==='fulfilled' && Array.isArray(klRes.value) ? klRes.value : [];
+        const oih = fundRes.status==='fulfilled' && Array.isArray(fundRes.value) ? fundRes.value : [];
+
+        if(kl.length<10){
+          document.getElementById('poi-price-chart').innerHTML='<div style="padding:40px 20px;color:#665;font-size:10px;font-family:monospace;text-align:center">No Binance data for '+cur+'<br><span style="color:#443;font-size:8px">Stocks/commodities options chart not available via Binance</span></div>';
+          document.getElementById('poi-oi-chart').innerHTML='<div style="padding:40px 20px;color:#665;font-size:10px;font-family:monospace;text-align:center">No OI data</div>';
+          return;
+        }
+
+        const times = kl.map(k=>new Date(k[0]));
+        const opens = kl.map(k=>parseFloat(k[1]));
+        const highs = kl.map(k=>parseFloat(k[2]));
+        const lows  = kl.map(k=>parseFloat(k[3]));
+        const closes= kl.map(k=>parseFloat(k[4]));
+        const lastPx = closes[closes.length-1];
+        const firstPx = opens[0];
+        const pxChg = ((lastPx-firstPx)/firstPx*100);
+
+        Plotly.newPlot('poi-price-chart',[{
+          x:times,open:opens,high:highs,low:lows,close:closes,
+          type:'candlestick',
+          increasing:{line:{color:'#22ccaa',width:0.5},fillcolor:'rgba(34,204,170,0.9)'},
+          decreasing:{line:{color:'#ff4488',width:0.5},fillcolor:'rgba(255,68,136,0.9)'},
+          hovertemplate:'%{x|%H:%M}<br>O $%{open:,.2f}<br>H $%{high:,.2f}<br>L $%{low:,.2f}<br>C $%{close:,.2f}<extra></extra>'
+        }],{
+          paper_bgcolor:'#040408',plot_bgcolor:'#040408',autosize:true,margin:{l:55,r:10,t:32,b:40},
+          xaxis:{rangeslider:{visible:false},tickfont:{size:7,color:'#554'},gridcolor:'rgba(255,255,255,0.04)',color:'#554'},
+          yaxis:{tickfont:{size:8,color:'#554'},tickprefix:'$',tickformat:',.0f',gridcolor:'rgba(255,255,255,0.04)',color:'#554',zeroline:false},
+          showlegend:false,font:{color:'#777',family:'Roboto Mono,monospace'},
+          hoverlabel:{bgcolor:'#0a0a18',bordercolor:'#22ccaa',font:{color:'#fff',size:10}},
+          annotations:[{x:1,y:1.05,xref:'paper',yref:'paper',
+            text:`$${lastPx.toLocaleString(undefined,{maximumFractionDigits:0})} <span style="color:${pxChg>=0?'#22ee88':'#ff5577'}">${pxChg>=0?'+':''}${pxChg.toFixed(2)}%</span>`,
+            showarrow:false,font:{size:9,color:'#ccc'},align:'right',xanchor:'right'}]
+        },{responsive:true,displayModeBar:false});
+
+        if(oih.length>5){
+          const oiTimes=oih.map(o=>new Date(o.timestamp));
+          const oiVals=oih.map(o=>parseFloat(o.sumOpenInterestValue));
+          const oiLast=oiVals[oiVals.length-1];
+          const oiChg=((oiLast-oiVals[0])/oiVals[0]*100);
+          Plotly.newPlot('poi-oi-chart',[{
+            x:oiTimes,y:oiVals,type:'scatter',mode:'lines',
+            line:{color:'rgba(120,200,255,0.8)',width:1.4},
+            fill:'tozeroy',fillcolor:'rgba(30,80,150,0.2)',
+            hovertemplate:'%{x|%H:%M}<br>OI: $%{y:,.0f}<extra></extra>'
+          }],{
+            paper_bgcolor:'#040408',plot_bgcolor:'#040408',autosize:true,margin:{l:60,r:10,t:32,b:40},
+            xaxis:{tickfont:{size:7,color:'#554'},gridcolor:'rgba(255,255,255,0.04)',color:'#554'},
+            yaxis:{tickfont:{size:8,color:'#554'},tickprefix:'$',tickformat:'.2s',gridcolor:'rgba(255,255,255,0.04)',color:'#554',zeroline:false,range:[Math.min(...oiVals)*0.995,Math.max(...oiVals)*1.005]},
+            showlegend:false,font:{color:'#777',family:'Roboto Mono,monospace'},
+            hoverlabel:{bgcolor:'#0a0a18',bordercolor:'#22ccaa',font:{color:'#fff',size:10}},
+            annotations:[{x:1,y:1.05,xref:'paper',yref:'paper',
+              text:`OI: $${(oiLast/1e9).toFixed(2)}B <span style="color:${oiChg>=0?'#22ee88':'#ff5577'}">${oiChg>=0?'+':''}${oiChg.toFixed(1)}%</span>`,
+              showarrow:false,font:{size:9,color:'#ccc'},align:'right',xanchor:'right',
+              bgcolor:oiChg>=0?'rgba(15,50,25,0.75)':'rgba(50,15,25,0.75)',bordercolor:oiChg>=0?'#22cc66':'#cc4466',borderwidth:1,borderpad:4}]
+          },{responsive:true,displayModeBar:false});
+        } else {
+          document.getElementById('poi-oi-chart').innerHTML='<div style="padding:40px 20px;color:#665;font-size:10px;text-align:center">OI data unavailable</div>';
+        }
+      } catch(e){
+        document.getElementById('poi-price-chart').innerHTML='<div style="padding:40px;color:#c44;font-size:10px">Fetch failed: '+e.message+'</div>';
+      }
+    };
+    if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_drawPriceOI,100);document.head.appendChild(s);}
+    else setTimeout(_drawPriceOI,60);
+
+  } else if(tab === 'sessionret'){
+    // ── CUMULATIVE RETURNS BY SESSION (Asia/Europe/US) ────────────────────
+    panel.innerHTML = `<div style="height:100%;display:flex;flex-direction:column">
+      <div style="background:#060400;border-bottom:1px solid #1a0e00;padding:4px 12px;display:flex;align-items:center;gap:12px">
+        <span style="color:#F39F41;font-size:8.5px;font-weight:700;letter-spacing:1.5px">CUMULATIVE RETURNS BY SESSION</span>
+        <span style="color:#555;font-size:8px">Asia 00-08 UTC · Europe 08-14 UTC · US 14-22 UTC</span>
+        <div style="margin-left:auto;display:flex;gap:4px" id="sr-periods">
+          ${['1M','3M','6M','1Y','ALL'].map(p=>`<span data-period="${p}" onclick="window._srSetPeriod('${p}')" style="cursor:pointer;font-size:7.5px;padding:1px 7px;border:1px solid ${p==='6M'?'#F39F41':'#1a0e00'};color:${p==='6M'?'#F39F41':'#443322'};border-radius:2px">${p}</span>`).join('')}
+        </div>
+      </div>
+      <div style="padding:6px 12px;background:#040200;border-bottom:1px solid #0a0600;font-family:'Roboto Mono',monospace;font-size:7.5px" id="sr-stats">
+        <div style="color:#443">Loading session stats...</div>
+      </div>
+      <div id="sr-plot" style="flex:1;min-height:0"></div>`;
+
+    window._srPeriod = window._srPeriod || '6M';
+
+    const _drawSR = async () => {
+      if(!window.Plotly || !document.getElementById('sr-plot')){setTimeout(_drawSR,200);return;}
+      try {
+        const binSym = cur + 'USDT';
+        const days = {'1M':30,'3M':90,'6M':180,'1Y':365,'ALL':1000}[window._srPeriod]||180;
+        const limit = Math.min(1000, days*24);
+        const klRes = await fetch(`https://api.binance.com/api/v3/klines?symbol=${binSym}&interval=1h&limit=${limit}`).then(r=>r.json());
+        if(!Array.isArray(klRes) || klRes.length<24){
+          document.getElementById('sr-plot').innerHTML='<div style="padding:40px;color:#665;font-size:10px;text-align:center">No data for '+cur+'</div>';
+          return;
+        }
+        const bars = klRes.map(k=>({t:k[0],open:parseFloat(k[1]),close:parseFloat(k[4]),ret:(parseFloat(k[4])-parseFloat(k[1]))/parseFloat(k[1])}));
+        const sessionOf = ts => {const h=new Date(ts).getUTCHours(); return h<8?'Asia':h<14?'Europe':h<22?'US':'Asia';};
+        const cumVal = {Asia:1,Europe:1,US:1};
+        const cumul = {Asia:[],Europe:[],US:[]};
+        const times = [];
+        const stats = {Asia:{wins:0,total:0,vols:[]},Europe:{wins:0,total:0,vols:[]},US:{wins:0,total:0,vols:[]}};
+        bars.forEach(b=>{
+          const s = sessionOf(b.t);
+          cumVal[s] *= (1+b.ret);
+          if(b.ret>0) stats[s].wins++;
+          stats[s].total++;
+          stats[s].vols.push(b.ret);
+          times.push(new Date(b.t));
+          cumul.Asia.push((cumVal.Asia-1)*100);
+          cumul.Europe.push((cumVal.Europe-1)*100);
+          cumul.US.push((cumVal.US-1)*100);
+        });
+
+        const fmtPct = v=>(v>=0?'+':'')+v.toFixed(2)+'%';
+        const winPct = s=>stats[s].total>0?(stats[s].wins/stats[s].total*100).toFixed(1):'—';
+        const stdDev = s=>{const v=stats[s].vols; if(v.length<2)return 0; const m=v.reduce((a,b)=>a+b,0)/v.length; return Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/v.length)*100;};
+        const maxRet = s=>stats[s].vols.length?Math.max(...stats[s].vols)*100:0;
+        const curRet = s=>(cumVal[s]-1)*100;
+
+        const sr_stats = document.getElementById('sr-stats');
+        let statsHTML = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;gap:8px">
+          <div style="color:#554;letter-spacing:1px">SESSION</div>
+          <div style="color:#554;text-align:right">RETURN</div>
+          <div style="color:#554;text-align:right">WIN %</div>
+          <div style="color:#554;text-align:right">VOLATILITY</div>
+          <div style="color:#554;text-align:right">BEST BAR</div>
+          <div style="color:#554;text-align:right">CURRENT</div>`;
+        [['Asia','#22ccdd'],['Europe','#F39F41'],['US','#ff6688']].forEach(([s,c])=>{
+          statsHTML += `
+            <div style="color:${c};font-weight:700">${s}</div>
+            <div style="color:${curRet(s)>=0?'#22ee88':'#ff5577'};text-align:right">${fmtPct(curRet(s))}</div>
+            <div style="color:#999;text-align:right">${winPct(s)}%</div>
+            <div style="color:#999;text-align:right">${stdDev(s).toFixed(2)}%</div>
+            <div style="color:#22ee88;text-align:right">${fmtPct(maxRet(s))}</div>
+            <div style="color:${curRet(s)>=0?'#22ee88':'#ff5577'};text-align:right">${fmtPct(curRet(s))}</div>`;
+        });
+        statsHTML += '</div>';
+        sr_stats.innerHTML = statsHTML;
+
+        Plotly.newPlot('sr-plot',[
+          {x:times,y:cumul.Asia,type:'scatter',mode:'lines',name:'Asia',line:{color:'#22ccdd',width:1.5},hovertemplate:'Asia: %{y:+.2f}%<extra></extra>'},
+          {x:times,y:cumul.Europe,type:'scatter',mode:'lines',name:'Europe',line:{color:'#F39F41',width:1.5},hovertemplate:'Europe: %{y:+.2f}%<extra></extra>'},
+          {x:times,y:cumul.US,type:'scatter',mode:'lines',name:'US',line:{color:'#ff6688',width:1.5},hovertemplate:'US: %{y:+.2f}%<extra></extra>'}
+        ],{
+          paper_bgcolor:'#040408',plot_bgcolor:'#040408',autosize:true,margin:{l:55,r:15,t:10,b:40},
+          xaxis:{tickfont:{size:7,color:'#554'},gridcolor:'rgba(255,255,255,0.04)',color:'#554'},
+          yaxis:{tickfont:{size:8,color:'#554'},ticksuffix:'%',tickformat:'+.0f',gridcolor:'rgba(255,255,255,0.04)',color:'#554',zeroline:true,zerolinecolor:'rgba(255,255,255,0.2)'},
+          legend:{orientation:'h',x:0,y:1.08,font:{size:8,color:'#ccc'},bgcolor:'rgba(0,0,0,0)'},
+          font:{color:'#777',family:'Roboto Mono,monospace'},
+          hoverlabel:{bgcolor:'#0a0a18',bordercolor:'#22ccdd',font:{color:'#fff',size:10}},
+          hovermode:'x unified'
+        },{responsive:true,displayModeBar:false});
+      } catch(e){
+        document.getElementById('sr-plot').innerHTML='<div style="padding:40px;color:#c44;font-size:10px">'+e.message+'</div>';
+      }
+    };
+    window._srSetPeriod = p => {
+      window._srPeriod = p;
+      document.querySelectorAll('#sr-periods [data-period]').forEach(el=>{
+        const a=el.dataset.period===p;
+        el.style.borderColor=a?'#F39F41':'#1a0e00';
+        el.style.color=a?'#F39F41':'#443322';
+      });
+      _drawSR();
+    };
+    if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_drawSR,100);document.head.appendChild(s);}
+    else setTimeout(_drawSR,60);
+
+  } else if(tab === 'hedgepressure'){
+    // ── MULTI-GREEK HEDGE PRESSURE (Gamma + Vanna + Charm scenarios) ──────
+    window._hpScenario = window._hpScenario || 'Rally+VC';
+    panel.innerHTML = `<div style="height:100%;display:flex;flex-direction:column">
+      <div style="background:#060400;border-bottom:1px solid #1a0e00;padding:4px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="color:#F39F41;font-size:8.5px;font-weight:700;letter-spacing:1.5px">MULTI-GREEK HEDGE PRESSURE</span>
+        <span style="color:#555;font-size:8px">Gamma + Vanna + Charm by Strike</span>
+        <div style="margin-left:auto;display:flex;gap:3px" id="hp-scenarios">
+          ${['Rally+VC','Sell+VS','Spot+1%','Spot-1%','VolCrush','VolSpike'].map(s=>`<span data-scen="${s}" onclick="window._hpSetScen('${s}')" style="cursor:pointer;font-size:7.5px;padding:2px 8px;border:1px solid ${s==='Rally+VC'?'#8844ff':'#1a0e00'};color:${s==='Rally+VC'?'#cc88ff':'#443322'};background:${s==='Rally+VC'?'rgba(136,68,255,0.1)':'transparent'};border-radius:2px">${s}</span>`).join('')}
+        </div>
+      </div>
+      <div style="padding:3px 12px;background:#040200;border-bottom:1px solid #0a0600;display:flex;gap:16px;font-size:7.5px;font-family:'Roboto Mono',monospace">
+        <span style="color:#22ee88">■ Gamma</span>
+        <span style="color:#22aaff">■ Vanna</span>
+        <span style="color:#ffaa44">■ Charm</span>
+        <span style="color:#555;margin-left:auto">Dealers short gamma = amplified moves, long gamma = pinning</span>
+      </div>
+      <div id="hp-plot" style="flex:1;min-height:0"></div>`;
+
+    window._hpSetScen = s => {
+      window._hpScenario = s;
+      document.querySelectorAll('#hp-scenarios [data-scen]').forEach(el=>{
+        const a=el.dataset.scen===s;
+        el.style.borderColor=a?'#8844ff':'#1a0e00';
+        el.style.color=a?'#cc88ff':'#443322';
+        el.style.background=a?'rgba(136,68,255,0.1)':'transparent';
+      });
+      _drawHP();
+    };
+
+    const _drawHP = () => {
+      if(!window.Plotly || !document.getElementById('hp-plot')){setTimeout(_drawHP,200);return;}
+      const scenMap = {'Rally+VC':{dS:+0.03,dV:-0.05},'Sell+VS':{dS:-0.03,dV:+0.05},'Spot+1%':{dS:+0.01,dV:0},'Spot-1%':{dS:-0.01,dV:0},'VolCrush':{dS:0,dV:-0.10},'VolSpike':{dS:0,dV:+0.10}};
+      const {dS,dV} = scenMap[window._hpScenario] || {dS:0,dV:0};
+      const newSpot = spot*(1+dS);
+      const gm = {};
+      opts.forEach(o=>{
+        if(!o.K||!o.oi||!o.iv) return;
+        const k = Math.round(o.K/1000)*1000;
+        if(!gm[k]) gm[k] = {K:k,gamma:0,vanna:0,charm:0};
+        const sign = o.type==='C'?1:-1;
+        const newIv = Math.max(5, o.iv*(1+dV));
+        const T = Math.max(o.dte,0.1)/365;
+        const sig = newIv/100;
+        const d1 = (Math.log(newSpot/o.K) + 0.5*sig*sig*T)/(sig*Math.sqrt(T));
+        const d2 = d1 - sig*Math.sqrt(T);
+        const nd1 = Math.exp(-0.5*d1*d1)/Math.sqrt(2*Math.PI);
+        const gamma = nd1/(newSpot*sig*Math.sqrt(T));
+        const vanna = -nd1*d2/sig;
+        const charm_val = -nd1*d2/(2*T);
+        const dealerSign = -1;
+        gm[k].gamma += dealerSign*sign*gamma*o.oi*spot*spot*0.0001;
+        gm[k].vanna += dealerSign*sign*vanna*o.oi*1000;
+        gm[k].charm += dealerSign*sign*charm_val*o.oi*500;
+      });
+      const rows = Object.values(gm).filter(d=>d.K>=spot*0.55&&d.K<=spot*1.55).sort((a,b)=>a.K-b.K);
+      if(rows.length<3){document.getElementById('hp-plot').innerHTML='<div style="padding:40px;color:#665;font-size:10px">Insufficient data</div>';return;}
+      const yLabels = rows.map(r=>'$'+Math.round(r.K/1000)+'K');
+      Plotly.newPlot('hp-plot',[
+        {x:rows.map(r=>r.gamma),y:yLabels,type:'bar',orientation:'h',name:'Gamma',marker:{color:'rgba(34,238,136,0.85)'}},
+        {x:rows.map(r=>r.vanna),y:yLabels,type:'bar',orientation:'h',name:'Vanna',marker:{color:'rgba(34,170,255,0.85)'}},
+        {x:rows.map(r=>r.charm),y:yLabels,type:'bar',orientation:'h',name:'Charm',marker:{color:'rgba(255,170,68,0.85)'}}
+      ],{
+        paper_bgcolor:'#040408',plot_bgcolor:'#040408',barmode:'group',autosize:true,margin:{l:70,r:15,t:15,b:45},
+        xaxis:{title:'Hedge Flow ($)',titlefont:{size:8,color:'#554'},tickfont:{size:7,color:'#554'},gridcolor:'rgba(255,255,255,0.04)',color:'#554',zeroline:true,zerolinecolor:'rgba(255,255,255,0.2)'},
+        yaxis:{title:'Strike',titlefont:{size:8,color:'#554'},tickfont:{size:7,color:'#554'},gridcolor:'rgba(255,255,255,0.03)',color:'#554'},
+        legend:{orientation:'h',x:0,y:-0.12,font:{size:8},bgcolor:'rgba(0,0,0,0)'},
+        shapes:[{type:'line',y0:'$'+Math.round(spot/1000)+'K',y1:'$'+Math.round(spot/1000)+'K',x0:0,x1:1,xref:'paper',line:{color:'rgba(243,159,65,0.6)',width:1.5,dash:'dash'}}],
+        annotations:[{x:1,y:'$'+Math.round(spot/1000)+'K',xref:'paper',text:`Spot · ${window._hpScenario}`,showarrow:false,font:{size:8,color:'#F39F41'},xanchor:'right',bgcolor:'rgba(10,10,25,0.85)',borderpad:3}],
+        font:{color:'#777',family:'Roboto Mono,monospace'},bargap:0.1,bargroupgap:0.05
+      },{responsive:true,displayModeBar:false});
+    };
+    if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_drawHP,100);document.head.appendChild(s);}
+    else setTimeout(_drawHP,60);
+
+  } else if(tab === 'hedgeheatmap'){
+    // ── HEDGE PRESSURE HEATMAP (Strike × IV shift) ────────────────────────
+    panel.innerHTML = `<div style="height:100%;display:flex;flex-direction:column">
+      <div style="background:#060400;border-bottom:1px solid #1a0e00;padding:4px 12px;display:flex;align-items:center;gap:12px">
+        <span style="color:#F39F41;font-size:8.5px;font-weight:700;letter-spacing:1.5px">HEDGE PRESSURE HEATMAP</span>
+        <span style="color:#555;font-size:8px">Strike × IV Surface · Green = Net Buying, Red = Net Selling</span>
+      </div>
+      <div id="hh-plot" style="flex:1;min-height:0"></div>`;
+
+    const _drawHH = () => {
+      if(!window.Plotly || !document.getElementById('hh-plot')){setTimeout(_drawHH,200);return;}
+      const strikes = [...new Set(opts.map(o=>Math.round(o.K/1000)*1000))].sort((a,b)=>b-a).filter(k=>k>=spot*0.55&&k<=spot*1.55);
+      const ivShifts = [];
+      for(let s=-15;s<=15;s+=1.5) ivShifts.push(s/100);
+      const Z = strikes.map(k=>ivShifts.map(dV=>{
+        let flow=0;
+        opts.filter(o=>Math.round(o.K/1000)*1000===k).forEach(o=>{
+          if(!o.oi||!o.iv) return;
+          const sign=o.type==='C'?1:-1;
+          const newIv=Math.max(5,o.iv*(1+dV));
+          const T=Math.max(o.dte,0.1)/365;
+          const sig=newIv/100;
+          const d1=(Math.log(spot/o.K)+0.5*sig*sig*T)/(sig*Math.sqrt(T));
+          const d2=d1-sig*Math.sqrt(T);
+          const nd1=Math.exp(-0.5*d1*d1)/Math.sqrt(2*Math.PI);
+          const vanna=-nd1*d2/sig;
+          flow += -sign*vanna*o.oi*dV*spot;
+        });
+        return flow;
+      }));
+      const absMax = Math.max(...Z.flat().map(Math.abs))||1;
+      const currentIV = opts.filter(o=>o.iv>0).reduce((a,b,_,arr)=>a+b.iv/arr.length,0);
+
+      Plotly.newPlot('hh-plot',[{
+        type:'heatmap',z:Z,
+        x:ivShifts.map(v=>(currentIV*(1+v)).toFixed(1)),
+        y:strikes.map(k=>'$'+Math.round(k/1000)+'K'),
+        colorscale:[[0,'#5c1a4a'],[0.15,'#bb1133'],[0.3,'#ee3333'],[0.45,'#cc3355'],[0.5,'#060608'],[0.55,'#0a4020'],[0.65,'#226622'],[0.8,'#22cc44'],[1,'#66ff88']],
+        zmin:-absMax,zmax:absMax,zmid:0,
+        hovertemplate:'Strike %{y}<br>IV %{x}%<br>Flow: %{z:+.0f}<extra></extra>',
+        colorbar:{title:{text:'Flow',font:{color:'#888',size:9}},tickfont:{color:'#666',size:8},thickness:10,len:0.6,x:1.02,tickvals:[-absMax,0,absMax],ticktext:['Selling','0','Buying']}
+      }],{
+        paper_bgcolor:'#040408',plot_bgcolor:'#040408',autosize:true,margin:{l:70,r:100,t:20,b:45},
+        xaxis:{title:'IV (%)',titlefont:{size:8,color:'#554'},tickfont:{size:7,color:'#554'}},
+        yaxis:{title:'Strike',titlefont:{size:8,color:'#554'},tickfont:{size:7,color:'#554'}},
+        annotations:[{x:currentIV.toFixed(1),yref:'paper',y:1.02,text:`IV: ${currentIV.toFixed(1)}%`,showarrow:false,font:{size:9,color:'#F39F41'},bgcolor:'rgba(30,20,5,0.85)',bordercolor:'#F39F41',borderpad:3,borderwidth:1}],
+        shapes:[{type:'line',x0:currentIV.toFixed(1),x1:currentIV.toFixed(1),y0:0,y1:1,yref:'paper',line:{color:'#F39F41',width:1.5,dash:'dot'}}],
+        font:{color:'#777',family:'Roboto Mono,monospace'}
+      },{responsive:true,displayModeBar:false});
+    };
+    if(!window.Plotly){const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.1/plotly.min.js';s.onload=()=>setTimeout(_drawHH,100);document.head.appendChild(s);}
+    else setTimeout(_drawHH,60);
+
+
   }
 }
 
@@ -39422,6 +39739,10 @@ window.buildOPTFLOW = function(){
     {id:'maxpain',label:'Max Pain'},
     {id:'putcall',label:'P/C Ratio'},
     {id:'chainsum',label:'Chain Summary'},
+    {id:'priceoi',label:'Price + OI'},
+    {id:'sessionret',label:'Session Returns'},
+    {id:'hedgepressure',label:'Hedge Pressure'},
+    {id:'hedgeheatmap',label:'Hedge Heatmap'},
   ];
   const tabBar = tabs.map(({id,label})=>
     `<span id="optflow-tab-${id}" onclick="window._ofSetTab('${id}')"
@@ -39430,8 +39751,28 @@ window.buildOPTFLOW = function(){
              color:${_OF.tab===id?'#F39F41':'#665840'}">${label}</span>`
   ).join('');
 
-  const ALL_COINS = ['BTC','ETH','SOL','XRP','BNB','MATIC','AVAX','HYPE','DOGE','LINK','ARB','SUI','TON','DOT'];
-  const coinBar = ALL_COINS.map(c=>
+  const CRYPTO_COINS = ['BTC','ETH','SOL','XRP','BNB','MATIC','AVAX','HYPE','DOGE','LINK','ARB','SUI','TON','DOT','ADA','LTC','NEAR','AAVE','ATOM','FIL','PEPE'];
+  const STOCKS_OPT = ['MSTR','COIN','SOFI','HOOD','TSLA','NVDA','AAPL','MSFT','META','GOOGL','AMZN','SPY','QQQ','GLD','USO'];
+  const COMMODITIES = ['OIL','GOLD','SILVER','NATGAS','COPPER','WHEAT','CORN'];
+  const ALL_COINS = CRYPTO_COINS;  // keep for back-compat with _ofSetCoin
+  const _assetCat = window._ofAssetCat || 'CRYPTO';
+  window._ofAssetCat = _assetCat;
+  const _getCoinsForCat = cat => cat==='STOCKS'?STOCKS_OPT : cat==='COMMODITIES'?COMMODITIES : CRYPTO_COINS;
+  const activeList = _getCoinsForCat(_assetCat);
+  // Ensure cur is valid for category
+  if(!activeList.includes(_OF.cur)) _OF.cur = activeList[0];
+  // Asset category tabs (CRYPTO / STOCKS / COMMODITIES)
+  const catBar = ['CRYPTO','STOCKS','COMMODITIES'].map(cat => {
+    const active = _assetCat===cat;
+    const color = cat==='CRYPTO'?'#22ccff' : cat==='STOCKS'?'#F39F41' : '#cc9944';
+    return `<span onclick="window._ofSetAssetCat('${cat}')"
+      style="cursor:pointer;padding:2px 9px;font-size:8.5px;font-weight:700;letter-spacing:1px;
+             border:1px solid ${active?color:'#1a0e00'};
+             color:${active?color:'#443322'};background:${active?'rgba(255,255,255,0.03)':'transparent'};
+             border-radius:2px">${cat}</span>`;
+  }).join('');
+
+  const coinBar = activeList.map(c=>
     `<span onclick="window._ofSetCoin('${c}')"
       style="cursor:pointer;padding:1px 7px;font-size:8px;font-weight:700;
              border:1px solid ${_OF.cur===c?'#F39F41':'#1a0e00'};
@@ -39441,7 +39782,7 @@ window.buildOPTFLOW = function(){
   // Read active sym
   if(window._bbgActiveSym) {
     let parsed = window._bbgActiveSym.replace(/\/.*/, '').replace(/USDT/i, '').replace(/USD/i, '').toUpperCase();
-    if(ALL_COINS.includes(parsed)) _OF.cur = parsed;
+    if([...CRYPTO_COINS,...STOCKS_OPT,...COMMODITIES].includes(parsed)) _OF.cur = parsed;
   }
   // Trigger data load
   setTimeout(()=>{
@@ -39456,10 +39797,14 @@ window.buildOPTFLOW = function(){
   }, 50);
 
   return `<div style="height:100%;background:#000;font-family:'Courier Prime',monospace;display:flex;flex-direction:column">
-    <!-- Header -->
+    <!-- Asset category bar -->
     <div style="background:#060400;border-bottom:1px solid #1a0e00;padding:3px 10px;display:flex;gap:6px;align-items:center;flex-shrink:0">
       <span style="color:#F39F41;font-size:8px;font-weight:700;letter-spacing:2px">OPTIONS FLOW &amp; GEX</span>
-      <div style="display:flex;gap:4px">${coinBar}</div>
+      <div style="display:flex;gap:4px">${catBar}</div>
+    </div>
+    <!-- Coin bar -->
+    <div style="background:#040200;border-bottom:1px solid #1a0e00;padding:3px 10px;display:flex;gap:4px;align-items:center;flex-shrink:0;overflow-x:auto;scrollbar-width:thin">
+      <div style="display:flex;gap:3px;flex-wrap:nowrap">${coinBar}</div>
       <span onclick="if(!window._OF||!window._OF.loading)window._ofFetch(window._OF.cur)"
         style="cursor:pointer;color:#443;font-size:8px;padding:1px 6px;border:1px solid #1a0e00;margin-left:4px"
         onmouseover="this.style.color='#F39F41'" onmouseout="this.style.color='#443'">↺ Refresh</span>
@@ -39476,7 +39821,7 @@ window.buildOPTFLOW = function(){
 window._ofSetTab = function(id){
   _OF.tab = id;
   // Update tab styles
-  ['summary','volsmile','gex','gexprofile','strikeexpiry','3dvol','probsurface','probdensity','chainsum','probheatmap','volcurves','oiexpiry','expectedmove','termstruct','ivrv','greeks','charmsurf','premtide','oichange','maxpain','putcall'].forEach(t=>{
+  ['summary','volsmile','gex','gexprofile','strikeexpiry','3dvol','probsurface','probdensity','chainsum','probheatmap','volcurves','oiexpiry','expectedmove','termstruct','ivrv','greeks','charmsurf','premtide','oichange','maxpain','putcall','priceoi','sessionret','hedgepressure','hedgeheatmap'].forEach(t=>{
     const el=document.getElementById('optflow-tab-'+t);
     if(el){
       el.style.borderBottom = t===id?'2px solid #F39F41':'2px solid transparent';
@@ -39485,6 +39830,25 @@ window._ofSetTab = function(id){
   });
   _ofRender();
 };
+window._ofSetAssetCat = function(cat){
+  window._ofAssetCat = cat;
+  // Reset to first coin of new category
+  const lists = {
+    CRYPTO: ['BTC','ETH','SOL','XRP','BNB','MATIC','AVAX','HYPE','DOGE','LINK','ARB','SUI','TON','DOT','ADA','LTC','NEAR','AAVE','ATOM','FIL','PEPE'],
+    STOCKS: ['MSTR','COIN','SOFI','HOOD','TSLA','NVDA','AAPL','MSFT','META','GOOGL','AMZN','SPY','QQQ','GLD','USO'],
+    COMMODITIES: ['OIL','GOLD','SILVER','NATGAS','COPPER','WHEAT','CORN']
+  };
+  const firstCoin = lists[cat]?.[0] || 'BTC';
+  _OF.cur = firstCoin;
+  // Re-render the whole panel to update coin list
+  const panelBody = document.getElementById('optflow-body');
+  if(panelBody){
+    const rootContainer = panelBody.closest('[data-panel="OPTFLOW"]') || panelBody.parentElement;
+    if(rootContainer) rootContainer.innerHTML = window.buildOPTFLOW();
+  }
+  if(!_OF.data[firstCoin] && !_OF.loading) _ofFetch(firstCoin);
+};
+
 window._ofSetCoin = function(c){
   _OF.cur = c;
   // Update coin tab styles
@@ -40058,3 +40422,4 @@ if (document.readyState === 'loading') {
 </script>
 </body>
 </html>
+
