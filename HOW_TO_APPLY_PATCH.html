@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Bloomberg Terminal — Data Patch Instructions</title>
+<style>
+  body { background:#111; color:#ccc; font-family:'Courier New',monospace; padding:30px; max-width:900px; }
+  h1 { color:#F39F41; font-size:18px; letter-spacing:2px; }
+  h2 { color:#ff8800; font-size:13px; letter-spacing:1px; margin-top:30px; }
+  code { background:#1a1200; border:1px solid #2a2000; padding:2px 6px; color:#F39F41; font-size:11px; }
+  pre { background:#0a0800; border:1px solid #2a2000; padding:16px; overflow-x:auto; font-size:10px; color:#c8b880; line-height:1.5; }
+  .ok { color:#00cc44; }
+  .warn { color:#ff8800; }
+  .err { color:#ff3333; }
+  .step { background:#0d0a00; border-left:3px solid #F39F41; padding:10px 16px; margin:10px 0; }
+  kbd { background:#333; border:1px solid #555; padding:2px 5px; border-radius:3px; color:#fff; font-size:11px; }
+</style>
+</head>
+<body>
+
+<h1>▶ BLOOMBERG TERMINAL — DATA PATCH v1.0</h1>
+<p style="color:#666;font-size:11px">Fixes: COMDTY null prices · Chart header At/Op/Hi/Lo dashes · Status bar static data · FX panel</p>
+
+<hr style="border-color:#1a1200;margin:20px 0">
+
+<h2>🔴 PROBLEMS FIXED</h2>
+<ul style="font-size:11px;line-height:2">
+  <li><span class="err">BRENT/USDT panel</span> — At:-:- Op:— Hi:— Lo:— Close:— Vol:— <br>
+      <span class="ok">→ Now seeded from live Yahoo Finance BZ=F within 3 seconds</span></li>
+  <li><span class="err">COMDTY_DATA has px:null</span> for ALL commodities (Gold, Oil, Silver, etc.)<br>
+      <span class="ok">→ Yahoo Finance futures (GC=F, CL=F, BZ=F, NG=F…) fetched as fallback</span></li>
+  <li><span class="err">Status bar</span> — BTC/ETH/Gold/WTI prices show "—" when Stooq fails<br>
+      <span class="ok">→ Force-refreshed after each Yahoo fetch cycle</span></li>
+  <li><span class="err">FX panel</span> — EUR/USD, GBP/USD etc. show static data<br>
+      <span class="ok">→ Yahoo Finance FX spot rates fetched live</span></li>
+  <li><span class="err">Stooq single point of failure</span><br>
+      <span class="ok">→ Yahoo Finance runs in parallel, fills gaps when Stooq is blocked</span></li>
+</ul>
+
+<h2>📋 HOW TO APPLY (TWO OPTIONS)</h2>
+
+<div class="step">
+  <strong style="color:#F39F41">OPTION A — Permanent fix (edit the HTML file)</strong><br><br>
+  1. Open <code>bloomberg_terminal_v5-8_fixed-3.html</code> in a text editor<br>
+  2. Find the very last line: <code>&lt;/body&gt;</code><br>
+  3. Paste the entire contents of <code>bloomberg_terminal_patch.js</code> just BEFORE it, wrapped in script tags:<br><br>
+  <pre>&lt;!-- DATA PATCH --&gt;
+&lt;script&gt;
+/* paste entire bloomberg_terminal_patch.js content here */
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+  4. Save and reload the file in your browser.
+</div>
+
+<div class="step">
+  <strong style="color:#F39F41">OPTION B — Live browser console injection (no file edit needed)</strong><br><br>
+  1. Open the terminal in your browser<br>
+  2. Press <kbd>F12</kbd> → go to <strong>Console</strong> tab<br>
+  3. Paste the entire contents of <code>bloomberg_terminal_patch.js</code> and press <kbd>Enter</kbd><br>
+  4. You should see: <code style="color:#00cc44">[PATCH] Bloomberg Terminal data patch loading...</code><br><br>
+  ⚠ This only lasts until you reload the page. Use Option A for a permanent fix.
+</div>
+
+<h2>✅ EXPECTED OUTPUT AFTER PATCH</h2>
+<pre style="color:#00cc44">
+[PATCH] Bloomberg Terminal data patch loading...
+[PATCH-INIT] Starting data patch...
+[PATCH-INIT] Commodity prices updated: 15
+[PATCH-INIT] FX pairs updated: 20
+[PATCH] Loaded. Yahoo Finance commodity + FX fallback active. Chart header seeding active.
+</pre>
+
+<h2>📡 DATA SOURCES ADDED BY PATCH</h2>
+<table style="font-size:11px;border-collapse:collapse;width:100%">
+<tr style="color:#F39F41"><td style="padding:4px 8px">Symbol</td><td style="padding:4px 8px">Yahoo Ticker</td><td style="padding:4px 8px">Name</td></tr>
+<tr><td style="padding:3px 8px;color:#888">XAU → CO1</td><td style="padding:3px 8px">GC=F → BZ=F</td><td style="padding:3px 8px">Gold → Brent Crude</td></tr>
+<tr><td style="padding:3px 8px;color:#888">CL1 → NG1</td><td style="padding:3px 8px">CL=F → NG=F</td><td style="padding:3px 8px">WTI Crude → Nat Gas</td></tr>
+<tr><td style="padding:3px 8px;color:#888">HG1 → W1</td><td style="padding:3px 8px">HG=F → ZW=F</td><td style="padding:3px 8px">Copper → Wheat</td></tr>
+<tr><td style="padding:3px 8px;color:#888">C1 → S1</td><td style="padding:3px 8px">ZC=F → ZS=F</td><td style="padding:3px 8px">Corn → Soybeans</td></tr>
+<tr><td style="padding:3px 8px;color:#888">EUR/USD → GBP/JPY</td><td style="padding:3px 8px">EURUSD=X → GBPJPY=X</td><td style="padding:3px 8px">24 FX pairs</td></tr>
+</table>
+
+<h2>🔄 REFRESH CADENCE</h2>
+<ul style="font-size:11px;line-height:1.8">
+  <li>Immediate: 500ms after load</li>
+  <li>Initial: 3s after load (after Stooq has had a chance to run)</li>
+  <li>Periodic: every 30s (same as existing Stooq interval)</li>
+  <li>On chart symbol change: 2.5s + 6s after switch</li>
+</ul>
+
+<h2>🛠 ROOT CAUSE SUMMARY</h2>
+<p style="font-size:11px;line-height:1.8;color:#888">
+All entries in <code>COMDTY_DATA[]</code> were initialized with <code>px:null</code> and relied 100% on <code>fetchStooq()</code> 
+to populate them. When Stooq's CSV endpoint is blocked (CORS, rate-limit, or geo-block), 
+all commodity prices stay null indefinitely. The chart header (At/Op/Hi/Lo/Vol) reads from 
+<code>window._chigh</code>, <code>window._clow</code>, <code>window._firstBbgPrice</code>, <code>window._cvol</code> — 
+these globals are only set by the TradingView iframe postMessage handler. 
+For commodity symbols like BRENT (TVC:UKOIL), the iframe loads but often doesn't 
+trigger the expected price-update messages in time. The patch adds Yahoo Finance futures 
+as a parallel data layer and seeds the globals directly from real data.
+</p>
+
+</body>
+</html>
