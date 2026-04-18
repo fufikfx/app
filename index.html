@@ -41629,10 +41629,16 @@ async function _liveFetch(sym) {
   sym = sym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
 
   // Hyperliquid-native tokens
-  if (IS_HL[sym]) return await _hlFetch(sym);
+  if (IS_HL[sym]) {
+    const res = await _hlFetch(sym);
+    if (res) return res;
+  }
 
   // Hyperliquid xyz: equities & pre-IPO (HIP-3)
-  if (IS_HL_XYZ[sym]) return await _hlXyzFetch(sym);
+  if (IS_HL_XYZ[sym]) {
+    const res = await _hlXyzFetch(sym);
+    if (res) return res;
+  }
 
   // Crypto — Binance spot is most reliable
   if (IS_CRYPTO[sym]) {
