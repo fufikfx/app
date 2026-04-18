@@ -6036,7 +6036,7 @@ const LYR_LABELS={mkt:'MKT',news:'NEWS',lbl:'LABELS',cb:'CENTRAL BANKS'};
             method:'POST',
             body:'data='+encodeURIComponent(query),
             headers:{'Content-Type':'application/x-www-form-urlencoded'},
-            signal: _timeoutSignal(22000)
+            signal: AbortSignal.timeout(22000)
           });
           if (r.ok) { data = await r.json(); break; }
         } catch(e) { /* try next */ }
@@ -22182,7 +22182,7 @@ function renderInstLayer(){
         const updEl  = document.getElementById(pid+'_upd');
         if(!rowsEl) return;
         try {
-          const resp = await fetch(_proxy, {signal: _timeoutSignal(8000)});
+          const resp = await fetch(_proxy, {signal: AbortSignal.timeout(8000)});
           const json = await resp.json();
           const meta = json?.chart?.result?.[0]?.meta;
           if(!meta){ throw new Error('no meta'); }
@@ -25307,7 +25307,7 @@ async function _portFetchYahoo(){
   ];
   for(const url of urls){
     try{
-      const r = await fetch(url,{signal:_timeoutSignal(6000)});
+      const r = await fetch(url,{signal:AbortSignal.timeout(6000)});
       const d = await r.json();
       const quotes = d?.quoteResponse?.result||[];
       quotes.forEach(q=>{
@@ -26772,7 +26772,7 @@ function _renderOIDash(){
   async function _fetchEpicFuryKML() {
     try {
       if(typeof window.mapGL === 'undefined' || typeof map === 'undefined') return;
-      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(KML_URL), { signal: _timeoutSignal(15000) });
+      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(KML_URL), { signal: AbortSignal.timeout(15000) });
       if(!res.ok) return;
       const xml = (new DOMParser()).parseFromString(await res.text(), "text/xml");
       let geojsonShapes = [], geojsonPts = [];
@@ -26818,7 +26818,7 @@ function _renderOIDash(){
   async function _fetchLiveNews() {
     try {
       if(typeof window.mapGL === 'undefined') return;
-      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent('https://api.gdeltproject.org/api/v1/gkg_geojson?TIMESPAN=1440&OUTPUTFIELDS=name,url,domain&MAXROWS=1000'), { signal: _timeoutSignal(15000) });
+      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent('https://api.gdeltproject.org/api/v1/gkg_geojson?TIMESPAN=1440&OUTPUTFIELDS=name,url,domain&MAXROWS=1000'), { signal: AbortSignal.timeout(15000) });
       if(!res.ok) return;
       const data = await res.json();
       if(!data || !data.features) return;
@@ -26994,7 +26994,7 @@ setTimeout(function(){ if(typeof fetchFundingRates==='function') try{fetchFundin
   async function _fetchEpicFuryKML() {
     try {
       if(typeof window.mapGL === 'undefined' || typeof map === 'undefined') return;
-      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(KML_URL), { signal: _timeoutSignal(15000) });
+      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(KML_URL), { signal: AbortSignal.timeout(15000) });
       if(!res.ok) return;
       const xml = (new DOMParser()).parseFromString(await res.text(), "text/xml");
       
@@ -27054,7 +27054,7 @@ setTimeout(function(){ if(typeof fetchFundingRates==='function') try{fetchFundin
     try {
       if(typeof window.mapGL === 'undefined') return;
       const gdeltUrl = 'https://api.gdeltproject.org/api/v1/gkg_geojson?TIMESPAN=1440&OUTPUTFIELDS=name,url,domain&MAXROWS=3000';
-      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(gdeltUrl), { signal: _timeoutSignal(15000) });
+      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(gdeltUrl), { signal: AbortSignal.timeout(15000) });
       if(!res.ok) return;
       const data = await res.json();
       if(!data || !data.features) return;
@@ -27569,9 +27569,10 @@ window._setChartInterval = async function(interval) {
         // ── Forex (HL.xyz HIP-3) ──────────────────────────────────────────────
         'EURUSD':'FX:EURUSD','USDJPY':'FX:USDJPY','GBPUSD':'FX:GBPUSD',
         'AUDUSD':'FX:AUDUSD','USDCAD':'FX:USDCAD','USDCHF':'FX:USDCHF',
-        'NZDUSD':'FX:NZDUSD','EUR':'FX:EURUSD','JPY':'FX:USDJPY',
-        // ── HL.xyz synthetic indices & commodities aliases ───────────────────
+        'NZDUSD':'FX:NZDUSD',
+        // ── HL.xyz synthetic indices & aliases ───────────────────────────────
         'SP500':'SPREADEX:SPX','XYZ100':'NASDAQ:NDX',
+        // ── HL.xyz commodity short tickers ───────────────────────────────────
         'BRENTOIL':'TVC:UKOIL','CL':'TVC:USOIL','PLATINUM':'TVC:PLATINUM',
         'PALLADIUM':'TVC:PALLADIUM',
     };
@@ -27586,23 +27587,26 @@ window._setChartInterval = async function(interval) {
         const bybitMap = {
             'VIX':'VIXUSD', 'HYPE':'HYPEUSDT'
         };
-        // ── Hyperliquid Oracle: Verified @-spot tokens (Wagyu.xyz / trade.xyz) ──
-        // Source of truth = live HL_XYZ_SYM (mutated at runtime by auto-discovery)
-        // Fallback hardcoded values used until allMids poll populates real @-IDs
-        const hlXyzMap = (typeof window !== 'undefined' && window.HL_XYZ_SYM)
-          ? window.HL_XYZ_SYM
-          : {
-              // US Equities
-              'TSLA':'@264', 'AAPL':'@268', 'GOOGL':'@266',
-              'AMZN':'@280', 'META':'@287', 'MSFT':'@289',
-              'HOOD':'@271', 'CRCL':'@263',
-              // ETFs
-              'SPY':'@279', 'QQQ':'@288', 'GLD':'@276', 'SLV':'@265', 'QQQM':'@308'
-            };
-        
+        // ── Hyperliquid Oracle: Verified @-spot tokens + HIP-3 perps ──
+        // Static verified entries (guaranteed working)
+        const hlXyzMapStatic = {
+            // US Equities @-spot
+            'TSLA':'@264', 'AAPL':'@268', 'GOOGL':'@266',
+            'AMZN':'@280', 'META':'@287', 'MSFT':'@289',
+            'HOOD':'@271', 'CRCL':'@263',
+            // ETFs @-spot
+            'SPY':'@279', 'QQQ':'@288', 'GLD':'@276', 'SLV':'@265', 'QQQM':'@308'
+        };
+        // Runtime-discovered additions merged in (auto-discovery populates window.HL_XYZ_SYM)
+        const hlRuntime = (typeof window !== 'undefined' && window.HL_XYZ_SYM) || {};
+        const hlXyzMap  = Object.assign({}, hlRuntime, hlXyzMapStatic);
+
         if (binanceMap[rawSym]) return { provider: 'BINANCE', ticker: binanceMap[rawSym], type: 'WS' };
         if (bybitMap[rawSym])   return { provider: 'BYBIT',   ticker: bybitMap[rawSym],   type: 'WS' };
-        if (hlXyzMap[rawSym])   return { provider: 'HL_XYZ',  ticker: hlXyzMap[rawSym],   type: 'POLL', hlSym: hlXyzMap[rawSym] };
+        // Route to HL_XYZ only if we have a real string @-ID / perp name (not null)
+        if (hlXyzMap[rawSym] && typeof hlXyzMap[rawSym] === 'string' && hlXyzMap[rawSym].length > 0) {
+            return { provider: 'HL_XYZ', ticker: hlXyzMap[rawSym], type: 'POLL', hlSym: hlXyzMap[rawSym] };
+        }
         if (cryptoMap[rawSym])  return { provider: 'BINANCE', ticker: cryptoMap[rawSym],  type: 'WS' };
         
         return { provider: 'YAHOO', ticker: (yahooMap[rawSym] || rawSym), type: 'POLL' };
@@ -27613,50 +27617,34 @@ window._setChartInterval = async function(interval) {
     // ── Smart Chart Routing: Decouple Data Stream from Chart Display ──
     let tvSym = tvSymMap[rawSym];
     
-        const isHL = !!IS_HL[rawSym] || !!IS_HL_XYZ[rawSym];
-
-        if (isHL) {
-            // Priority 1: Hyperliquid Crypto Chart
-            if (IS_HL[rawSym]) {
-                tvSym = 'HYPERLIQUID:' + rawSym;
-            } 
-            // Priority 2: Equities Chart via mapped source
-            else if (resolved.provider === 'HL_XYZ') {
-                const xyzTvMap = {
-                    // ── Mega-cap Tech (HL.xyz @-spot) ──
-                    'META':'NASDAQ:META', 'AMZN':'NASDAQ:AMZN', 'AAPL':'NASDAQ:AAPL',
-                    'GOOGL':'NASDAQ:GOOGL', 'MSFT':'NASDAQ:MSFT', 'TSLA':'NASDAQ:TSLA',
-                    'NVDA':'NASDAQ:NVDA', 'NFLX':'NASDAQ:NFLX', 'AMD':'NASDAQ:AMD',
-                    // ── Financials / Crypto-native ──
-                    'HOOD':'NASDAQ:HOOD', 'CRCL':'NYSE:CRCL', 'COIN':'NASDAQ:COIN',
-                    'PLTR':'NASDAQ:PLTR', 'MSTR':'NASDAQ:MSTR', 'SOFI':'NASDAQ:SOFI',
-                    // ── ETFs ──
-                    'SPY':'AMEX:SPY', 'QQQ':'NASDAQ:QQQ', 'QQQM':'NASDAQ:QQQM',
-                    'GLD':'AMEX:GLD', 'SLV':'AMEX:SLV', 'IWM':'AMEX:IWM',
-                    'USO':'AMEX:USO', 'TLT':'NASDAQ:TLT',
-                    // ── Indices (HL.xyz synthetic / licensed) ──
-                    'SP500':'SPREADEX:SPX', 'SPX':'SPREADEX:SPX',
-                    'XYZ100':'NASDAQ:NDX', 'NDX':'NASDAQ:NDX',
-                    'DJI':'DJ:DJI', 'RUT':'TVC:RUT',
-                    // ── Commodities (HL.xyz HIP-3) ──
-                    'GOLD':'TVC:GOLD', 'XAU':'TVC:GOLD',
-                    'SILVER':'TVC:SILVER', 'XAG':'TVC:SILVER',
-                    'OIL':'TVC:USOIL', 'WTI':'TVC:USOIL', 'CL':'TVC:USOIL',
-                    'BRENT':'TVC:UKOIL', 'BRENTOIL':'TVC:UKOIL',
-                    'NATGAS':'TVC:NATGAS', 'GAS':'TVC:NATGAS',
-                    'COPPER':'TVC:COPPER', 'HG':'TVC:COPPER',
-                    'PLATINUM':'TVC:PLATINUM', 'XPT':'TVC:PLATINUM',
-                    'PALLADIUM':'TVC:PALLADIUM', 'XPD':'TVC:PALLADIUM',
-                    // ── Forex (HL.xyz HIP-3) ──
-                    'EUR':'FX:EURUSD', 'EURUSD':'FX:EURUSD',
-                    'JPY':'FX:USDJPY', 'USDJPY':'FX:USDJPY',
-                    'GBP':'FX:GBPUSD', 'GBPUSD':'FX:GBPUSD',
-                    'AUD':'FX:AUDUSD', 'AUDUSD':'FX:AUDUSD',
-                    'CAD':'FX:USDCAD', 'USDCAD':'FX:USDCAD',
-                    'CHF':'FX:USDCHF', 'USDCHF':'FX:USDCHF',
-                };
-                tvSym = xyzTvMap[rawSym] || ('NASDAQ:' + rawSym);
-            }
+    if (!tvSym) {
+        if (resolved.provider === 'HL_XYZ') {
+            // xyz: equities — chart via TradingView (real exchange), data via Hyperliquid
+            const xyzTvMap = {
+                // ── Mega-cap Tech (HL.xyz @-spot) ──
+                'META':'NASDAQ:META','AMZN':'NASDAQ:AMZN','AAPL':'NASDAQ:AAPL',
+                'GOOGL':'NASDAQ:GOOGL','MSFT':'NASDAQ:MSFT','TSLA':'NASDAQ:TSLA',
+                'NVDA':'NASDAQ:NVDA','NFLX':'NASDAQ:NFLX','AMD':'NASDAQ:AMD',
+                // ── Financials / Crypto-native ──
+                'HOOD':'NASDAQ:HOOD','CRCL':'NYSE:CRCL','COIN':'NASDAQ:COIN',
+                'PLTR':'NASDAQ:PLTR','MSTR':'NASDAQ:MSTR','SOFI':'NASDAQ:SOFI',
+                // ── ETFs ──
+                'SPY':'AMEX:SPY','QQQ':'NASDAQ:QQQ','QQQM':'NASDAQ:QQQM',
+                'GLD':'AMEX:GLD','SLV':'AMEX:SLV','IWM':'AMEX:IWM',
+                'USO':'AMEX:USO','TLT':'NASDAQ:TLT',
+                // ── Indices (HL.xyz synthetic / licensed) ──
+                'SP500':'SPREADEX:SPX','XYZ100':'NASDAQ:NDX',
+                // ── Commodities (HL.xyz HIP-3) ──
+                'GOLD':'TVC:GOLD','SILVER':'TVC:SILVER',
+                'OIL':'TVC:USOIL','WTI':'TVC:USOIL','CL':'TVC:USOIL',
+                'BRENT':'TVC:UKOIL','BRENTOIL':'TVC:UKOIL',
+                'NATGAS':'TVC:NATGAS','COPPER':'TVC:COPPER',
+                'PLATINUM':'TVC:PLATINUM','PALLADIUM':'TVC:PALLADIUM',
+                // ── Forex (HL.xyz HIP-3) ──
+                'EURUSD':'FX:EURUSD','USDJPY':'FX:USDJPY',
+                'GBPUSD':'FX:GBPUSD','AUDUSD':'FX:AUDUSD',
+            };
+            tvSym = xyzTvMap[rawSym] || ('NASDAQ:' + rawSym);
         } else if (resolved.type === 'WS') {
             tvSym = resolved.provider + ':' + (resolved.provider === 'BYBIT' ? resolved.ticker + '.P' : resolved.ticker);
         } else {
@@ -27664,6 +27652,7 @@ window._setChartInterval = async function(interval) {
             const isKnownEquity = !!yahooMap[rawSym] && !cryptoMap[rawSym];
             tvSym = (isKnownEquity ? 'NASDAQ:' : '') + (yahooMap[rawSym] || rawSym);
         }
+    }
 
     const _nonEquityPrefix = ['BINANCE:','BYBIT:','FX:','TVC:','FOREXCOM:','XETR:','CME_MINI:',
         'NYMEX:','COMEX:','CBOT:','ICEUS:','BSE:','NSE:','KRX:','ASX:','SSE:',
@@ -27907,7 +27896,7 @@ window._setChartInterval = async function(interval) {
                 const url  = `${MMT_BASE_URL}/candles?exchange=${_mmtExchange}&symbol=${encodeURIComponent(_mmtSymbol)}&tf=${binanceInterval}&from=${from}&to=${to}`;
                 const r = await fetch(url, {
                     headers: _mmtKey ? { 'X-API-Key': _mmtKey, 'Accept': 'application/json' } : { 'Accept': 'application/json' },
-                    signal: _timeoutSignal(6000), cache: 'no-store'
+                    signal: AbortSignal.timeout(6000), cache: 'no-store'
                 });
                 if(r.ok) {
                     const data = await r.json();
@@ -27932,7 +27921,7 @@ window._setChartInterval = async function(interval) {
             if(!_mmtKey) return;
             try {
                 const url = `${MMT_BASE_URL}/stats?exchange=${_mmtExchange}&symbol=${encodeURIComponent(_mmtSymbol)}&tf=1m&from=${Math.floor(Date.now()/1000)-300}&to=${Math.floor(Date.now()/1000)}`;
-                const r = await fetch(url, { headers:{'X-API-Key':_mmtKey,'Accept':'application/json'}, signal:_timeoutSignal(5000), cache:'no-store' });
+                const r = await fetch(url, { headers:{'X-API-Key':_mmtKey,'Accept':'application/json'}, signal:AbortSignal.timeout(5000), cache:'no-store' });
                 if(r.ok) {
                     const data = await r.json();
                     const pts = data.data;
@@ -28117,7 +28106,7 @@ window._setChartInterval = async function(interval) {
                     ];
                     for (const url of urls) {
                         try {
-                            const ry = await fetch(url, {signal: _timeoutSignal(5000), cache:'no-store'});
+                            const ry = await fetch(url, {signal: AbortSignal.timeout(5000), cache:'no-store'});
                             const raw = await ry.text();
                             let parsed = null;
                             try { parsed = JSON.parse(raw); } catch(pe) {
@@ -28263,7 +28252,7 @@ window._setChartInterval = async function(interval) {
                 ];
 
                 const tryYahooChart = async (url) => {
-                    const r = await fetch(url, { cache: 'no-store', signal: _timeoutSignal(4000), headers: {'Accept':'application/json'} });
+                    const r = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(4000), headers: {'Accept':'application/json'} });
                     if(!r.ok) throw new Error('HTTP '+r.status);
                     const raw = await r.text();
                     const parsed = _parseRaw(raw);
@@ -28319,7 +28308,7 @@ window._setChartInterval = async function(interval) {
                             'GC=F':'GC.F','CL=F':'CL.F','SI=F':'SI.F',
                         })[ticker] || null;
                         if(stooqTicker) {
-                            const sr = await fetch('https://stooq.com/q/d/l/?s='+encodeURIComponent(stooqTicker)+'&d1=&d2=&i=d', {signal:_timeoutSignal(5000)});
+                            const sr = await fetch('https://stooq.com/q/d/l/?s='+encodeURIComponent(stooqTicker)+'&d1=&d2=&i=d', {signal:AbortSignal.timeout(5000)});
                             const csv = await sr.text();
                             const lines = csv.trim().split('\n');
                             if(lines.length >= 2) {
@@ -28353,7 +28342,7 @@ window._setChartInterval = async function(interval) {
                             'https://corsproxy.io/?url=' + encodeURIComponent(yahooChartUrl),
                             'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1m&range=1d'),
                         ];
-                        const r3 = await Promise.any(extraProxies.map(u => fetch(u, {signal:_timeoutSignal(6000)})));
+                        const r3 = await Promise.any(extraProxies.map(u => fetch(u, {signal:AbortSignal.timeout(6000)})));
                         const raw3 = await r3.text();
                         const p3 = _parseRaw(raw3);
                         if(p3?.chart?.result?.[0]) {
@@ -29634,7 +29623,7 @@ async function fetchIndex(sym) {
     try {
       const url = `https://query1.finance.yahoo.com/v8/finance/chart/${target}?interval=1m&range=1d`;
       const r = await fetch(typeof proxy === 'function' ? proxy(url) : proxy, { 
-        signal: _timeoutSignal(6000),
+        signal: AbortSignal.timeout(6000),
         headers: { 'Accept': 'application/json' }
       });
       if (!r.ok) continue;
@@ -30794,7 +30783,7 @@ window.addEventListener('storage', (e) => {
   async function _fetchMarketStats() {
     // Fetch from primary (Binance) backend
     try {
-      const r = await fetch(CE_HTTP + '/api/market-stats', { signal: _timeoutSignal(8000) });
+      const r = await fetch(CE_HTTP + '/api/market-stats', { signal: AbortSignal.timeout(8000) });
       if (r.ok) {
         const arr = await r.json();
         arr.forEach(ms => {
@@ -30821,7 +30810,7 @@ window.addEventListener('storage', (e) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'metaAndAssetCtxs' }),
-        signal: _timeoutSignal(8000)
+        signal: AbortSignal.timeout(8000)
       });
       if (hlR.ok) {
         const [meta, ctxs] = await hlR.json();
@@ -30853,7 +30842,7 @@ window.addEventListener('storage', (e) => {
   async function _fetchScreener() {
     // Primary: cryexc backend screener (Binance 24h ticker)
     try {
-      const r = await fetch(CE_HTTP + '/screener', { signal: _timeoutSignal(10000) });
+      const r = await fetch(CE_HTTP + '/screener', { signal: AbortSignal.timeout(10000) });
       if (r.ok) {
         const arr = await r.json();
         CE.screener = arr;
@@ -30886,7 +30875,7 @@ window.addEventListener('storage', (e) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'allMids' }),
-        signal: _timeoutSignal(6000)
+        signal: AbortSignal.timeout(6000)
       });
       if (hlR.ok) {
         const mids = await hlR.json(); // {BTC: "104200.5", ETH: "2350.2", ...}
@@ -31164,7 +31153,7 @@ async function _pollStockPrices() {
     const syms = batch.join(',');
     const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms}&fields=regularMarketPrice,regularMarketChangePercent,regularMarketVolume,marketCap`;
     // Zkus allorigins proxy
-    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {signal: _timeoutSignal(8000)});
+    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {signal: AbortSignal.timeout(8000)});
     if (!r.ok) throw new Error('allorigins failed');
     const json = await r.json();
     const parsed = JSON.parse(json.contents);
@@ -31202,7 +31191,7 @@ async function _pollStockPrices() {
     try {
       const syms = batch.join(',');
       const url = `https://query2.finance.yahoo.com/v8/finance/spark?symbols=${syms}&range=1d&interval=1d`;
-      const r2 = await fetch(url, {signal: _timeoutSignal(6000), headers:{'Accept':'application/json'}});
+      const r2 = await fetch(url, {signal: AbortSignal.timeout(6000), headers:{'Accept':'application/json'}});
       if (r2.ok) {
         const d = await r2.json();
         const sp = d?.spark?.result || [];
@@ -31242,7 +31231,7 @@ async function _fetchHLPerps() {
     const r = await fetch('https://api.hyperliquid.xyz/info', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({type:'metaAndAssetCtxs'}),
-      signal: _timeoutSignal(8000)
+      signal: AbortSignal.timeout(8000)
     });
     if (!r.ok) return;
     const [meta, ctxs] = await r.json();
@@ -31276,7 +31265,7 @@ async function _fetchHLPerps() {
   try {
     const r2 = await fetch('https://api.hyperliquid.xyz/info', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({type:'globalSummary'}), signal: _timeoutSignal(6000)
+      body: JSON.stringify({type:'globalSummary'}), signal: AbortSignal.timeout(6000)
     });
     if (r2.ok) {
       const gs = await r2.json();
@@ -32290,7 +32279,7 @@ async function _hlRestBootstrap() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'metaAndAssetCtxs' }),
-      signal: _timeoutSignal(10000)
+      signal: AbortSignal.timeout(10000)
     });
     if (!r.ok) return;
     const [meta, ctxs] = await r.json();
@@ -32508,7 +32497,7 @@ async function _hlPollFundingForStocks() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'metaAndAssetCtxs' }),
-      signal: _timeoutSignal(8000)
+      signal: AbortSignal.timeout(8000)
     });
     if (!r.ok) return;
     const [meta, ctxs] = await r.json();
@@ -36225,11 +36214,11 @@ if __name__ == "__main__":
 
   const _apiFetch = async (url) => {
     try {
-      const r = await fetch(url, {signal: _timeoutSignal(8000)});
+      const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
       if (r.ok) return r.json();
     } catch(e) {}
     try {
-      const r = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(url), {signal: _timeoutSignal(10000)});
+      const r = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(url), {signal: AbortSignal.timeout(10000)});
       if (r.ok) return r.json();
     } catch(e2) {}
     throw new Error('fetch failed: ' + url);
@@ -36357,7 +36346,7 @@ if __name__ == "__main__":
           let yj = null;
           for(const pu of proxies) {
             try {
-              const r = await fetch(pu, {signal: _timeoutSignal(8000)});
+              const r = await fetch(pu, {signal: AbortSignal.timeout(8000)});
               if(r.ok) { yj = await r.json(); break; }
             } catch(e2){}
           }
@@ -36436,7 +36425,7 @@ if __name__ == "__main__":
     let yj = null;
     for(const pu of proxies) {
       try {
-        const r = await fetch(pu, {signal: _timeoutSignal(10000)});
+        const r = await fetch(pu, {signal: AbortSignal.timeout(10000)});
         if(r.ok) { yj = await r.json(); break; }
       } catch(e) {}
     }
@@ -36460,7 +36449,7 @@ if __name__ == "__main__":
         for(const pu of proxies) {
           try {
             const u = pu.includes('?') ? pu + '&date=' + expTs : pu + '?date=' + expTs;
-            const r = await fetch(u, {signal: _timeoutSignal(8000)});
+            const r = await fetch(u, {signal: AbortSignal.timeout(8000)});
             if(r.ok) {
               const ej = await r.json();
               calls = ej?.optionChain?.result?.[0]?.options?.[0]?.calls || [];
@@ -36487,8 +36476,8 @@ if __name__ == "__main__":
   async function _loadOKXOptions(sym) {
     const CUR = sym.toUpperCase();
     const _gO = async (u) => {
-      try { const r = await fetch(u, {signal:_timeoutSignal(9000)}); if(r.ok) return r.json(); } catch(e) {}
-      const r2 = await fetch('https://corsproxy.io/?url='+encodeURIComponent(u), {signal:_timeoutSignal(12000)});
+      try { const r = await fetch(u, {signal:AbortSignal.timeout(9000)}); if(r.ok) return r.json(); } catch(e) {}
+      const r2 = await fetch('https://corsproxy.io/?url='+encodeURIComponent(u), {signal:AbortSignal.timeout(12000)});
       if(!r2.ok) throw new Error('HTTP '+r2.status);
       return r2.json();
     };
@@ -37494,8 +37483,8 @@ async function _ofFetch(cur){
   _ofRender();
   try {
     const _g = async (u) => {
-      try { const r = await fetch(u,{signal:_timeoutSignal(9000)}); if(r.ok) return r.json(); } catch(e){}
-      const r2 = await fetch('https://corsproxy.io/?url='+encodeURIComponent(u),{signal:_timeoutSignal(12000)});
+      try { const r = await fetch(u,{signal:AbortSignal.timeout(9000)}); if(r.ok) return r.json(); } catch(e){}
+      const r2 = await fetch('https://corsproxy.io/?url='+encodeURIComponent(u),{signal:AbortSignal.timeout(12000)});
       if(!r2.ok) throw new Error('HTTP '+r2.status);
       return r2.json();
     };
@@ -37537,7 +37526,7 @@ async function _ofFetch(cur){
         let yj = null;
         for(const pu of yProxies) {
           try {
-            const r = await fetch(pu, {signal:_timeoutSignal(10000)});
+            const r = await fetch(pu, {signal:AbortSignal.timeout(10000)});
             if(r.ok) { yj = await r.json(); break; }
           } catch(pe){}
         }
@@ -37562,7 +37551,7 @@ async function _ofFetch(cur){
                 for(const pu of yProxies) {
                   try {
                     const ru=pu.includes('?')? pu+'&date='+expTs : pu+'?date='+expTs;
-                    const r=await fetch(ru,{signal:_timeoutSignal(8000)});
+                    const r=await fetch(ru,{signal:AbortSignal.timeout(8000)});
                     if(r.ok){ej=await r.json();break;}
                   }catch(e2){}
                 }
@@ -41239,14 +41228,6 @@ function _applyLiveTick(px, chgPct, hi, lo, vol, op, sym) {
   console.log('[v12-LIVE] ' + (sym||'?') + ' → ' + _fP(px) + ' (' + (chgPct||0).toFixed(2) + '%)');
 }
 
-// ── Safety Helper for timeouts (_timeoutSignal fallback) ───────────────
-function _timeoutSignal(ms) {
-  if (typeof AbortSignal !== 'undefined' && _timeoutSignal) return _timeoutSignal(ms);
-  var controller = new AbortController();
-  setTimeout(function(){ controller.abort(); }, ms);
-  return controller.signal;
-}
-
 // ── Yahoo Finance fetch ──────────────────────────────────────────────────────
 // Full Yahoo ticker map — covers commodities, indices, equities, FX, bonds
 var YH = {
@@ -41317,7 +41298,7 @@ async function _yahooFetch(ticker) {
   ];
   for (var i = 0; i < proxies.length; i++) {
     try {
-      var r = await fetch(proxies[i], {signal:_timeoutSignal(8000), cache:'no-store'});
+      var r = await fetch(proxies[i], {signal:AbortSignal.timeout(8000), cache:'no-store'});
       if (!r.ok) continue;
       var d = await r.json();
       var res = d && d.chart && d.chart.result && d.chart.result[0];
@@ -41363,7 +41344,7 @@ async function _bybitFetch(symbol) {
   ];
   for (var i = 0; i < proxies.length; i++) {
     try {
-      var r = await fetch(proxies[i], {signal:_timeoutSignal(7000), cache:'no-store'});
+      var r = await fetch(proxies[i], {signal:AbortSignal.timeout(7000), cache:'no-store'});
       if (!r.ok) continue;
       var d = await r.json();
       if (d.retCode !== 0 || !d.result || !d.result.list || !d.result.list[0]) continue;
@@ -41386,21 +41367,33 @@ async function _bybitFetch(symbol) {
 }
 
 // ── Hyperliquid REST ────────────────────────────────────────────────────────
-// ── Hyperliquid Data Access (Cache Only) ───────────────────────────────────
-function _hlFetch(coin) {
-  return _HL_PRICE_CACHE[coin] || null;
+async function _hlFetch(coin) {
+  try {
+    var r = await fetch('https://api.hyperliquid.xyz/info', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({type:'metaAndAssetCtxs'}),
+      signal:AbortSignal.timeout(7000)
+    });
+    if (!r.ok) return null;
+    var data = await r.json();
+    var idx = data[0].universe.findIndex(function(a){return a.name===coin;});
+    if (idx === -1) return null;
+    var ctx = data[1][idx];
+    var px  = parseFloat(ctx.markPx || ctx.midPx || 0);
+    if (!px) return null;
+    var prev = parseFloat(ctx.prevDayPx || px);
+    var chg  = prev > 0 ? ((px-prev)/prev*100) : 0;
+    return {px:px, chg:chg, open:prev,
+            hi: parseFloat(ctx.dayHigh||px), lo:parseFloat(ctx.dayLow||px),
+            vol:parseFloat(ctx.dayNtlVlm||0)};
+  } catch(e) { return null; }
 }
-
-function _hlXyzFetch(sym) {
-  return _HL_PRICE_CACHE[sym] || null;
-}
-
 
 // ── Binance spot ticker (crypto) ────────────────────────────────────────────
 async function _binanceFetch(pair) {
   try {
     var r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol='+pair,
-                        {signal:_timeoutSignal(5000), cache:'no-store'});
+                        {signal:AbortSignal.timeout(5000), cache:'no-store'});
     if (!r.ok) return null;
     var d = await r.json();
     var px = parseFloat(d.lastPrice||0);
@@ -41431,70 +41424,57 @@ var IS_CRYPTO = {BTC:1,ETH:1,SOL:1,BNB:1,XRP:1,ADA:1,DOGE:1,AVAX:1,LINK:1,
                  DOT:1,LTC:1,BCH:1,UNI:1,AAVE:1,FTM:1,NEAR:1,APT:1,SUI:1,
                  ARB:1,OP:1,INJ:1,TIA:1,PEPE:1,WIF:1,BONK:1,TON:1,SHIB:1,
                  TRX:1,XLM:1,ATOM:1,ALGO:1,VET:1,OM:1,HBAR:1,KAS:1,SEI:1};
-var IS_HL     = {
-  BTC:1, ETH:1, SOL:1, BNB:1, XRP:1, ADA:1, DOGE:1, AVAX:1, LINK:1, DOT:1,
-  LTC:1, BCH:1, UNI:1, AAVE:1, NEAR:1, ARB:1, OP:1, SUI:1, APT:1, TIA:1,
-  PEPE:1, WIF:1, BONK:1, TON:1, SHIB:1, TRX:1, XLM:1, ATOM:1, ALGO:1,
-  HYPE:1, PURR:1, FRIEND:1, SEI:1, OM:1, HBAR:1, KAS:1
-};
+var IS_HL     = {HYPE:1,PURR:1,FRIEND:1};
 
-// ── IS_HL_XYZ: verified assets on Hyperliquid @-spot oracle (Wagyu.xyz / trade.xyz HIP-3) ──
-// Includes ALL asset classes: equities, ETFs, indices, commodities, forex
-// Auto-discovery at runtime resolves unknown @-IDs from spotMetaAndAssetCtxs
+// ── IS_HL_XYZ: ALL assets available on Hyperliquid.xyz (Wagyu.xyz / trade.xyz HIP-3) ──
+// Every symbol here will get: TradingView chart + live data panel from Hyperliquid.xyz
+// (same treatment as AMZN). If API doesn't have it yet, falls back gracefully.
 var IS_HL_XYZ = {
-  // ── Mega-cap Tech Equities ───────────────────────────────────
-  TSLA:1, AAPL:1, GOOGL:1, AMZN:1, META:1, MSFT:1, NVDA:1,
-  NFLX:1, AMD:1,
-  // ── Crypto-native / Fintech Equities ─────────────────────────
-  HOOD:1, CRCL:1, COIN:1, PLTR:1, MSTR:1, SOFI:1,
-  // ── ETFs ─────────────────────────────────────────────────────
+  // ── Equities @-spot (HIP-1 tokens) ──
+  TSLA:1, AAPL:1, GOOGL:1, AMZN:1, META:1, MSFT:1, HOOD:1, CRCL:1,
+  NVDA:1, NFLX:1, AMD:1, COIN:1, PLTR:1, MSTR:1, SOFI:1,
+  // ── ETFs @-spot ──
   SPY:1, QQQ:1, QQQM:1, GLD:1, SLV:1, IWM:1, USO:1, TLT:1,
-  // ── Indices (HL.xyz synthetic / licensed) ────────────────────
-  SP500:1, SPX:1, XYZ100:1, NDX:1, DJI:1, RUT:1,
-  // ── Commodities (HL.xyz HIP-3) ───────────────────────────────
-  GOLD:1, SILVER:1, OIL:1, WTI:1, CL:1, BRENT:1, BRENTOIL:1,
-  NATGAS:1, COPPER:1, PLATINUM:1, PALLADIUM:1,
-  XAU:1, XAG:1, HG:1, XPT:1, XPD:1,
-  // ── Forex (HL.xyz HIP-3) ─────────────────────────────────────
-  EURUSD:1, USDJPY:1, GBPUSD:1, AUDUSD:1, USDCAD:1, USDCHF:1,
-  EUR:1, JPY:1, GBP:1, AUD:1, CAD:1, CHF:1
+  // ── Indices (HIP-3 perps) ──
+  SP500:1, XYZ100:1,
+  // ── Commodities (HIP-3 perps) ──
+  GOLD:1, SILVER:1, OIL:1, BRENT:1, NATGAS:1, COPPER:1,
+  PLATINUM:1, PALLADIUM:1,
+  // ── Forex (HIP-3 perps) ──
+  EURUSD:1, USDJPY:1, GBPUSD:1, AUDUSD:1
 };
-
 
 // ── HL_XYZ_SYM: terminal symbol → Hyperliquid allMids key ────────────────────
-// '@NNN' = verified spot token on Hyperliquid (Wagyu.xyz HIP-3)
-// Hardcoded values = verified @-IDs from 2026-04
-// null values = auto-populated at runtime by _hlAutoDiscover() from live API
+// '@NNN'    = verified HIP-1 spot token (direct allMids key)
+// 'xyz:XXX' = HIP-3 perp market name (direct allMids key)
+// null      = auto-discovery will resolve on first API scan
 var HL_XYZ_SYM = {
-  // ── US Equities (verified @-IDs) ──────────────────────────────
-  TSLA:  '@264',   // Tesla        ~$215
-  AAPL:  '@268',   // Apple        ~$270
-  GOOGL: '@266',   // Alphabet     ~$339
-  AMZN:  '@280',   // Amazon       ~$250
-  META:  '@287',   // Meta         ~$678
-  MSFT:  '@289',   // Microsoft    ~$412
-  HOOD:  '@271',   // Robinhood    ~$91
-  CRCL:  '@263',   // Circle       ~$105
-  // ── ETFs (verified) ──────────────────────────────────────────
-  SPY:   '@279',   // SPDR S&P500  ~$710
-  QQQ:   '@288',   // Invesco QQQ  ~$649
-  QQQM:  '@308',   // Invesco QQQM ~$649
-  GLD:   '@276',   // SPDR Gold    ~$439
-  SLV:   '@265',   // iShares Ag   ~$73
-  // ── Auto-discovery placeholders (resolved at runtime) ────────
-  // New HL.xyz tokens added after 2026-04 — auto-populated from API
-  NVDA:  null, NFLX: null, AMD:  null, COIN: null, PLTR: null, MSTR: null, SOFI: null,
-  IWM:   null, USO:  null, TLT:  null,
-  SP500: null, SPX:  null, XYZ100: null, NDX: null, DJI: null, RUT: null,
-  GOLD:  null, SILVER: null, OIL: null, WTI: null, CL: null, BRENT: null, BRENTOIL: null,
-  NATGAS: null, COPPER: null, PLATINUM: null, PALLADIUM: null,
-  XAU: null, XAG: null, HG: null, XPT: null, XPD: null,
-  EURUSD: null, USDJPY: null, GBPUSD: null, AUDUSD: null, USDCAD: null, USDCHF: null,
-  EUR:    null, JPY:    null, GBP:    null, AUD:    null, CAD:    null, CHF:    null,
+  // ── US Equities (verified @-IDs 2026-04) ──
+  TSLA:  '@264',
+  AAPL:  '@268',
+  GOOGL: '@266',
+  AMZN:  '@280',
+  META:  '@287',
+  MSFT:  '@289',
+  HOOD:  '@271',
+  CRCL:  '@263',
+  // ── ETFs (verified @-IDs 2026-04) ──
+  SPY:   '@279',
+  QQQ:   '@288',
+  QQQM:  '@308',
+  GLD:   '@276',
+  SLV:   '@265',
+  // ── Auto-discovery (populated from live API on boot) ──
+  NVDA: null, NFLX: null, AMD: null, COIN: null, PLTR: null, MSTR: null, SOFI: null,
+  IWM: null, USO: null, TLT: null,
+  SP500: null, XYZ100: null,
+  GOLD: null, SILVER: null, OIL: null, BRENT: null, NATGAS: null, COPPER: null,
+  PLATINUM: null, PALLADIUM: null,
+  EURUSD: null, USDJPY: null, GBPUSD: null, AUDUSD: null
 };
 
-// Expose to window for dynamic resolver access
-window.IS_HL_XYZ  = IS_HL_XYZ;
+// Expose to window so chart resolver can read merged map
+window.IS_HL_XYZ = IS_HL_XYZ;
 window.HL_XYZ_SYM = HL_XYZ_SYM;
 
 // ── Global cache for all HL prices (refreshed by polling loop) ───────────────
@@ -41526,8 +41506,93 @@ async function _hlGetMids() {
 }
 
 // ── Fetch spot candle/ctx for @-token to get hi/lo/vol/prevDay ───────────────
-// ── Logic moved to centralized polling engine ────────────────────────────
+async function _hlSpotCtx(marketKey) {
+  // marketKey = '@264', '@268', etc.
+  try {
+    const r = await fetch('https://api.hyperliquid.xyz/info', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({type:'spotMetaAndAssetCtxs'}),
+      signal: (()=>{const c=new AbortController();setTimeout(()=>c.abort(),8000);return c.signal;})(),
+      cache: 'no-store'
+    });
+    if (!r.ok) return null;
+    const [meta, ctxs] = await r.json();
+    const mkts = meta.universe || [];
+    const idx = mkts.findIndex(m => m.name === marketKey);
+    if (idx === -1 || !ctxs[idx]) return null;
+    return ctxs[idx];
+  } catch(e) { return null; }
+}
 
+
+// ── Core xyz fetch: @-spot + xyz: perp, with cache ──────────────────────
+async function _hlXyzFetch(sym) {
+  const hlKey = HL_XYZ_SYM[sym];
+  if (!hlKey) return null;
+  try {
+    const mids = await _hlGetMids();
+    const px = parseFloat(mids[hlKey]);
+    if (!px || px <= 0) return null;
+
+    if (hlKey.startsWith('@')) {
+      // Spot token: get rich ctx
+      try {
+        const ctx = await _hlSpotCtx(hlKey);
+        if (ctx) {
+          const prevPx  = parseFloat(ctx.prevDayPx) || px;
+          const markPx  = parseFloat(ctx.markPx) || px;
+          const dayOpen = parseFloat(ctx.dayOpen) || prevPx;
+          const dayHi   = parseFloat(ctx.dayHigh) || Math.max(markPx, prevPx);
+          const dayLo   = parseFloat(ctx.dayLow)  || Math.min(markPx, prevPx);
+          const vol     = parseFloat(ctx.dayNtlVlm) || 0;
+          const chg     = dayOpen > 0 ? ((markPx - dayOpen) / dayOpen * 100) : 0;
+          const result  = { px: markPx, chg, hi: dayHi, lo: dayLo, vol, open: dayOpen, src: 'HL_SPOT' };
+          _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
+          _hlSyncAll(sym, markPx, chg, result);
+          return result;
+        }
+      } catch(e2) {}
+      // Fallback: allMids price only
+      const cached = _HL_PRICE_CACHE[sym];
+      const prevPx = cached && cached.open > 0 ? cached.open : px;
+      const chg = prevPx > 0 ? ((px - prevPx) / prevPx * 100) : 0;
+      const result = { px, chg, hi: Math.max(px, prevPx), lo: Math.min(px, prevPx), vol: 0, open: prevPx, src: 'HL_SPOT_MID' };
+      _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
+      _hlSyncAll(sym, px, chg, result);
+      return result;
+    }
+
+    // xyz: perp oracle
+    try {
+      const r2 = await fetch('https://api.hyperliquid.xyz/info', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({type:'metaAndAssetCtxs'}),
+        signal: (()=>{const c=new AbortController();setTimeout(()=>c.abort(),8000);return c.signal;})(),
+        cache: 'no-store'
+      });
+      if (r2.ok) {
+        const [meta, ctxs] = await r2.json();
+        const idx = (meta.universe||[]).findIndex(a => a.name === hlKey);
+        if (idx !== -1 && ctxs[idx]) {
+          const ctx    = ctxs[idx];
+          const prevPx = parseFloat(ctx.prevDayPx) || px;
+          const markPx = parseFloat(ctx.markPx)    || px;
+          const chg    = prevPx > 0 ? ((markPx - prevPx) / prevPx * 100) : 0;
+          const vol    = parseFloat(ctx.dayNtlVlm) || 0;
+          const result = { px: markPx, chg, hi: Math.max(markPx, prevPx), lo: Math.min(markPx, prevPx), vol, open: prevPx, src: 'HL_ORACLE' };
+          _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
+          _hlSyncAll(sym, markPx, chg, result);
+          return result;
+        }
+      }
+    } catch(e2) {}
+    const rf = { px, chg: 0, hi: px, lo: px, vol: 0, open: px, src: 'HL_MID' };
+    _HL_PRICE_CACHE[sym] = { ...rf, ts: Date.now() };
+    _hlSyncAll(sym, px, 0, rf);
+    return rf;
+  } catch(e) { return null; }
+}
 
 // ── Centralized sync: push HL price to ALL data structures ────────────────
 function _hlSyncAll(sym, px, chg, result) {
@@ -41556,342 +41621,299 @@ function _hlSyncAll(sym, px, chg, result) {
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// HL.xyz AUTO-DISCOVERY — dynamically resolves unknown @-IDs and perp names
-// ══════════════════════════════════════════════════════════════════════════════
-// Runs once at boot + every 5 min. Scans:
-//   (1) spotMetaAndAssetCtxs → HIP-1 @-tokens  (equities, ETFs on trade.xyz)
-//   (2) metaAndAssetCtxs     → HIP-3 perps     (indices, commodities, forex)
-// For each HL_XYZ_SYM entry with null value, attempts name match and populates.
-// ══════════════════════════════════════════════════════════════════════════════
-
-// Terminal-symbol → list of potential names in HL metadata (case-insensitive)
-// Covers naming variations: 'TSLA', 'xyz:TSLA', 'XYZ:TSLA', 'XYZ100', etc.
-var HL_XYZ_ALIASES = {
-  // Equities
-  NVDA:   ['NVDA','xyz:NVDA','XYZ:NVDA'],
-  NFLX:   ['NFLX','xyz:NFLX'],
-  AMD:    ['AMD','xyz:AMD'],
-  COIN:   ['COIN','xyz:COIN'],
-  PLTR:   ['PLTR','xyz:PLTR'],
-  MSTR:   ['MSTR','xyz:MSTR'],
-  SOFI:   ['SOFI','xyz:SOFI'],
-  // ETFs
-  IWM:    ['IWM','xyz:IWM'],
-  USO:    ['USO','xyz:USO'],
-  TLT:    ['TLT','xyz:TLT'],
-  // Indices (HL.xyz synthetic / licensed)
-  SP500:  ['SP500','xyz:SP500','SPX','xyz:SPX','S&P500','SP-500'],
-  SPX:    ['SPX','xyz:SPX','SP500','xyz:SP500'],
-  XYZ100: ['XYZ100','xyz:XYZ100','NDX','xyz:NDX','NASDAQ100'],
-  NDX:    ['NDX','xyz:NDX','XYZ100','xyz:XYZ100'],
-  DJI:    ['DJI','xyz:DJI','DOW','xyz:DOW'],
-  RUT:    ['RUT','xyz:RUT','RUSSELL2000'],
-  // Commodities
-  GOLD:     ['GOLD','xyz:GOLD','XAU','xyz:XAU'],
-  XAU:      ['XAU','xyz:XAU','GOLD','xyz:GOLD'],
-  SILVER:   ['SILVER','xyz:SILVER','XAG','xyz:XAG','XAGUSD'],
-  XAG:      ['XAG','xyz:XAG','SILVER','xyz:SILVER'],
-  OIL:      ['OIL','xyz:OIL','CL','xyz:CL','WTI','xyz:WTI','CRUDE'],
-  WTI:      ['WTI','xyz:WTI','CL','xyz:CL','OIL','xyz:OIL'],
-  CL:       ['CL','xyz:CL','OIL','xyz:OIL','WTI','xyz:WTI'],
-  BRENT:    ['BRENT','xyz:BRENT','BRENTOIL','xyz:BRENTOIL','BZ'],
-  BRENTOIL: ['BRENTOIL','xyz:BRENTOIL','BRENT','xyz:BRENT'],
-  NATGAS:   ['NATGAS','xyz:NATGAS','NG','xyz:NG','GAS','xyz:GAS'],
-  COPPER:   ['COPPER','xyz:COPPER','HG','xyz:HG'],
-  HG:       ['HG','xyz:HG','COPPER','xyz:COPPER'],
-  PLATINUM: ['PLATINUM','xyz:PLATINUM','XPT','xyz:XPT','PL'],
-  XPT:      ['XPT','xyz:XPT','PLATINUM','xyz:PLATINUM'],
-  PALLADIUM:['PALLADIUM','xyz:PALLADIUM','XPD','xyz:XPD','PA'],
-  XPD:      ['XPD','xyz:XPD','PALLADIUM','xyz:PALLADIUM'],
-  // Forex
-  EUR:    ['EUR','xyz:EUR','EURUSD','xyz:EURUSD'],
-  EURUSD: ['EURUSD','xyz:EURUSD','EUR','xyz:EUR'],
-  JPY:    ['JPY','xyz:JPY','USDJPY','xyz:USDJPY'],
-  USDJPY: ['USDJPY','xyz:USDJPY','JPY','xyz:JPY'],
-  GBP:    ['GBP','xyz:GBP','GBPUSD','xyz:GBPUSD'],
-  GBPUSD: ['GBPUSD','xyz:GBPUSD','GBP','xyz:GBP'],
-  AUD:    ['AUD','xyz:AUD','AUDUSD','xyz:AUDUSD'],
-  AUDUSD: ['AUDUSD','xyz:AUDUSD','AUD','xyz:AUD'],
-  CAD:    ['CAD','xyz:CAD','USDCAD','xyz:USDCAD'],
-  USDCAD: ['USDCAD','xyz:USDCAD','CAD','xyz:CAD'],
-  CHF:    ['CHF','xyz:CHF','USDCHF','xyz:USDCHF'],
-  USDCHF: ['USDCHF','xyz:USDCHF','CHF','xyz:CHF'],
-};
-
-// Normalize a HL metadata name for matching (strip xyz: prefix, uppercase, trim)
-function _hlNormName(name) {
-  if (!name) return '';
-  return String(name).toUpperCase().replace(/^XYZ:/,'').replace(/[^A-Z0-9]/g,'').trim();
+// ── Fast poll: update all IS_HL_XYZ every 8s from allMids ────────────────
+async function _hlPollAll() {
+  try {
+    const mids = await _hlGetMids();
+    let anyUpdate = false;
+    for (const sym of Object.keys(IS_HL_XYZ)) {
+      const hlKey = HL_XYZ_SYM[sym]; if (!hlKey) continue;
+      const rawPx = parseFloat(mids[hlKey]); if (!rawPx || rawPx <= 0) continue;
+      const cached = _HL_PRICE_CACHE[sym];
+      const prevPx = cached && cached.open > 0 ? cached.open : rawPx;
+      const chg = prevPx > 0 ? ((rawPx - prevPx) / prevPx * 100) : 0;
+      const result = {
+        px: rawPx, chg,
+        hi: Math.max(rawPx, cached ? (cached.hi || rawPx) : rawPx),
+        lo: Math.min(rawPx, cached ? (cached.lo || rawPx) : rawPx),
+        vol: cached ? cached.vol : 0, open: prevPx, src: 'HL_POLL'
+      };
+      _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
+      _hlSyncAll(sym, rawPx, chg, result);
+      anyUpdate = true;
+    }
+    if (anyUpdate && typeof _refreshActivePanels === 'function') _refreshActivePanels();
+  } catch(e) {}
 }
 
-// Check if a HL universe entry name matches any alias for our terminal symbol
-function _hlNameMatches(termSym, hlName) {
-  const aliases = HL_XYZ_ALIASES[termSym] || [termSym];
-  const normHl = _hlNormName(hlName);
-  for (const a of aliases) {
-    if (_hlNormName(a) === normHl) return true;
+// ── Deep refresh: full ctx for ALL HL.xyz entries (spot @-tokens + HIP-3 perps) ─
+async function _hlDeepRefresh() {
+  const allEntries = Object.entries(HL_XYZ_SYM).filter(([,k]) => k && typeof k === 'string');
+  const spotEntries = allEntries.filter(([,k]) => k.startsWith('@'));
+  const perpEntries = allEntries.filter(([,k]) => !k.startsWith('@'));
+  const mids = await _hlGetMids();
+
+  // 1. SPOT @-tokens (HIP-1 equities/ETFs) — use _hlSpotCtx (existing)
+  for (const [sym, hlKey] of spotEntries) {
+    try {
+      const rawPx = parseFloat(mids[hlKey]); if (!rawPx) continue;
+      const ctx = await _hlSpotCtx(hlKey); if (!ctx) continue;
+      await new Promise(r => setTimeout(r, 250));
+      const prevPx  = parseFloat(ctx.prevDayPx) || rawPx;
+      const markPx  = parseFloat(ctx.markPx) || rawPx;
+      const dayOpen = parseFloat(ctx.dayOpen) || prevPx;
+      const dayHi   = parseFloat(ctx.dayHigh) || Math.max(markPx, prevPx);
+      const dayLo   = parseFloat(ctx.dayLow)  || Math.min(markPx, prevPx);
+      const vol     = parseFloat(ctx.dayNtlVlm) || 0;
+      const chg     = dayOpen > 0 ? ((markPx - dayOpen) / dayOpen * 100) : 0;
+      const result  = { px: markPx, chg, hi: dayHi, lo: dayLo, vol, open: dayOpen, src: 'HL_DEEP' };
+      _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
+      _hlSyncAll(sym, markPx, chg, result);
+    } catch(e) {}
+  }
+
+  // 2. HIP-3 PERPS (indices, commodities, forex) — fetch metaAndAssetCtxs
+  if (perpEntries.length > 0) {
+    try {
+      const r = await fetch('https://api.hyperliquid.xyz/info', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({type:'metaAndAssetCtxs'}),
+        signal: (()=>{const c=new AbortController();setTimeout(()=>c.abort(),8000);return c.signal;})(),
+        cache: 'no-store'
+      });
+      if (r.ok) {
+        const [meta, ctxs] = await r.json();
+        const universe = meta.universe || [];
+        for (const [sym, hlKey] of perpEntries) {
+          const idx = universe.findIndex(u => u && u.name === hlKey);
+          if (idx === -1 || !ctxs[idx]) continue;
+          const ctx = ctxs[idx];
+          const markPx  = parseFloat(ctx.markPx || ctx.midPx || mids[hlKey] || 0);
+          if (!markPx || markPx <= 0) continue;
+          const prevPx  = parseFloat(ctx.prevDayPx) || markPx;
+          const dayHi   = parseFloat(ctx.dayHigh) || Math.max(markPx, prevPx);
+          const dayLo   = parseFloat(ctx.dayLow)  || Math.min(markPx, prevPx);
+          const vol     = parseFloat(ctx.dayNtlVlm) || 0;
+          const chg     = prevPx > 0 ? ((markPx - prevPx) / prevPx * 100) : 0;
+          const result  = { px: markPx, chg, hi: dayHi, lo: dayLo, vol, open: prevPx, src: 'HL_PERP_DEEP' };
+          _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
+          _hlSyncAll(sym, markPx, chg, result);
+        }
+      }
+    } catch(e) {}
+  }
+
+  if (typeof _refreshActivePanels === 'function') _refreshActivePanels();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HL.xyz AUTO-DISCOVERY
+// ──────────────────────────────────────────────────────────────────────────────
+// Scans live HL API for @-spot tokens (HIP-1) and perp markets (HIP-3),
+// resolves null placeholders in HL_XYZ_SYM → real API keys, so every asset
+// in IS_HL_XYZ gets live price data from Hyperliquid (panel) while chart
+// comes from TradingView via tvSymMap/xyzTvMap (unchanged working path).
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Terminal ticker → accepted HL metadata names (normalized)
+var HL_XYZ_DISCOVERY_ALIASES = {
+  NVDA:['NVDA','xyz:NVDA'],   NFLX:['NFLX','xyz:NFLX'], AMD:['AMD','xyz:AMD'],
+  COIN:['COIN','xyz:COIN'],   PLTR:['PLTR','xyz:PLTR'], MSTR:['MSTR','xyz:MSTR'],
+  SOFI:['SOFI','xyz:SOFI'],
+  IWM:['IWM','xyz:IWM'],      USO:['USO','xyz:USO'],    TLT:['TLT','xyz:TLT'],
+  SP500:['SP500','xyz:SP500','SPX','xyz:SPX'],
+  XYZ100:['XYZ100','xyz:XYZ100','NDX','xyz:NDX'],
+  GOLD:['xyz:GOLD','GOLD','XAU','xyz:XAU'],
+  SILVER:['xyz:SILVER','SILVER','XAG','xyz:XAG'],
+  OIL:['xyz:CL','CL','xyz:OIL','OIL','xyz:WTI','WTI'],
+  BRENT:['xyz:BRENT','BRENT','xyz:BRENTOIL','BRENTOIL'],
+  NATGAS:['xyz:NATGAS','NATGAS','xyz:NG','NG'],
+  COPPER:['xyz:COPPER','COPPER','xyz:HG','HG'],
+  PLATINUM:['xyz:PLATINUM','PLATINUM','xyz:XPT','XPT'],
+  PALLADIUM:['xyz:PALLADIUM','PALLADIUM','xyz:XPD','XPD'],
+  EURUSD:['xyz:EUR','EUR','xyz:EURUSD','EURUSD'],
+  USDJPY:['xyz:JPY','JPY','xyz:USDJPY','USDJPY'],
+  GBPUSD:['xyz:GBP','GBP','xyz:GBPUSD','GBPUSD'],
+  AUDUSD:['xyz:AUD','AUD','xyz:AUDUSD','AUDUSD'],
+};
+
+function _hlDiscNorm(s) {
+  return String(s||'').toUpperCase().replace(/^XYZ:/,'').replace(/[^A-Z0-9]/g,'');
+}
+
+function _hlDiscMatches(termSym, hlName) {
+  var aliases = HL_XYZ_DISCOVERY_ALIASES[termSym] || [termSym];
+  var n = _hlDiscNorm(hlName);
+  for (var i=0; i<aliases.length; i++) {
+    if (_hlDiscNorm(aliases[i]) === n) return true;
   }
   return false;
 }
 
-// Auto-discovery: scan HL API metadata and populate missing @-IDs / perp names
 async function _hlAutoDiscover() {
   try {
-    const _sig = () => { const c = new AbortController(); setTimeout(()=>c.abort(), 10000); return c.signal; };
-    let found = 0;
+    var _sig = function() { var c = new AbortController(); setTimeout(function(){c.abort();}, 10000); return c.signal; };
+    var discovered = [];
 
-    // ── 1. SPOT metadata (@-tokens, HIP-1 equities on trade.xyz) ──
+    // 1. SPOT meta (@-tokens — HIP-1 equities/ETFs)
     try {
-      const rSpot = await fetch('https://api.hyperliquid.xyz/info', {
+      var rSpot = await fetch('https://api.hyperliquid.xyz/info', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({type:'spotMetaAndAssetCtxs'}),
         signal: _sig(), cache: 'no-store'
       });
       if (rSpot.ok) {
-        const payload = await rSpot.json();
-        const meta = Array.isArray(payload) ? payload[0] : payload.meta;
-        const universe = (meta && meta.universe) || [];
-        // Each universe entry: { name: '@264' or similar, ... }
-        // Some entries also have 'tokens' array mapping to HIP-1 tokens
-        const tokens = (meta && meta.tokens) || [];
+        var payload = await rSpot.json();
+        var meta = Array.isArray(payload) ? payload[0] : (payload && payload.meta);
+        var universe = (meta && meta.universe) || [];
+        var tokens = (meta && meta.tokens) || [];
 
-        for (const sym of Object.keys(HL_XYZ_SYM)) {
-          if (HL_XYZ_SYM[sym]) continue; // already resolved
+        Object.keys(HL_XYZ_DISCOVERY_ALIASES).forEach(function(termSym) {
+          if (HL_XYZ_SYM[termSym]) return; // already resolved
 
-          // Strategy 1: match token name (e.g., 'NVDA' or 'xyz:NVDA') in tokens[]
-          const tokIdx = tokens.findIndex(t => _hlNameMatches(sym, t && t.name));
+          // Strategy 1: find token by name, then pair in universe
+          var tokIdx = -1;
+          for (var ti=0; ti<tokens.length; ti++) {
+            if (tokens[ti] && _hlDiscMatches(termSym, tokens[ti].name)) { tokIdx = ti; break; }
+          }
           if (tokIdx !== -1) {
-            // Find universe entry that pairs this token with USDC
-            const uIdx = universe.findIndex(u =>
-              u && Array.isArray(u.tokens) && u.tokens.indexOf(tokIdx) !== -1
-            );
-            if (uIdx !== -1 && universe[uIdx].name) {
-              HL_XYZ_SYM[sym] = universe[uIdx].name; // e.g. '@295'
-              found++;
-              continue;
+            for (var ui=0; ui<universe.length; ui++) {
+              var u = universe[ui];
+              if (u && Array.isArray(u.tokens) && u.tokens.indexOf(tokIdx) !== -1 && u.name) {
+                HL_XYZ_SYM[termSym] = u.name;
+                IS_HL_XYZ[termSym] = 1;
+                discovered.push(termSym + '→' + u.name);
+                return;
+              }
             }
           }
-          // Strategy 2: direct name match in universe
-          const dIdx = universe.findIndex(u => _hlNameMatches(sym, u && u.name));
-          if (dIdx !== -1 && universe[dIdx].name) {
-            HL_XYZ_SYM[sym] = universe[dIdx].name;
-            found++;
+          // Strategy 2: direct universe name match
+          for (var vi=0; vi<universe.length; vi++) {
+            if (universe[vi] && _hlDiscMatches(termSym, universe[vi].name)) {
+              HL_XYZ_SYM[termSym] = universe[vi].name;
+              IS_HL_XYZ[termSym] = 1;
+              discovered.push(termSym + '→' + universe[vi].name);
+              return;
+            }
           }
-        }
+        });
       }
-    } catch(e) { /* ignore */ }
+    } catch(e) {}
 
-    // ── 2. PERP metadata (HIP-3 perps: commodities, indices, forex) ──
-    // For perp markets, the "key" in allMids is the market NAME directly (no @-ID)
+    // 2. PERP meta (HIP-3 perps: commodities, indices, forex)
     try {
-      const rPerp = await fetch('https://api.hyperliquid.xyz/info', {
+      var rPerp = await fetch('https://api.hyperliquid.xyz/info', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({type:'metaAndAssetCtxs'}),
         signal: _sig(), cache: 'no-store'
       });
       if (rPerp.ok) {
-        const payload = await rPerp.json();
-        const meta = Array.isArray(payload) ? payload[0] : payload.meta;
-        const universe = (meta && meta.universe) || [];
-        for (const sym of Object.keys(HL_XYZ_SYM)) {
-          if (HL_XYZ_SYM[sym]) continue; // already resolved
-          const u = universe.find(x => _hlNameMatches(sym, x && x.name));
-          if (u && u.name) {
-            // Perps use the raw name as allMids key (e.g. 'xyz:GOLD')
-            HL_XYZ_SYM[sym] = u.name;
-            found++;
-          }
-        }
-      }
-    } catch(e) { /* ignore */ }
+        var payload = await rPerp.json();
+        var meta = Array.isArray(payload) ? payload[0] : (payload && payload.meta);
+        var universe = (meta && meta.universe) || [];
 
-    // Sync back to window + resolver
+        Object.keys(HL_XYZ_DISCOVERY_ALIASES).forEach(function(termSym) {
+          if (HL_XYZ_SYM[termSym]) return;
+          for (var vi=0; vi<universe.length; vi++) {
+            var u = universe[vi];
+            if (u && u.name && _hlDiscMatches(termSym, u.name)) {
+              HL_XYZ_SYM[termSym] = u.name;
+              IS_HL_XYZ[termSym] = 1;
+              discovered.push(termSym + '→' + u.name);
+              return;
+            }
+          }
+        });
+      }
+    } catch(e) {}
+
+    // Sync to window
+    window.IS_HL_XYZ = IS_HL_XYZ;
     window.HL_XYZ_SYM = HL_XYZ_SYM;
 
-    if (found > 0) {
-      console.log('[HL AUTO-DISCOVERY] ⚡ Resolved', found, 'new symbols');
-      // Log newly resolved symbols
-      Object.keys(HL_XYZ_SYM).forEach(s => {
-        if (HL_XYZ_SYM[s]) {
-          // (only show if it's one of the newly-resolved ones — ok to log all)
-        }
-      });
+    if (discovered.length > 0) {
+      console.log('[HL AUTO-DISCOVERY] ⚡ Resolved', discovered.length, 'symbols:', discovered.join(', '));
+      if (typeof _hlPollAll === 'function') _hlPollAll();
+      if (typeof _hlDeepRefresh === 'function') setTimeout(_hlDeepRefresh, 1500);
+    } else {
+      console.log('[HL AUTO-DISCOVERY] No new symbols found');
     }
   } catch(e) {
-    console.warn('[HL AUTO-DISCOVERY] failed:', e);
+    console.warn('[HL AUTO-DISCOVERY] failed:', e && e.message);
   }
-}
-
-// ── Fast poll: update ALL HL tokens from allMids every 8s ────────────────
-async function _hlPollAll() {
-  try {
-    const mids = await _hlGetMids();
-    let anyUpdate = false;
-    
-    // Process IS_HL (Native Perps)
-    for (const sym of Object.keys(IS_HL)) {
-      const px = parseFloat(mids[sym]);
-      if (!px || px <= 0) continue;
-      _updateHLCache(sym, px, 'HL_PERP');
-      anyUpdate = true;
-    }
-    
-    // Process IS_HL_XYZ (@-spot Equities/ETFs)
-    for (const sym of Object.keys(IS_HL_XYZ)) {
-      const hlKey = HL_XYZ_SYM[sym]; if (!hlKey) continue;
-      const px = parseFloat(mids[hlKey]);
-      if (!px || px <= 0) continue;
-      _updateHLCache(sym, px, 'HL_XYZ');
-      anyUpdate = true;
-    }
-    
-    if (anyUpdate && typeof _refreshActivePanels === 'function') _refreshActivePanels();
-  } catch(e) {}
-}
-
-function _updateHLCache(sym, rawPx, src) {
-  const cached = _HL_PRICE_CACHE[sym];
-  const prevPx = cached && cached.open > 0 ? cached.open : rawPx;
-  const chg = prevPx > 0 ? ((rawPx - prevPx) / prevPx * 100) : 0;
-  const result = {
-    px: rawPx, chg,
-    hi: Math.max(rawPx, cached ? (cached.hi || rawPx) : rawPx),
-    lo: Math.min(rawPx, cached ? (cached.lo || rawPx) : rawPx),
-    vol: cached ? (cached.vol || 0) : 0, open: prevPx, src: src
-  };
-  _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
-  _hlSyncAll(sym, rawPx, chg, result);
-}
-
-// ── Deep refresh: full metadata (OHLC/Vol) for all HL assets ───────────
-async function _hlDeepRefresh() {
-  try {
-    // 1. Fetch Perp Metadata (covers native crypto perps + HIP-3 perps like GOLD, SP500, EURUSD)
-    const r1 = await fetch('https://api.hyperliquid.xyz/info', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({type:'metaAndAssetCtxs'}),
-      signal: _timeoutSignal(10000)
-    });
-    if (r1.ok) {
-        const [meta, ctxs] = await r1.json();
-        (meta.universe||[]).forEach((m, i) => {
-            const name = m.name;
-            if (!ctxs[i]) return;
-            // Native Hyperliquid perp (BTC, ETH, SOL, ...)
-            if (IS_HL[name]) {
-                _applyCtxToCache(name, ctxs[i], 'HL_PERP_DEEP');
-                return;
-            }
-            // HIP-3 perp that our auto-discovery mapped to an IS_HL_XYZ symbol
-            // Find any term symbol whose resolved key matches this name
-            for (const termSym of Object.keys(HL_XYZ_SYM)) {
-                if (HL_XYZ_SYM[termSym] === name) {
-                    _applyCtxToCache(termSym, ctxs[i], 'HL_XYZ_PERP_DEEP');
-                    break;
-                }
-            }
-        });
-    }
-
-    // 2. Fetch Spot Metadata (@ tokens — HIP-1 equities/ETFs)
-    const r2 = await fetch('https://api.hyperliquid.xyz/info', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({type:'spotMetaAndAssetCtxs'}),
-      signal: _timeoutSignal(10000)
-    });
-    if (r2.ok) {
-        const [meta, ctxs] = await r2.json();
-        Object.keys(IS_HL_XYZ).forEach(sym => {
-            const hlKey = HL_XYZ_SYM[sym];
-            if (!hlKey) return;
-            const idx = (meta.universe||[]).findIndex(a => a.name === hlKey);
-            if (idx !== -1 && ctxs[idx]) {
-                _applyCtxToCache(sym, ctxs[idx], 'HL_XYZ_DEEP');
-            }
-        });
-    }
-  } catch(e) {}
-}
-
-function _applyCtxToCache(sym, ctx, src) {
-  const markPx  = parseFloat(ctx.markPx || ctx.midPx || 0); if (!markPx) return;
-  const prevPx  = parseFloat(ctx.prevDayPx) || markPx;
-  const dayHi   = parseFloat(ctx.dayHigh) || markPx;
-  const dayLo   = parseFloat(ctx.dayLow) || markPx;
-  const vol     = parseFloat(ctx.dayNtlVlm) || 0;
-  const chg     = prevPx > 0 ? ((markPx - prevPx) / prevPx * 100) : 0;
-  const result  = { px: markPx, chg, hi: dayHi, lo: dayLo, vol, open: prevPx, src: src };
-  _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
-  _hlSyncAll(sym, markPx, chg, result);
 }
 
 
 // ── Auto-start HL polling on load ────────────────────────────────────────
 (function _startHLPolling() {
-  // Boot sequence:
-  //   T+0.5s: auto-discovery (resolves all unknown @-IDs / perp names)
-  //   T+1.5s: first poll with resolved map
-  //   T+4s:   deep refresh (OHLC + volume)
-  //   Recurring: poll every 8s, deep refresh every 60s, re-discover every 5 min
   setTimeout(async () => {
-    await _hlAutoDiscover();           // populate HL_XYZ_SYM from live API
-    await _hlPollAll();                // first price pass
-    setTimeout(_hlDeepRefresh, 2500);  // OHLC + volume
-  }, 500);
-  setInterval(_hlPollAll,      8000);      // fast price updates
-  setInterval(_hlDeepRefresh,  60000);     // OHLC refresh
-  setInterval(_hlAutoDiscover, 300000);    // re-discover every 5 min (catches new listings)
+    await _hlAutoDiscover();                    // resolve placeholders first
+    await _hlPollAll();                         // then fetch prices
+    setTimeout(_hlDeepRefresh, 2500);           // full OHLC + volume
+  }, 800);
+  setInterval(_hlPollAll, 8000);                // price polling
+  setInterval(_hlDeepRefresh, 60000);           // OHLC refresh
+  setInterval(_hlAutoDiscover, 300000);         // re-scan for new listings every 5 min
   console.log('[HL ORACLE] ⚡ Started —', Object.keys(IS_HL_XYZ).length, 'assets registered:', Object.keys(IS_HL_XYZ).join(', '));
 })();
 
 // ── Master fetch: best source per asset class ────────────────────────────────
 async function _liveFetch(sym) {
-  try {
-    sym = sym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
+  sym = sym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
 
-    // Hyperliquid-native tokens (Perps)
-    if (IS_HL[sym]) {
-      const res = await _hlFetch(sym);
-      if (res && res.px > 0) return res;
-    }
+  // Hyperliquid-native tokens
+  if (IS_HL[sym]) {
+    const res = await _hlFetch(sym);
+    if (res) return res;
+  }
 
-    // Hyperliquid xyz: equities & pre-IPO (HIP-3)
-    if (IS_HL_XYZ[sym]) {
-      const res = await _hlXyzFetch(sym);
-      if (res && res.px > 0) return res;
-    }
+  // Hyperliquid xyz: equities & pre-IPO (HIP-3)
+  if (IS_HL_XYZ[sym]) {
+    const res = await _hlXyzFetch(sym);
+    if (res) return res;
+  }
 
-    // Crypto fallback — Binance spot
-    if (IS_CRYPTO[sym] || IS_HL[sym]) {
-      var bPair = sym + 'USDT';
-      var resB = await _binanceFetch(bPair);
-      if (resB) return resB;
-    }
+  // Crypto — Binance spot is most reliable
+  if (IS_CRYPTO[sym]) {
+    var bPair = sym + 'USDT';
+    return await _binanceFetch(bPair);
+  }
 
-    // Commodities → Yahoo Finance
-    if (IS_COMDTY[sym] && YH[sym]) {
-      var resC = await _yahooFetch(YH[sym]);
-      if (resC) return resC;
-    }
+  // Commodities → Yahoo Finance (authoritative CME/NYMEX data)
+  if (IS_COMDTY[sym] && YH[sym]) return await _yahooFetch(YH[sym]);
 
-    // Indices → Yahoo
-    if (IS_IDX[sym] && YH[sym]) {
-      var resI = await _yahooFetch(YH[sym]);
-      if (resI) return resI;
-    }
-
-    // FX / Bonds
-    if ((IS_FX[sym] || IS_BOND[sym]) && YH[sym]) return await _yahooFetch(YH[sym]);
-
-    // Final generic fallback
-    if (YH[sym]) return await _yahooFetch(YH[sym]);
-
-    return null;
-  } catch(e) {
-    console.warn("[v12-LIVE] Master fetch error for " + sym, e);
+  // Indices → Yahoo primary, Bybit secondary (for 24h)
+  if (IS_IDX[sym]) {
+    var yRes = YH[sym] ? await _yahooFetch(YH[sym]) : null;
+    if (yRes && yRes.px > 0) return yRes;
+    if (BB[sym]) return await _bybitFetch(BB[sym]);
     return null;
   }
+
+  // Bonds / FX → Yahoo Finance
+  if ((IS_BOND[sym] || IS_FX[sym]) && YH[sym]) return await _yahooFetch(YH[sym]);
+
+  // US Equities — try Bybit perp first (24/7), then Yahoo (market hours)
+  if (BB[sym]) {
+    var bbRes = await _bybitFetch(BB[sym]);
+    if (bbRes && bbRes.px > 0) {
+      // Sanity check: Bybit price should be within 20% of Yahoo to avoid bad data
+      if (YH[sym]) {
+        var yRes2 = await _yahooFetch(YH[sym]);
+        if (yRes2 && yRes2.px > 0) {
+          var diff = Math.abs(bbRes.px - yRes2.px) / yRes2.px;
+          // If close enough, use Yahoo (more accurate for % change)
+          return diff < 0.20 ? yRes2 : bbRes;
+        }
+      }
+      return bbRes;
+    }
+  }
+
+  // Generic Yahoo fallback for all other equities
+  if (YH[sym]) return await _yahooFetch(YH[sym]);
+
+  return null;
 }
 
 // ── Per-symbol polling manager ──────────────────────────────────────────────
