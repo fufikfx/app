@@ -6036,7 +6036,7 @@ const LYR_LABELS={mkt:'MKT',news:'NEWS',lbl:'LABELS',cb:'CENTRAL BANKS'};
             method:'POST',
             body:'data='+encodeURIComponent(query),
             headers:{'Content-Type':'application/x-www-form-urlencoded'},
-            signal: AbortSignal.timeout(22000)
+            signal: _timeoutSignal(22000)
           });
           if (r.ok) { data = await r.json(); break; }
         } catch(e) { /* try next */ }
@@ -22182,7 +22182,7 @@ function renderInstLayer(){
         const updEl  = document.getElementById(pid+'_upd');
         if(!rowsEl) return;
         try {
-          const resp = await fetch(_proxy, {signal: AbortSignal.timeout(8000)});
+          const resp = await fetch(_proxy, {signal: _timeoutSignal(8000)});
           const json = await resp.json();
           const meta = json?.chart?.result?.[0]?.meta;
           if(!meta){ throw new Error('no meta'); }
@@ -25307,7 +25307,7 @@ async function _portFetchYahoo(){
   ];
   for(const url of urls){
     try{
-      const r = await fetch(url,{signal:AbortSignal.timeout(6000)});
+      const r = await fetch(url,{signal:_timeoutSignal(6000)});
       const d = await r.json();
       const quotes = d?.quoteResponse?.result||[];
       quotes.forEach(q=>{
@@ -26772,7 +26772,7 @@ function _renderOIDash(){
   async function _fetchEpicFuryKML() {
     try {
       if(typeof window.mapGL === 'undefined' || typeof map === 'undefined') return;
-      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(KML_URL), { signal: AbortSignal.timeout(15000) });
+      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(KML_URL), { signal: _timeoutSignal(15000) });
       if(!res.ok) return;
       const xml = (new DOMParser()).parseFromString(await res.text(), "text/xml");
       let geojsonShapes = [], geojsonPts = [];
@@ -26818,7 +26818,7 @@ function _renderOIDash(){
   async function _fetchLiveNews() {
     try {
       if(typeof window.mapGL === 'undefined') return;
-      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent('https://api.gdeltproject.org/api/v1/gkg_geojson?TIMESPAN=1440&OUTPUTFIELDS=name,url,domain&MAXROWS=1000'), { signal: AbortSignal.timeout(15000) });
+      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent('https://api.gdeltproject.org/api/v1/gkg_geojson?TIMESPAN=1440&OUTPUTFIELDS=name,url,domain&MAXROWS=1000'), { signal: _timeoutSignal(15000) });
       if(!res.ok) return;
       const data = await res.json();
       if(!data || !data.features) return;
@@ -26994,7 +26994,7 @@ setTimeout(function(){ if(typeof fetchFundingRates==='function') try{fetchFundin
   async function _fetchEpicFuryKML() {
     try {
       if(typeof window.mapGL === 'undefined' || typeof map === 'undefined') return;
-      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(KML_URL), { signal: AbortSignal.timeout(15000) });
+      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(KML_URL), { signal: _timeoutSignal(15000) });
       if(!res.ok) return;
       const xml = (new DOMParser()).parseFromString(await res.text(), "text/xml");
       
@@ -27054,7 +27054,7 @@ setTimeout(function(){ if(typeof fetchFundingRates==='function') try{fetchFundin
     try {
       if(typeof window.mapGL === 'undefined') return;
       const gdeltUrl = 'https://api.gdeltproject.org/api/v1/gkg_geojson?TIMESPAN=1440&OUTPUTFIELDS=name,url,domain&MAXROWS=3000';
-      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(gdeltUrl), { signal: AbortSignal.timeout(15000) });
+      const res = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(gdeltUrl), { signal: _timeoutSignal(15000) });
       if(!res.ok) return;
       const data = await res.json();
       if(!data || !data.features) return;
@@ -27601,17 +27601,24 @@ window._setChartInterval = async function(interval) {
     // ── Smart Chart Routing: Decouple Data Stream from Chart Display ──
     let tvSym = tvSymMap[rawSym];
     
-    if (!tvSym) {
-        if (resolved.provider === 'HL_XYZ') {
-            // xyz: equities — chart via TradingView (real exchange), data via Hyperliquid
-            const xyzTvMap = {
-                'META':'NASDAQ:META','AMZN':'NASDAQ:AMZN','AAPL':'NASDAQ:AAPL',
-                'GOOGL':'NASDAQ:GOOGL','MSFT':'NASDAQ:MSFT','TSLA':'NASDAQ:TSLA',
-                'HOOD':'NASDAQ:HOOD','CRCL':'NYSE:CRCL',
-                'SPY':'AMEX:SPY','QQQ':'NASDAQ:QQQ','QQQM':'NASDAQ:QQQM',
-                'GLD':'AMEX:GLD','SLV':'AMEX:SLV'
-            };
-            tvSym = xyzTvMap[rawSym] || ('NASDAQ:' + rawSym);
+        const isHL = !!IS_HL[rawSym] || !!IS_HL_XYZ[rawSym];
+
+        if (isHL) {
+            // Priority 1: Hyperliquid Crypto Chart
+            if (IS_HL[rawSym]) {
+                tvSym = 'HYPERLIQUID:' + rawSym;
+            } 
+            // Priority 2: Equities Chart via mapped source
+            else if (resolved.provider === 'HL_XYZ') {
+                const xyzTvMap = {
+                    'META':'NASDAQ:META', 'AMZN':'NASDAQ:AMZN', 'AAPL':'NASDAQ:AAPL',
+                    'GOOGL':'NASDAQ:GOOGL', 'MSFT':'NASDAQ:MSFT', 'TSLA':'NASDAQ:TSLA',
+                    'HOOD':'NASDAQ:HOOD', 'CRCL':'NYSE:CRCL',
+                    'SPY':'AMEX:SPY', 'QQQ':'NASDAQ:QQQ', 'QQQM':'NASDAQ:QQQM',
+                    'GLD':'AMEX:GLD', 'SLV':'AMEX:SLV'
+                };
+                tvSym = xyzTvMap[rawSym] || ('NASDAQ:' + rawSym);
+            }
         } else if (resolved.type === 'WS') {
             tvSym = resolved.provider + ':' + (resolved.provider === 'BYBIT' ? resolved.ticker + '.P' : resolved.ticker);
         } else {
@@ -27619,7 +27626,6 @@ window._setChartInterval = async function(interval) {
             const isKnownEquity = !!yahooMap[rawSym] && !cryptoMap[rawSym];
             tvSym = (isKnownEquity ? 'NASDAQ:' : '') + (yahooMap[rawSym] || rawSym);
         }
-    }
 
     const _nonEquityPrefix = ['BINANCE:','BYBIT:','FX:','TVC:','FOREXCOM:','XETR:','CME_MINI:',
         'NYMEX:','COMEX:','CBOT:','ICEUS:','BSE:','NSE:','KRX:','ASX:','SSE:',
@@ -27863,7 +27869,7 @@ window._setChartInterval = async function(interval) {
                 const url  = `${MMT_BASE_URL}/candles?exchange=${_mmtExchange}&symbol=${encodeURIComponent(_mmtSymbol)}&tf=${binanceInterval}&from=${from}&to=${to}`;
                 const r = await fetch(url, {
                     headers: _mmtKey ? { 'X-API-Key': _mmtKey, 'Accept': 'application/json' } : { 'Accept': 'application/json' },
-                    signal: AbortSignal.timeout(6000), cache: 'no-store'
+                    signal: _timeoutSignal(6000), cache: 'no-store'
                 });
                 if(r.ok) {
                     const data = await r.json();
@@ -27888,7 +27894,7 @@ window._setChartInterval = async function(interval) {
             if(!_mmtKey) return;
             try {
                 const url = `${MMT_BASE_URL}/stats?exchange=${_mmtExchange}&symbol=${encodeURIComponent(_mmtSymbol)}&tf=1m&from=${Math.floor(Date.now()/1000)-300}&to=${Math.floor(Date.now()/1000)}`;
-                const r = await fetch(url, { headers:{'X-API-Key':_mmtKey,'Accept':'application/json'}, signal:AbortSignal.timeout(5000), cache:'no-store' });
+                const r = await fetch(url, { headers:{'X-API-Key':_mmtKey,'Accept':'application/json'}, signal:_timeoutSignal(5000), cache:'no-store' });
                 if(r.ok) {
                     const data = await r.json();
                     const pts = data.data;
@@ -28073,7 +28079,7 @@ window._setChartInterval = async function(interval) {
                     ];
                     for (const url of urls) {
                         try {
-                            const ry = await fetch(url, {signal: AbortSignal.timeout(5000), cache:'no-store'});
+                            const ry = await fetch(url, {signal: _timeoutSignal(5000), cache:'no-store'});
                             const raw = await ry.text();
                             let parsed = null;
                             try { parsed = JSON.parse(raw); } catch(pe) {
@@ -28219,7 +28225,7 @@ window._setChartInterval = async function(interval) {
                 ];
 
                 const tryYahooChart = async (url) => {
-                    const r = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(4000), headers: {'Accept':'application/json'} });
+                    const r = await fetch(url, { cache: 'no-store', signal: _timeoutSignal(4000), headers: {'Accept':'application/json'} });
                     if(!r.ok) throw new Error('HTTP '+r.status);
                     const raw = await r.text();
                     const parsed = _parseRaw(raw);
@@ -28275,7 +28281,7 @@ window._setChartInterval = async function(interval) {
                             'GC=F':'GC.F','CL=F':'CL.F','SI=F':'SI.F',
                         })[ticker] || null;
                         if(stooqTicker) {
-                            const sr = await fetch('https://stooq.com/q/d/l/?s='+encodeURIComponent(stooqTicker)+'&d1=&d2=&i=d', {signal:AbortSignal.timeout(5000)});
+                            const sr = await fetch('https://stooq.com/q/d/l/?s='+encodeURIComponent(stooqTicker)+'&d1=&d2=&i=d', {signal:_timeoutSignal(5000)});
                             const csv = await sr.text();
                             const lines = csv.trim().split('\n');
                             if(lines.length >= 2) {
@@ -28309,7 +28315,7 @@ window._setChartInterval = async function(interval) {
                             'https://corsproxy.io/?url=' + encodeURIComponent(yahooChartUrl),
                             'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1m&range=1d'),
                         ];
-                        const r3 = await Promise.any(extraProxies.map(u => fetch(u, {signal:AbortSignal.timeout(6000)})));
+                        const r3 = await Promise.any(extraProxies.map(u => fetch(u, {signal:_timeoutSignal(6000)})));
                         const raw3 = await r3.text();
                         const p3 = _parseRaw(raw3);
                         if(p3?.chart?.result?.[0]) {
@@ -29590,7 +29596,7 @@ async function fetchIndex(sym) {
     try {
       const url = `https://query1.finance.yahoo.com/v8/finance/chart/${target}?interval=1m&range=1d`;
       const r = await fetch(typeof proxy === 'function' ? proxy(url) : proxy, { 
-        signal: AbortSignal.timeout(6000),
+        signal: _timeoutSignal(6000),
         headers: { 'Accept': 'application/json' }
       });
       if (!r.ok) continue;
@@ -30750,7 +30756,7 @@ window.addEventListener('storage', (e) => {
   async function _fetchMarketStats() {
     // Fetch from primary (Binance) backend
     try {
-      const r = await fetch(CE_HTTP + '/api/market-stats', { signal: AbortSignal.timeout(8000) });
+      const r = await fetch(CE_HTTP + '/api/market-stats', { signal: _timeoutSignal(8000) });
       if (r.ok) {
         const arr = await r.json();
         arr.forEach(ms => {
@@ -30777,7 +30783,7 @@ window.addEventListener('storage', (e) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'metaAndAssetCtxs' }),
-        signal: AbortSignal.timeout(8000)
+        signal: _timeoutSignal(8000)
       });
       if (hlR.ok) {
         const [meta, ctxs] = await hlR.json();
@@ -30809,7 +30815,7 @@ window.addEventListener('storage', (e) => {
   async function _fetchScreener() {
     // Primary: cryexc backend screener (Binance 24h ticker)
     try {
-      const r = await fetch(CE_HTTP + '/screener', { signal: AbortSignal.timeout(10000) });
+      const r = await fetch(CE_HTTP + '/screener', { signal: _timeoutSignal(10000) });
       if (r.ok) {
         const arr = await r.json();
         CE.screener = arr;
@@ -30842,7 +30848,7 @@ window.addEventListener('storage', (e) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'allMids' }),
-        signal: AbortSignal.timeout(6000)
+        signal: _timeoutSignal(6000)
       });
       if (hlR.ok) {
         const mids = await hlR.json(); // {BTC: "104200.5", ETH: "2350.2", ...}
@@ -31120,7 +31126,7 @@ async function _pollStockPrices() {
     const syms = batch.join(',');
     const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms}&fields=regularMarketPrice,regularMarketChangePercent,regularMarketVolume,marketCap`;
     // Zkus allorigins proxy
-    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {signal: AbortSignal.timeout(8000)});
+    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {signal: _timeoutSignal(8000)});
     if (!r.ok) throw new Error('allorigins failed');
     const json = await r.json();
     const parsed = JSON.parse(json.contents);
@@ -31158,7 +31164,7 @@ async function _pollStockPrices() {
     try {
       const syms = batch.join(',');
       const url = `https://query2.finance.yahoo.com/v8/finance/spark?symbols=${syms}&range=1d&interval=1d`;
-      const r2 = await fetch(url, {signal: AbortSignal.timeout(6000), headers:{'Accept':'application/json'}});
+      const r2 = await fetch(url, {signal: _timeoutSignal(6000), headers:{'Accept':'application/json'}});
       if (r2.ok) {
         const d = await r2.json();
         const sp = d?.spark?.result || [];
@@ -31198,7 +31204,7 @@ async function _fetchHLPerps() {
     const r = await fetch('https://api.hyperliquid.xyz/info', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({type:'metaAndAssetCtxs'}),
-      signal: AbortSignal.timeout(8000)
+      signal: _timeoutSignal(8000)
     });
     if (!r.ok) return;
     const [meta, ctxs] = await r.json();
@@ -31232,7 +31238,7 @@ async function _fetchHLPerps() {
   try {
     const r2 = await fetch('https://api.hyperliquid.xyz/info', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({type:'globalSummary'}), signal: AbortSignal.timeout(6000)
+      body: JSON.stringify({type:'globalSummary'}), signal: _timeoutSignal(6000)
     });
     if (r2.ok) {
       const gs = await r2.json();
@@ -32246,7 +32252,7 @@ async function _hlRestBootstrap() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'metaAndAssetCtxs' }),
-      signal: AbortSignal.timeout(10000)
+      signal: _timeoutSignal(10000)
     });
     if (!r.ok) return;
     const [meta, ctxs] = await r.json();
@@ -32464,7 +32470,7 @@ async function _hlPollFundingForStocks() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'metaAndAssetCtxs' }),
-      signal: AbortSignal.timeout(8000)
+      signal: _timeoutSignal(8000)
     });
     if (!r.ok) return;
     const [meta, ctxs] = await r.json();
@@ -36181,11 +36187,11 @@ if __name__ == "__main__":
 
   const _apiFetch = async (url) => {
     try {
-      const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
+      const r = await fetch(url, {signal: _timeoutSignal(8000)});
       if (r.ok) return r.json();
     } catch(e) {}
     try {
-      const r = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(url), {signal: AbortSignal.timeout(10000)});
+      const r = await fetch('https://corsproxy.io/?url=' + encodeURIComponent(url), {signal: _timeoutSignal(10000)});
       if (r.ok) return r.json();
     } catch(e2) {}
     throw new Error('fetch failed: ' + url);
@@ -36313,7 +36319,7 @@ if __name__ == "__main__":
           let yj = null;
           for(const pu of proxies) {
             try {
-              const r = await fetch(pu, {signal: AbortSignal.timeout(8000)});
+              const r = await fetch(pu, {signal: _timeoutSignal(8000)});
               if(r.ok) { yj = await r.json(); break; }
             } catch(e2){}
           }
@@ -36392,7 +36398,7 @@ if __name__ == "__main__":
     let yj = null;
     for(const pu of proxies) {
       try {
-        const r = await fetch(pu, {signal: AbortSignal.timeout(10000)});
+        const r = await fetch(pu, {signal: _timeoutSignal(10000)});
         if(r.ok) { yj = await r.json(); break; }
       } catch(e) {}
     }
@@ -36416,7 +36422,7 @@ if __name__ == "__main__":
         for(const pu of proxies) {
           try {
             const u = pu.includes('?') ? pu + '&date=' + expTs : pu + '?date=' + expTs;
-            const r = await fetch(u, {signal: AbortSignal.timeout(8000)});
+            const r = await fetch(u, {signal: _timeoutSignal(8000)});
             if(r.ok) {
               const ej = await r.json();
               calls = ej?.optionChain?.result?.[0]?.options?.[0]?.calls || [];
@@ -36443,8 +36449,8 @@ if __name__ == "__main__":
   async function _loadOKXOptions(sym) {
     const CUR = sym.toUpperCase();
     const _gO = async (u) => {
-      try { const r = await fetch(u, {signal:AbortSignal.timeout(9000)}); if(r.ok) return r.json(); } catch(e) {}
-      const r2 = await fetch('https://corsproxy.io/?url='+encodeURIComponent(u), {signal:AbortSignal.timeout(12000)});
+      try { const r = await fetch(u, {signal:_timeoutSignal(9000)}); if(r.ok) return r.json(); } catch(e) {}
+      const r2 = await fetch('https://corsproxy.io/?url='+encodeURIComponent(u), {signal:_timeoutSignal(12000)});
       if(!r2.ok) throw new Error('HTTP '+r2.status);
       return r2.json();
     };
@@ -37450,8 +37456,8 @@ async function _ofFetch(cur){
   _ofRender();
   try {
     const _g = async (u) => {
-      try { const r = await fetch(u,{signal:AbortSignal.timeout(9000)}); if(r.ok) return r.json(); } catch(e){}
-      const r2 = await fetch('https://corsproxy.io/?url='+encodeURIComponent(u),{signal:AbortSignal.timeout(12000)});
+      try { const r = await fetch(u,{signal:_timeoutSignal(9000)}); if(r.ok) return r.json(); } catch(e){}
+      const r2 = await fetch('https://corsproxy.io/?url='+encodeURIComponent(u),{signal:_timeoutSignal(12000)});
       if(!r2.ok) throw new Error('HTTP '+r2.status);
       return r2.json();
     };
@@ -37493,7 +37499,7 @@ async function _ofFetch(cur){
         let yj = null;
         for(const pu of yProxies) {
           try {
-            const r = await fetch(pu, {signal:AbortSignal.timeout(10000)});
+            const r = await fetch(pu, {signal:_timeoutSignal(10000)});
             if(r.ok) { yj = await r.json(); break; }
           } catch(pe){}
         }
@@ -37518,7 +37524,7 @@ async function _ofFetch(cur){
                 for(const pu of yProxies) {
                   try {
                     const ru=pu.includes('?')? pu+'&date='+expTs : pu+'?date='+expTs;
-                    const r=await fetch(ru,{signal:AbortSignal.timeout(8000)});
+                    const r=await fetch(ru,{signal:_timeoutSignal(8000)});
                     if(r.ok){ej=await r.json();break;}
                   }catch(e2){}
                 }
@@ -41195,6 +41201,14 @@ function _applyLiveTick(px, chgPct, hi, lo, vol, op, sym) {
   console.log('[v12-LIVE] ' + (sym||'?') + ' → ' + _fP(px) + ' (' + (chgPct||0).toFixed(2) + '%)');
 }
 
+// ── Safety Helper for timeouts (_timeoutSignal fallback) ───────────────
+function _timeoutSignal(ms) {
+  if (typeof AbortSignal !== 'undefined' && _timeoutSignal) return _timeoutSignal(ms);
+  var controller = new AbortController();
+  setTimeout(function(){ controller.abort(); }, ms);
+  return controller.signal;
+}
+
 // ── Yahoo Finance fetch ──────────────────────────────────────────────────────
 // Full Yahoo ticker map — covers commodities, indices, equities, FX, bonds
 var YH = {
@@ -41265,7 +41279,7 @@ async function _yahooFetch(ticker) {
   ];
   for (var i = 0; i < proxies.length; i++) {
     try {
-      var r = await fetch(proxies[i], {signal:AbortSignal.timeout(8000), cache:'no-store'});
+      var r = await fetch(proxies[i], {signal:_timeoutSignal(8000), cache:'no-store'});
       if (!r.ok) continue;
       var d = await r.json();
       var res = d && d.chart && d.chart.result && d.chart.result[0];
@@ -41311,7 +41325,7 @@ async function _bybitFetch(symbol) {
   ];
   for (var i = 0; i < proxies.length; i++) {
     try {
-      var r = await fetch(proxies[i], {signal:AbortSignal.timeout(7000), cache:'no-store'});
+      var r = await fetch(proxies[i], {signal:_timeoutSignal(7000), cache:'no-store'});
       if (!r.ok) continue;
       var d = await r.json();
       if (d.retCode !== 0 || !d.result || !d.result.list || !d.result.list[0]) continue;
@@ -41334,33 +41348,21 @@ async function _bybitFetch(symbol) {
 }
 
 // ── Hyperliquid REST ────────────────────────────────────────────────────────
-async function _hlFetch(coin) {
-  try {
-    var r = await fetch('https://api.hyperliquid.xyz/info', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({type:'metaAndAssetCtxs'}),
-      signal:AbortSignal.timeout(7000)
-    });
-    if (!r.ok) return null;
-    var data = await r.json();
-    var idx = data[0].universe.findIndex(function(a){return a.name===coin;});
-    if (idx === -1) return null;
-    var ctx = data[1][idx];
-    var px  = parseFloat(ctx.markPx || ctx.midPx || 0);
-    if (!px) return null;
-    var prev = parseFloat(ctx.prevDayPx || px);
-    var chg  = prev > 0 ? ((px-prev)/prev*100) : 0;
-    return {px:px, chg:chg, open:prev,
-            hi: parseFloat(ctx.dayHigh||px), lo:parseFloat(ctx.dayLow||px),
-            vol:parseFloat(ctx.dayNtlVlm||0)};
-  } catch(e) { return null; }
+// ── Hyperliquid Data Access (Cache Only) ───────────────────────────────────
+function _hlFetch(coin) {
+  return _HL_PRICE_CACHE[coin] || null;
 }
+
+function _hlXyzFetch(sym) {
+  return _HL_PRICE_CACHE[sym] || null;
+}
+
 
 // ── Binance spot ticker (crypto) ────────────────────────────────────────────
 async function _binanceFetch(pair) {
   try {
     var r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol='+pair,
-                        {signal:AbortSignal.timeout(5000), cache:'no-store'});
+                        {signal:_timeoutSignal(5000), cache:'no-store'});
     if (!r.ok) return null;
     var d = await r.json();
     var px = parseFloat(d.lastPrice||0);
@@ -41391,16 +41393,20 @@ var IS_CRYPTO = {BTC:1,ETH:1,SOL:1,BNB:1,XRP:1,ADA:1,DOGE:1,AVAX:1,LINK:1,
                  DOT:1,LTC:1,BCH:1,UNI:1,AAVE:1,FTM:1,NEAR:1,APT:1,SUI:1,
                  ARB:1,OP:1,INJ:1,TIA:1,PEPE:1,WIF:1,BONK:1,TON:1,SHIB:1,
                  TRX:1,XLM:1,ATOM:1,ALGO:1,VET:1,OM:1,HBAR:1,KAS:1,SEI:1};
-var IS_HL     = {HYPE:1,PURR:1,FRIEND:1};
+var IS_HL     = {
+  BTC:1, ETH:1, SOL:1, BNB:1, XRP:1, ADA:1, DOGE:1, AVAX:1, LINK:1, DOT:1,
+  LTC:1, BCH:1, UNI:1, AAVE:1, NEAR:1, ARB:1, OP:1, SUI:1, APT:1, TIA:1,
+  PEPE:1, WIF:1, BONK:1, TON:1, SHIB:1, TRX:1, XLM:1, ATOM:1, ALGO:1,
+  HYPE:1, PURR:1, FRIEND:1, SEI:1, OM:1, HBAR:1, KAS:1
+};
 
 // ── IS_HL_XYZ: verified assets on Hyperliquid @-spot oracle (Wagyu.xyz HIP-3) ──
 // Only includes @-spot tokens that exist & return live prices in allMids
 var IS_HL_XYZ = {
-  // US Equities
   TSLA:1, AAPL:1, GOOGL:1, AMZN:1, META:1, MSFT:1, HOOD:1, CRCL:1,
-  // ETFs
   SPY:1, QQQ:1, QQQM:1, GLD:1, SLV:1
 };
+
 
 // ── HL_XYZ_SYM: terminal symbol → Hyperliquid allMids key ────────────────────
 // '@NNN' = verified spot token on Hyperliquid (Wagyu.xyz HIP-3)
@@ -41567,54 +41573,97 @@ function _hlSyncAll(sym, px, chg, result) {
   }
 }
 
-// ── Fast poll: update all IS_HL_XYZ every 8s from allMids ────────────────
+// ── Fast poll: update ALL HL tokens from allMids every 8s ────────────────
 async function _hlPollAll() {
   try {
     const mids = await _hlGetMids();
     let anyUpdate = false;
-    for (const sym of Object.keys(IS_HL_XYZ)) {
-      const hlKey = HL_XYZ_SYM[sym]; if (!hlKey) continue;
-      const rawPx = parseFloat(mids[hlKey]); if (!rawPx || rawPx <= 0) continue;
-      const cached = _HL_PRICE_CACHE[sym];
-      const prevPx = cached && cached.open > 0 ? cached.open : rawPx;
-      const chg = prevPx > 0 ? ((rawPx - prevPx) / prevPx * 100) : 0;
-      const result = {
-        px: rawPx, chg,
-        hi: Math.max(rawPx, cached ? (cached.hi || rawPx) : rawPx),
-        lo: Math.min(rawPx, cached ? (cached.lo || rawPx) : rawPx),
-        vol: cached ? cached.vol : 0, open: prevPx, src: 'HL_POLL'
-      };
-      _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
-      _hlSyncAll(sym, rawPx, chg, result);
+    
+    // Process IS_HL (Native Perps)
+    for (const sym of Object.keys(IS_HL)) {
+      const px = parseFloat(mids[sym]);
+      if (!px || px <= 0) continue;
+      _updateHLCache(sym, px, 'HL_PERP');
       anyUpdate = true;
     }
+    
+    // Process IS_HL_XYZ (@-spot Equities/ETFs)
+    for (const sym of Object.keys(IS_HL_XYZ)) {
+      const hlKey = HL_XYZ_SYM[sym]; if (!hlKey) continue;
+      const px = parseFloat(mids[hlKey]);
+      if (!px || px <= 0) continue;
+      _updateHLCache(sym, px, 'HL_XYZ');
+      anyUpdate = true;
+    }
+    
     if (anyUpdate && typeof _refreshActivePanels === 'function') _refreshActivePanels();
   } catch(e) {}
 }
 
-// ── Deep refresh: full ctx for all @-spot equities every 60s ─────────────
-async function _hlDeepRefresh() {
-  const spotEntries = Object.entries(HL_XYZ_SYM).filter(([,k]) => k.startsWith('@'));
-  const mids = await _hlGetMids();
-  for (const [sym, hlKey] of spotEntries) {
-    try {
-      const rawPx = parseFloat(mids[hlKey]); if (!rawPx) continue;
-      const ctx = await _hlSpotCtx(hlKey); if (!ctx) continue;
-      await new Promise(r => setTimeout(r, 250));
-      const prevPx  = parseFloat(ctx.prevDayPx) || rawPx;
-      const markPx  = parseFloat(ctx.markPx) || rawPx;
-      const dayOpen = parseFloat(ctx.dayOpen) || prevPx;
-      const dayHi   = parseFloat(ctx.dayHigh) || Math.max(markPx, prevPx);
-      const dayLo   = parseFloat(ctx.dayLow)  || Math.min(markPx, prevPx);
-      const vol     = parseFloat(ctx.dayNtlVlm) || 0;
-      const chg     = dayOpen > 0 ? ((markPx - dayOpen) / dayOpen * 100) : 0;
-      const result  = { px: markPx, chg, hi: dayHi, lo: dayLo, vol, open: dayOpen, src: 'HL_DEEP' };
-      _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
-      _hlSyncAll(sym, markPx, chg, result);
-    } catch(e) {}
-  }
-  if (typeof _refreshActivePanels === 'function') _refreshActivePanels();
+function _updateHLCache(sym, rawPx, src) {
+  const cached = _HL_PRICE_CACHE[sym];
+  const prevPx = cached && cached.open > 0 ? cached.open : rawPx;
+  const chg = prevPx > 0 ? ((rawPx - prevPx) / prevPx * 100) : 0;
+  const result = {
+    px: rawPx, chg,
+    hi: Math.max(rawPx, cached ? (cached.hi || rawPx) : rawPx),
+    lo: Math.min(rawPx, cached ? (cached.lo || rawPx) : rawPx),
+    vol: cached ? (cached.vol || 0) : 0, open: prevPx, src: src
+  };
+  _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
+  _hlSyncAll(sym, rawPx, chg, result);
 }
+
+// ── Deep refresh: full metadata (OHLC/Vol) for all HL assets ───────────
+async function _hlDeepRefresh() {
+  try {
+    // 1. Fetch Prep Metadata
+    const r1 = await fetch('https://api.hyperliquid.xyz/info', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({type:'metaAndAssetCtxs'}),
+      signal: _timeoutSignal(10000)
+    });
+    if (r1.ok) {
+        const [meta, ctxs] = await r1.json();
+        (meta.universe||[]).forEach((m, i) => {
+            const sym = m.name;
+            if (IS_HL[sym] && ctxs[i]) {
+                _applyCtxToCache(sym, ctxs[i], 'HL_PERP_DEEP');
+            }
+        });
+    }
+
+    // 2. Fetch Spot Metadata (@ tokens)
+    const r2 = await fetch('https://api.hyperliquid.xyz/info', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({type:'spotMetaAndAssetCtxs'}),
+      signal: _timeoutSignal(10000)
+    });
+    if (r2.ok) {
+        const [meta, ctxs] = await r2.json();
+        Object.keys(IS_HL_XYZ).forEach(sym => {
+            const hlKey = HL_XYZ_SYM[sym];
+            const idx = (meta.universe||[]).findIndex(a => a.name === hlKey);
+            if (idx !== -1 && ctxs[idx]) {
+                _applyCtxToCache(sym, ctxs[idx], 'HL_XYZ_DEEP');
+            }
+        });
+    }
+  } catch(e) {}
+}
+
+function _applyCtxToCache(sym, ctx, src) {
+  const markPx  = parseFloat(ctx.markPx || ctx.midPx || 0); if (!markPx) return;
+  const prevPx  = parseFloat(ctx.prevDayPx) || markPx;
+  const dayHi   = parseFloat(ctx.dayHigh) || markPx;
+  const dayLo   = parseFloat(ctx.dayLow) || markPx;
+  const vol     = parseFloat(ctx.dayNtlVlm) || 0;
+  const chg     = prevPx > 0 ? ((markPx - prevPx) / prevPx * 100) : 0;
+  const result  = { px: markPx, chg, hi: dayHi, lo: dayLo, vol, open: prevPx, src: src };
+  _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
+  _hlSyncAll(sym, markPx, chg, result);
+}
+
 
 // ── Auto-start HL polling on load ────────────────────────────────────────
 (function _startHLPolling() {
@@ -41626,61 +41675,51 @@ async function _hlDeepRefresh() {
 
 // ── Master fetch: best source per asset class ────────────────────────────────
 async function _liveFetch(sym) {
-  sym = sym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
+  try {
+    sym = sym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
 
-  // Hyperliquid-native tokens
-  if (IS_HL[sym]) {
-    const res = await _hlFetch(sym);
-    if (res) return res;
-  }
+    // Hyperliquid-native tokens (Perps)
+    if (IS_HL[sym]) {
+      const res = await _hlFetch(sym);
+      if (res && res.px > 0) return res;
+    }
 
-  // Hyperliquid xyz: equities & pre-IPO (HIP-3)
-  if (IS_HL_XYZ[sym]) {
-    const res = await _hlXyzFetch(sym);
-    if (res) return res;
-  }
+    // Hyperliquid xyz: equities & pre-IPO (HIP-3)
+    if (IS_HL_XYZ[sym]) {
+      const res = await _hlXyzFetch(sym);
+      if (res && res.px > 0) return res;
+    }
 
-  // Crypto — Binance spot is most reliable
-  if (IS_CRYPTO[sym]) {
-    var bPair = sym + 'USDT';
-    return await _binanceFetch(bPair);
-  }
+    // Crypto fallback — Binance spot
+    if (IS_CRYPTO[sym] || IS_HL[sym]) {
+      var bPair = sym + 'USDT';
+      var resB = await _binanceFetch(bPair);
+      if (resB) return resB;
+    }
 
-  // Commodities → Yahoo Finance (authoritative CME/NYMEX data)
-  if (IS_COMDTY[sym] && YH[sym]) return await _yahooFetch(YH[sym]);
+    // Commodities → Yahoo Finance
+    if (IS_COMDTY[sym] && YH[sym]) {
+      var resC = await _yahooFetch(YH[sym]);
+      if (resC) return resC;
+    }
 
-  // Indices → Yahoo primary, Bybit secondary (for 24h)
-  if (IS_IDX[sym]) {
-    var yRes = YH[sym] ? await _yahooFetch(YH[sym]) : null;
-    if (yRes && yRes.px > 0) return yRes;
-    if (BB[sym]) return await _bybitFetch(BB[sym]);
+    // Indices → Yahoo
+    if (IS_IDX[sym] && YH[sym]) {
+      var resI = await _yahooFetch(YH[sym]);
+      if (resI) return resI;
+    }
+
+    // FX / Bonds
+    if ((IS_FX[sym] || IS_BOND[sym]) && YH[sym]) return await _yahooFetch(YH[sym]);
+
+    // Final generic fallback
+    if (YH[sym]) return await _yahooFetch(YH[sym]);
+
+    return null;
+  } catch(e) {
+    console.warn("[v12-LIVE] Master fetch error for " + sym, e);
     return null;
   }
-
-  // Bonds / FX → Yahoo Finance
-  if ((IS_BOND[sym] || IS_FX[sym]) && YH[sym]) return await _yahooFetch(YH[sym]);
-
-  // US Equities — try Bybit perp first (24/7), then Yahoo (market hours)
-  if (BB[sym]) {
-    var bbRes = await _bybitFetch(BB[sym]);
-    if (bbRes && bbRes.px > 0) {
-      // Sanity check: Bybit price should be within 20% of Yahoo to avoid bad data
-      if (YH[sym]) {
-        var yRes2 = await _yahooFetch(YH[sym]);
-        if (yRes2 && yRes2.px > 0) {
-          var diff = Math.abs(bbRes.px - yRes2.px) / yRes2.px;
-          // If close enough, use Yahoo (more accurate for % change)
-          return diff < 0.20 ? yRes2 : bbRes;
-        }
-      }
-      return bbRes;
-    }
-  }
-
-  // Generic Yahoo fallback for all other equities
-  if (YH[sym]) return await _yahooFetch(YH[sym]);
-
-  return null;
 }
 
 // ── Per-symbol polling manager ──────────────────────────────────────────────
