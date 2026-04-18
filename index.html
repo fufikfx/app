@@ -39841,46 +39841,6 @@ function _ofRender(){
          line:{color:'#4488ff',width:2}}
       ];
 
-      // ── Master fetch: best source per asset class ────────────────────────────
-      async function _liveFetch(sym) {
-        sym = sym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
-
-        // 1. Hyperliquid-native (HYPE, PURR, etc.)
-        if (IS_HL[sym]) return await _hlFetch(sym);
-
-        // 2. HL Oracle PRIORITY — equities, ETFs, indices, commodities
-        //    Return fresh cache instantly (< 15s old), otherwise refetch
-        if (IS_HL_XYZ[sym]) {
-          const cached = _HL_PRICE_CACHE[sym];
-          if (cached && (Date.now() - cached.ts) < 15000) return cached;
-          return await _hlXyzFetch(sym);
-        }
-
-        // 3. Crypto — Binance
-        if (IS_CRYPTO[sym]) return await _binanceFetch(sym + 'USDT');
-
-        // 4. Commodities → Yahoo Finance
-        if (IS_COMDTY[sym] && YH[sym]) return await _yahooFetch(YH[sym]);
-      }
-
-      async function _hlXyzFetch(sym) {
-        try {
-          const res = await fetch('https://api.hyperliquid.xyz/info', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'metaAndAssetCtxs' })
-          });
-          const data = await res.json();
-          const asset = data[1].find(a => a.name === sym);
-          if (asset) {
-            const price = parseFloat(asset.markPx);
-            _HL_PRICE_CACHE[sym] = { price, ts: Date.now() };
-            return { price };
-          }
-        } catch (e) { console.error('HL XYZ fetch failed', e); }
-        return null;
-      }
-
       // Two subplots side by side
       plotEl.innerHTML='<div style="display:flex;height:100%"><div id="prem-odte" style="flex:1;height:100%"></div><div id="prem-weekly" style="flex:1;height:100%"></div></div>';
       setTimeout(()=>{
