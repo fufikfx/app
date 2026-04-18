@@ -28932,6 +28932,32 @@ window._bbgInstantFill = function(sym) {
     }
   }
 
+  // 1.5) Try STKS cache — equities/ETFs (full OHLCV, updated by background polls)
+  if (typeof STKS !== 'undefined') {
+    var stksKey = _symClean;
+    var stks = STKS[stksKey];
+    if (stks && stks.px > 0) {
+      s('bbg-close',  fmtP(stks.px));
+      s('bbg-start',  fmtP(stks.open || stks.px));
+      if (stks.hi  > 0) s('bbg-high',   fmtP(stks.hi));
+      if (stks.lo  > 0) s('bbg-low',    fmtP(stks.lo));
+      if (stks.vol > 0) s('bbg-volume', fmtV(stks.vol));
+      var pxStks = document.getElementById('bbg-current-price');
+      if (pxStks) pxStks.innerText = fmtP(stks.px);
+      var chgStks = document.getElementById('bbg-price-change');
+      if (chgStks && stks.chg != null) {
+        var chgS = parseFloat(stks.chg);
+        chgStks.innerText = (chgS >= 0 ? '+' : '') + chgS.toFixed(2) + '%';
+        chgStks.style.color = chgS >= 0 ? '#4caf50' : '#f44336';
+        var arrStks = document.getElementById('bbg-price-arrow');
+        if (arrStks) { arrStks.innerText = chgS >= 0 ? '↑' : '↓'; arrStks.style.color = chgS >= 0 ? '#4caf50' : '#f44336'; }
+        var ctnrStks = document.getElementById('bbg-current-price-container');
+        if (ctnrStks) ctnrStks.style.color = chgS >= 0 ? '#4caf50' : '#f44336';
+      }
+      return; // cache hit
+    }
+  }
+
   // 3) Fallback: l1Data sync cache
   if (window._l1Data) {
     var d = window._l1Data;
@@ -28947,6 +28973,28 @@ window._bbgInstantFill = function(sym) {
       var px3El = document.getElementById('bbg-current-price');
       if (px3El) px3El.innerText = fmtP(px3);
     }
+  }
+
+  // 4) Async fast-fetch: for equities/assets not in any cache, hit API immediately
+  //    This runs in background — panel shows '—' briefly then snaps to live data
+  if (typeof _liveFetch === 'function' && typeof _applyLiveTick === 'function') {
+    var _symF = _symClean;
+    _liveFetch(_symF).then(function(data) {
+      // Only apply if symbol is still active
+      if (!data || data.px <= 0) return;
+      var active = (window._bbgActiveSym || '').toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
+      if (active !== _symF) return;
+      _applyLiveTick(data.px, data.chg||0, data.hi||0, data.lo||0, data.vol||0, data.open||data.px, _symF);
+      // Also update STKS cache for future instant fills
+      if (window.STKS && window.STKS[_symF]) {
+        window.STKS[_symF].px = data.px; window.STKS[_symF].chg = data.chg;
+        if (data.hi > 0) window.STKS[_symF].hi = data.hi;
+        if (data.lo > 0) window.STKS[_symF].lo = data.lo;
+        if (data.vol > 0) window.STKS[_symF].vol = data.vol;
+        if (data.open > 0) window.STKS[_symF].open = data.open;
+        window.STKS[_symF]._pxTs = Date.now();
+      }
+    }).catch(function(){});
   }
 };
 
@@ -41471,10 +41519,10 @@ function _v12StartPoll(rawSym) {
     }
   };
 
-  // Run immediately, then every 10s
+  // Run immediately, then every 5s for fast updates
   _fetch();
-  _v12Polls[sym] = setInterval(_fetch, 10000);
-  console.log('[v12-POLL] Started for ' + sym + ' (10s interval)');
+  _v12Polls[sym] = setInterval(_fetch, 5000);
+  console.log('[v12-POLL] Started for ' + sym + ' (5s interval)');
 }
 
 // ── Patch _openChartForSymbol ───────────────────────────────────────────────
@@ -41482,9 +41530,9 @@ var _origOpen = window._openChartForSymbol;
 window._openChartForSymbol = function(sym) {
   if (_origOpen) _origOpen.apply(this, arguments);
   if (!sym) return;
-  // Small delay so native _bbgInstantFill + _setChartInterval run first
-  // then we overwrite with live data
-  setTimeout(function() { _v12StartPoll(sym); }, 1500);
+  // Run immediately — _bbgInstantFill already ran inside _origOpen,
+  // so we just need to kick off the live poll with no artificial delay
+  _v12StartPoll(sym);
 };
 
 // ── Patch _setChartInterval (interval change) ───────────────────────────────
@@ -41492,7 +41540,8 @@ var _origSetInterval = window._setChartInterval;
 window._setChartInterval = async function(interval) {
   if (_origSetInterval) await _origSetInterval.apply(this, arguments);
   var sym = window._bbgActiveSym || '';
-  if (sym) setTimeout(function() { _v12StartPoll(sym); }, 1500);
+  // 50ms guard: let native feed initialise first, then kick v12 poll
+  if (sym) setTimeout(function() { _v12StartPoll(sym); }, 50);
 };
 
 // ── Status-bar commodity prices refresh ─────────────────────────────────────
