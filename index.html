@@ -3634,7 +3634,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="ql-folder-body">
           <div class="ql-it" onclick="_openChartForSymbol('GOLD');closeAllQL()"><div class="ql-it-desc">GOLD Spot — Binance XAUUSDT</div></div>
           <div class="ql-it" onclick="_openChartForSymbol('SILVER');closeAllQL()"><div class="ql-it-desc">SILVER Spot — Binance XAGUSDT</div></div>
-          <div class="ql-it" onclick="_openChartForSymbol('OIL');closeAllQL()"><div class="ql-it-desc">WTI Crude Oil — Yahoo Finance</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('OIL');closeAllQL()"><div class="ql-it-desc">WTI Crude Oil — Hyperliquid Perp</div></div>
           <div class="ql-it" onclick="_openChartForSymbol('GAS');closeAllQL()"><div class="ql-it-desc">Natural Gas — Yahoo Finance</div></div>
           <div class="ql-it" onclick="openPanel('COMDTY');closeAllQL()"><div class="ql-it-desc">COMDTY: All Sectors</div></div>
         </div>
@@ -26274,8 +26274,8 @@ function renderVPVR(sym){
   const yahooMap = {
     'SPX':'^SPX','NDX':'^NDX','DJI':'^DJI','VIX':'^VIX','DXY':'DX-Y.NYB',
     'US10Y':'^TNX',
-    'AAPL':'AAPL','MSFT':'MSFT','NVDA':'NVDA','TSLA':'TSLA',
-    'WTI':'CL=F','OIL':'CL=F'
+    'AAPL':'AAPL','MSFT':'MSFT','NVDA':'NVDA','TSLA':'TSLA'
+    // OIL/WTI removed — use Hyperliquid data
   };
   
   el.innerHTML = '<div style="font-size:7px;color:#998870;margin-bottom:4px;padding:0 4px">' +
@@ -27436,9 +27436,8 @@ window._setChartInterval = async function(interval) {
         'BERA':'BERAUSDT','OM':'OMUSDT','VIRTUAL':'VIRTUALUSDT','MOVE':'MOVEUSDT',
         'KAS':'KASUSDT','ZRO':'ZROUSDT','W':'WUSDT','ONDO':'ONDOUSDT',
         'DRIFT':'DRIFTUSDT','OSMO':'OSMOUSDT',
-        // ── 'Hybrid' Equities (Use Binance Perpetuals for High-Speed) ────────
-        'MSTR':'MSTRUSDT','COIN':'COINUSDT','SOFI':'SOFIUSDT',
-        // NOTE: GOLD, SILVER, EURUSD intentionally NOT here — they route via Yahoo
+        // NOTE: MSTR, COIN, SOFI removed — they are HL.xyz @-spot, handled below
+        // NOTE: GOLD, SILVER, OIL removed — route via Hyperliquid perps
     };
     const yahooMap = {
         // ── Global Indices ────────────────────────────────────────────────────
@@ -27453,9 +27452,9 @@ window._setChartInterval = async function(interval) {
         // ── US Futures ────────────────────────────────────────────────────────
         'ES1':'ES=F','NQ1':'NQ=F','YM1':'YM=F','RTY1':'RTY=F',
         'ES':'ES=F','NQ':'NQ=F','YM':'YM=F',
-        // ── Commodities ───────────────────────────────────────────────────────
-        'GOLD':'GC=F','SILVER':'SI=F','XAUUSD':'GC=F','XAGUSD':'SI=F',
-        'OIL':'CL=F','WTI':'CL=F','BRENT':'BZ=F','GAS':'NG=F','NATGAS':'NG=F',
+        // ── Commodities ── NOTE: OIL/GOLD/SILVER removed — they route via Hyperliquid now
+        // 'GOLD':'GC=F','SILVER':'SI=F' → use HL_XYZ_SYM instead
+        // 'OIL':'CL=F','WTI':'CL=F'    → use HL_XYZ_SYM instead
         'COPPER':'HG=F','ALUMINUM':'ALI=F','ZINC':'ZNC=F','NICKEL':'NIK=F',
         'WHEAT':'ZW=F','CORN':'ZC=F','SOYBEAN':'ZS=F','RICE':'ZR=F',
         'COFFEE':'KC=F','COCOA':'CC=F','SUGAR':'SB=F','COTTON':'CT=F',
@@ -27542,9 +27541,9 @@ window._setChartInterval = async function(interval) {
         'VIX':'TVC:VIX','VVIX':'CBOE:VVIX','DAX':'XETR:DAX','NI225':'TVC:NI225',
         'FTSE':'TVC:UKX','CAC':'TVC:CAC40','HSI':'TVC:HSI','NIFTY':'NSE:NIFTY',
         'ES1':'CME_MINI:ES1!','NQ1':'CME_MINI:NQ1!','YM1':'CME_MINI:YM1!',
-        // ── Commodities ───────────────────────────────────────────────────────
-        'GOLD':'TVC:GOLD','SILVER':'TVC:SILVER','OIL':'TVC:USOIL','WTI':'TVC:USOIL',
-        'BRENT':'TVC:UKOIL','NATGAS':'TVC:NATGAS','GAS':'TVC:NATGAS',
+        // ── Commodities → HYPERLIQUID perps (same data as panel) ─────────────
+        'GOLD':'HYPERLIQUID:GOLDUSD.P','SILVER':'HYPERLIQUID:SILVERUSD.P','OIL':'HYPERLIQUID:OILUSD.P','WTI':'HYPERLIQUID:OILUSD.P',
+        'BRENT':'HYPERLIQUID:BRENTUSD.P','NATGAS':'HYPERLIQUID:NGASUSD.P','GAS':'HYPERLIQUID:NGASUSD.P',
         'COPPER':'TVC:COPPER','WHEAT':'CBOT:ZW1!','CORN':'CBOT:ZC1!',
         // ── Crypto (Binance) ──────────────────────────────────────────────────
         'BTC':'BINANCE:BTCUSDT','ETH':'BINANCE:ETHUSDT','SOL':'BINANCE:SOLUSDT',
@@ -27573,7 +27572,7 @@ window._setChartInterval = async function(interval) {
         // ── HL.xyz synthetic indices & aliases ───────────────────────────────
         'SP500':'SPREADEX:SPX','XYZ100':'NASDAQ:NDX',
         // ── HL.xyz commodity short tickers ───────────────────────────────────
-        'BRENTOIL':'TVC:UKOIL','CL':'TVC:USOIL','PLATINUM':'TVC:PLATINUM',
+        'BRENTOIL':'HYPERLIQUID:BRENTUSD.P','CL':'HYPERLIQUID:OILUSD.P','PLATINUM':'HYPERLIQUID:PLATINUMUSD.P',
         'PALLADIUM':'TVC:PALLADIUM',
     };
 
@@ -27581,7 +27580,6 @@ window._setChartInterval = async function(interval) {
     const _resolveBestDataSource = (sym) => {
         // High-speed WebSocket sources for Ribbon data
         const binanceMap = {
-            'GOLD':'XAUUSDT', 'SILVER':'XAGUSDT',
             'BTC':'BTCUSDT', 'ETH':'ETHUSDT', 'SOL':'SOLUSDT', 'BNB':'BNBUSDT'
         };
         const bybitMap = {
@@ -27590,12 +27588,25 @@ window._setChartInterval = async function(interval) {
         // ── Hyperliquid Oracle: Verified @-spot tokens + HIP-3 perps ──
         // Static verified entries (guaranteed working)
         const hlXyzMapStatic = {
-            // US Equities @-spot
+            // ── US Equities @-spot (verified IDs 2026-04) ──
             'TSLA':'@264', 'AAPL':'@268', 'GOOGL':'@266',
             'AMZN':'@280', 'META':'@287', 'MSFT':'@289',
             'HOOD':'@271', 'CRCL':'@263',
-            // ETFs @-spot
-            'SPY':'@279', 'QQQ':'@288', 'GLD':'@276', 'SLV':'@265', 'QQQM':'@308'
+            // Auto-discovered equities (window.HL_XYZ_SYM fills @-IDs at boot)
+            // Fallback: use sym name so IS_HL_XYZ check above catches them
+            'NVDA':'NVDA', 'NFLX':'NFLX', 'AMD':'AMD',
+            'COIN':'COIN', 'PLTR':'PLTR', 'MSTR':'MSTR', 'SOFI':'SOFI',
+            // ── ETFs @-spot (verified IDs 2026-04) ──
+            'SPY':'@279', 'QQQ':'@288', 'GLD':'@276', 'SLV':'@265', 'QQQM':'@308',
+            'IWM':'IWM', 'USO':'USO', 'TLT':'TLT',
+            // ── Commodities perps (exact HL allMids keys) ──
+            'GOLD':'GOLD', 'SILVER':'SILVER', 'OIL':'OIL', 'WTI':'OIL',
+            'BRENT':'BRENT', 'NATGAS':'NGAS', 'GAS':'NGAS', 'COPPER':'COPPER',
+            'PLATINUM':'PLATINUM', 'PALLADIUM':'PALLADIUM',
+            // ── Forex perps (HL uses single currency not pair) ──
+            'EURUSD':'EUR', 'USDJPY':'JPY', 'GBPUSD':'GBP', 'AUDUSD':'AUD',
+            // ── Indices ──
+            'SP500':'SP500', 'XYZ100':'XYZ100'
         };
         // Runtime-discovered additions merged in (auto-discovery populates window.HL_XYZ_SYM)
         const hlRuntime = (typeof window !== 'undefined' && window.HL_XYZ_SYM) || {};
@@ -27603,9 +27614,14 @@ window._setChartInterval = async function(interval) {
 
         if (binanceMap[rawSym]) return { provider: 'BINANCE', ticker: binanceMap[rawSym], type: 'WS' };
         if (bybitMap[rawSym])   return { provider: 'BYBIT',   ticker: bybitMap[rawSym],   type: 'WS' };
-        // Route to HL_XYZ only if we have a real string @-ID / perp name (not null)
+        // Route to HL_XYZ if we have a confirmed key
         if (hlXyzMap[rawSym] && typeof hlXyzMap[rawSym] === 'string' && hlXyzMap[rawSym].length > 0) {
             return { provider: 'HL_XYZ', ticker: hlXyzMap[rawSym], type: 'POLL', hlSym: hlXyzMap[rawSym] };
+        }
+        // IS_HL_XYZ assets whose @-ID is not yet discovered: still route to HL (not Binance/Yahoo)
+        // Ticker = rawSym as fallback (works for perps; @-spot will auto-discover later)
+        if (typeof IS_HL_XYZ !== 'undefined' && IS_HL_XYZ[rawSym]) {
+            return { provider: 'HL_XYZ', ticker: rawSym, type: 'POLL', hlSym: rawSym, pendingDiscover: true };
         }
         if (cryptoMap[rawSym])  return { provider: 'BINANCE', ticker: cryptoMap[rawSym],  type: 'WS' };
         
@@ -27628,18 +27644,22 @@ window._setChartInterval = async function(interval) {
                 // ── Financials / Crypto-native ──
                 'HOOD':'NASDAQ:HOOD','CRCL':'NYSE:CRCL','COIN':'NASDAQ:COIN',
                 'PLTR':'NASDAQ:PLTR','MSTR':'NASDAQ:MSTR','SOFI':'NASDAQ:SOFI',
+                'UPST':'NASDAQ:UPST','AFRM':'NASDAQ:AFRM','SQ':'NYSE:SQ',
+                'PYPL':'NASDAQ:PYPL','RIVN':'NASDAQ:RIVN','LCID':'NASDAQ:LCID',
+                'CRWV':'NASDAQ:CRWV','SBET':'NASDAQ:SBET',
                 // ── ETFs ──
                 'SPY':'AMEX:SPY','QQQ':'NASDAQ:QQQ','QQQM':'NASDAQ:QQQM',
                 'GLD':'AMEX:GLD','SLV':'AMEX:SLV','IWM':'AMEX:IWM',
                 'USO':'AMEX:USO','TLT':'NASDAQ:TLT',
                 // ── Indices (HL.xyz synthetic / licensed) ──
                 'SP500':'SPREADEX:SPX','XYZ100':'NASDAQ:NDX',
-                // ── Commodities (HL.xyz HIP-3) ──
-                'GOLD':'TVC:GOLD','SILVER':'TVC:SILVER',
-                'OIL':'TVC:USOIL','WTI':'TVC:USOIL','CL':'TVC:USOIL',
-                'BRENT':'TVC:UKOIL','BRENTOIL':'TVC:UKOIL',
-                'NATGAS':'TVC:NATGAS','COPPER':'TVC:COPPER',
-                'PLATINUM':'TVC:PLATINUM','PALLADIUM':'TVC:PALLADIUM',
+                // ── Commodities → HYPERLIQUID perp chart (same source as panel data) ──
+                'GOLD':'HYPERLIQUID:GOLDUSD.P','SILVER':'HYPERLIQUID:SILVERUSD.P',
+                'OIL':'HYPERLIQUID:OILUSD.P','WTI':'HYPERLIQUID:OILUSD.P','CL':'HYPERLIQUID:OILUSD.P',
+                'BRENT':'HYPERLIQUID:BRENTUSD.P','BRENTOIL':'HYPERLIQUID:BRENTUSD.P',
+                'NATGAS':'HYPERLIQUID:NGASUSD.P','GAS':'HYPERLIQUID:NGASUSD.P',
+                'COPPER':'HYPERLIQUID:COPPERUSD.P',
+                'PLATINUM':'HYPERLIQUID:PLATINUMUSD.P','PALLADIUM':'HYPERLIQUID:PALLADIUUSD.P',
                 // ── Forex (HL.xyz HIP-3) ──
                 'EURUSD':'FX:EURUSD','USDJPY':'FX:USDJPY',
                 'GBPUSD':'FX:GBPUSD','AUDUSD':'FX:AUDUSD',
@@ -27752,12 +27772,16 @@ window._setChartInterval = async function(interval) {
     };
 
     const _HYPE_ONLY = ['HYPE','PURR','FRIEND','POINTS'];
-    const isHL = _HYPE_ONLY.includes(rawSym);
+    // isHL = true for HYPE-only tokens AND all HL xyz commodities/FX perps (non-@-spot)
+    const isHL = _HYPE_ONLY.includes(rawSym) ||
+        (typeof IS_HL_XYZ !== 'undefined' && IS_HL_XYZ[rawSym] &&
+         typeof HL_XYZ_SYM !== 'undefined' && HL_XYZ_SYM[rawSym] &&
+         typeof HL_XYZ_SYM[rawSym] === 'string' && !HL_XYZ_SYM[rawSym].startsWith('@'));
     const tvParts = (window._tvActiveSym || '').split(':');
     const tvEx = tvParts[0] || '';
     const tvTk = tvParts[1] || '';
 
-    const cryptoExList = ['BINANCE','BYBIT','OKX','GATEIO','MEXC','KUCOIN'];
+    const cryptoExList = ['BINANCE','BYBIT','OKX','GATEIO','MEXC','KUCOIN','HYPERLIQUID'];
     const useCryptoSync = resolved.type === 'WS' || cryptoExList.includes(tvEx) || isHL;
 
     if (useCryptoSync) {
@@ -27860,7 +27884,7 @@ window._setChartInterval = async function(interval) {
             fetchOKX();
         }
 
-        // 1d. Hyperliquid Direct Fallback (only if no CEX source is charting)
+        // 1d. Hyperliquid Direct Fallback — fires for ALL HL assets (isHL=true covers xyz perps now)
         if (!symBin && tvEx !== 'BYBIT' && tvEx !== 'OKX' && isHL) {
             try {
                 const rhl = await fetch('https://api.hyperliquid.xyz/info', {
@@ -28927,7 +28951,16 @@ window._bbgInstantFill = function(sym) {
 
   var _symClean = (sym||'').toUpperCase().replace(/\s+(EQUITY|INDEX|COMDTY|CURNCY|GOVT)$/i,'').trim();
 
-  // 0) Global OHLCV cache check (fastest path for recently viewed assets)
+  // 0a) HL_PRICE_CACHE — fastest for xyz symbols (live data from HL polling)
+  var _hlCached = window._HL_PRICE_CACHE && (window._HL_PRICE_CACHE[_symClean] || window._HL_PRICE_CACHE[sym]);
+  if (_hlCached && _hlCached.px > 0 && (Date.now() - (_hlCached.ts||0)) < 30000) {
+    if (typeof _applyLiveTick === 'function') {
+      _applyLiveTick(_hlCached.px, _hlCached.chg||0, _hlCached.hi||0, _hlCached.lo||0, _hlCached.vol||0, _hlCached.open||_hlCached.px, _symClean);
+    }
+    return; // Already applied via _applyLiveTick, no need to continue
+  }
+
+  // 0b) Global OHLCV cache check (fastest path for recently viewed assets)
   var _cachedOhlv = window._bbgOhlvCache && (window._bbgOhlvCache[sym] || window._bbgOhlvCache[_symClean]);
   if (_cachedOhlv && (Date.now() - _cachedOhlv._ts) < 90000) {
     s('bbg-close',  fmtP(_cachedOhlv.px));
@@ -29043,7 +29076,24 @@ window._bbgInstantFill = function(sym) {
     }
   }
 
-  // 3) Fallback: l1Data sync cache
+  // 3) Fallback: _HL.perps — covers ALL Hyperliquid perp assets (TRUMP, FARTCOIN, POPCAT, etc.)
+  if (window._HL && window._HL.perps) {
+    var hlPerp = window._HL.perps[_symClean];
+    if (hlPerp && hlPerp.mark > 0) {
+      var pxHL = hlPerp.mark;
+      s('bbg-close', fmtP(pxHL));
+      var pxHLEl = document.getElementById('bbg-current-price');
+      if (pxHLEl) pxHLEl.innerText = fmtP(pxHL);
+      var chgHLEl = document.getElementById('bbg-price-change');
+      if (chgHLEl && hlPerp.chg24h != null) {
+        var chgHL = parseFloat(hlPerp.chg24h);
+        chgHLEl.innerText = (chgHL >= 0 ? '+' : '') + chgHL.toFixed(2) + '%';
+        chgHLEl.style.color = chgHL >= 0 ? '#4caf50' : '#f44336';
+      }
+    }
+  }
+
+  // 4) Fallback: l1Data sync cache
   if (window._l1Data) {
     var d = window._l1Data;
     var symLow = sym.toUpperCase();
@@ -29060,7 +29110,7 @@ window._bbgInstantFill = function(sym) {
     }
   }
 
-  // 4) Async fast-fetch: for equities/assets not in any cache, hit API immediately
+  // 5) Async fast-fetch: for equities/assets not in any cache, hit API immediately
   //    This runs in background — panel shows '—' briefly then snaps to live data
   if (typeof _liveFetch === 'function' && typeof _applyLiveTick === 'function') {
     var _symF = _symClean;
@@ -29394,7 +29444,15 @@ window._openChartForSymbol = function(sym) {
         'BAC':'Equity','WFC':'Equity','MS':'Equity','UNH':'Equity','LLY':'Equity',
         'JNJ':'Equity','ABBV':'Equity','PFE':'Equity','MRK':'Equity'
     };
-    var pair = pairMap[sym] || (sym + 'USDT');
+    // If asset is a Hyperliquid-native perp (not on Binance), route to HL chart
+    var _isHLNative = window._HL && window._HL.perps && window._HL.perps[sym] &&
+                      !['BTC','ETH','SOL','BNB','XRP','ADA','DOGE','AVAX','LINK','DOT',
+                         'LTC','BCH','UNI','AAVE','FTM','NEAR','APT','SUI','ARB','OP',
+                         'INJ','TIA','PEPE','WIF','BONK','TON','SHIB','TRX','XLM',
+                         'ATOM','ALGO','VET','OM','HBAR','KAS','SEI','ONDO','GRT',
+                         'RENDER','PENDLE','ENA','JUP','IMX','STRK','MOVE','ETC',
+                         'ZEC','FIL'].includes(sym);
+    var pair = pairMap[sym] || (_isHLNative ? 'HYPERLIQUID:'+sym+'USD' : (sym + 'USDT'));
     var suffix = assetType[sym] || 'Crypto';
     // For futures indices: show "ES1! Futures", for equity: "AAPL Equity", for crypto: "BTC/USDT"
     var displayPair;
@@ -29731,11 +29789,11 @@ masterUpdate();
     NZDUSD:'FX:NZDUSD',  EURGBP:'FX:EURGBP',  EURJPY:'FX:EURJPY',
     GBPJPY:'FX:GBPJPY',  USDMXN:'FX:USDMXN',  USDBRL:'FX_IDC:USDBRL',
     USDZAR:'FX:USDZAR',  USDTRY:'FX:USDTRY',  USDINR:'FX_IDC:USDINR',
-    // Commodities
-    GOLD:'TVC:GOLD',     SILVER:'TVC:SILVER',  OIL:'TVC:USOIL',
-    WTI:'TVC:USOIL',     BRENT:'TVC:UKOIL',    NATGAS:'TVC:NATURALGAS',
-    COPPER:'TVC:COPPER', WHEAT:'CBOT:ZW1!',    CORN:'CBOT:ZC1!',
-    PLATINUM:'TVC:PLATINUM', PALLADIUM:'TVC:PALLADIUM',
+    // Commodities → HYPERLIQUID perps (same source as panel data)
+    GOLD:'HYPERLIQUID:GOLDUSD.P',     SILVER:'HYPERLIQUID:SILVERUSD.P',  OIL:'HYPERLIQUID:OILUSD.P',
+    WTI:'HYPERLIQUID:OILUSD.P',       BRENT:'HYPERLIQUID:BRENTUSD.P',    NATGAS:'HYPERLIQUID:NGASUSD.P',
+    COPPER:'HYPERLIQUID:COPPERUSD.P', WHEAT:'CBOT:ZW1!',    CORN:'CBOT:ZC1!',
+    PLATINUM:'HYPERLIQUID:PLATINUMUSD.P', PALLADIUM:'HYPERLIQUID:PALLADIUUSD.P',
     // Bonds
     US10Y:'TVC:US10Y',   US2Y:'TVC:US02Y',     US30Y:'TVC:US30Y',
     US5Y:'TVC:US05Y',
@@ -31227,7 +31285,7 @@ const _HL = {
 
 async function _fetchHLPerps() {
   try {
-    // Meta + assetContexts
+    // Meta + assetContexts — perp universe
     const r = await fetch('https://api.hyperliquid.xyz/info', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({type:'metaAndAssetCtxs'}),
@@ -31239,26 +31297,92 @@ async function _fetchHLPerps() {
       const ctx = ctxs[i];
       if (!ctx) return;
       const sym = asset.name;
+      const markPx = parseFloat(ctx.markPx||0);
+      const prevPx = parseFloat(ctx.prevDayPx||0);
       _HL.perps[sym] = {
         name: sym,
-        mark: parseFloat(ctx.markPx||0),
+        mark: markPx,
         mid: parseFloat(ctx.midPx||ctx.markPx||0),
         funding: (parseFloat(ctx.funding||0)*100).toFixed(4),
         oi: parseFloat(ctx.openInterest||0),
-        oiUsd: parseFloat(ctx.openInterest||0) * parseFloat(ctx.markPx||0),
+        oiUsd: parseFloat(ctx.openInterest||0) * markPx,
         vol24h: parseFloat(ctx.dayNtlVlm||0),
-        chg24h: parseFloat(ctx.prevDayPx||0) > 0 ?
-          ((parseFloat(ctx.markPx||0)/parseFloat(ctx.prevDayPx||0)-1)*100) : 0,
-        premium: (parseFloat(ctx.funding||0)*100*3*8).toFixed(3), // annualized approx
-        maxLev: parseFloat(asset.maxLeverage||50)
+        chg24h: prevPx > 0 ? ((markPx/prevPx-1)*100) : 0,
+        premium: (parseFloat(ctx.funding||0)*100*3*8).toFixed(3),
+        maxLev: parseFloat(asset.maxLeverage||50),
+        isSpot: false
       };
     });
     _HL.topPerps = Object.values(_HL.perps)
       .filter(p=>p.vol24h>0)
       .sort((a,b)=>b.vol24h-a.vol24h)
-      .slice(0,40);
+      .slice(0,100);
     _HL.lastUpdate = Date.now();
     _refreshHYPERPanels();
+  } catch(e) {}
+
+  // ── Also fetch xyz SPOT markets (equities: AMZN, TSLA, AAPL etc.) ──────
+  try {
+    const rSpot = await fetch('https://api.hyperliquid.xyz/info', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({type:'spotMetaAndAssetCtxs'}),
+      signal: AbortSignal.timeout(8000)
+    });
+    if (rSpot.ok) {
+      const spotData = await rSpot.json();
+      const spotMeta = Array.isArray(spotData) ? spotData[0] : spotData.meta;
+      const spotCtxs = Array.isArray(spotData) ? spotData[1] : spotData.ctxs;
+      if (spotMeta && spotMeta.universe && Array.isArray(spotCtxs)) {
+        // Build token name map
+        const tokens = spotMeta.tokens || [];
+        spotMeta.universe.forEach((pair, i) => {
+          const ctx = spotCtxs[i];
+          if (!ctx) return;
+          // Get token names for this pair (e.g. ["@264","USDC"] → token names)
+          const pairTokens = pair.tokens || [];
+          const baseIdx = pairTokens[0];
+          const baseTok = typeof baseIdx === 'number' ? tokens[baseIdx] : tokens.find(t=>t&&t.index===baseIdx);
+          if (!baseTok || !baseTok.name) return;
+          const symName = baseTok.name.replace(/^xyz:/,'').replace(/-SPOT$/,'');
+          const markPx = parseFloat(ctx.markPx||ctx.midPx||0);
+          const prevPx = parseFloat(ctx.prevDayPx||0);
+          if (markPx <= 0) return;
+          const chg24h = prevPx > 0 ? ((markPx/prevPx-1)*100) : 0;
+          // Store in _HL.perps with -USDC suffix (xyz naming convention)
+          const displayName = pair.name || (symName + '-SPOT');
+          if (!_HL.perps[displayName] || _HL.perps[displayName].vol24h === 0) {
+            _HL.perps[displayName] = {
+              name: displayName,
+              mark: markPx,
+              mid: markPx,
+              funding: '0.0000',
+              oi: parseFloat(ctx.circulatingSupply||0),
+              oiUsd: parseFloat(ctx.circulatingSupply||0) * markPx,
+              vol24h: parseFloat(ctx.dayNtlVlm||0),
+              chg24h,
+              premium: '0.000',
+              maxLev: 1,
+              isSpot: true,
+              baseSymbol: symName
+            };
+          }
+          // Also update _bbgOhlvCache so chart panel shows real price
+          if (!window._bbgOhlvCache) window._bbgOhlvCache = {};
+          const cacheKey = symName.toUpperCase();
+          const existing = window._bbgOhlvCache[cacheKey];
+          if (!existing || (Date.now() - (existing._ts||0)) > 5000) {
+            window._bbgOhlvCache[cacheKey] = { px:markPx, open:prevPx||markPx, hi:markPx, lo:markPx, vol:parseFloat(ctx.dayNtlVlm||0), prevClose:prevPx||markPx, pct:chg24h, chg:chg24h, _ts:Date.now() };
+          }
+          // Sync active chart panel
+          try {
+            const activeSym = (window._bbgActiveSym||'').toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
+            if (activeSym === cacheKey && typeof _applyLiveTick === 'function') {
+              _applyLiveTick(markPx, chg24h, markPx, markPx, parseFloat(ctx.dayNtlVlm||0), prevPx||markPx, cacheKey);
+            }
+          } catch(e) {}
+        });
+      }
+    }
   } catch(e) {}
 
   // Also fetch global stats
@@ -31330,16 +31454,20 @@ function _buildHYPERInner() {
     const chgCol = p.chg24h >= 0 ? '#00e676' : '#ff3d3d';
     const fundCol = parseFloat(p.funding) > 0 ? '#ff8800' : parseFloat(p.funding) < 0 ? '#00ccff' : '#666';
     const fundSign = parseFloat(p.funding) > 0 ? '+' : '';
+    const spotBadge = p.isSpot ? '<span style="color:#44ffcc;font-size:7px;margin-left:3px">SPOT</span>' : '';
+    const fundDisplay = p.isSpot ? '<span style="color:#444">—</span>' : `<span style="color:${fundCol};font-family:\'Roboto Mono\',monospace">${fundSign}${p.funding}%</span>`;
+    const levDisplay = p.isSpot ? '<span style="color:#444">1x</span>' : `<span style="color:#665840">${p.maxLev}x</span>`;
+    const chartSym = p.baseSymbol || p.name.replace(/-PERP$/,'').replace(/-SPOT$/,'').replace(/-USDC$/,'');
     h += `<tr style="border-bottom:1px solid #000000" onmouseover="this.style.background='#000000'" onmouseout="this.style.background='transparent'">
-      <td style="padding:3px 6px;font-weight:700;color:#ff9900">${p.name}-PERP</td>
+      <td style="padding:3px 6px;font-weight:700;color:#ff9900">${p.name}${spotBadge}</td>
       <td style="padding:3px 6px;text-align:right;color:#fff;font-family:'Roboto Mono',monospace">${fmtPx(p.mark, p.name)}</td>
       <td style="padding:3px 6px;text-align:right;color:${chgCol};font-weight:700;font-family:'Roboto Mono',monospace">${p.chg24h>=0?'+':''}${p.chg24h.toFixed(2)}%</td>
-      <td style="padding:3px 6px;text-align:right;color:${fundCol};font-family:'Roboto Mono',monospace">${fundSign}${p.funding}%</td>
+      <td style="padding:3px 6px;text-align:right">${fundDisplay}</td>
       <td style="padding:3px 6px;text-align:right;color:#00ccff;font-family:'Roboto Mono',monospace">${fmtUsd(p.oiUsd)}</td>
       <td style="padding:3px 6px;text-align:right;color:#887060;font-family:'Roboto Mono',monospace">${fmtUsd(p.vol24h)}</td>
-      <td style="padding:3px 6px;text-align:right;color:#665840">${p.maxLev}x</td>
+      <td style="padding:3px 6px;text-align:right">${levDisplay}</td>
       <td style="padding:3px 6px;text-align:right">
-        <span style="color:#ff6600;cursor:pointer;font-size:8px" onclick="if(window._openChartForSymbol)_openChartForSymbol('${p.name}')">GP »</span>
+        <span style="color:#ff6600;cursor:pointer;font-size:8px" onclick="if(window._openChartForSymbol)_openChartForSymbol('${chartSym}')">GP »</span>
       </td>
     </tr>`;
   });
@@ -41433,15 +41561,23 @@ var IS_HL_XYZ = {
   // ── Equities @-spot (HIP-1 tokens) ──
   TSLA:1, AAPL:1, GOOGL:1, AMZN:1, META:1, MSFT:1, HOOD:1, CRCL:1,
   NVDA:1, NFLX:1, AMD:1, COIN:1, PLTR:1, MSTR:1, SOFI:1,
+  UPST:1, AFRM:1, RIVN:1, LCID:1, CRWV:1, SBET:1,
+  // ── Additional xyz equities (from xyz markets) ──
+  SNDK:1, NVDX:1, ORCL:1, INTC:1, HIMS:1, MU:1, BABA:1, TSM:1,
+  BIRD:1, USAR:1, EWJ:1, SKHYNIX:1,
   // ── ETFs @-spot ──
   SPY:1, QQQ:1, QQQM:1, GLD:1, SLV:1, IWM:1, USO:1, TLT:1,
+  EWY:1, EWJ:1,
   // ── Indices (HIP-3 perps) ──
-  SP500:1, XYZ100:1,
+  SP500:1, XYZ100:1, KR200:1, JP225:1,
   // ── Commodities (HIP-3 perps) ──
   GOLD:1, SILVER:1, OIL:1, BRENT:1, NATGAS:1, COPPER:1,
   PLATINUM:1, PALLADIUM:1,
   // ── Forex (HIP-3 perps) ──
-  EURUSD:1, USDJPY:1, GBPUSD:1, AUDUSD:1
+  EURUSD:1, USDJPY:1, GBPUSD:1, AUDUSD:1,
+  // ── More xyz equities ──
+  SAMSUNG:1, LLY:1, URNM:1, COST:1, HYUNDAI:1, DKNG:1,
+  CRWV:1, GOOGL:1,
 };
 
 // ── HL_XYZ_SYM: terminal symbol → Hyperliquid allMids key ────────────────────
@@ -41464,13 +41600,21 @@ var HL_XYZ_SYM = {
   QQQM:  '@308',
   GLD:   '@276',
   SLV:   '@265',
-  // ── Auto-discovery (populated from live API on boot) ──
+  // ── Additional equities — auto-discovery fills these ──
   NVDA: null, NFLX: null, AMD: null, COIN: null, PLTR: null, MSTR: null, SOFI: null,
-  IWM: null, USO: null, TLT: null,
+  IWM: null, USO: null, TLT: null, EWY: null, EWJ: null,
+  UPST: null, AFRM: null, RIVN: null, LCID: null, CRWV: null, SBET: null,
+  SNDK: null, ORCL: null, INTC: null, HIMS: null, MU: null, BABA: null, TSM: null,
+  BIRD: null, USAR: null, SKHYNIX: null, SAMSUNG: null, LLY: null, URNM: null,
+  COST: null, HYUNDAI: null, DKNG: null,
   SP500: null, XYZ100: null,
-  GOLD: null, SILVER: null, OIL: null, BRENT: null, NATGAS: null, COPPER: null,
-  PLATINUM: null, PALLADIUM: null,
-  EURUSD: null, USDJPY: null, GBPUSD: null, AUDUSD: null
+  // ── Commodities: REAL HL perp names (confirmed from allMids) ──
+  GOLD: 'GOLD', SILVER: 'SILVER', OIL: 'OIL', BRENT: 'BRENT', NATGAS: 'NGAS', COPPER: 'COPPER',
+  PLATINUM: 'PLATINUM', PALLADIUM: 'PALLADIUM',
+  // ── Indices: REAL HL perp names ──
+  KR200: 'KR200', JP225: 'JP225',
+  // ── Forex: REAL HL perp names (HL uses single currency, not pair) ──
+  EURUSD: 'EUR', USDJPY: 'JPY', GBPUSD: 'GBP', AUDUSD: 'AUD'
 };
 
 // Expose to window so chart resolver can read merged map
@@ -41528,7 +41672,8 @@ async function _hlSpotCtx(marketKey) {
 
 // ── Core xyz fetch: @-spot + xyz: perp, with cache ──────────────────────
 async function _hlXyzFetch(sym) {
-  const hlKey = HL_XYZ_SYM[sym];
+  // hlKey = @263 for @-spot, 'OIL' for perp, or null if not yet auto-discovered
+  const hlKey = HL_XYZ_SYM[sym] || sym; // fallback: use sym name directly (works for perps)
   if (!hlKey) return null;
   try {
     const mids = await _hlGetMids();
@@ -41619,6 +41764,20 @@ function _hlSyncAll(sym, px, chg, result) {
     const cd = window.COMDTY_DATA.find(x => x.s === cds || x.s === sym);
     if (cd) { cd.px = px; cd.chg = chg; cd._pxTs = ts; }
   }
+  // ── Sync active chart panel (AMZN/equity style status bar) ──────────────
+  try {
+    const activeSym = (window._bbgActiveSym || window._bbgCurrentSym || '').toUpperCase()
+      .replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
+    if (activeSym === sym.toUpperCase() && typeof _applyLiveTick === 'function') {
+      _applyLiveTick(px, chg, result.hi||0, result.lo||0, result.vol||0, result.open||px, sym);
+    }
+  } catch(e) {}
+  // ── Update _bbgOhlvCache so _bbgInstantFill has fresh data ───────────────
+  try {
+    if (!window._bbgOhlvCache) window._bbgOhlvCache = {};
+    window._bbgOhlvCache[sym] = { px, open: result.open||px, hi: result.hi||px, lo: result.lo||px,
+      vol: result.vol||0, prevClose: result.open||px, pct: chg, chg, _ts: ts };
+  } catch(e) {}
 }
 
 // ── Fast poll: update all IS_HL_XYZ every 8s from allMids ────────────────
@@ -41627,7 +41786,7 @@ async function _hlPollAll() {
     const mids = await _hlGetMids();
     let anyUpdate = false;
     for (const sym of Object.keys(IS_HL_XYZ)) {
-      const hlKey = HL_XYZ_SYM[sym]; if (!hlKey) continue;
+      const hlKey = HL_XYZ_SYM[sym] || sym; // fallback to sym name for undiscovered @-spot
       const rawPx = parseFloat(mids[hlKey]); if (!rawPx || rawPx <= 0) continue;
       const cached = _HL_PRICE_CACHE[sym];
       const prevPx = cached && cached.open > 0 ? cached.open : rawPx;
@@ -41720,14 +41879,29 @@ var HL_XYZ_DISCOVERY_ALIASES = {
   NVDA:['NVDA','xyz:NVDA'],   NFLX:['NFLX','xyz:NFLX'], AMD:['AMD','xyz:AMD'],
   COIN:['COIN','xyz:COIN'],   PLTR:['PLTR','xyz:PLTR'], MSTR:['MSTR','xyz:MSTR'],
   SOFI:['SOFI','xyz:SOFI'],
+  UPST:['UPST','xyz:UPST'],   AFRM:['AFRM','xyz:AFRM'],
+  RIVN:['RIVN','xyz:RIVN'],   LCID:['LCID','xyz:LCID'],
+  CRWV:['CRWV','xyz:CRWV'],   SBET:['SBET','xyz:SBET'],
   IWM:['IWM','xyz:IWM'],      USO:['USO','xyz:USO'],    TLT:['TLT','xyz:TLT'],
+  EWY:['EWY','xyz:EWY'],      EWJ:['EWJ','xyz:EWJ'],
+  SNDK:['SNDK','xyz:SNDK'],   ORCL:['ORCL','xyz:ORCL'],
+  INTC:['INTC','xyz:INTC'],   HIMS:['HIMS','xyz:HIMS'],
+  MU:['MU','xyz:MU'],         BABA:['BABA','xyz:BABA'],
+  TSM:['TSM','xyz:TSM'],      BIRD:['BIRD','xyz:BIRD'],
+  USAR:['USAR','xyz:USAR'],   SKHYNIX:['SKHYNIX','xyz:SKHYNIX'],
+  SAMSUNG:['SAMSUNG','xyz:SAMSUNG'],
+  LLY:['LLY','xyz:LLY'],      URNM:['URNM','xyz:URNM'],
+  COST:['COST','xyz:COST'],   HYUNDAI:['HYUNDAI','xyz:HYUNDAI'],
+  DKNG:['DKNG','xyz:DKNG'],
   SP500:['SP500','xyz:SP500','SPX','xyz:SPX'],
   XYZ100:['XYZ100','xyz:XYZ100','NDX','xyz:NDX'],
+  KR200:['KR200','xyz:KR200'],
+  JP225:['JP225','xyz:JP225'],
   GOLD:['xyz:GOLD','GOLD','XAU','xyz:XAU'],
   SILVER:['xyz:SILVER','SILVER','XAG','xyz:XAG'],
   OIL:['xyz:CL','CL','xyz:OIL','OIL','xyz:WTI','WTI'],
   BRENT:['xyz:BRENT','BRENT','xyz:BRENTOIL','BRENTOIL'],
-  NATGAS:['xyz:NATGAS','NATGAS','xyz:NG','NG'],
+  NATGAS:['xyz:NATGAS','NATGAS','xyz:NG','NG','NGAS','xyz:NGAS'],
   COPPER:['xyz:COPPER','COPPER','xyz:HG','HG'],
   PLATINUM:['xyz:PLATINUM','PLATINUM','xyz:XPT','XPT'],
   PALLADIUM:['xyz:PALLADIUM','PALLADIUM','xyz:XPD','XPD'],
@@ -41850,10 +42024,12 @@ async function _hlAutoDiscover() {
     await _hlAutoDiscover();                    // resolve placeholders first
     await _hlPollAll();                         // then fetch prices
     setTimeout(_hlDeepRefresh, 2500);           // full OHLC + volume
+    // Also kick off the perps panel fetch to get spot equity data
+    if (typeof _fetchHLPerps === 'function') setTimeout(_fetchHLPerps, 3000);
   }, 800);
-  setInterval(_hlPollAll, 8000);                // price polling
-  setInterval(_hlDeepRefresh, 60000);           // OHLC refresh
-  setInterval(_hlAutoDiscover, 300000);         // re-scan for new listings every 5 min
+  setInterval(_hlPollAll, 5000);                // price polling (5s for faster updates)
+  setInterval(_hlDeepRefresh, 45000);           // OHLC refresh
+  setInterval(_hlAutoDiscover, 180000);         // re-scan for new listings every 3 min
   console.log('[HL ORACLE] ⚡ Started —', Object.keys(IS_HL_XYZ).length, 'assets registered:', Object.keys(IS_HL_XYZ).join(', '));
 })();
 
@@ -41861,7 +42037,7 @@ async function _hlAutoDiscover() {
 async function _liveFetch(sym) {
   sym = sym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
 
-  // Hyperliquid-native tokens
+  // Hyperliquid-native tokens (HYPE, PURR, FRIEND)
   if (IS_HL[sym]) {
     const res = await _hlFetch(sym);
     if (res) return res;
@@ -41913,6 +42089,33 @@ async function _liveFetch(sym) {
   // Generic Yahoo fallback for all other equities
   if (YH[sym]) return await _yahooFetch(YH[sym]);
 
+  // ── UNIVERSAL HYPERLIQUID FALLBACK ────────────────────────────────────────
+  // Any symbol in Hyperliquid perp market (TRUMP, FARTCOIN, POPCAT, ANIME, etc.)
+  if (window._HL && window._HL.perps && window._HL.perps[sym]) {
+    const res = await _hlFetch(sym);
+    if (res) return res;
+    // Fallback to cached perp data if live fetch fails
+    const p = window._HL.perps[sym];
+    if (p && p.mark > 0) {
+      const prevDay = p.chg24h ? p.mark / (1 + p.chg24h / 100) : p.mark;
+      return {
+        px: p.mark,
+        chg: p.chg24h || 0,
+        hi: p.mark,
+        lo: p.mark,
+        vol: p.vol24h || 0,
+        open: prevDay,
+        src: 'HL_PERP_CACHE'
+      };
+    }
+  }
+
+  // Final attempt: try Hyperliquid live for any unknown symbol
+  try {
+    const hlRes = await _hlFetch(sym);
+    if (hlRes && hlRes.px > 0) return hlRes;
+  } catch(e) {}
+
   return null;
 }
 
@@ -41931,6 +42134,8 @@ function _v12StopAll() {
 function _needsPoll(sym) {
   sym = sym.toUpperCase();
   if (IS_CRYPTO[sym]) return false; // Binance WS handles these natively
+  // Any known Hyperliquid perp gets polling via _hlFetch
+  if (window._HL && window._HL.perps && window._HL.perps[sym]) return true;
   return !!(IS_COMDTY[sym] || IS_IDX[sym] || IS_BOND[sym] || IS_FX[sym] ||
             IS_HL[sym] || YH[sym] || BB[sym]);
 }
@@ -41968,6 +42173,19 @@ window._openChartForSymbol = function(sym) {
   // Run immediately — _bbgInstantFill already ran inside _origOpen,
   // so we just need to kick off the live poll with no artificial delay
   _v12StartPoll(sym);
+  // ── Also immediately fetch HL data for XYZ symbols ──────────────────────
+  var symClean = (sym||'').toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
+  if (typeof IS_HL_XYZ !== 'undefined' && IS_HL_XYZ[symClean]) {
+    setTimeout(function() {
+      if (typeof _hlXyzFetch === 'function') {
+        _hlXyzFetch(symClean).then(function(data) {
+          if (data && data.px > 0 && typeof _applyLiveTick === 'function') {
+            _applyLiveTick(data.px, data.chg||0, data.hi||0, data.lo||0, data.vol||0, data.open||data.px, symClean);
+          }
+        }).catch(function(){});
+      }
+    }, 200);
+  }
 };
 
 // ── Patch _setChartInterval (interval change) ───────────────────────────────
