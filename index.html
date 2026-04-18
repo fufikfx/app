@@ -27585,10 +27585,11 @@ window._setChartInterval = async function(interval) {
             // ── Ventuals Pre-IPO (valuation perps) — not listed on any real exchange ──
             'SPACEX':'xyz:SPACEX','OPENAI':'xyz:OPENAI','ANTHROPIC':'xyz:ANTHROPIC',
             // ── HL-native or explicitly requested via HL ──
-            'BABA':'xyz:BABA','TSM':'xyz:TSM','SBET':'xyz:SBET','XYZ100':'xyz:XYZ100',
+            'BABA':'xyz:BABA','TSM':'xyz:TSM','SBET':'xyz:SBET', 'XYZ100':'xyz:XYZ100',
             'CRWV':'xyz:CRWV','CRCL':'xyz:CRCL', 'ORCL':'xyz:ORCL', 'MU':'xyz:MU', 'RIVN':'xyz:RIVN',
-            // Indices natively on Hyperliquid
-            'SPX':'SPX', 'NDX':'NDX', 'RUT':'RUT'
+            // ── Indices & Commodities natively on Hyperliquid (Oracles) ──
+            'SPX':'xyz:SPX', 'NDX':'xyz:NDX', 'DJI':'xyz:DJI', 'RUT':'xyz:RUT',
+            'GOLD':'xyz:XAU', 'SILVER':'xyz:XAG', 'WTI':'xyz:WTI', 'OIL':'xyz:WTI'
         };
         
         if (binanceMap[rawSym]) return { provider: 'BINANCE', ticker: binanceMap[rawSym], type: 'WS' };
@@ -41419,13 +41420,17 @@ var IS_HL     = {HYPE:1,PURR:1,FRIEND:1};
 var IS_HL_XYZ = {
   // True pre-IPO (no real exchange listing)
   SPACEX:1,OPENAI:1,ANTHROPIC:1,
-  // HL-native only (no Yahoo ticker)
-  BABA:1,TSM:1,SBET:1,XYZ100:1,CRWV:1,CRCL:1
+  // HL-native or explicitly requested via HL
+  BABA:1,TSM:1,SBET:1,XYZ100:1,CRWV:1,CRCL:1,
+  // Indices & Commodities via HL Oracle (xyz)
+  SPX:1,NDX:1,DJI:1,GOLD:1,SILVER:1,WTI:1,OIL:1
 };
 var HL_XYZ_SYM = {
   BABA:'xyz:BABA',TSM:'xyz:TSM',SBET:'xyz:SBET',XYZ100:'xyz:XYZ100',
   CRWV:'xyz:CRWV',CRCL:'xyz:CRCL',
-  SPACEX:'xyz:SPACEX',OPENAI:'xyz:OPENAI',ANTHROPIC:'xyz:ANTHROPIC'
+  SPACEX:'xyz:SPACEX',OPENAI:'xyz:OPENAI',ANTHROPIC:'xyz:ANTHROPIC',
+  SPX:'xyz:SPX',NDX:'xyz:NDX',DJI:'xyz:DJI',INDU:'xyz:DJI',
+  GOLD:'xyz:XAU',SILVER:'xyz:XAG',WTI:'xyz:WTI',OIL:'xyz:WTI'
 };
 
 // ── Hyperliquid xyz: fetch (HIP-3 equities + pre-IPO) ──────────────────────────
@@ -41463,13 +41468,26 @@ async function _hlXyzFetch(sym) {
           const chg    = prevPx > 0 ? ((markPx - prevPx) / prevPx * 100) : 0;
           const vol    = parseFloat(ctx.dayNtlVlm)  || 0;
           const result = { px: markPx, chg, hi: Math.max(markPx, prevPx), lo: Math.min(markPx, prevPx), vol, open: prevPx };
-        // Sync to STKS cache for sidebar/panels
+        // Sync to various caches/data structures
         if (window.STKS && window.STKS[sym]) {
           window.STKS[sym].px  = markPx;
           window.STKS[sym].chg = chg;
           window.STKS[sym].hi  = result.hi;
           window.STKS[sym].lo  = result.lo;
           window.STKS[sym]._pxTs = Date.now();
+        }
+        if (window.MKT && window.MKT[sym]) {
+          window.MKT[sym].px  = markPx;
+          window.MKT[sym].chg = chg;
+          window.MKT[sym]._pxTs = Date.now();
+        }
+        if (window.COMDTY_DATA) {
+          const cd = window.COMDTY_DATA.find(x => x.s === sym || (sym==='WTI'&&x.s==='OIL'));
+          if (cd) {
+            cd.px  = markPx;
+            cd.chg = chg;
+            cd._pxTs = Date.now();
+          }
         }
         return result;
         }
