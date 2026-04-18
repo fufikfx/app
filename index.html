@@ -26271,6 +26271,13 @@ function renderVPVR(sym){
   const maxVol = Math.max(...sorted.map(b=>b.total));
   const poc = sorted.reduce((a,b)=>b.total>a.total?b:a);
   
+  const yahooMap = {
+    'SPX':'^SPX','NDX':'^NDX','DJI':'^DJI','VIX':'^VIX','DXY':'DX-Y.NYB',
+    'US10Y':'^TNX',
+    'AAPL':'AAPL','MSFT':'MSFT','NVDA':'NVDA','TSLA':'TSLA',
+    'WTI':'CL=F','OIL':'CL=F'
+  };
+  
   el.innerHTML = '<div style="font-size:7px;color:#998870;margin-bottom:4px;padding:0 4px">' +
     'POC: <span style="color:#ff8800">' + poc.price.toLocaleString() + '</span> · ' +
     'RANGE: <span style="color:#665840">' + data.minP.toFixed(0) + ' — ' + data.maxP.toFixed(0) + '</span>' +
@@ -27577,17 +27584,19 @@ window._setChartInterval = async function(interval) {
         const hlXyzMap = {
             // ── Ventuals Pre-IPO (valuation perps) — not listed on any real exchange ──
             'SPACEX':'xyz:SPACEX','OPENAI':'xyz:OPENAI','ANTHROPIC':'xyz:ANTHROPIC',
-            // ── HL-native only (no Yahoo ticker) ──
+            // ── HL-native or explicitly requested via HL ──
             'BABA':'xyz:BABA','TSM':'xyz:TSM','SBET':'xyz:SBET','XYZ100':'xyz:XYZ100',
-            'CRWV':'xyz:CRWV','CRCL':'xyz:CRCL',
+            'CRWV':'xyz:CRWV','CRCL':'xyz:CRCL', 'ORCL':'xyz:ORCL', 'MU':'xyz:MU', 'RIVN':'xyz:RIVN',
+            // Indices natively on Hyperliquid
+            'SPX':'SPX', 'NDX':'NDX', 'RUT':'RUT'
         };
         
-        if (binanceMap[sym]) return { provider: 'BINANCE', ticker: binanceMap[sym], type: 'WS' };
-        if (bybitMap[sym])   return { provider: 'BYBIT',   ticker: bybitMap[sym],   type: 'WS' };
-        if (hlXyzMap[sym])   return { provider: 'HL_XYZ',  ticker: hlXyzMap[sym],   type: 'POLL', hlSym: hlXyzMap[sym] };
-        if (cryptoMap[sym])  return { provider: 'BINANCE', ticker: cryptoMap[sym],  type: 'WS' };
+        if (binanceMap[rawSym]) return { provider: 'BINANCE', ticker: binanceMap[rawSym], type: 'WS' };
+        if (bybitMap[rawSym])   return { provider: 'BYBIT',   ticker: bybitMap[rawSym],   type: 'WS' };
+        if (hlXyzMap[rawSym])   return { provider: 'HL_XYZ',  ticker: hlXyzMap[rawSym],   type: 'POLL', hlSym: hlXyzMap[rawSym] };
+        if (cryptoMap[rawSym])  return { provider: 'BINANCE', ticker: cryptoMap[rawSym],  type: 'WS' };
         
-        return { provider: 'YAHOO', ticker: (yahooMap[sym] || sym), type: 'POLL' };
+        return { provider: 'YAHOO', ticker: (yahooMap[rawSym] || rawSym), type: 'POLL' };
     };
 
     const resolved = _resolveBestDataSource(rawSym);
@@ -28053,6 +28062,9 @@ window._setChartInterval = async function(interval) {
                     setEl('bbg-low',    fmtP(lo));
                     setEl('bbg-volume', fmtV(vol));
                     setEl('bbg-close',  fmtP(markPx));
+                    if (!window._bbgOhlvCache) window._bbgOhlvCache = {};
+                    window._bbgOhlvCache[rawSym] = { px:markPx, open:prevPx, hi, lo, vol, prevClose:prevPx, pct:chgPct, chg:chgPct, _ts:Date.now() };
+                    window._bbgOhlvCache[hlSym] = window._bbgOhlvCache[rawSym];
                     console.log('[HL-XYZ] ' + hlSym + ' px=' + markPx.toFixed(2) + ' chg=' + chgPct.toFixed(2) + '%');
                     return;
                 }
@@ -28060,6 +28072,7 @@ window._setChartInterval = async function(interval) {
                 console.warn('[HL-XYZ] fetch failed:', e.message);
                 // Fallback to Yahoo for public equities
                 const yFallback = {
+                    'SPX':'^SPX', 'NDX':'^NDX', 'RUT':'^RUT',
                     'BABA':'BABA','TSM':'TSM','ORCL':'ORCL','MU':'MU',
                     'CRWV':'CRWV','RIVN':'RIVN','CRCL':'CRCL','SBET':'SBET'
                 }[rawSym];
@@ -28111,32 +28124,9 @@ window._setChartInterval = async function(interval) {
         // We detect a TF switch by checking if a previous price is already displayed (live data exists).
         const _isSymbolSwitch = !window._bbgLastRenderedSym || window._bbgLastRenderedSym !== rawSym;
         window._bbgLastRenderedSym = rawSym;
-        const _stksPreload = _isSymbolSwitch && (typeof STKS !== 'undefined') && STKS[rawSym];
-        if (_stksPreload && _stksPreload.px) {
-            const _sp = _stksPreload;
-            const _prc = _sp.px;
-            const _opn = _sp.open || _prc;
-            const _pct = _sp.chg || 0;
-            const _up  = _pct >= 0;
-            const _col = _up ? '#00cc44' : '#ff3d3d';
-            setEl('bbg-current-price', fmtP(_prc));
-            setEl('bbg-start',  fmtP(_opn));
-            setEl('bbg-high',   _sp.hi ? fmtP(_sp.hi) : '—');
-            setEl('bbg-low',    _sp.lo ? fmtP(_sp.lo) : '—');
-            setEl('bbg-close',  fmtP(_prc));
-            setEl('ov-start',   fmtP(_prc));
-            setEl('ov-open',    fmtP(_opn));
-            setEl('ov-high',    _sp.hi ? fmtP(_sp.hi) : '—');
-            setEl('ov-low',     _sp.lo ? fmtP(_sp.lo) : '—');
-            setEl('ov-close',   fmtP(_prc));
-            const chgEl = document.getElementById('bbg-price-change');
-            if (chgEl) { chgEl.innerText = (_up?'+':'') + _pct.toFixed(2) + '%'; chgEl.style.color = _col; }
-            const arrEl = document.getElementById('bbg-price-arrow');
-            if (arrEl) { arrEl.innerText = _up ? '↑' : '↓'; arrEl.style.color = _col; }
-            const ctnr = document.getElementById('bbg-current-price-container');
-            if (ctnr) ctnr.style.color = _col;
-            window._firstBbgPrice = _opn;
-        } else if (!_isSymbolSwitch) {
+        // _bbgInstantFill already preloads standard UI elements from _bbgOhlvCache.
+        // We only reset period-specific values if this is a timeframe switch.
+        if (!_isSymbolSwitch) {
             // Timeframe switch: reset Hi/Lo/Open to dashes so stale values aren't shown.
             // Current price stays (it's live), but period-specific values reload from fetch.
             setEl('bbg-high',  '—');
@@ -28913,14 +28903,33 @@ window._bbgInstantFill = function(sym) {
   };
   var s = function(id, val) { if (!val) return; var e = document.getElementById(id); if (e) e.innerText = val; };
 
-  // Reset to loading indicator
-  ['bbg-close','bbg-high','bbg-low','bbg-volume','bbg-start'].forEach(function(id){
-    var e = document.getElementById(id); if (e) e.innerText = '—';
-  });
+  var _symClean = (sym||'').toUpperCase().replace(/\s+(EQUITY|INDEX|COMDTY|CURNCY|GOVT)$/i,'').trim();
+
+  // 0) Global OHLCV cache check (fastest path for recently viewed assets)
+  var _cachedOhlv = window._bbgOhlvCache && (window._bbgOhlvCache[sym] || window._bbgOhlvCache[_symClean]);
+  if (_cachedOhlv && (Date.now() - _cachedOhlv._ts) < 90000) {
+    s('bbg-close',  fmtP(_cachedOhlv.px));
+    s('bbg-start',  fmtP(_cachedOhlv.open || _cachedOhlv.px));
+    if (_cachedOhlv.hi  > 0) s('bbg-high',   fmtP(_cachedOhlv.hi));
+    if (_cachedOhlv.lo  > 0) s('bbg-low',    fmtP(_cachedOhlv.lo));
+    if (_cachedOhlv.vol > 0) s('bbg-volume', fmtV(_cachedOhlv.vol));
+    var pxCached = document.getElementById('bbg-current-price');
+    if (pxCached) pxCached.innerText = fmtP(_cachedOhlv.px);
+    var chgCached = document.getElementById('bbg-price-change');
+    if (chgCached && _cachedOhlv.chg != null) {
+      var chgC = parseFloat(_cachedOhlv.chg);
+      chgCached.innerText = (chgC >= 0 ? '+' : '') + chgC.toFixed(2) + '%';
+      chgCached.style.color = chgC >= 0 ? '#4caf50' : '#f44336';
+    }
+  } else {
+    // Reset to loading indicator if no cache
+    ['bbg-close','bbg-high','bbg-low','bbg-volume','bbg-start'].forEach(function(id){
+      var e = document.getElementById(id); if (e) e.innerText = '…';
+    });
+  }
 
   // Pre-IPO warning badge — show/hide based on symbol
   var _preIPO = ['SPACEX','OPENAI','ANTHROPIC'];
-  var _symClean = (sym||'').toUpperCase().replace(/\s+(EQUITY|INDEX|COMDTY|CURNCY|GOVT)$/i,'').trim();
   var _preIpoBadge = document.getElementById('bbg-preipo-badge');
   if (!_preIpoBadge) {
     _preIpoBadge = document.createElement('div');
