@@ -27566,6 +27566,14 @@ window._setChartInterval = async function(interval) {
         // ── ETFs ──────────────────────────────────────────────────────────────
         'SPY':'AMEX:SPY','QQQ':'NASDAQ:QQQ','IWM':'AMEX:IWM','DIA':'AMEX:DIA',
         'GLD':'AMEX:GLD','SLV':'AMEX:SLV','USO':'AMEX:USO','TLT':'NASDAQ:TLT',
+        // ── Forex (HL.xyz HIP-3) ──────────────────────────────────────────────
+        'EURUSD':'FX:EURUSD','USDJPY':'FX:USDJPY','GBPUSD':'FX:GBPUSD',
+        'AUDUSD':'FX:AUDUSD','USDCAD':'FX:USDCAD','USDCHF':'FX:USDCHF',
+        'NZDUSD':'FX:NZDUSD','EUR':'FX:EURUSD','JPY':'FX:USDJPY',
+        // ── HL.xyz synthetic indices & commodities aliases ───────────────────
+        'SP500':'SPREADEX:SPX','XYZ100':'NASDAQ:NDX',
+        'BRENTOIL':'TVC:UKOIL','CL':'TVC:USOIL','PLATINUM':'TVC:PLATINUM',
+        'PALLADIUM':'TVC:PALLADIUM',
     };
 
     // ── SMART DATA RESOLVER ──
@@ -27578,15 +27586,19 @@ window._setChartInterval = async function(interval) {
         const bybitMap = {
             'VIX':'VIXUSD', 'HYPE':'HYPEUSDT'
         };
-        // ── Hyperliquid Oracle: Verified @-spot tokens (Wagyu.xyz) ──
-        const hlXyzMap = {
-            // US Equities
-            'TSLA':'@264', 'AAPL':'@268', 'GOOGL':'@266',
-            'AMZN':'@280', 'META':'@287', 'MSFT':'@289',
-            'HOOD':'@271', 'CRCL':'@263',
-            // ETFs
-            'SPY':'@279', 'QQQ':'@288', 'GLD':'@276', 'SLV':'@265', 'QQQM':'@308'
-        };
+        // ── Hyperliquid Oracle: Verified @-spot tokens (Wagyu.xyz / trade.xyz) ──
+        // Source of truth = live HL_XYZ_SYM (mutated at runtime by auto-discovery)
+        // Fallback hardcoded values used until allMids poll populates real @-IDs
+        const hlXyzMap = (typeof window !== 'undefined' && window.HL_XYZ_SYM)
+          ? window.HL_XYZ_SYM
+          : {
+              // US Equities
+              'TSLA':'@264', 'AAPL':'@268', 'GOOGL':'@266',
+              'AMZN':'@280', 'META':'@287', 'MSFT':'@289',
+              'HOOD':'@271', 'CRCL':'@263',
+              // ETFs
+              'SPY':'@279', 'QQQ':'@288', 'GLD':'@276', 'SLV':'@265', 'QQQM':'@308'
+            };
         
         if (binanceMap[rawSym]) return { provider: 'BINANCE', ticker: binanceMap[rawSym], type: 'WS' };
         if (bybitMap[rawSym])   return { provider: 'BYBIT',   ticker: bybitMap[rawSym],   type: 'WS' };
@@ -27611,11 +27623,37 @@ window._setChartInterval = async function(interval) {
             // Priority 2: Equities Chart via mapped source
             else if (resolved.provider === 'HL_XYZ') {
                 const xyzTvMap = {
+                    // ── Mega-cap Tech (HL.xyz @-spot) ──
                     'META':'NASDAQ:META', 'AMZN':'NASDAQ:AMZN', 'AAPL':'NASDAQ:AAPL',
                     'GOOGL':'NASDAQ:GOOGL', 'MSFT':'NASDAQ:MSFT', 'TSLA':'NASDAQ:TSLA',
-                    'HOOD':'NASDAQ:HOOD', 'CRCL':'NYSE:CRCL',
+                    'NVDA':'NASDAQ:NVDA', 'NFLX':'NASDAQ:NFLX', 'AMD':'NASDAQ:AMD',
+                    // ── Financials / Crypto-native ──
+                    'HOOD':'NASDAQ:HOOD', 'CRCL':'NYSE:CRCL', 'COIN':'NASDAQ:COIN',
+                    'PLTR':'NASDAQ:PLTR', 'MSTR':'NASDAQ:MSTR', 'SOFI':'NASDAQ:SOFI',
+                    // ── ETFs ──
                     'SPY':'AMEX:SPY', 'QQQ':'NASDAQ:QQQ', 'QQQM':'NASDAQ:QQQM',
-                    'GLD':'AMEX:GLD', 'SLV':'AMEX:SLV'
+                    'GLD':'AMEX:GLD', 'SLV':'AMEX:SLV', 'IWM':'AMEX:IWM',
+                    'USO':'AMEX:USO', 'TLT':'NASDAQ:TLT',
+                    // ── Indices (HL.xyz synthetic / licensed) ──
+                    'SP500':'SPREADEX:SPX', 'SPX':'SPREADEX:SPX',
+                    'XYZ100':'NASDAQ:NDX', 'NDX':'NASDAQ:NDX',
+                    'DJI':'DJ:DJI', 'RUT':'TVC:RUT',
+                    // ── Commodities (HL.xyz HIP-3) ──
+                    'GOLD':'TVC:GOLD', 'XAU':'TVC:GOLD',
+                    'SILVER':'TVC:SILVER', 'XAG':'TVC:SILVER',
+                    'OIL':'TVC:USOIL', 'WTI':'TVC:USOIL', 'CL':'TVC:USOIL',
+                    'BRENT':'TVC:UKOIL', 'BRENTOIL':'TVC:UKOIL',
+                    'NATGAS':'TVC:NATGAS', 'GAS':'TVC:NATGAS',
+                    'COPPER':'TVC:COPPER', 'HG':'TVC:COPPER',
+                    'PLATINUM':'TVC:PLATINUM', 'XPT':'TVC:PLATINUM',
+                    'PALLADIUM':'TVC:PALLADIUM', 'XPD':'TVC:PALLADIUM',
+                    // ── Forex (HL.xyz HIP-3) ──
+                    'EUR':'FX:EURUSD', 'EURUSD':'FX:EURUSD',
+                    'JPY':'FX:USDJPY', 'USDJPY':'FX:USDJPY',
+                    'GBP':'FX:GBPUSD', 'GBPUSD':'FX:GBPUSD',
+                    'AUD':'FX:AUDUSD', 'AUDUSD':'FX:AUDUSD',
+                    'CAD':'FX:USDCAD', 'USDCAD':'FX:USDCAD',
+                    'CHF':'FX:USDCHF', 'USDCHF':'FX:USDCHF',
                 };
                 tvSym = xyzTvMap[rawSym] || ('NASDAQ:' + rawSym);
             }
@@ -41400,19 +41438,35 @@ var IS_HL     = {
   HYPE:1, PURR:1, FRIEND:1, SEI:1, OM:1, HBAR:1, KAS:1
 };
 
-// ── IS_HL_XYZ: verified assets on Hyperliquid @-spot oracle (Wagyu.xyz HIP-3) ──
-// Only includes @-spot tokens that exist & return live prices in allMids
+// ── IS_HL_XYZ: verified assets on Hyperliquid @-spot oracle (Wagyu.xyz / trade.xyz HIP-3) ──
+// Includes ALL asset classes: equities, ETFs, indices, commodities, forex
+// Auto-discovery at runtime resolves unknown @-IDs from spotMetaAndAssetCtxs
 var IS_HL_XYZ = {
-  TSLA:1, AAPL:1, GOOGL:1, AMZN:1, META:1, MSFT:1, HOOD:1, CRCL:1,
-  SPY:1, QQQ:1, QQQM:1, GLD:1, SLV:1
+  // ── Mega-cap Tech Equities ───────────────────────────────────
+  TSLA:1, AAPL:1, GOOGL:1, AMZN:1, META:1, MSFT:1, NVDA:1,
+  NFLX:1, AMD:1,
+  // ── Crypto-native / Fintech Equities ─────────────────────────
+  HOOD:1, CRCL:1, COIN:1, PLTR:1, MSTR:1, SOFI:1,
+  // ── ETFs ─────────────────────────────────────────────────────
+  SPY:1, QQQ:1, QQQM:1, GLD:1, SLV:1, IWM:1, USO:1, TLT:1,
+  // ── Indices (HL.xyz synthetic / licensed) ────────────────────
+  SP500:1, SPX:1, XYZ100:1, NDX:1, DJI:1, RUT:1,
+  // ── Commodities (HL.xyz HIP-3) ───────────────────────────────
+  GOLD:1, SILVER:1, OIL:1, WTI:1, CL:1, BRENT:1, BRENTOIL:1,
+  NATGAS:1, COPPER:1, PLATINUM:1, PALLADIUM:1,
+  XAU:1, XAG:1, HG:1, XPT:1, XPD:1,
+  // ── Forex (HL.xyz HIP-3) ─────────────────────────────────────
+  EURUSD:1, USDJPY:1, GBPUSD:1, AUDUSD:1, USDCAD:1, USDCHF:1,
+  EUR:1, JPY:1, GBP:1, AUD:1, CAD:1, CHF:1
 };
 
 
 // ── HL_XYZ_SYM: terminal symbol → Hyperliquid allMids key ────────────────────
 // '@NNN' = verified spot token on Hyperliquid (Wagyu.xyz HIP-3)
-// Verified live prices from allMids, 2026-04
+// Hardcoded values = verified @-IDs from 2026-04
+// null values = auto-populated at runtime by _hlAutoDiscover() from live API
 var HL_XYZ_SYM = {
-  // ── US Equities ──────────────────────────────────
+  // ── US Equities (verified @-IDs) ──────────────────────────────
   TSLA:  '@264',   // Tesla        ~$215
   AAPL:  '@268',   // Apple        ~$270
   GOOGL: '@266',   // Alphabet     ~$339
@@ -41421,13 +41475,27 @@ var HL_XYZ_SYM = {
   MSFT:  '@289',   // Microsoft    ~$412
   HOOD:  '@271',   // Robinhood    ~$91
   CRCL:  '@263',   // Circle       ~$105
-  // ── ETFs ─────────────────────────────────────────
+  // ── ETFs (verified) ──────────────────────────────────────────
   SPY:   '@279',   // SPDR S&P500  ~$710
   QQQ:   '@288',   // Invesco QQQ  ~$649
   QQQM:  '@308',   // Invesco QQQM ~$649
   GLD:   '@276',   // SPDR Gold    ~$439
   SLV:   '@265',   // iShares Ag   ~$73
+  // ── Auto-discovery placeholders (resolved at runtime) ────────
+  // New HL.xyz tokens added after 2026-04 — auto-populated from API
+  NVDA:  null, NFLX: null, AMD:  null, COIN: null, PLTR: null, MSTR: null, SOFI: null,
+  IWM:   null, USO:  null, TLT:  null,
+  SP500: null, SPX:  null, XYZ100: null, NDX: null, DJI: null, RUT: null,
+  GOLD:  null, SILVER: null, OIL: null, WTI: null, CL: null, BRENT: null, BRENTOIL: null,
+  NATGAS: null, COPPER: null, PLATINUM: null, PALLADIUM: null,
+  XAU: null, XAG: null, HG: null, XPT: null, XPD: null,
+  EURUSD: null, USDJPY: null, GBPUSD: null, AUDUSD: null, USDCAD: null, USDCHF: null,
+  EUR:    null, JPY:    null, GBP:    null, AUD:    null, CAD:    null, CHF:    null,
 };
+
+// Expose to window for dynamic resolver access
+window.IS_HL_XYZ  = IS_HL_XYZ;
+window.HL_XYZ_SYM = HL_XYZ_SYM;
 
 // ── Global cache for all HL prices (refreshed by polling loop) ───────────────
 var _HL_PRICE_CACHE = {}; // sym -> {px, chg, hi, lo, vol, open, ts}
@@ -41458,93 +41526,8 @@ async function _hlGetMids() {
 }
 
 // ── Fetch spot candle/ctx for @-token to get hi/lo/vol/prevDay ───────────────
-async function _hlSpotCtx(marketKey) {
-  // marketKey = '@264', '@268', etc.
-  try {
-    const r = await fetch('https://api.hyperliquid.xyz/info', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({type:'spotMetaAndAssetCtxs'}),
-      signal: (()=>{const c=new AbortController();setTimeout(()=>c.abort(),8000);return c.signal;})(),
-      cache: 'no-store'
-    });
-    if (!r.ok) return null;
-    const [meta, ctxs] = await r.json();
-    const mkts = meta.universe || [];
-    const idx = mkts.findIndex(m => m.name === marketKey);
-    if (idx === -1 || !ctxs[idx]) return null;
-    return ctxs[idx];
-  } catch(e) { return null; }
-}
+// ── Logic moved to centralized polling engine ────────────────────────────
 
-
-// ── Core xyz fetch: @-spot + xyz: perp, with cache ──────────────────────
-async function _hlXyzFetch(sym) {
-  const hlKey = HL_XYZ_SYM[sym];
-  if (!hlKey) return null;
-  try {
-    const mids = await _hlGetMids();
-    const px = parseFloat(mids[hlKey]);
-    if (!px || px <= 0) return null;
-
-    if (hlKey.startsWith('@')) {
-      // Spot token: get rich ctx
-      try {
-        const ctx = await _hlSpotCtx(hlKey);
-        if (ctx) {
-          const prevPx  = parseFloat(ctx.prevDayPx) || px;
-          const markPx  = parseFloat(ctx.markPx) || px;
-          const dayOpen = parseFloat(ctx.dayOpen) || prevPx;
-          const dayHi   = parseFloat(ctx.dayHigh) || Math.max(markPx, prevPx);
-          const dayLo   = parseFloat(ctx.dayLow)  || Math.min(markPx, prevPx);
-          const vol     = parseFloat(ctx.dayNtlVlm) || 0;
-          const chg     = dayOpen > 0 ? ((markPx - dayOpen) / dayOpen * 100) : 0;
-          const result  = { px: markPx, chg, hi: dayHi, lo: dayLo, vol, open: dayOpen, src: 'HL_SPOT' };
-          _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
-          _hlSyncAll(sym, markPx, chg, result);
-          return result;
-        }
-      } catch(e2) {}
-      // Fallback: allMids price only
-      const cached = _HL_PRICE_CACHE[sym];
-      const prevPx = cached && cached.open > 0 ? cached.open : px;
-      const chg = prevPx > 0 ? ((px - prevPx) / prevPx * 100) : 0;
-      const result = { px, chg, hi: Math.max(px, prevPx), lo: Math.min(px, prevPx), vol: 0, open: prevPx, src: 'HL_SPOT_MID' };
-      _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
-      _hlSyncAll(sym, px, chg, result);
-      return result;
-    }
-
-    // xyz: perp oracle
-    try {
-      const r2 = await fetch('https://api.hyperliquid.xyz/info', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({type:'metaAndAssetCtxs'}),
-        signal: (()=>{const c=new AbortController();setTimeout(()=>c.abort(),8000);return c.signal;})(),
-        cache: 'no-store'
-      });
-      if (r2.ok) {
-        const [meta, ctxs] = await r2.json();
-        const idx = (meta.universe||[]).findIndex(a => a.name === hlKey);
-        if (idx !== -1 && ctxs[idx]) {
-          const ctx    = ctxs[idx];
-          const prevPx = parseFloat(ctx.prevDayPx) || px;
-          const markPx = parseFloat(ctx.markPx)    || px;
-          const chg    = prevPx > 0 ? ((markPx - prevPx) / prevPx * 100) : 0;
-          const vol    = parseFloat(ctx.dayNtlVlm) || 0;
-          const result = { px: markPx, chg, hi: Math.max(markPx, prevPx), lo: Math.min(markPx, prevPx), vol, open: prevPx, src: 'HL_ORACLE' };
-          _HL_PRICE_CACHE[sym] = { ...result, ts: Date.now() };
-          _hlSyncAll(sym, markPx, chg, result);
-          return result;
-        }
-      }
-    } catch(e2) {}
-    const rf = { px, chg: 0, hi: px, lo: px, vol: 0, open: px, src: 'HL_MID' };
-    _HL_PRICE_CACHE[sym] = { ...rf, ts: Date.now() };
-    _hlSyncAll(sym, px, 0, rf);
-    return rf;
-  } catch(e) { return null; }
-}
 
 // ── Centralized sync: push HL price to ALL data structures ────────────────
 function _hlSyncAll(sym, px, chg, result) {
@@ -41570,6 +41553,173 @@ function _hlSyncAll(sym, px, chg, result) {
     const cds = ca[sym] || sym;
     const cd = window.COMDTY_DATA.find(x => x.s === cds || x.s === sym);
     if (cd) { cd.px = px; cd.chg = chg; cd._pxTs = ts; }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HL.xyz AUTO-DISCOVERY — dynamically resolves unknown @-IDs and perp names
+// ══════════════════════════════════════════════════════════════════════════════
+// Runs once at boot + every 5 min. Scans:
+//   (1) spotMetaAndAssetCtxs → HIP-1 @-tokens  (equities, ETFs on trade.xyz)
+//   (2) metaAndAssetCtxs     → HIP-3 perps     (indices, commodities, forex)
+// For each HL_XYZ_SYM entry with null value, attempts name match and populates.
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Terminal-symbol → list of potential names in HL metadata (case-insensitive)
+// Covers naming variations: 'TSLA', 'xyz:TSLA', 'XYZ:TSLA', 'XYZ100', etc.
+var HL_XYZ_ALIASES = {
+  // Equities
+  NVDA:   ['NVDA','xyz:NVDA','XYZ:NVDA'],
+  NFLX:   ['NFLX','xyz:NFLX'],
+  AMD:    ['AMD','xyz:AMD'],
+  COIN:   ['COIN','xyz:COIN'],
+  PLTR:   ['PLTR','xyz:PLTR'],
+  MSTR:   ['MSTR','xyz:MSTR'],
+  SOFI:   ['SOFI','xyz:SOFI'],
+  // ETFs
+  IWM:    ['IWM','xyz:IWM'],
+  USO:    ['USO','xyz:USO'],
+  TLT:    ['TLT','xyz:TLT'],
+  // Indices (HL.xyz synthetic / licensed)
+  SP500:  ['SP500','xyz:SP500','SPX','xyz:SPX','S&P500','SP-500'],
+  SPX:    ['SPX','xyz:SPX','SP500','xyz:SP500'],
+  XYZ100: ['XYZ100','xyz:XYZ100','NDX','xyz:NDX','NASDAQ100'],
+  NDX:    ['NDX','xyz:NDX','XYZ100','xyz:XYZ100'],
+  DJI:    ['DJI','xyz:DJI','DOW','xyz:DOW'],
+  RUT:    ['RUT','xyz:RUT','RUSSELL2000'],
+  // Commodities
+  GOLD:     ['GOLD','xyz:GOLD','XAU','xyz:XAU'],
+  XAU:      ['XAU','xyz:XAU','GOLD','xyz:GOLD'],
+  SILVER:   ['SILVER','xyz:SILVER','XAG','xyz:XAG','XAGUSD'],
+  XAG:      ['XAG','xyz:XAG','SILVER','xyz:SILVER'],
+  OIL:      ['OIL','xyz:OIL','CL','xyz:CL','WTI','xyz:WTI','CRUDE'],
+  WTI:      ['WTI','xyz:WTI','CL','xyz:CL','OIL','xyz:OIL'],
+  CL:       ['CL','xyz:CL','OIL','xyz:OIL','WTI','xyz:WTI'],
+  BRENT:    ['BRENT','xyz:BRENT','BRENTOIL','xyz:BRENTOIL','BZ'],
+  BRENTOIL: ['BRENTOIL','xyz:BRENTOIL','BRENT','xyz:BRENT'],
+  NATGAS:   ['NATGAS','xyz:NATGAS','NG','xyz:NG','GAS','xyz:GAS'],
+  COPPER:   ['COPPER','xyz:COPPER','HG','xyz:HG'],
+  HG:       ['HG','xyz:HG','COPPER','xyz:COPPER'],
+  PLATINUM: ['PLATINUM','xyz:PLATINUM','XPT','xyz:XPT','PL'],
+  XPT:      ['XPT','xyz:XPT','PLATINUM','xyz:PLATINUM'],
+  PALLADIUM:['PALLADIUM','xyz:PALLADIUM','XPD','xyz:XPD','PA'],
+  XPD:      ['XPD','xyz:XPD','PALLADIUM','xyz:PALLADIUM'],
+  // Forex
+  EUR:    ['EUR','xyz:EUR','EURUSD','xyz:EURUSD'],
+  EURUSD: ['EURUSD','xyz:EURUSD','EUR','xyz:EUR'],
+  JPY:    ['JPY','xyz:JPY','USDJPY','xyz:USDJPY'],
+  USDJPY: ['USDJPY','xyz:USDJPY','JPY','xyz:JPY'],
+  GBP:    ['GBP','xyz:GBP','GBPUSD','xyz:GBPUSD'],
+  GBPUSD: ['GBPUSD','xyz:GBPUSD','GBP','xyz:GBP'],
+  AUD:    ['AUD','xyz:AUD','AUDUSD','xyz:AUDUSD'],
+  AUDUSD: ['AUDUSD','xyz:AUDUSD','AUD','xyz:AUD'],
+  CAD:    ['CAD','xyz:CAD','USDCAD','xyz:USDCAD'],
+  USDCAD: ['USDCAD','xyz:USDCAD','CAD','xyz:CAD'],
+  CHF:    ['CHF','xyz:CHF','USDCHF','xyz:USDCHF'],
+  USDCHF: ['USDCHF','xyz:USDCHF','CHF','xyz:CHF'],
+};
+
+// Normalize a HL metadata name for matching (strip xyz: prefix, uppercase, trim)
+function _hlNormName(name) {
+  if (!name) return '';
+  return String(name).toUpperCase().replace(/^XYZ:/,'').replace(/[^A-Z0-9]/g,'').trim();
+}
+
+// Check if a HL universe entry name matches any alias for our terminal symbol
+function _hlNameMatches(termSym, hlName) {
+  const aliases = HL_XYZ_ALIASES[termSym] || [termSym];
+  const normHl = _hlNormName(hlName);
+  for (const a of aliases) {
+    if (_hlNormName(a) === normHl) return true;
+  }
+  return false;
+}
+
+// Auto-discovery: scan HL API metadata and populate missing @-IDs / perp names
+async function _hlAutoDiscover() {
+  try {
+    const _sig = () => { const c = new AbortController(); setTimeout(()=>c.abort(), 10000); return c.signal; };
+    let found = 0;
+
+    // ── 1. SPOT metadata (@-tokens, HIP-1 equities on trade.xyz) ──
+    try {
+      const rSpot = await fetch('https://api.hyperliquid.xyz/info', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({type:'spotMetaAndAssetCtxs'}),
+        signal: _sig(), cache: 'no-store'
+      });
+      if (rSpot.ok) {
+        const payload = await rSpot.json();
+        const meta = Array.isArray(payload) ? payload[0] : payload.meta;
+        const universe = (meta && meta.universe) || [];
+        // Each universe entry: { name: '@264' or similar, ... }
+        // Some entries also have 'tokens' array mapping to HIP-1 tokens
+        const tokens = (meta && meta.tokens) || [];
+
+        for (const sym of Object.keys(HL_XYZ_SYM)) {
+          if (HL_XYZ_SYM[sym]) continue; // already resolved
+
+          // Strategy 1: match token name (e.g., 'NVDA' or 'xyz:NVDA') in tokens[]
+          const tokIdx = tokens.findIndex(t => _hlNameMatches(sym, t && t.name));
+          if (tokIdx !== -1) {
+            // Find universe entry that pairs this token with USDC
+            const uIdx = universe.findIndex(u =>
+              u && Array.isArray(u.tokens) && u.tokens.indexOf(tokIdx) !== -1
+            );
+            if (uIdx !== -1 && universe[uIdx].name) {
+              HL_XYZ_SYM[sym] = universe[uIdx].name; // e.g. '@295'
+              found++;
+              continue;
+            }
+          }
+          // Strategy 2: direct name match in universe
+          const dIdx = universe.findIndex(u => _hlNameMatches(sym, u && u.name));
+          if (dIdx !== -1 && universe[dIdx].name) {
+            HL_XYZ_SYM[sym] = universe[dIdx].name;
+            found++;
+          }
+        }
+      }
+    } catch(e) { /* ignore */ }
+
+    // ── 2. PERP metadata (HIP-3 perps: commodities, indices, forex) ──
+    // For perp markets, the "key" in allMids is the market NAME directly (no @-ID)
+    try {
+      const rPerp = await fetch('https://api.hyperliquid.xyz/info', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({type:'metaAndAssetCtxs'}),
+        signal: _sig(), cache: 'no-store'
+      });
+      if (rPerp.ok) {
+        const payload = await rPerp.json();
+        const meta = Array.isArray(payload) ? payload[0] : payload.meta;
+        const universe = (meta && meta.universe) || [];
+        for (const sym of Object.keys(HL_XYZ_SYM)) {
+          if (HL_XYZ_SYM[sym]) continue; // already resolved
+          const u = universe.find(x => _hlNameMatches(sym, x && x.name));
+          if (u && u.name) {
+            // Perps use the raw name as allMids key (e.g. 'xyz:GOLD')
+            HL_XYZ_SYM[sym] = u.name;
+            found++;
+          }
+        }
+      }
+    } catch(e) { /* ignore */ }
+
+    // Sync back to window + resolver
+    window.HL_XYZ_SYM = HL_XYZ_SYM;
+
+    if (found > 0) {
+      console.log('[HL AUTO-DISCOVERY] ⚡ Resolved', found, 'new symbols');
+      // Log newly resolved symbols
+      Object.keys(HL_XYZ_SYM).forEach(s => {
+        if (HL_XYZ_SYM[s]) {
+          // (only show if it's one of the newly-resolved ones — ok to log all)
+        }
+      });
+    }
+  } catch(e) {
+    console.warn('[HL AUTO-DISCOVERY] failed:', e);
   }
 }
 
@@ -41617,7 +41767,7 @@ function _updateHLCache(sym, rawPx, src) {
 // ── Deep refresh: full metadata (OHLC/Vol) for all HL assets ───────────
 async function _hlDeepRefresh() {
   try {
-    // 1. Fetch Prep Metadata
+    // 1. Fetch Perp Metadata (covers native crypto perps + HIP-3 perps like GOLD, SP500, EURUSD)
     const r1 = await fetch('https://api.hyperliquid.xyz/info', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({type:'metaAndAssetCtxs'}),
@@ -41626,14 +41776,25 @@ async function _hlDeepRefresh() {
     if (r1.ok) {
         const [meta, ctxs] = await r1.json();
         (meta.universe||[]).forEach((m, i) => {
-            const sym = m.name;
-            if (IS_HL[sym] && ctxs[i]) {
-                _applyCtxToCache(sym, ctxs[i], 'HL_PERP_DEEP');
+            const name = m.name;
+            if (!ctxs[i]) return;
+            // Native Hyperliquid perp (BTC, ETH, SOL, ...)
+            if (IS_HL[name]) {
+                _applyCtxToCache(name, ctxs[i], 'HL_PERP_DEEP');
+                return;
+            }
+            // HIP-3 perp that our auto-discovery mapped to an IS_HL_XYZ symbol
+            // Find any term symbol whose resolved key matches this name
+            for (const termSym of Object.keys(HL_XYZ_SYM)) {
+                if (HL_XYZ_SYM[termSym] === name) {
+                    _applyCtxToCache(termSym, ctxs[i], 'HL_XYZ_PERP_DEEP');
+                    break;
+                }
             }
         });
     }
 
-    // 2. Fetch Spot Metadata (@ tokens)
+    // 2. Fetch Spot Metadata (@ tokens — HIP-1 equities/ETFs)
     const r2 = await fetch('https://api.hyperliquid.xyz/info', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({type:'spotMetaAndAssetCtxs'}),
@@ -41643,6 +41804,7 @@ async function _hlDeepRefresh() {
         const [meta, ctxs] = await r2.json();
         Object.keys(IS_HL_XYZ).forEach(sym => {
             const hlKey = HL_XYZ_SYM[sym];
+            if (!hlKey) return;
             const idx = (meta.universe||[]).findIndex(a => a.name === hlKey);
             if (idx !== -1 && ctxs[idx]) {
                 _applyCtxToCache(sym, ctxs[idx], 'HL_XYZ_DEEP');
@@ -41667,10 +41829,20 @@ function _applyCtxToCache(sym, ctx, src) {
 
 // ── Auto-start HL polling on load ────────────────────────────────────────
 (function _startHLPolling() {
-  setTimeout(async () => { await _hlPollAll(); setTimeout(_hlDeepRefresh, 4000); }, 1500);
-  setInterval(_hlPollAll, 8000);
-  setInterval(_hlDeepRefresh, 60000);
-  console.log('[HL ORACLE] ⚡ Started —', Object.keys(IS_HL_XYZ).length, 'assets:', Object.keys(IS_HL_XYZ).join(', '));
+  // Boot sequence:
+  //   T+0.5s: auto-discovery (resolves all unknown @-IDs / perp names)
+  //   T+1.5s: first poll with resolved map
+  //   T+4s:   deep refresh (OHLC + volume)
+  //   Recurring: poll every 8s, deep refresh every 60s, re-discover every 5 min
+  setTimeout(async () => {
+    await _hlAutoDiscover();           // populate HL_XYZ_SYM from live API
+    await _hlPollAll();                // first price pass
+    setTimeout(_hlDeepRefresh, 2500);  // OHLC + volume
+  }, 500);
+  setInterval(_hlPollAll,      8000);      // fast price updates
+  setInterval(_hlDeepRefresh,  60000);     // OHLC refresh
+  setInterval(_hlAutoDiscover, 300000);    // re-discover every 5 min (catches new listings)
+  console.log('[HL ORACLE] ⚡ Started —', Object.keys(IS_HL_XYZ).length, 'assets registered:', Object.keys(IS_HL_XYZ).join(', '));
 })();
 
 // ── Master fetch: best source per asset class ────────────────────────────────
