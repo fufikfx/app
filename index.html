@@ -28010,66 +28010,58 @@ window._setChartInterval = async function(interval) {
             window._firstBbgPrice = 0; window._chigh = -Infinity; window._clow = Infinity;
         }
 
+        // ── HL-XYZ: fetch allMids + metaAndAssetCtxs in PARALLEL for fastest OHLCV ──
         const fetchHlXyz = async () => {
             try {
-                const r = await fetch('https://api.hyperliquid.xyz/info', {
-                    method: 'POST',
-                    headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({type:'allMids'}),
-                    signal: AbortSignal.timeout(6000),
-                    cache: 'no-store'
-                });
-                if (!r.ok) throw new Error('HTTP '+r.status);
-                const mids = await r.json();
+                const _sig = () => { const c = new AbortController(); setTimeout(() => c.abort(), 4000); return c.signal; };
+                const [rMids, rMeta] = await Promise.all([
+                    fetch('https://api.hyperliquid.xyz/info', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({type:'allMids'}), signal: _sig(), cache: 'no-store'
+                    }),
+                    fetch('https://api.hyperliquid.xyz/info', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({type:'metaAndAssetCtxs'}), signal: _sig(), cache: 'no-store'
+                    })
+                ]);
+                // Parse mids
+                const mids = rMids.ok ? await rMids.json() : {};
                 const px = parseFloat(mids[hlSym]);
                 if (px > 0) {
-                    // Get 24h data from metaAndAssetCtxs for hi/lo/vol
-                    try {
-                        const r2 = await fetch('https://api.hyperliquid.xyz/info', {
-                            method: 'POST',
-                            headers: {'Content-Type':'application/json'},
-                            body: JSON.stringify({type:'metaAndAssetCtxs'}),
-                            signal: AbortSignal.timeout(6000),
-                            cache: 'no-store'
-                        });
-                        if (r2.ok) {
-                            const [meta, ctxs] = await r2.json();
+                    let markPx = px, prevPx = px, chgPct = 0, vol = 0, hi = px, lo = px;
+                    // Parse metaAndAssetCtxs
+                    if (rMeta.ok) {
+                        try {
+                            const [meta, ctxs] = await rMeta.json();
                             const idx = (meta.universe || []).findIndex(a => a.name === hlSym);
                             if (idx !== -1 && ctxs[idx]) {
                                 const ctx = ctxs[idx];
-                                const prevPx  = parseFloat(ctx.prevDayPx) || px;
-                                const markPx  = parseFloat(ctx.markPx)    || px;
-                                const chgPct  = prevPx > 0 ? ((markPx - prevPx) / prevPx * 100) : 0;
-                                const vol     = parseFloat(ctx.dayNtlVlm) || 0;
-                                // HL doesn't expose daily hi/lo directly — use mark vs prev as proxy
-                                const hi = Math.max(markPx, prevPx);
-                                const lo = Math.min(markPx, prevPx);
-                                window._chigh = hi; window._clow = lo; window._cvol = vol;
-                                window._firstBbgPrice = prevPx;
-                                _applyTick(markPx, chgPct, hi, lo, vol, prevPx);
-                                setEl('bbg-start',  fmtP(prevPx));
-                                setEl('bbg-high',   fmtP(hi));
-                                setEl('bbg-low',    fmtP(lo));
-                                setEl('bbg-volume', fmtV(vol));
-                                console.log('[HL-XYZ] ' + hlSym + ' px=' + markPx.toFixed(2) + ' chg=' + chgPct.toFixed(2) + '%');
-                                return;
+                                prevPx  = parseFloat(ctx.prevDayPx) || px;
+                                markPx  = parseFloat(ctx.markPx)    || px;
+                                chgPct  = prevPx > 0 ? ((markPx - prevPx) / prevPx * 100) : 0;
+                                vol     = parseFloat(ctx.dayNtlVlm) || 0;
+                                hi = Math.max(markPx, prevPx);
+                                lo = Math.min(markPx, prevPx);
                             }
-                        }
-                    } catch(e2) {}
-                    // Fallback: just price, no hi/lo
-                    _applyTick(px, 0, 0, 0, 0, px);
-                    setEl('bbg-current-price', fmtP(px));
-                    setEl('bbg-close', fmtP(px));
+                        } catch(e2) {}
+                    }
+                    window._chigh = hi; window._clow = lo; window._cvol = vol;
+                    window._firstBbgPrice = prevPx;
+                    _applyTick(markPx, chgPct, hi, lo, vol, prevPx);
+                    setEl('bbg-start',  fmtP(prevPx));
+                    setEl('bbg-high',   fmtP(hi));
+                    setEl('bbg-low',    fmtP(lo));
+                    setEl('bbg-volume', fmtV(vol));
+                    setEl('bbg-close',  fmtP(markPx));
+                    console.log('[HL-XYZ] ' + hlSym + ' px=' + markPx.toFixed(2) + ' chg=' + chgPct.toFixed(2) + '%');
+                    return;
                 }
             } catch(e) {
                 console.warn('[HL-XYZ] fetch failed:', e.message);
                 // Fallback to Yahoo for public equities
                 const yFallback = {
-                    'META':'META','AMZN':'AMZN','AAPL':'AAPL','GOOGL':'GOOGL',
-                    'MSFT':'MSFT','NVDA':'NVDA','TSLA':'TSLA','PLTR':'PLTR',
-                    'COIN':'COIN','MSTR':'MSTR','AMD':'AMD','NFLX':'NFLX',
-                    'HOOD':'HOOD','BABA':'BABA','TSM':'TSM','ORCL':'ORCL',
-                    'INTC':'INTC','MU':'MU','CRWV':'CRWV','RIVN':'RIVN','CRCL':'CRCL'
+                    'BABA':'BABA','TSM':'TSM','ORCL':'ORCL','MU':'MU',
+                    'CRWV':'CRWV','RIVN':'RIVN','CRCL':'CRCL','SBET':'SBET'
                 }[rawSym];
                 if (yFallback) {
                     const cbust = '&_t=' + Date.now();
@@ -28107,7 +28099,7 @@ window._setChartInterval = async function(interval) {
         };
 
         fetchHlXyz();
-        const _hlXyzTimer = setInterval(fetchHlXyz, 15000);
+        const _hlXyzTimer = setInterval(fetchHlXyz, 6000);
         window._currentBbgWs = { close: () => clearInterval(_hlXyzTimer) };
 
     } else if (useYahoo) {
@@ -28868,19 +28860,9 @@ window._bbgInstantFill = function(sym) {
   }
   _preIpoBadge.style.display = _preIPO.includes(_symClean) ? 'block' : 'none';
 
-  // HL_XYZ source badge — only shown for true pre-IPO / HL-native instruments
+  // HL_XYZ source badge — permanently hidden (removed by user request)
   var _xyzBadge = document.getElementById('bbg-xyz-badge');
-  if (!_xyzBadge) {
-    _xyzBadge = document.createElement('div');
-    _xyzBadge.id = 'bbg-xyz-badge';
-    _xyzBadge.style.cssText = 'display:none;position:absolute;top:28px;right:12px;z-index:9998;background:rgba(0,180,120,0.12);border:1px solid #00cc88;padding:1px 6px;font-size:8px;color:#00cc88;letter-spacing:1px;';
-    _xyzBadge.innerHTML = '⬡ HYPERLIQUID xyz:';
-    var chartPnl2 = document.getElementById('bbg-chart-panel');
-    if (chartPnl2) chartPnl2.appendChild(_xyzBadge);
-  }
-  // Only show for true pre-IPO / HL-native (not real-exchange equities)
-  var _hlXyzSyms = ['SPACEX','OPENAI','ANTHROPIC','BABA','TSM','SBET','XYZ100','CRWV','CRCL'];
-  _xyzBadge.style.display = _hlXyzSyms.includes(_symClean) ? 'inline-block' : 'none';
+  if (_xyzBadge) _xyzBadge.style.display = 'none';
 
   // 1) Try CRYPTO array (live Binance WS prices — fastest, most accurate)
   var crypto = null;
@@ -29323,18 +29305,10 @@ window._openChartForSymbol = function(sym) {
     
     var titleEl = document.getElementById('bbg-chart-title');
     if (titleEl) titleEl.innerText = displayPair;
-    // Update source badge (Pre-IPO only — standard equities get no badge)
+    // Source badge — completely hidden (removed by user request)
     (function(){
-      var _pIPO = ['SPACEX','OPENAI','ANTHROPIC'];
-      // Only HL-native instruments that have no real exchange listing
-      var _xyzL = ['BABA','TSM','SBET','XYZ100','CRWV','CRCL'];
-      var _sU = sym.toUpperCase().replace(/\s+(EQUITY|INDEX|COMDTY|CURNCY|GOVT)$/i,'').trim();
       var _stag = document.getElementById('bbg-source-tag');
-      if (_stag) {
-        if (_pIPO.includes(_sU)) _stag.innerHTML = '<span style="color:#ff9933;font-size:8px;border:1px solid #ff7800;padding:1px 5px;vertical-align:middle;letter-spacing:1px;">⬡ PRE-IPO SYNTHETIC</span>';
-        else if (_xyzL.includes(_sU)) _stag.innerHTML = '<span style="color:#00cc88;font-size:8px;border:1px solid #00cc88;padding:1px 5px;vertical-align:middle;letter-spacing:1px;">⬡ HYPERLIQUID xyz:</span>';
-        else _stag.innerHTML = '';
-      }
+      if (_stag) _stag.innerHTML = '';
     })();
     var tbTitle = document.getElementById('bbg-toolbar-title');
     if (tbTitle) tbTitle.innerHTML = '<span>' + displayPair + '</span>';
