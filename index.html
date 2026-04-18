@@ -27571,27 +27571,15 @@ window._setChartInterval = async function(interval) {
         };
         const bybitMap = {
             'SPX':'SPXUSD', 'NDX':'NDXUSD', 'DJI':'DJIUSD', 'VIX':'VIXUSD',
-            'MSTR':'MSTRUSDT', 'COIN':'COINUSDT', 'SOFI':'SOFIUSDT',
-            'TSLA':'TSLAUSDT', 'NVDA':'NVDAUSDT', 'AAPL':'AAPLUSDT',
-            'AMZN':'AMZNUSDT','GOOGL':'GOOGLUSDT','META':'METAUSDT',
-            'MSFT':'MSFTUSDT','NFLX':'NFLXUSDT','AMD':'AMDUSDT',
-            'PLTR':'PLTRUSDT','HOOD':'HOODUSDT','RIOT':'RIOTUSDT',
             'HYPE':'HYPEUSDT'
         };
-        // Hyperliquid HIP-3 xyz: equities & pre-IPO (trade.xyz / Ventuals)
-        // These use xyz:SYMBOL format on Hyperliquid — data via HL REST API
+        // Hyperliquid HIP-3 xyz: — only true pre-IPO instruments not listed on any exchange
         const hlXyzMap = {
-            // ── trade.xyz US Equities (HIP-3) ──
-            'META':'xyz:META','AMZN':'xyz:AMZN','AAPL':'xyz:AAPL',
-            'GOOGL':'xyz:GOOGL','MSFT':'xyz:MSFT','NVDA':'xyz:NVDA',
-            'TSLA':'xyz:TSLA','PLTR':'xyz:PLTR','COIN':'xyz:COIN',
-            'MSTR':'xyz:MSTR','AMD':'xyz:AMD','NFLX':'xyz:NFLX',
-            'HOOD':'xyz:HOOD','BABA':'xyz:BABA','TSM':'xyz:TSM',
-            'ORCL':'xyz:ORCL','INTC':'xyz:INTC','MU':'xyz:MU',
-            'CRWV':'xyz:CRWV','RIVN':'xyz:RIVN','CRCL':'xyz:CRCL',
-            'SBET':'xyz:SBET','XYZ100':'xyz:XYZ100',
-            // ── Ventuals Pre-IPO (valuation perps) ──
+            // ── Ventuals Pre-IPO (valuation perps) — not listed on any real exchange ──
             'SPACEX':'xyz:SPACEX','OPENAI':'xyz:OPENAI','ANTHROPIC':'xyz:ANTHROPIC',
+            // ── HL-native only (no Yahoo ticker) ──
+            'BABA':'xyz:BABA','TSM':'xyz:TSM','SBET':'xyz:SBET','XYZ100':'xyz:XYZ100',
+            'CRWV':'xyz:CRWV','CRCL':'xyz:CRCL',
         };
         
         if (binanceMap[sym]) return { provider: 'BINANCE', ticker: binanceMap[sym], type: 'WS' };
@@ -28880,7 +28868,7 @@ window._bbgInstantFill = function(sym) {
   }
   _preIpoBadge.style.display = _preIPO.includes(_symClean) ? 'block' : 'none';
 
-  // HL_XYZ source badge
+  // HL_XYZ source badge — only shown for true pre-IPO / HL-native instruments
   var _xyzBadge = document.getElementById('bbg-xyz-badge');
   if (!_xyzBadge) {
     _xyzBadge = document.createElement('div');
@@ -28890,7 +28878,8 @@ window._bbgInstantFill = function(sym) {
     var chartPnl2 = document.getElementById('bbg-chart-panel');
     if (chartPnl2) chartPnl2.appendChild(_xyzBadge);
   }
-  var _hlXyzSyms = ['META','AMZN','AAPL','GOOGL','MSFT','NVDA','TSLA','PLTR','COIN','MSTR','AMD','NFLX','HOOD','BABA','TSM','ORCL','INTC','MU','CRWV','RIVN','CRCL','SBET','XYZ100','SPACEX','OPENAI','ANTHROPIC'];
+  // Only show for true pre-IPO / HL-native (not real-exchange equities)
+  var _hlXyzSyms = ['SPACEX','OPENAI','ANTHROPIC','BABA','TSM','SBET','XYZ100','CRWV','CRCL'];
   _xyzBadge.style.display = _hlXyzSyms.includes(_symClean) ? 'inline-block' : 'none';
 
   // 1) Try CRYPTO array (live Binance WS prices — fastest, most accurate)
@@ -29286,10 +29275,11 @@ window._openChartForSymbol = function(sym) {
     
     var titleEl = document.getElementById('bbg-chart-title');
     if (titleEl) titleEl.innerText = displayPair;
-    // Update source badge (Pre-IPO / HL xyz:)
+    // Update source badge (Pre-IPO only — standard equities get no badge)
     (function(){
       var _pIPO = ['SPACEX','OPENAI','ANTHROPIC'];
-      var _xyzL = ['META','AMZN','AAPL','GOOGL','MSFT','NVDA','TSLA','PLTR','COIN','MSTR','AMD','NFLX','HOOD','BABA','TSM','ORCL','INTC','MU','CRWV','RIVN','CRCL','SBET','XYZ100','SPACEX','OPENAI','ANTHROPIC'];
+      // Only HL-native instruments that have no real exchange listing
+      var _xyzL = ['BABA','TSM','SBET','XYZ100','CRWV','CRCL'];
       var _sU = sym.toUpperCase().replace(/\s+(EQUITY|INDEX|COMDTY|CURNCY|GOVT)$/i,'').trim();
       var _stag = document.getElementById('bbg-source-tag');
       if (_stag) {
@@ -41324,18 +41314,14 @@ var IS_CRYPTO = {BTC:1,ETH:1,SOL:1,BNB:1,XRP:1,ADA:1,DOGE:1,AVAX:1,LINK:1,
                  TRX:1,XLM:1,ATOM:1,ALGO:1,VET:1,OM:1,HBAR:1,KAS:1,SEI:1};
 var IS_HL     = {HYPE:1,PURR:1,FRIEND:1};
 var IS_HL_XYZ = {
-  META:1,AMZN:1,AAPL:1,GOOGL:1,MSFT:1,NVDA:1,TSLA:1,PLTR:1,COIN:1,
-  MSTR:1,AMD:1,NFLX:1,HOOD:1,BABA:1,TSM:1,ORCL:1,INTC:1,MU:1,
-  CRWV:1,RIVN:1,CRCL:1,SBET:1,XYZ100:1,
-  SPACEX:1,OPENAI:1,ANTHROPIC:1
+  // True pre-IPO (no real exchange listing)
+  SPACEX:1,OPENAI:1,ANTHROPIC:1,
+  // HL-native only (no Yahoo ticker)
+  BABA:1,TSM:1,SBET:1,XYZ100:1,CRWV:1,CRCL:1
 };
 var HL_XYZ_SYM = {
-  META:'xyz:META',AMZN:'xyz:AMZN',AAPL:'xyz:AAPL',GOOGL:'xyz:GOOGL',
-  MSFT:'xyz:MSFT',NVDA:'xyz:NVDA',TSLA:'xyz:TSLA',PLTR:'xyz:PLTR',
-  COIN:'xyz:COIN',MSTR:'xyz:MSTR',AMD:'xyz:AMD',NFLX:'xyz:NFLX',
-  HOOD:'xyz:HOOD',BABA:'xyz:BABA',TSM:'xyz:TSM',ORCL:'xyz:ORCL',
-  INTC:'xyz:INTC',MU:'xyz:MU',CRWV:'xyz:CRWV',RIVN:'xyz:RIVN',
-  CRCL:'xyz:CRCL',SBET:'xyz:SBET',XYZ100:'xyz:XYZ100',
+  BABA:'xyz:BABA',TSM:'xyz:TSM',SBET:'xyz:SBET',XYZ100:'xyz:XYZ100',
+  CRWV:'xyz:CRWV',CRCL:'xyz:CRCL',
   SPACEX:'xyz:SPACEX',OPENAI:'xyz:OPENAI',ANTHROPIC:'xyz:ANTHROPIC'
 };
 
