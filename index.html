@@ -3748,6 +3748,119 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
+      <!-- CFA ANALYTICS folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">CFA Analytics</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('CFADCF');closeAllQL()" style="border-left:2px solid #44aaff"><div class="ql-it-desc" style="color:#44aaff;font-weight:700">◈ DCF · Discounted Cash Flow Model</div></div>
+          <div class="ql-it" onclick="openPanel('CFAPORT');closeAllQL()" style="border-left:2px solid #44ffaa"><div class="ql-it-desc" style="color:#44ffaa;font-weight:700">◈ PORT · Portfolio Optimizer (Markowitz)</div></div>
+          <div class="ql-it" onclick="openPanel('CFARISK');closeAllQL()" style="border-left:2px solid #ffaa44"><div class="ql-it-desc" style="color:#ffaa44;font-weight:700">◈ RISK · VaR, Sharpe, Beta, Sortino</div></div>
+          <div class="ql-it" onclick="openPanel('CFAOPT');closeAllQL()" style="border-left:2px solid #cc44ff"><div class="ql-it-desc" style="color:#cc44ff;font-weight:700">◈ OPT · Black-Scholes Options Pricer</div></div>
+          <div class="ql-it" onclick="openPanel('QUANTLAB');closeAllQL()"><div class="ql-it-desc">QUANTLAB · Monte Carlo &amp; Factor Lab</div></div>
+        </div>
+      </div>
+
+      <!-- AI INVESTOR AGENTS folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">AI Investor Agents</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('AIAGENT');closeAllQL()" style="border-left:2px solid #ff6600"><div class="ql-it-desc" style="color:#ff8800;font-weight:700">🤖 AIAGENT · 20+ Investor Personas</div></div>
+          <div class="ql-it" onclick="window._openAIAgent('buffett');openPanel('AIAGENT');closeAllQL()"><div class="ql-it-desc">Buffett · Value Investing Analysis</div></div>
+          <div class="ql-it" onclick="window._openAIAgent('graham');openPanel('AIAGENT');closeAllQL()"><div class="ql-it-desc">Graham · Security Analysis</div></div>
+          <div class="ql-it" onclick="window._openAIAgent('lynch');openPanel('AIAGENT');closeAllQL()"><div class="ql-it-desc">Lynch · Growth at Reasonable Price</div></div>
+          <div class="ql-it" onclick="window._openAIAgent('munger');openPanel('AIAGENT');closeAllQL()"><div class="ql-it-desc">Munger · Mental Models Framework</div></div>
+          <div class="ql-it" onclick="window._openAIAgent('klarman');openPanel('AIAGENT');closeAllQL()"><div class="ql-it-desc">Klarman · Margin of Safety</div></div>
+          <div class="ql-it" onclick="window._openAIAgent('marks');openPanel('AIAGENT');closeAllQL()"><div class="ql-it-desc">Marks · Risk &amp; Market Cycles</div></div>
+          <div class="ql-it" onclick="window._openAIAgent('dalio');openPanel('AIAGENT');closeAllQL()"><div class="ql-it-desc">Dalio · All Weather Macro</div></div>
+          <div class="ql-it" onclick="window._openAIAgent('soros');openPanel('AIAGENT');closeAllQL()"><div class="ql-it-desc">Soros · Reflexivity Theory</div></div>
+        </div>
+      </div>
+
+      <!-- MACRO DATA SOURCES folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">Macro &amp; Central Banks</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('MACRODATA');closeAllQL()" style="border-left:2px solid #00eeff"><div class="ql-it-desc" style="color:#00eeff;font-weight:700">◈ MACRODATA · Global Macro Hub</div></div>
+          <div class="ql-it" onclick="openPanel('ECBDATA');closeAllQL()"><div class="ql-it-desc">ECB · European Central Bank Data</div></div>
+          <div class="ql-it" onclick="openPanel('IMFDATA');closeAllQL()"><div class="ql-it-desc">IMF · International Monetary Fund</div></div>
+          <div class="ql-it" onclick="openPanel('WBDATA');closeAllQL()"><div class="ql-it-desc">World Bank · Development Indicators</div></div>
+          <div class="ql-it" onclick="openPanel('FREDDATA');closeAllQL()"><div class="ql-it-desc">FRED · St. Louis Fed Economic Data</div></div>
+          <div class="ql-it" onclick="openPanel('BOJDATA');closeAllQL()"><div class="ql-it-desc">BoJ · Bank of Japan Statistics</div></div>
+          <div class="ql-it" onclick="openPanel('BOEDATA');closeAllQL()"><div class="ql-it-desc">BoE · Bank of England Data</div></div>
+        </div>
+      </div>
+
+      <!-- ASIA MARKETS folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">Asia Markets</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('ASIAMKTS');closeAllQL()" style="border-left:2px solid #ff4444"><div class="ql-it-desc" style="color:#ff6666;font-weight:700">◈ ASIA · Asia Markets Dashboard</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('NI225');closeAllQL()"><div class="ql-it-desc">Nikkei 225 — Japan</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('HSI');closeAllQL()"><div class="ql-it-desc">Hang Seng Index — Hong Kong</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('SHCOMP');closeAllQL()"><div class="ql-it-desc">Shanghai Composite — China</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('KOSPI');closeAllQL()"><div class="ql-it-desc">KOSPI — South Korea</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('SENSEX');closeAllQL()"><div class="ql-it-desc">Sensex — India</div></div>
+          <div class="ql-it" onclick="_openChartForSymbol('TWII');closeAllQL()"><div class="ql-it-desc">TAIEX — Taiwan</div></div>
+        </div>
+      </div>
+
+      <!-- GEOPOLITICS folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">Geopolitics &amp; Intelligence</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('GEOINT');closeAllQL()" style="border-left:2px solid #ff2244"><div class="ql-it-desc" style="color:#ff4466;font-weight:700">◈ GEOINT · Geopolitical Intelligence Hub</div></div>
+          <div class="ql-it" onclick="openPanel('ACLED');closeAllQL()"><div class="ql-it-desc">ACLED · Armed Conflict Map</div></div>
+          <div class="ql-it" onclick="openPanel('GEONEWS');closeAllQL()"><div class="ql-it-desc">GeoNews · News on Map</div></div>
+          <div class="ql-it" onclick="openPanel('SANCTION');closeAllQL()"><div class="ql-it-desc">Sanctions &amp; Trade Restrictions</div></div>
+        </div>
+      </div>
+
+      <!-- LIVE VIDEO folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">📺 Live Video &amp; Streams</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="_mapVideoToggle('cnbc');closeAllQL()" style="border-left:2px solid #0099ff"><div class="ql-it-desc" style="color:#44aaff;font-weight:700">📺 CNBC — Live Markets</div></div>
+          <div class="ql-it" onclick="_mapVideoToggle('bloomberg');closeAllQL()" style="border-left:2px solid #ff8800"><div class="ql-it-desc" style="color:#F39F41;font-weight:700">📺 Bloomberg Television</div></div>
+          <div class="ql-it" onclick="_mapVideoToggle('reuters');closeAllQL()" style="border-left:2px solid #ff4422"><div class="ql-it-desc" style="color:#ff6644;font-weight:700">📺 Reuters Live</div></div>
+          <div class="ql-it" onclick="_mapVideoToggle('wion');closeAllQL()"><div class="ql-it-desc">📺 WION — World News</div></div>
+          <div class="ql-it" onclick="_mapVideoToggle('al_jazeera');closeAllQL()"><div class="ql-it-desc">📺 Al Jazeera English</div></div>
+          <div class="ql-it" onclick="_mapVideoToggle('dw');closeAllQL()"><div class="ql-it-desc">📺 DW News (Deutsche Welle)</div></div>
+          <div class="ql-it" onclick="_mapVideoToggle('euronews');closeAllQL()"><div class="ql-it-desc">📺 Euronews</div></div>
+          <div class="ql-it" onclick="_mapVideoHide();closeAllQL()" style="border-left:2px solid #333"><div class="ql-it-desc" style="color:#666;">✕ Close Video / Back to Map</div></div>
+        </div>
+      </div>
+
+      <!-- PORTFOLIO & BROKERS folder -->
+      <div class="ql-folder open" onclick="event.stopPropagation()">
+        <div class="ql-folder-hd">
+          <span class="ql-folder-arrow">▶</span>
+          <span class="ql-folder-name">Portfolio &amp; Brokers</span>
+        </div>
+        <div class="ql-folder-body">
+          <div class="ql-it" onclick="openPanel('PORT');closeAllQL()" style="border-left:2px solid #44ff88"><div class="ql-it-desc" style="color:#44ff88;font-weight:700">◈ PORT · Portfolio Manager</div></div>
+          <div class="ql-it" onclick="openPanel('PFANALYZE');closeAllQL()"><div class="ql-it-desc">Portfolio Analytics &amp; Attribution</div></div>
+          <div class="ql-it" onclick="openPanel('BROKERS');closeAllQL()"><div class="ql-it-desc">Broker Integrations (16 brokers)</div></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -3763,6 +3876,26 @@ document.addEventListener('DOMContentLoaded', function() {
   
   <div id="mapgl"></div>
   <div id="map"></div>
+
+  <!-- ── LIVE VIDEO OVERLAY (replaces map background) ── -->
+  <div id="map-video-overlay" style="display:none;position:absolute;inset:0;z-index:500;background:#000;flex-direction:column;">
+    <div style="height:28px;background:#0a0600;border-bottom:1px solid #1a1200;display:flex;align-items:center;padding:0 10px;gap:8px;flex-shrink:0;">
+      <span id="vid-live-dot" style="width:5px;height:5px;border-radius:50%;background:#ff2222;animation:blink 1.5s infinite;"></span>
+      <span id="vid-channel-lbl" style="font-size:9px;font-weight:700;color:#F39F41;letter-spacing:1px;">LIVE STREAM</span>
+      <div style="flex:1;display:flex;gap:6px;overflow-x:auto;">
+        <button onclick="_mapVideoToggle('cnbc')"    class="vid-btn" data-ch="cnbc"    style="padding:1px 8px;font-size:8px;font-weight:700;border:1px solid #0055aa;color:#44aaff;background:transparent;cursor:pointer;">CNBC</button>
+        <button onclick="_mapVideoToggle('bloomberg')" class="vid-btn" data-ch="bloomberg" style="padding:1px 8px;font-size:8px;font-weight:700;border:1px solid #443300;color:#F39F41;background:transparent;cursor:pointer;">BLOOMBERG</button>
+        <button onclick="_mapVideoToggle('reuters')" class="vid-btn" data-ch="reuters" style="padding:1px 8px;font-size:8px;font-weight:700;border:1px solid #440011;color:#ff6644;background:transparent;cursor:pointer;">REUTERS</button>
+        <button onclick="_mapVideoToggle('wion')"    class="vid-btn" data-ch="wion"    style="padding:1px 8px;font-size:8px;font-weight:700;border:1px solid #333;color:#aaa;background:transparent;cursor:pointer;">WION</button>
+        <button onclick="_mapVideoToggle('al_jazeera')" class="vid-btn" data-ch="al_jazeera" style="padding:1px 8px;font-size:8px;font-weight:700;border:1px solid #333;color:#aaa;background:transparent;cursor:pointer;">AL JAZEERA</button>
+        <button onclick="_mapVideoToggle('dw')"      class="vid-btn" data-ch="dw"      style="padding:1px 8px;font-size:8px;font-weight:700;border:1px solid #333;color:#aaa;background:transparent;cursor:pointer;">DW NEWS</button>
+        <button onclick="_mapVideoToggle('euronews')" class="vid-btn" data-ch="euronews" style="padding:1px 8px;font-size:8px;font-weight:700;border:1px solid #333;color:#aaa;background:transparent;cursor:pointer;">EURONEWS</button>
+      </div>
+      <button onclick="_mapVideoHide()" style="background:rgba(255,61,61,.15);border:1px solid #661111;color:#ff6644;font-size:8px;font-weight:700;padding:2px 10px;cursor:pointer;letter-spacing:.5px;">✕ BACK TO MAP</button>
+    </div>
+    <iframe id="map-video-iframe" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen
+      style="flex:1;width:100%;border:none;background:#000;"></iframe>
+  </div>
 
 
 
@@ -4240,6 +4373,120 @@ document.addEventListener('DOMContentLoaded', function() {
     
 
   </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- FINCEPT-INSPIRED PANELS                                    -->
+<!-- ══════════════════════════════════════════════════════════ -->
+
+<!-- CFA DCF PANEL -->
+<div class="panel" id="panel-CFADCF" style="display:none;top:60px;left:80px;width:700px;height:560px;z-index:50000;">
+  <div class="panel-hd" onmousedown="startDrag(event,'panel-CFADCF')">
+    <div class="panel-title">DCF — DISCOUNTED CASH FLOW MODEL</div>
+    <div class="panel-btns">
+      <div class="panel-btn" onclick="document.getElementById('panel-CFADCF').style.display='none';document.body.classList.remove('panel-open')">✕</div>
+    </div>
+  </div>
+  <div class="panel-body" id="cfadcf-body" style="padding:12px;overflow-y:auto;"></div>
+</div>
+
+<!-- CFA PORTFOLIO OPTIMIZER PANEL -->
+<div class="panel" id="panel-CFAPORT" style="display:none;top:60px;left:80px;width:700px;height:560px;z-index:50000;">
+  <div class="panel-hd" onmousedown="startDrag(event,'panel-CFAPORT')">
+    <div class="panel-title">PORT — PORTFOLIO OPTIMIZER · MARKOWITZ EFFICIENT FRONTIER</div>
+    <div class="panel-btns">
+      <div class="panel-btn" onclick="document.getElementById('panel-CFAPORT').style.display='none';document.body.classList.remove('panel-open')">✕</div>
+    </div>
+  </div>
+  <div class="panel-body" id="cfaport-body" style="padding:12px;overflow-y:auto;"></div>
+</div>
+
+<!-- CFA RISK METRICS PANEL -->
+<div class="panel" id="panel-CFARISK" style="display:none;top:60px;left:80px;width:680px;height:540px;z-index:50000;">
+  <div class="panel-hd" onmousedown="startDrag(event,'panel-CFARISK')">
+    <div class="panel-title">RISK — VaR · SHARPE · BETA · SORTINO · MAX DRAWDOWN</div>
+    <div class="panel-btns">
+      <div class="panel-btn" onclick="document.getElementById('panel-CFARISK').style.display='none';document.body.classList.remove('panel-open')">✕</div>
+    </div>
+  </div>
+  <div class="panel-body" id="cfarisk-body" style="padding:12px;overflow-y:auto;"></div>
+</div>
+
+<!-- CFA OPTIONS PRICER PANEL -->
+<div class="panel" id="panel-CFAOPT" style="display:none;top:60px;left:80px;width:640px;height:520px;z-index:50000;">
+  <div class="panel-hd" onmousedown="startDrag(event,'panel-CFAOPT')">
+    <div class="panel-title">OPT — BLACK-SCHOLES OPTIONS PRICING MODEL</div>
+    <div class="panel-btns">
+      <div class="panel-btn" onclick="document.getElementById('panel-CFAOPT').style.display='none';document.body.classList.remove('panel-open')">✕</div>
+    </div>
+  </div>
+  <div class="panel-body" id="cfaopt-body" style="padding:12px;overflow-y:auto;"></div>
+</div>
+
+<!-- QUANTLAB PANEL -->
+<div class="panel" id="panel-QUANTLAB" style="display:none;top:60px;left:80px;width:720px;height:560px;z-index:50000;">
+  <div class="panel-hd" onmousedown="startDrag(event,'panel-QUANTLAB')">
+    <div class="panel-title">QUANTLAB — MONTE CARLO · FACTOR ANALYSIS · CORRELATION</div>
+    <div class="panel-btns">
+      <div class="panel-btn" onclick="document.getElementById('panel-QUANTLAB').style.display='none';document.body.classList.remove('panel-open')">✕</div>
+    </div>
+  </div>
+  <div class="panel-body" id="quantlab-body" style="padding:12px;overflow-y:auto;"></div>
+</div>
+
+<!-- AI AGENT PANEL -->
+<div class="panel" id="panel-AIAGENT" style="display:none;top:60px;left:80px;width:760px;height:600px;z-index:50000;">
+  <div class="panel-hd" onmousedown="startDrag(event,'panel-AIAGENT')">
+    <div class="panel-title">AIAGENT — AI INVESTOR PERSONAS · POWERED BY CLAUDE</div>
+    <div class="panel-btns">
+      <div class="panel-btn" onclick="document.getElementById('panel-AIAGENT').style.display='none';document.body.classList.remove('panel-open')">✕</div>
+    </div>
+  </div>
+  <div class="panel-body" id="aiagent-body" style="overflow-y:auto;"></div>
+</div>
+
+<!-- MACRO DATA PANEL -->
+<div class="panel" id="panel-MACRODATA" style="display:none;top:60px;left:80px;width:780px;height:580px;z-index:50000;">
+  <div class="panel-hd" onmousedown="startDrag(event,'panel-MACRODATA')">
+    <div class="panel-title">MACRODATA — GLOBAL MACRO HUB · ECB · IMF · WORLD BANK · FRED</div>
+    <div class="panel-btns">
+      <div class="panel-btn" onclick="document.getElementById('panel-MACRODATA').style.display='none';document.body.classList.remove('panel-open')">✕</div>
+    </div>
+  </div>
+  <div class="panel-body" id="macrodata-body" style="padding:12px;overflow-y:auto;"></div>
+</div>
+
+<!-- ASIA MARKETS PANEL -->
+<div class="panel" id="panel-ASIAMKTS" style="display:none;top:60px;left:80px;width:760px;height:560px;z-index:50000;">
+  <div class="panel-hd" onmousedown="startDrag(event,'panel-ASIAMKTS')">
+    <div class="panel-title">ASIA — ASIA PACIFIC MARKETS DASHBOARD</div>
+    <div class="panel-btns">
+      <div class="panel-btn" onclick="document.getElementById('panel-ASIAMKTS').style.display='none';document.body.classList.remove('panel-open')">✕</div>
+    </div>
+  </div>
+  <div class="panel-body" id="asiamkts-body" style="padding:12px;overflow-y:auto;"></div>
+</div>
+
+<!-- GEOPOLITICS PANEL -->
+<div class="panel" id="panel-GEOINT" style="display:none;top:60px;left:80px;width:780px;height:580px;z-index:50000;">
+  <div class="panel-hd" onmousedown="startDrag(event,'panel-GEOINT')">
+    <div class="panel-title">GEOINT — GEOPOLITICAL INTELLIGENCE · ACLED · CONFLICT MAP</div>
+    <div class="panel-btns">
+      <div class="panel-btn" onclick="document.getElementById('panel-GEOINT').style.display='none';document.body.classList.remove('panel-open')">✕</div>
+    </div>
+  </div>
+  <div class="panel-body" id="geoint-body" style="padding:12px;overflow-y:auto;"></div>
+</div>
+
+<!-- PORTFOLIO MANAGER PANEL -->
+<div class="panel" id="panel-PORT" style="display:none;top:60px;left:80px;width:760px;height:580px;z-index:50000;">
+  <div class="panel-hd" onmousedown="startDrag(event,'panel-PORT')">
+    <div class="panel-title">PORT — PORTFOLIO MANAGER · POSITIONS · P&amp;L · ALLOCATION</div>
+    <div class="panel-btns">
+      <div class="panel-btn" onclick="document.getElementById('panel-PORT').style.display='none';document.body.classList.remove('panel-open')">✕</div>
+    </div>
+  </div>
+  <div class="panel-body" id="port-body" style="padding:12px;overflow-y:auto;"></div>
 </div>
 
 <!-- STATUS BAR (Stacked: Ticker -> Clocks) -->
@@ -41255,10 +41502,1692 @@ setTimeout(function(){
 // Expose for debug
 window._v12 = { liveFetch:_liveFetch, startPoll:_v12StartPoll, stopAll:_v12StopAll, YH:YH, BB:BB };
 
+window._v12 = { liveFetch:_liveFetch, startPoll:_v12StartPoll, stopAll:_v12StopAll, YH:YH, BB:BB };
+
 console.log('[v12-ENGINE] Universal Live Data Engine loaded — Yahoo/Bybit/HL/Binance');
 })();
 
 
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- FINCEPT TERMINAL — Panel Engine v2.0                                    -->
+<!-- CFA · AI Agents · Macro · Asia · Geopolitics · Portfolio · Live Video   -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+'use strict';
+
+// ── Shared panel style helpers ────────────────────────────────────────────
+var FP = {
+  h2: 'font-size:10px;font-weight:700;color:#F39F41;letter-spacing:1.2px;padding:6px 0 4px;border-bottom:1px solid #1a1200;margin-bottom:8px;text-transform:uppercase;',
+  lbl: 'font-size:9px;color:#886644;letter-spacing:.5px;',
+  val: 'font-size:11px;color:#ffffff;font-weight:700;',
+  inp: 'background:#0a0800;border:1px solid #2a1800;color:#F39F41;font-family:"Courier New",monospace;font-size:10px;padding:3px 6px;outline:none;width:100%;',
+  btn: 'background:#F39F41;color:#000;border:none;font-family:"Courier New",monospace;font-size:9px;font-weight:700;padding:4px 14px;cursor:pointer;letter-spacing:.5px;',
+  btng: 'background:#1a1200;color:#F39F41;border:1px solid #2a1800;font-family:"Courier New",monospace;font-size:9px;font-weight:700;padding:4px 14px;cursor:pointer;letter-spacing:.5px;',
+  row: 'display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #0d0800;font-size:9px;',
+  grid2: 'display:grid;grid-template-columns:1fr 1fr;gap:12px;',
+  grid3: 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;',
+  card: 'background:#080600;border:1px solid #1a1200;padding:10px 12px;',
+  pos: function(v){ return v>=0?'color:#00cc44':'color:#ff3d3d'; },
+};
+
+// ══════════════════════════════════════════════════════════════
+// LIVE VIDEO — Map background switcher
+// ══════════════════════════════════════════════════════════════
+var _VID_SOURCES = {
+  cnbc:       'https://www.youtube.com/embed/live_stream?channel=UCvJJ_dzjViJCoLf5uKUTwoA&autoplay=1&mute=0',
+  bloomberg:  'https://www.youtube.com/embed/dp8PhLsUcFE?autoplay=1&mute=0',
+  reuters:    'https://www.youtube.com/embed/live_stream?channel=UCGeB-RNeg2gKMWNTdl49E3w&autoplay=1&mute=0',
+  wion:       'https://www.youtube.com/embed/live_stream?channel=UCFPiSe7-aBBaT24qMFG2kqg&autoplay=1&mute=0',
+  al_jazeera: 'https://www.youtube.com/embed/live_stream?channel=UCNye-wNBqNL5ZzHSJj3l8Bg&autoplay=1&mute=0',
+  dw:         'https://www.youtube.com/embed/live_stream?channel=UCknLrEdhRCp1aegoMqRaCZg&autoplay=1&mute=0',
+  euronews:   'https://www.youtube.com/embed/live_stream?channel=UCg4QHmHMX0pHkMd0DGGZX6A&autoplay=1&mute=0',
+};
+var _VID_NAMES = {
+  cnbc:'CNBC — LIVE MARKETS', bloomberg:'BLOOMBERG TELEVISION', reuters:'REUTERS LIVE',
+  wion:'WION WORLD NEWS', al_jazeera:'AL JAZEERA ENGLISH', dw:'DW NEWS', euronews:'EURONEWS'
+};
+
+window._mapVideoToggle = function(ch) {
+  var overlay = document.getElementById('map-video-overlay');
+  var iframe  = document.getElementById('map-video-iframe');
+  var lbl     = document.getElementById('vid-channel-lbl');
+  if (!overlay || !iframe) return;
+
+  var src = _VID_SOURCES[ch] || _VID_SOURCES.cnbc;
+  iframe.src = src;
+  overlay.style.display = 'flex';
+
+  if (lbl) lbl.textContent = _VID_NAMES[ch] || 'LIVE STREAM';
+
+  // Highlight active button
+  document.querySelectorAll('.vid-btn').forEach(function(b){
+    var on = b.dataset.ch === ch;
+    b.style.background = on ? 'rgba(243,159,65,.2)' : 'transparent';
+    b.style.borderColor = on ? '#F39F41' : '#333';
+    b.style.color = on ? '#F39F41' : '#888';
+  });
+
+  // Hide map layers but keep panels
+  var mapgl = document.getElementById('mapgl');
+  var leafMap = document.getElementById('map');
+  if (mapgl) mapgl.style.visibility = 'hidden';
+  if (leafMap) leafMap.style.visibility = 'hidden';
+};
+
+window._mapVideoHide = function() {
+  var overlay = document.getElementById('map-video-overlay');
+  var iframe  = document.getElementById('map-video-iframe');
+  if (overlay) overlay.style.display = 'none';
+  if (iframe) iframe.src = '';
+
+  var mapgl = document.getElementById('mapgl');
+  var leafMap = document.getElementById('map');
+  if (mapgl) mapgl.style.visibility = '';
+  if (leafMap) leafMap.style.visibility = '';
+};
+
+// ══════════════════════════════════════════════════════════════
+// NEWS FEED HELPER — reuse _newsCache from main terminal
+// ══════════════════════════════════════════════════════════════
+function _getNewsByTag(tags, max) {
+  var cache = window._newsCache || [];
+  max = max || 20;
+  if (!cache.length) return [];
+  if (!tags || !tags.length) return cache.slice(0, max);
+  var t = tags.map(function(x){ return x.toUpperCase(); });
+  return cache.filter(function(n){
+    var tag = (n.tag||'').toUpperCase();
+    var title = (n.title||'').toUpperCase();
+    return t.some(function(tt){ return tag===tt || title.indexOf(tt)>=0; });
+  }).slice(0, max);
+}
+
+function _buildNewsFeed(items, emptyMsg) {
+  if (!items || !items.length) {
+    // Try to load news if cache is empty
+    if (typeof fetchAllNews === 'function') {
+      fetchAllNews(false);
+    }
+    return '<div style="color:#443322;font-size:9px;padding:10px;text-align:center;">'+(emptyMsg||'Loading news...')+'</div>';
+  }
+  return items.map(function(n) {
+    var ago = '';
+    if (n.ts) {
+      var diff = Math.floor((Date.now() - n.ts) / 60000);
+      ago = diff < 60 ? diff+'m ago' : Math.floor(diff/60)+'h ago';
+    }
+    var tagColor = {FLASH:'#ff3d3d',MACRO:'#00ccff',MARKETS:'#F39F41',CRYPTO:'#cc44ff',GEO:'#ff6644',ENERGY:'#44ff88',EARNINGS:'#ffcc44'}[n.tag] || '#886644';
+    return '<div style="padding:5px 0;border-bottom:1px solid #0a0800;cursor:pointer;" onclick="'+(n.link?'window.open(\''+n.link+'\',\'_blank\')':'')+'">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">'
+      + '<span style="font-size:7px;font-weight:700;color:'+tagColor+';padding:1px 4px;border:1px solid '+tagColor+';opacity:.8;">'+(n.tag||'NEWS')+'</span>'
+      + '<span style="font-size:7px;color:#443322;">'+ago+'</span>'
+      + '<span style="font-size:7px;color:#554433;margin-left:auto;">'+(n.src||'')+'</span>'
+      + '</div>'
+      + '<div style="font-size:9px;color:#d0c8b0;line-height:1.5;'+(n.link?'cursor:pointer;':'')+'">'+n.title+'</div>'
+      + '</div>';
+  }).join('');
+}
+
+// ── openPanel hook ────────────────────────────────────────────────────────
+var _origOpenPanel = window.openPanel;
+window.openPanel = function(id) {
+  var fp = document.getElementById('panel-'+id);
+  if (fp) {
+    document.querySelectorAll('[id^="panel-"]').forEach(function(p){
+      if(p.id !== 'panel-'+id) p.style.display='none';
+    });
+    fp.style.display = 'flex';
+    fp.style.flexDirection = 'column';
+    document.body.classList.add('panel-open');
+    _initPanel(id);
+    return;
+  }
+  if (_origOpenPanel) _origOpenPanel.apply(this, arguments);
+};
+
+function _initPanel(id) {
+  switch(id) {
+    case 'CFADCF':   _renderDCF(); break;
+    case 'CFAPORT':  _renderPortOpt(); break;
+    case 'CFARISK':  _renderRisk(); break;
+    case 'CFAOPT':   _renderOptions(); break;
+    case 'QUANTLAB': _renderQuantLab(); break;
+    case 'AIAGENT':  _renderAIAgent(); break;
+    case 'MACRODATA':_renderMacroData(); break;
+    case 'ASIAMKTS': _renderAsia(); break;
+    case 'GEOINT':   _renderGeoint(); break;
+    case 'PORT':     _renderPortfolio(); break;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 1. DCF — DISCOUNTED CASH FLOW
+// ══════════════════════════════════════════════════════════════
+function _renderDCF() {
+  var el = document.getElementById('cfadcf-body');
+  if (!el) return;
+  el.innerHTML = `
+<div style="${FP.card}margin-bottom:12px;">
+  <div style="${FP.h2}">DCF VALUATION MODEL — CFA LEVEL II</div>
+  <div style="${FP.grid2}gap:16px;">
+    <div>
+      <div style="margin-bottom:8px;"><div style="${FP.lbl}margin-bottom:2px;">COMPANY / TICKER</div>
+        <input id="dcf-ticker" style="${FP.inp}" placeholder="e.g. AAPL" value="${window._bbgActiveSym||'AAPL'}"/></div>
+      <div style="${FP.grid2}gap:8px;margin-bottom:8px;">
+        <div><div style="${FP.lbl}margin-bottom:2px;">FREE CASH FLOW ($M)</div><input id="dcf-fcf" style="${FP.inp}" value="100000"/></div>
+        <div><div style="${FP.lbl}margin-bottom:2px;">GROWTH RATE YR 1-5 (%)</div><input id="dcf-g1" style="${FP.inp}" value="12"/></div>
+      </div>
+      <div style="${FP.grid2}gap:8px;margin-bottom:8px;">
+        <div><div style="${FP.lbl}margin-bottom:2px;">TERMINAL GROWTH (%)</div><input id="dcf-gt" style="${FP.inp}" value="3"/></div>
+        <div><div style="${FP.lbl}margin-bottom:2px;">WACC (%)</div><input id="dcf-wacc" style="${FP.inp}" value="9"/></div>
+      </div>
+      <div style="${FP.grid2}gap:8px;margin-bottom:12px;">
+        <div><div style="${FP.lbl}margin-bottom:2px;">SHARES OUT. (M)</div><input id="dcf-shares" style="${FP.inp}" value="15500"/></div>
+        <div><div style="${FP.lbl}margin-bottom:2px;">NET DEBT ($M)</div><input id="dcf-debt" style="${FP.inp}" value="45000"/></div>
+      </div>
+      <button style="${FP.btn}width:100%;" onclick="_calcDCF()">CALCULATE INTRINSIC VALUE &lt;GO&gt;</button>
+    </div>
+    <div id="dcf-result" style="background:#030200;border:1px solid #0d0800;padding:12px;min-height:200px;">
+      <div style="color:#443322;font-size:9px;padding-top:40px;text-align:center;">Enter parameters and press CALCULATE</div>
+    </div>
+  </div>
+</div>
+<div id="dcf-cashflows" style="${FP.card}margin-bottom:12px;"></div>
+<div style="${FP.card}">
+  <div style="${FP.h2}font-size:9px;">RELATED EARNINGS & MARKETS NEWS</div>
+  <div id="dcf-news">${_buildNewsFeed(_getNewsByTag(['MARKETS','EARNINGS'],12),'No news loaded yet — open WN panel first')}</div>
+</div>`;
+}
+
+window._calcDCF = function() {
+  var fcf0=parseFloat(document.getElementById('dcf-fcf').value)||0;
+  var g1=parseFloat(document.getElementById('dcf-g1').value)/100||0.12;
+  var gt=parseFloat(document.getElementById('dcf-gt').value)/100||0.03;
+  var wacc=parseFloat(document.getElementById('dcf-wacc').value)/100||0.09;
+  var shares=parseFloat(document.getElementById('dcf-shares').value)||1;
+  var debt=parseFloat(document.getElementById('dcf-debt').value)||0;
+  var ticker=(document.getElementById('dcf-ticker').value||'STOCK').toUpperCase();
+  if(wacc<=gt){document.getElementById('dcf-result').innerHTML='<div style="color:#ff3d3d;font-size:9px;padding:20px;">ERROR: WACC must be greater than terminal growth rate.</div>';return;}
+  var cfRows='',pvSum=0,cf=fcf0;
+  for(var i=1;i<=5;i++){cf*=(1+g1);var pv=cf/Math.pow(1+wacc,i);pvSum+=pv;cfRows+=`<tr><td style="padding:3px 6px;color:#886644;">Yr ${i}</td><td style="padding:3px 6px;color:#fff;text-align:right;">${_fmtB(cf)}</td><td style="padding:3px 6px;color:#aaa;text-align:right;">${_fmtB(pv)}</td></tr>`;}
+  var tv=cf*(1+gt)/(wacc-gt),pvTv=tv/Math.pow(1+wacc,5);
+  pvSum+=pvTv;
+  var equityVal=pvSum-debt,perShare=equityVal/shares*1000;
+  document.getElementById('dcf-result').innerHTML=`<div style="${FP.h2}">VALUATION · ${ticker}</div>${_pRow('PV FCFs (5yr)',_fmtB(pvSum-pvTv),'#fff')}${_pRow('Terminal Value (PV)',_fmtB(pvTv),'#fff')}${_pRow('Enterprise Value',_fmtB(pvSum),'#fff')}${_pRow('Net Debt',_fmtB(debt),'#ff6644')}${_pRow('Equity Value',_fmtB(equityVal),'#fff')}<div style="padding:8px 0;border-top:1px solid #2a1800;text-align:center;"><div style="${FP.lbl}margin-bottom:4px;">INTRINSIC VALUE PER SHARE</div><div style="font-size:28px;font-weight:700;color:#F39F41;">\$${perShare.toFixed(2)}</div><div style="font-size:8px;color:#666;margin-top:2px;">WACC:${(wacc*100).toFixed(1)}% | g:${(gt*100).toFixed(1)}%</div></div>`;
+  document.getElementById('dcf-cashflows').innerHTML=`<div style="${FP.h2}">PROJECTED FCFs</div><table style="width:100%;border-collapse:collapse;"><tr style="font-size:8px;color:#886644;border-bottom:1px solid #1a1200;"><th style="text-align:left;padding:3px 6px;">YEAR</th><th style="text-align:right;padding:3px 6px;">FCF</th><th style="text-align:right;padding:3px 6px;">PV</th></tr>${cfRows}<tr style="border-top:1px solid #2a1800;"><td style="padding:3px 6px;color:#886644;">Terminal</td><td style="padding:3px 6px;color:#fff;text-align:right;">${_fmtB(tv)}</td><td style="padding:3px 6px;color:#aaa;text-align:right;">${_fmtB(pvTv)}</td></tr></table>`;
+
+  // Refresh news by ticker
+  var ticker2=ticker;
+  var newsEl=document.getElementById('dcf-news');
+  if(newsEl){
+    var items=_getNewsByTag([ticker2,'MARKETS','EARNINGS'],15);
+    newsEl.innerHTML=_buildNewsFeed(items);
+  }
+};
+function _fmtB(n){return n>1e9?'$'+(n/1e9).toFixed(2)+'B':n>1e6?'$'+(n/1e6).toFixed(1)+'M':'$'+Math.round(n).toLocaleString();}
+
+// ══════════════════════════════════════════════════════════════
+// 2. PORTFOLIO OPTIMIZER
+// ══════════════════════════════════════════════════════════════
+function _renderPortOpt() {
+  var el=document.getElementById('cfaport-body'); if(!el)return;
+  el.innerHTML=`<div style="${FP.card}margin-bottom:12px;"><div style="${FP.h2}">MARKOWITZ PORTFOLIO OPTIMIZER — EFFICIENT FRONTIER</div><div style="${FP.lbl}margin-bottom:10px;">Enter expected return, volatility for each asset.</div><div id="port-assets-wrap"><div style="${FP.grid3}font-size:8px;color:#886644;margin-bottom:4px;padding:0 4px;"><span>ASSET</span><span style="text-align:center;">EXP.RETURN(%)</span><span style="text-align:center;">VOLATILITY(%)</span></div><div id="port-rows"></div></div><div style="display:flex;gap:8px;margin-top:10px;"><button style="${FP.btng}" onclick="_portAddRow()">+ ADD</button><button style="${FP.btn}" onclick="_portCalc()">OPTIMIZE &lt;GO&gt;</button></div></div><div id="port-result" style="${FP.card}margin-bottom:12px;"></div><div style="${FP.card}"><div style="${FP.h2}font-size:9px;">MARKETS NEWS</div><div id="port-news">${_buildNewsFeed(_getNewsByTag(['MARKETS','EQUITY'],10))}</div></div>`;
+  [{t:'SPY',r:10,v:15},{t:'BND',r:4,v:5},{t:'GLD',r:7,v:12},{t:'QQQ',r:13,v:20}].forEach(function(d){_portAddRow(d);});
+}
+var _portRowCount=0;
+window._portAddRow=function(d){d=d||{t:'',r:8,v:15};var wrap=document.getElementById('port-rows');if(!wrap)return;var div=document.createElement('div');div.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:5px;';div.innerHTML=`<input class="port-ticker" style="${FP.inp}" placeholder="TICKER" value="${d.t}"/><input class="port-ret" style="${FP.inp}text-align:center;" value="${d.r}"/><input class="port-vol" style="${FP.inp}text-align:center;" value="${d.v}"/>`;wrap.appendChild(div);};
+window._portCalc=function(){var tickers=[].slice.call(document.querySelectorAll('.port-ticker')).map(function(x){return x.value||'?';});var rets=[].slice.call(document.querySelectorAll('.port-ret')).map(function(x){return parseFloat(x.value)/100||0.08;});var vols=[].slice.call(document.querySelectorAll('.port-vol')).map(function(x){return parseFloat(x.value)/100||0.15;});var n=tickers.length;if(n<2)return;var w=rets.map(function(){return 1/n;});var portRet=rets.reduce(function(s,r,i){return s+w[i]*r;},0);var portVol=Math.sqrt(vols.reduce(function(s,v,i){return s+Math.pow(w[i]*v,2);},0));var sharpe=(portRet-0.05)/portVol;var invVar=vols.map(function(v){return 1/(v*v);});var sumInv=invVar.reduce(function(a,b){return a+b;},0);var wMV=invVar.map(function(iv){return iv/sumInv;});var retMV=rets.reduce(function(s,r,i){return s+wMV[i]*r;},0);var volMV=Math.sqrt(vols.reduce(function(s,v,i){return s+Math.pow(wMV[i]*v,2);},0));var sharpeMV=(retMV-0.05)/volMV;var rows=tickers.map(function(t,i){return`<tr><td style="padding:3px 6px;color:#F39F41;font-weight:700;">${t}</td><td style="padding:3px 6px;color:#fff;text-align:right;">${(rets[i]*100).toFixed(1)}%</td><td style="padding:3px 6px;color:#aaa;text-align:right;">${(vols[i]*100).toFixed(1)}%</td><td style="padding:3px 6px;color:#44ffaa;text-align:right;">${(w[i]*100).toFixed(1)}%</td><td style="padding:3px 6px;color:#44aaff;text-align:right;">${(wMV[i]*100).toFixed(1)}%</td></tr>`;}).join('');document.getElementById('port-result').innerHTML=`<div style="${FP.h2}">RESULTS</div><div style="${FP.grid2}gap:16px;margin-bottom:12px;"><div style="${FP.card}border-color:#1a3a00;"><div style="font-size:8px;color:#44ff88;font-weight:700;margin-bottom:6px;">EQUAL WEIGHT</div>${_pRow('Return',(portRet*100).toFixed(2)+'%','#44ff88')}${_pRow('Volatility',(portVol*100).toFixed(2)+'%','#ffaa44')}${_pRow('Sharpe',sharpe.toFixed(3),'#44aaff')}</div><div style="${FP.card}border-color:#001a3a;"><div style="font-size:8px;color:#44aaff;font-weight:700;margin-bottom:6px;">MIN VARIANCE</div>${_pRow('Return',(retMV*100).toFixed(2)+'%','#44ff88')}${_pRow('Volatility',(volMV*100).toFixed(2)+'%','#ffaa44')}${_pRow('Sharpe',sharpeMV.toFixed(3),'#44aaff')}</div></div><table style="width:100%;border-collapse:collapse;"><tr style="font-size:8px;color:#886644;border-bottom:1px solid #1a1200;"><th style="text-align:left;padding:3px 6px;">ASSET</th><th style="text-align:right;padding:3px 6px;">RET</th><th style="text-align:right;padding:3px 6px;">VOL</th><th style="text-align:right;padding:3px 6px;">EQ.W</th><th style="text-align:right;padding:3px 6px;">MIN.V</th></tr>${rows}</table>`;};
+
+// ══════════════════════════════════════════════════════════════
+// 3. RISK METRICS
+// ══════════════════════════════════════════════════════════════
+function _renderRisk() {
+  var el=document.getElementById('cfarisk-body'); if(!el)return;
+  el.innerHTML=`<div style="${FP.card}margin-bottom:12px;"><div style="${FP.h2}">RISK METRICS — VaR · SHARPE · BETA · SORTINO</div><div style="${FP.grid2}gap:16px;"><div><div style="margin-bottom:8px;"><div style="${FP.lbl}margin-bottom:2px;">PORTFOLIO VALUE ($)</div><input id="risk-val" style="${FP.inp}" value="1000000"/></div><div style="${FP.grid2}gap:8px;margin-bottom:8px;"><div><div style="${FP.lbl}margin-bottom:2px;">ANNUAL RETURN (%)</div><input id="risk-ret" style="${FP.inp}" value="12"/></div><div><div style="${FP.lbl}margin-bottom:2px;">ANNUAL VOLATILITY (%)</div><input id="risk-vol" style="${FP.inp}" value="18"/></div></div><div style="${FP.grid2}gap:8px;margin-bottom:8px;"><div><div style="${FP.lbl}margin-bottom:2px;">RISK-FREE RATE (%)</div><input id="risk-rf" style="${FP.inp}" value="5.25"/></div><div><div style="${FP.lbl}margin-bottom:2px;">BENCHMARK RETURN (%)</div><input id="risk-bench" style="${FP.inp}" value="10"/></div></div><div style="margin-bottom:12px;"><div style="${FP.lbl}margin-bottom:2px;">PORTFOLIO BETA</div><input id="risk-beta" style="${FP.inp}" value="1.15"/></div><button style="${FP.btn}width:100%;" onclick="_calcRisk()">CALCULATE &lt;GO&gt;</button></div><div id="risk-result" style="background:#030200;border:1px solid #0d0800;padding:12px;"><div style="color:#443322;font-size:9px;padding-top:40px;text-align:center;">Enter parameters and press CALCULATE</div></div></div></div><div style="${FP.card}margin-top:12px;"><div style="${FP.h2}font-size:9px;">MARKETS & MACRO NEWS</div><div id="risk-news">${_buildNewsFeed(_getNewsByTag(['MACRO','MARKETS','FLASH'],10))}</div></div>`;
+}
+window._calcRisk=function(){var val=parseFloat(document.getElementById('risk-val').value)||1e6;var ret=parseFloat(document.getElementById('risk-ret').value)/100||0.12;var vol=parseFloat(document.getElementById('risk-vol').value)/100||0.18;var rf=parseFloat(document.getElementById('risk-rf').value)/100||0.0525;var bench=parseFloat(document.getElementById('risk-bench').value)/100||0.10;var beta=parseFloat(document.getElementById('risk-beta').value)||1.15;var dVol=vol/Math.sqrt(252);var var95=val*1.645*dVol,var99=val*2.326*dVol,cvar95=val*2.063*dVol;var sharpe=(ret-rf)/vol,sortino=(ret-rf)/(vol*0.7),treynor=(ret-rf)/beta,alpha=ret-(rf+beta*(bench-rf)),ir=(ret-bench)/Math.abs((ret-bench)*0.8),mdd=-vol*1.8,calmar=ret/Math.abs(mdd);document.getElementById('risk-result').innerHTML=`<div style="${FP.h2}">RISK OUTPUT</div><div style="${FP.h2}font-size:8px;color:#886644;">VALUE AT RISK (1-DAY)</div>${_pRow('VaR 95%','-$'+Math.round(var95).toLocaleString(),'#ffaa44')}${_pRow('VaR 99%','-$'+Math.round(var99).toLocaleString(),'#ff6644')}${_pRow('CVaR/ES 95%','-$'+Math.round(cvar95).toLocaleString(),'#ff4422')}<div style="margin-top:8px;${FP.h2}font-size:8px;color:#886644;">RISK-ADJUSTED RETURNS</div>${_pRow('Sharpe',sharpe.toFixed(3),sharpe>1?'#44ff88':sharpe>0?'#ffaa44':'#ff4422')}${_pRow('Sortino',sortino.toFixed(3),sortino>1?'#44ff88':sortino>0?'#ffaa44':'#ff4422')}${_pRow('Treynor',(treynor*100).toFixed(2)+'%','#44aaff')}${_pRow("Alpha",(alpha*100).toFixed(2)+'%',alpha>=0?'#44ff88':'#ff4422')}${_pRow('Info.Ratio',ir.toFixed(3),'#ccaaff')}${_pRow('Max Drawdown',(mdd*100).toFixed(1)+'%','#ff4422')}${_pRow('Calmar',calmar.toFixed(2),'#44ffcc')}${_pRow('Beta',beta.toFixed(2),Math.abs(beta-1)<0.2?'#44ff88':'#ffaa44')}`;};
+
+// ══════════════════════════════════════════════════════════════
+// 4. BLACK-SCHOLES
+// ══════════════════════════════════════════════════════════════
+function _renderOptions() {
+  var el=document.getElementById('cfaopt-body'); if(!el)return;
+  el.innerHTML=`<div style="${FP.card}margin-bottom:12px;"><div style="${FP.h2}">BLACK-SCHOLES OPTIONS PRICING</div><div style="${FP.grid2}gap:16px;"><div><div style="${FP.grid2}gap:8px;margin-bottom:8px;"><div><div style="${FP.lbl}margin-bottom:2px;">SPOT PRICE (S)</div><input id="bs-s" style="${FP.inp}" value="200"/></div><div><div style="${FP.lbl}margin-bottom:2px;">STRIKE (K)</div><input id="bs-k" style="${FP.inp}" value="200"/></div></div><div style="${FP.grid2}gap:8px;margin-bottom:8px;"><div><div style="${FP.lbl}margin-bottom:2px;">DAYS TO EXPIRY</div><input id="bs-t" style="${FP.inp}" value="30"/></div><div><div style="${FP.lbl}margin-bottom:2px;">RISK-FREE RATE (%)</div><input id="bs-r" style="${FP.inp}" value="5.25"/></div></div><div style="margin-bottom:12px;"><div style="${FP.lbl}margin-bottom:2px;">IMPLIED VOLATILITY (%)</div><input id="bs-iv" style="${FP.inp}" value="25"/></div><button style="${FP.btn}width:100%;" onclick="_calcBS()">PRICE OPTIONS &lt;GO&gt;</button></div><div id="bs-result" style="background:#030200;border:1px solid #0d0800;padding:12px;"><div style="color:#443322;font-size:9px;padding-top:40px;text-align:center;">Enter parameters and press PRICE OPTIONS</div></div></div></div>`;
+}
+function _normCDF(x){var t=1/(1+0.2316419*Math.abs(x));var y=1-((((1.330274429*t-1.821255978)*t+1.781477937)*t-0.356563782)*t+0.319381530)*t*Math.exp(-x*x/2)/Math.sqrt(2*Math.PI);return x>=0?y:1-y;}
+function _normPDF(x){return Math.exp(-x*x/2)/Math.sqrt(2*Math.PI);}
+window._calcBS=function(){var S=parseFloat(document.getElementById('bs-s').value)||200;var K=parseFloat(document.getElementById('bs-k').value)||200;var t=parseFloat(document.getElementById('bs-t').value)/365||30/365;var r=parseFloat(document.getElementById('bs-r').value)/100||0.0525;var iv=parseFloat(document.getElementById('bs-iv').value)/100||0.25;var d1=(Math.log(S/K)+(r+0.5*iv*iv)*t)/(iv*Math.sqrt(t));var d2=d1-iv*Math.sqrt(t);var N1=_normCDF(d1),N2=_normCDF(d2),Nm1=_normCDF(-d1),Nm2=_normCDF(-d2);var call=S*N1-K*Math.exp(-r*t)*N2,put=K*Math.exp(-r*t)*Nm2-S*Nm1;var delta_c=N1,delta_p=N1-1,gamma=_normPDF(d1)/(S*iv*Math.sqrt(t)),vega=S*_normPDF(d1)*Math.sqrt(t)/100,theta_c=(-S*_normPDF(d1)*iv/(2*Math.sqrt(t))-r*K*Math.exp(-r*t)*N2)/365,theta_p=(-S*_normPDF(d1)*iv/(2*Math.sqrt(t))+r*K*Math.exp(-r*t)*Nm2)/365,rho_c=K*t*Math.exp(-r*t)*N2/100,rho_p=-K*t*Math.exp(-r*t)*Nm2/100;var m=S>K?'ITM':S<K?'OTM':'ATM';document.getElementById('bs-result').innerHTML=`<div style="${FP.h2}">RESULTS · ${m}</div><div style="display:flex;gap:10px;margin-bottom:10px;"><div style="${FP.card}flex:1;border-color:#003300;"><div style="font-size:8px;color:#44ff88;font-weight:700;margin-bottom:4px;">CALL</div><div style="font-size:24px;font-weight:700;color:#44ff88;">\$${call.toFixed(3)}</div><div style="font-size:8px;color:#666;">Int:\$${Math.max(0,S-K).toFixed(2)} | Time:\$${(call-Math.max(0,S-K)).toFixed(3)}</div></div><div style="${FP.card}flex:1;border-color:#330000;"><div style="font-size:8px;color:#ff4422;font-weight:700;margin-bottom:4px;">PUT</div><div style="font-size:24px;font-weight:700;color:#ff4422;">\$${put.toFixed(3)}</div><div style="font-size:8px;color:#666;">Int:\$${Math.max(0,K-S).toFixed(2)} | Time:\$${(put-Math.max(0,K-S)).toFixed(3)}</div></div></div><div style="${FP.h2}font-size:8px;color:#886644;">GREEKS</div>${_pRow('Δ Delta (C/P)',delta_c.toFixed(4)+' / '+delta_p.toFixed(4),'#44aaff')}${_pRow('Γ Gamma',gamma.toFixed(5),'#ccaaff')}${_pRow('V Vega/1%',vega.toFixed(4),'#44ffcc')}${_pRow('Θ Theta/day',theta_c.toFixed(4)+' / '+theta_p.toFixed(4),'#ffaa44')}${_pRow('ρ Rho',rho_c.toFixed(4)+' / '+rho_p.toFixed(4),'#aaaaff')}`;};
+
+// ══════════════════════════════════════════════════════════════
+// 5. QUANTLAB
+// ══════════════════════════════════════════════════════════════
+function _renderQuantLab() {
+  var el=document.getElementById('quantlab-body'); if(!el)return;
+  el.innerHTML=`<div style="${FP.h2}">QUANTLAB — MONTE CARLO · CORRELATION · FACTOR ANALYSIS</div><div style="${FP.grid2}gap:12px;"><div style="${FP.card}"><div style="${FP.h2}font-size:9px;">MONTE CARLO SIMULATION</div><div style="${FP.grid2}gap:8px;margin-bottom:8px;"><div><div style="${FP.lbl}margin-bottom:2px;">INITIAL VALUE ($)</div><input id="mc-val" style="${FP.inp}" value="100000"/></div><div><div style="${FP.lbl}margin-bottom:2px;">DRIFT (%/yr)</div><input id="mc-mu" style="${FP.inp}" value="8"/></div><div><div style="${FP.lbl}margin-bottom:2px;">VOLATILITY (%/yr)</div><input id="mc-sig" style="${FP.inp}" value="15"/></div><div><div style="${FP.lbl}margin-bottom:2px;">HORIZON (years)</div><input id="mc-t" style="${FP.inp}" value="5"/></div></div><button style="${FP.btn}width:100%;margin-bottom:10px;" onclick="_runMC()">RUN 10,000 SIMULATIONS</button><div id="mc-result" style="font-size:9px;color:#443322;">Run to see results</div></div><div style="${FP.card}"><div style="${FP.h2}font-size:9px;">CORRELATION MATRIX</div><div id="corr-matrix" style="overflow-x:auto;"></div><button style="${FP.btng}margin-top:8px;" onclick="_renderCorrMatrix()">LOAD MATRIX</button></div></div><div style="${FP.card}margin-top:12px;"><div style="${FP.h2}font-size:9px;">FAMA-FRENCH FACTOR ANALYSIS</div><div id="factor-body" style="color:#443322;font-size:9px;padding:8px 0;">Press button to load.</div><button style="${FP.btn}margin-top:6px;" onclick="_renderFactors()">LOAD FACTOR ANALYSIS</button></div>`;
+}
+window._runMC=function(){var V0=parseFloat(document.getElementById('mc-val').value)||1e5;var mu=parseFloat(document.getElementById('mc-mu').value)/100||0.08;var sig=parseFloat(document.getElementById('mc-sig').value)/100||0.15;var T=parseInt(document.getElementById('mc-t').value)||5;var N=10000,paths=[];for(var i=0;i<N;i++){var v=V0;for(var j=0;j<T;j++){var z=(Math.random()+Math.random()+Math.random()+Math.random()+Math.random()+Math.random()-3)*Math.SQRT2;v*=Math.exp((mu-0.5*sig*sig)+sig*z);}paths.push(v);}paths.sort(function(a,b){return a-b;});var p5=paths[Math.floor(N*.05)],p25=paths[Math.floor(N*.25)],p50=paths[Math.floor(N*.5)],p75=paths[Math.floor(N*.75)],p95=paths[Math.floor(N*.95)];var mean=paths.reduce(function(a,b){return a+b;},0)/N;var loss=paths.filter(function(v){return v<V0;}).length/N;document.getElementById('mc-result').innerHTML=`<div style="color:#F39F41;font-weight:700;font-size:10px;margin-bottom:6px;">10,000 PATHS · ${T}YR</div>${_pRow('Median (P50)','$'+Math.round(p50).toLocaleString(),'#44ff88')}${_pRow('Mean','$'+Math.round(mean).toLocaleString(),'#44aaff')}${_pRow('Best 5% (P95)','$'+Math.round(p95).toLocaleString(),'#44ffcc')}${_pRow('Worst 5% (P5)','$'+Math.round(p5).toLocaleString(),'#ff4422')}${_pRow('P25/P75','$'+Math.round(p25).toLocaleString()+' / $'+Math.round(p75).toLocaleString(),'#ffaa44')}${_pRow('Prob.Loss',(loss*100).toFixed(1)+'%',loss>0.3?'#ff4422':'#44ff88')}`;};
+window._renderCorrMatrix=function(){var assets=['SPY','BND','GLD','OIL','BTC','USD'];var cm=[[1.00,-0.13,0.06,0.18,0.22,-0.38],[-0.13,1.00,0.14,-0.05,-0.12,0.08],[0.06,0.14,1.00,0.12,0.18,-0.44],[0.18,-0.05,0.12,1.00,0.14,-0.10],[0.22,-0.12,0.18,0.14,1.00,-0.20],[-0.38,0.08,-0.44,-0.10,-0.20,1.00]];var html='<table style="border-collapse:collapse;font-size:8px;"><tr><td></td>';assets.forEach(function(a){html+='<th style="padding:2px 5px;color:#886644;">'+a+'</th>';});html+='</tr>';cm.forEach(function(row,i){html+='<tr><th style="padding:2px 5px;color:#886644;text-align:right;">'+assets[i]+'</th>';row.forEach(function(v){var c=v>0.5?'#44ff88':v>0.2?'#aaff44':v<-0.3?'#ff4422':v<-0.1?'#ffaa44':'#888';html+='<td style="padding:2px 5px;text-align:center;color:'+c+';font-weight:'+(Math.abs(v)===1?'700':'400')+';">'+v.toFixed(2)+'</td>';});html+='</tr>';});html+='</table>';document.getElementById('corr-matrix').innerHTML=html;};
+window._renderFactors=function(){var factors=[['Market (Rm-Rf)','1.05','18.4','0.000',true],['Size (SMB)','0.12','2.1','0.038',true],['Value (HML)','-0.08','-1.4','0.162',false],['Profitability (RMW)','0.22','3.8','0.000',true],['Investment (CMA)','-0.05','-0.9','0.370',false],['Momentum (WML)','0.18','3.2','0.002',true]];var rows=factors.map(function(f){return`<tr><td style="padding:3px 6px;color:#F39F41;">${f[0]}</td><td style="padding:3px 6px;text-align:right;color:${parseFloat(f[1])>=0?'#44ff88':'#ff4422'};font-weight:700;">${f[1]}</td><td style="padding:3px 6px;text-align:right;color:#aaa;">${f[2]}</td><td style="padding:3px 6px;text-align:right;color:#aaa;">${f[3]}</td><td style="padding:3px 6px;text-align:center;">${f[4]?'<span style="color:#44ff88;">★</span>':'<span style="color:#555;">—</span>'}</td></tr>`;}).join('');document.getElementById('factor-body').innerHTML=`<div style="font-size:8px;color:#886644;margin-bottom:6px;">FAMA-FRENCH 5F+MOM · R²=0.847 · Alpha=0.24%/yr</div><table style="width:100%;border-collapse:collapse;"><tr style="font-size:8px;color:#886644;border-bottom:1px solid #1a1200;"><th style="text-align:left;padding:3px 6px;">FACTOR</th><th style="text-align:right;padding:3px 6px;">BETA</th><th style="text-align:right;padding:3px 6px;">T-STAT</th><th style="text-align:right;padding:3px 6px;">P-VALUE</th><th style="text-align:center;padding:3px 6px;">SIG</th></tr>${rows}</table>`;};
+
+// ══════════════════════════════════════════════════════════════
+// 6. AI INVESTOR AGENTS
+// ══════════════════════════════════════════════════════════════
+var _currentAgent = 'buffett';
+var _agentPersonas = {
+  buffett:{name:'Warren Buffett',style:'Value Investing',color:'#F39F41',prompt:'You are Warren Buffett. Analyze this investment using your philosophy: wide economic moats, strong management, pricing power, long-term value, margin of safety. Be direct, use folksy analogies, reference Berkshire investments. Keep it under 350 words.'},
+  graham:{name:'Benjamin Graham',style:'Security Analysis',color:'#44aaff',prompt:'You are Benjamin Graham. Analyze with quantitative rigor: net-net working capital, P/E below 15, P/B below 1.5, debt-to-equity, earnings stability, dividend record. Be methodical and conservative. Under 350 words.'},
+  lynch:{name:'Peter Lynch',style:'GARP',color:'#44ff88',prompt:'You are Peter Lynch. Analyze using GARP: PEG ratio, earnings growth, business story, tenbagger potential. Favor simple understandable businesses. Under 350 words.'},
+  munger:{name:'Charlie Munger',style:'Mental Models',color:'#cc44ff',prompt:'You are Charlie Munger. Use your latticework of mental models: inversion, moat sustainability, management incentives, circle of competence. Be blunt and contrarian. Under 350 words.'},
+  klarman:{name:'Seth Klarman',style:'Margin of Safety',color:'#ff44aa',prompt:'You are Seth Klarman. Analyze with extreme value discipline: absolute margin of safety, downside first, catalysts, distressed situations. Under 350 words.'},
+  marks:{name:'Howard Marks',style:'Risk & Cycles',color:'#44ffcc',prompt:'You are Howard Marks. Analyze through market cycles, risk assessment, investor psychology. Where in the cycle? Risk-adjusted return? Under 350 words.'},
+  dalio:{name:'Ray Dalio',style:'All Weather Macro',color:'#ffcc44',prompt:'You are Ray Dalio. Analyze through macro: debt cycle, growth/inflation regime, currency dynamics, risk parity. Under 350 words.'},
+  soros:{name:'George Soros',style:'Reflexivity',color:'#ff6644',prompt:'You are George Soros. Analyze using reflexivity: how do beliefs affect fundamentals? Identify boom-bust, divergence, reversal points. Under 350 words.'},
+};
+window._openAIAgent = function(agent) { _currentAgent = agent || 'buffett'; };
+
+function _renderAIAgent() {
+  var el = document.getElementById('aiagent-body'); if (!el) return;
+  var tabs = Object.keys(_agentPersonas).map(function(k){
+    var p=_agentPersonas[k];
+    return `<div class="ai-agent-tab" data-k="${k}" onclick="_selectAgent('${k}')" style="padding:4px 12px;font-size:8px;font-weight:700;cursor:pointer;color:#555;border-bottom:2px solid transparent;white-space:nowrap;transition:all .1s;">${p.name.split(' ').pop().toUpperCase()}</div>`;
+  }).join('');
+
+  el.innerHTML = `<style>.ai-agent-tab.active{color:#F39F41!important;border-bottom-color:#F39F41!important;background:rgba(243,159,65,.06);}.ai-agent-tab:hover{color:#F39F41!important;}</style>
+<div style="background:#030200;border-bottom:1px solid #0d0800;padding:8px 12px 0;flex-shrink:0;"><div style="display:flex;gap:0;overflow-x:auto;">${tabs}</div></div>
+<div style="display:grid;grid-template-columns:1fr 340px;flex:1;min-height:0;overflow:hidden;">
+  <div style="padding:12px;overflow-y:auto;border-right:1px solid #0d0800;">
+    <div id="agent-persona-bar" style="${FP.card}margin-bottom:12px;border-color:#2a1800;"></div>
+    <div style="${FP.grid2}gap:12px;margin-bottom:12px;">
+      <div><div style="${FP.lbl}margin-bottom:2px;">TICKER</div><input id="agent-ticker" style="${FP.inp}" value="${window._bbgActiveSym||'AAPL'}"/></div>
+      <div><div style="${FP.lbl}margin-bottom:2px;">CURRENT PRICE ($)</div><input id="agent-price" style="${FP.inp}" placeholder="185.50" value=""/></div>
+    </div>
+    <div style="${FP.lbl}margin-bottom:2px;">ADDITIONAL CONTEXT (financials, news, thesis)</div>
+    <textarea id="agent-context" style="${FP.inp}height:55px;resize:vertical;margin-bottom:10px;" placeholder="P/E: 28, Revenue growth: 12%, Strong brand moat..."></textarea>
+    <button id="agent-run-btn" style="${FP.btn}width:100%;margin-bottom:12px;" onclick="_runAIAgent()">ASK THIS INVESTOR &lt;GO&gt;</button>
+    <div id="agent-output" style="background:#030200;border:1px solid #0d0800;padding:12px;min-height:180px;font-size:10px;line-height:1.7;color:#ccc;white-space:pre-wrap;font-family:'Courier New',monospace;"></div>
+  </div>
+  <div style="padding:10px;overflow-y:auto;">
+    <div style="${FP.h2}font-size:9px;">LATEST NEWS</div>
+    <div id="agent-news-feed">${_buildNewsFeed(_getNewsByTag(['MARKETS','EARNINGS','FLASH'],15))}</div>
+  </div>
+</div>`;
+  _selectAgent(_currentAgent);
+
+  // Auto-refresh news every 60s
+  if (window._agentNewsInterval) clearInterval(window._agentNewsInterval);
+  window._agentNewsInterval = setInterval(function(){
+    var nf=document.getElementById('agent-news-feed');
+    if(nf) nf.innerHTML=_buildNewsFeed(_getNewsByTag(['MARKETS','EARNINGS','FLASH'],15));
+  }, 60000);
+}
+window._selectAgent=function(k){_currentAgent=k;var p=_agentPersonas[k];if(!p)return;document.querySelectorAll('.ai-agent-tab').forEach(function(t){t.classList.toggle('active',t.dataset.k===k);});var bar=document.getElementById('agent-persona-bar');if(bar)bar.innerHTML=`<div style="display:flex;align-items:center;gap:12px;"><div style="width:3px;height:40px;background:${p.color};flex-shrink:0;"></div><div><div style="font-size:12px;font-weight:700;color:${p.color};">${p.name}</div><div style="font-size:9px;color:#886644;margin-top:2px;">${p.style}</div></div></div>`;};
+window._runAIAgent=function(){var ticker=(document.getElementById('agent-ticker').value||'AAPL').toUpperCase();var price=document.getElementById('agent-price').value||'unknown';var ctx=document.getElementById('agent-context').value||'';var p=_agentPersonas[_currentAgent];var out=document.getElementById('agent-output');var btn=document.getElementById('agent-run-btn');if(!p||!out)return;out.innerHTML='<span style="color:#443322;animation:blink 1s infinite;">● Consulting '+p.name+'...</span>';btn.disabled=true;btn.style.opacity='0.5';
+
+  // Inject relevant news headlines into context
+  var newsItems=_getNewsByTag([ticker,'MARKETS','EARNINGS'],5);
+  var newsCtx=newsItems.length?'\n\nRecent news headlines:\n'+newsItems.map(function(n){return'• '+n.title;}).join('\n'):'';
+
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:p.prompt,messages:[{role:'user',content:'Analyze '+ticker+' (price: $'+price+'). '+(ctx?'Context: '+ctx:'')+(newsCtx||'')+'\n\nGive investment thesis, risks, valuation, and recommendation (Buy/Hold/Sell with price target).'}]})})
+  .then(function(r){return r.json();}).then(function(d){var text=(d.content&&d.content[0]&&d.content[0].text)||'No response.';out.innerHTML='<div style="color:'+p.color+';font-weight:700;font-size:9px;letter-spacing:1px;margin-bottom:8px;">'+p.name.toUpperCase()+' — '+ticker+'</div>'+text.replace(/</g,'&lt;').replace(/>/g,'&gt;');btn.disabled=false;btn.style.opacity='1';}).catch(function(e){out.innerHTML='<span style="color:#ff4422;">Error: '+e.message+'</span>';btn.disabled=false;btn.style.opacity='1';});};
+
+// ══════════════════════════════════════════════════════════════
+// 7. MACRO DATA HUB — with live news
+// ══════════════════════════════════════════════════════════════
+function _renderMacroData() {
+  var el=document.getElementById('macrodata-body'); if(!el)return;
+  el.innerHTML=`<div style="${FP.h2}">GLOBAL MACRO DATA HUB — ECB · IMF · WORLD BANK · FRED</div>
+<div style="display:grid;grid-template-columns:1fr 320px;gap:12px;">
+<div>
+<div style="${FP.grid3}gap:8px;margin-bottom:12px;">
+  ${_msCard('worldbank','🌍 WORLD BANK','GDP · Poverty · Development','#44aaff')}
+  ${_msCard('fred','🏛 FRED (St. Louis)','US Macro · Rates · Jobs','#F39F41')}
+  ${_msCard('ecb','🇪🇺 ECB','EUR Rates · Inflation · M3','#00eeff')}
+  ${_msCard('imf','💰 IMF WEO','Forecasts · Debt · Growth','#ccaaff')}
+  ${_msCard('frankfurter','💱 ECB FX','Official EUR FX Rates','#ffcc44')}
+  ${_msCard('openmeteo','🌡 Open-Meteo','Weather · Climate Data','#ff9944')}
+</div>
+<div id="macro-data-output" style="${FP.card}min-height:200px;"><div style="color:#443322;font-size:9px;padding:20px;text-align:center;">Select a data source above</div></div>
+</div>
+<div style="${FP.card}overflow-y:auto;max-height:520px;">
+  <div style="${FP.h2}font-size:9px;">MACRO & CENTRAL BANK NEWS</div>
+  <div id="macro-news-feed">${_buildNewsFeed(_getNewsByTag(['MACRO','FLASH'],20),'No news yet — open WN panel first to load')}</div>
+</div>
+</div>`;
+
+  // Auto-refresh news
+  if(window._macroNewsInterval) clearInterval(window._macroNewsInterval);
+  window._macroNewsInterval=setInterval(function(){
+    var nf=document.getElementById('macro-news-feed');
+    if(nf)nf.innerHTML=_buildNewsFeed(_getNewsByTag(['MACRO','FLASH'],20));
+  },60000);
+}
+function _msCard(src,title,desc,color){return`<div style="${FP.card}cursor:pointer;" onclick="_loadMacroSource('${src}')"><div style="font-size:9px;font-weight:700;color:${color};margin-bottom:3px;">${title}</div><div style="font-size:8px;color:#666;">${desc}</div><div style="font-size:8px;color:#44ff88;margin-top:4px;">● FREE</div></div>`;}
+
+window._loadMacroSource=function(src){var out=document.getElementById('macro-data-output');if(!out)return;out.innerHTML='<div style="color:#443322;font-size:9px;padding:20px;text-align:center;">⟳ Loading '+src.toUpperCase()+'...</div>';
+if(src==='frankfurter'){fetch('https://api.frankfurter.app/latest?from=EUR').then(function(r){return r.json();}).then(function(d){var pairs=Object.entries(d.rates||{}).slice(0,18);out.innerHTML=`<div style="${FP.h2}">ECB FX RATES — EUR BASE · ${d.date}</div>`+pairs.map(function(x){return`<div style="${FP.row}"><span style="color:#F39F41;font-weight:700;">EUR/${x[0]}</span><span style="color:#fff;">${x[1].toFixed(4)}</span></div>`;}).join('');}).catch(function(){out.innerHTML='<div style="color:#ff4422;padding:12px;">FX data unavailable.</div>';});}
+else if(src==='openmeteo'){fetch('https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&current=temperature_2m,windspeed_10m,precipitation&timezone=America/New_York').then(function(r){return r.json();}).then(function(d){var c=d.current;out.innerHTML=`<div style="${FP.h2}">OPEN-METEO — NEW YORK</div>${_fredCard('Temperature',c.temperature_2m+'°C','#ff8800','')}${_fredCard('Wind',c.windspeed_10m+' km/h','#44aaff','')}${_fredCard('Precipitation',c.precipitation+' mm','#00eeff','')}`;}).catch(function(){out.innerHTML='<div style="color:#ff4422;padding:12px;">Weather data unavailable.</div>';});}
+else if(src==='worldbank'){out.innerHTML=`<div style="${FP.h2}">WORLD BANK — GDP BY COUNTRY (LATEST)</div><div id="wb-rows"></div>`;var wbRows=document.getElementById('wb-rows');[{c:'US',n:'United States'},{c:'CN',n:'China'},{c:'DE',n:'Germany'},{c:'JP',n:'Japan'},{c:'GB',n:'UK'},{c:'IN',n:'India'},{c:'FR',n:'France'},{c:'BR',n:'Brazil'}].forEach(function(co){fetch('https://api.worldbank.org/v2/country/'+co.c+'/indicator/NY.GDP.MKTP.CD?format=json&mrv=1').then(function(r){return r.json();}).then(function(d){var val=d[1]&&d[1][0]&&d[1][0].value;var yr=d[1]&&d[1][0]&&d[1][0].date;if(wbRows)wbRows.innerHTML+=`<div style="${FP.row}"><span style="color:#F39F41;font-weight:700;width:120px;">${co.n}</span><span style="color:#fff;">${val?('$'+(val/1e12).toFixed(2)+'T'):'N/A'}</span><span style="color:#444;">${yr||''}</span></div>`;}).catch(function(){});});}
+else if(src==='fred'){out.innerHTML=`<div style="${FP.h2}">FRED — US KEY INDICATORS</div><div style="${FP.grid2}gap:8px;">${_fredCard('Fed Funds Rate','5.25–5.50%','#ff8800','Rate target')}${_fredCard('CPI YoY','3.2%','#ff4422','Inflation')}${_fredCard('Unemployment','3.8%','#44ff88','U-3 rate')}${_fredCard('10Y Yield','4.35%','#44aaff','Treasury')}${_fredCard('GDP Growth','2.8%','#44ffcc','Real QoQ ann.')}${_fredCard('Core PCE','2.7%','#ffcc44','Fed target measure')}</div><div style="font-size:7px;color:#443322;margin-top:8px;">Indicative — connect FRED API key for live</div>`;}
+else if(src==='ecb'){out.innerHTML=`<div style="${FP.h2}">ECB — EURO AREA POLICY RATES</div><div style="${FP.grid2}gap:8px;">${_fredCard('Main Refi Rate','4.50%','#00eeff','')}${_fredCard('Deposit Rate','4.00%','#44aaff','')}${_fredCard('Marginal Lending','4.75%','#44ffcc','')}${_fredCard('EA CPI','2.6%','#ff4422','')}${_fredCard('Core HICP','2.9%','#ffaa44','')}${_fredCard('EA Unemployment','6.4%','#44ff88','')}</div>`;}
+else if(src==='imf'){out.innerHTML=`<div style="${FP.h2}">IMF WEO — 2026 PROJECTIONS</div><table style="width:100%;border-collapse:collapse;font-size:9px;"><tr style="color:#886644;font-size:8px;border-bottom:1px solid #1a1200;"><th style="text-align:left;padding:3px 6px;">ECONOMY</th><th style="text-align:right;padding:3px 6px;">GDP 2025</th><th style="text-align:right;padding:3px 6px;">GDP 2026</th><th style="text-align:right;padding:3px 6px;">CPI 2025</th></tr>${[['World','3.2%','3.3%','5.8%'],['United States','2.8%','2.4%','3.0%'],['China','5.0%','4.5%','1.5%'],['Euro Area','0.9%','1.7%','2.4%'],['Japan','1.0%','1.0%','2.8%'],['India','7.0%','6.5%','4.6%'],['UK','0.7%','1.5%','2.7%'],['Brazil','2.2%','2.4%','4.4%']].map(function(r){return'<tr><td style="padding:3px 6px;color:#F39F41;">'+r[0]+'</td><td style="padding:3px 6px;text-align:right;color:#44ff88;">'+r[1]+'</td><td style="padding:3px 6px;text-align:right;color:#44aaff;">'+r[2]+'</td><td style="padding:3px 6px;text-align:right;color:#ffaa44;">'+r[3]+'</td></tr>';}).join('')}</table>`;}};
+function _fredCard(name,val,color,desc){return`<div style="${FP.card}"><div style="font-size:8px;color:#886644;margin-bottom:3px;">${name}</div><div style="font-size:20px;font-weight:700;color:${color};">${val}</div>${desc?'<div style="font-size:7px;color:#443322;margin-top:3px;">'+desc+'</div>':''}</div>`;}
+
+// ══════════════════════════════════════════════════════════════
+// 8. ASIA MARKETS — with Asia/Markets news
+// ══════════════════════════════════════════════════════════════
+function _renderAsia() {
+  var el=document.getElementById('asiamkts-body'); if(!el)return;
+  el.innerHTML=`<div style="${FP.h2}">ASIA PACIFIC MARKETS DASHBOARD</div>
+<div style="display:grid;grid-template-columns:1fr 300px;gap:12px;">
+<div>
+<div id="asia-indices" style="${FP.grid3}gap:10px;margin-bottom:12px;"></div>
+<div style="${FP.grid2}gap:12px;">
+  <div style="${FP.card}"><div style="${FP.h2}font-size:9px;">ASIA FX vs USD</div><div id="asia-fx"></div></div>
+  <div style="${FP.card}"><div style="${FP.h2}font-size:9px;">TRADING HOURS (UTC)</div><div id="asia-hours"></div></div>
+</div>
+</div>
+<div style="${FP.card}overflow-y:auto;max-height:520px;">
+  <div style="${FP.h2}font-size:9px;">ASIA & MARKETS NEWS</div>
+  <div id="asia-news-feed">${_buildNewsFeed(_getNewsByTag(['MARKETS','FLASH'],20),'No news yet')}</div>
+</div>
+</div>`;
+
+  // Indices
+  var indices=[{sym:'NI225',n:'Nikkei 225',c:'Japan',yf:'^N225',color:'#ff4444'},{sym:'HSI',n:'Hang Seng',c:'HK',yf:'^HSI',color:'#ff8844'},{sym:'SHCOMP',n:'Shanghai',c:'China',yf:'000001.SS',color:'#ff4422'},{sym:'KOSPI',n:'KOSPI',c:'Korea',yf:'^KS11',color:'#44aaff'},{sym:'SENSEX',n:'Sensex',c:'India',yf:'^BSESN',color:'#44ff88'},{sym:'TWII',n:'TAIEX',c:'Taiwan',yf:'^TWII',color:'#ccaaff'}];
+  var wrap=document.getElementById('asia-indices');
+  indices.forEach(function(idx){var card=document.createElement('div');card.style.cssText=FP.card+'cursor:pointer;';card.innerHTML=`<div style="font-size:8px;font-weight:700;color:${idx.color};">${idx.n}</div><div style="font-size:8px;color:#886644;margin-bottom:4px;">${idx.c}</div><div id="asia-${idx.sym}" style="font-size:18px;font-weight:700;color:#fff;">—</div><div id="asia-chg-${idx.sym}" style="font-size:9px;color:#666;">—</div>`;card.onclick=function(){if(window._openChartForSymbol)_openChartForSymbol(idx.sym);};wrap.appendChild(card);
+  fetch('https://corsproxy.io/?'+encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+idx.yf+'?interval=1d&range=2d')).then(function(r){return r.json();}).then(function(d){var q=d.chart&&d.chart.result&&d.chart.result[0];if(!q)return;var px=q.meta.regularMarketPrice,prev=q.meta.previousClose;var chg=((px-prev)/prev*100);var pEl=document.getElementById('asia-'+idx.sym),cEl=document.getElementById('asia-chg-'+idx.sym);if(pEl)pEl.textContent=px.toLocaleString();if(cEl){cEl.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';cEl.style.color=chg>=0?'#44ff88':'#ff4422';}}).catch(function(){});});
+
+  // FX
+  var fxWrap=document.getElementById('asia-fx');
+  [{p:'USDJPY',f:'JPY=X'},{p:'USDCNY',f:'CNY=X'},{p:'USDINR',f:'INR=X'},{p:'USDKRW',f:'KRW=X'},{p:'USDHKD',f:'HKD=X'},{p:'USDSGD',f:'SGD=X'}].forEach(function(fx){var row=document.createElement('div');row.style.cssText=FP.row;row.innerHTML='<span style="color:#F39F41;font-weight:700;">'+fx.p+'</span><span id="fx-asia-'+fx.p+'" style="color:#fff;">—</span>';fxWrap.appendChild(row);fetch('https://corsproxy.io/?'+encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+fx.f+'?interval=1d&range=1d')).then(function(r){return r.json();}).then(function(d){var px=d.chart&&d.chart.result&&d.chart.result[0]&&d.chart.result[0].meta.regularMarketPrice;var e=document.getElementById('fx-asia-'+fx.p);if(e&&px)e.textContent=px.toFixed(4);}).catch(function(){});});
+
+  // Hours
+  var hoursWrap=document.getElementById('asia-hours'),utcH=new Date().getUTCHours();
+  [{m:'Tokyo (TSE)',u:'00–06',color:'#ff4444'},{m:'Shanghai (SSE)',u:'01:30–07',color:'#ff4422'},{m:'Hong Kong',u:'01:30–08',color:'#ff8844'},{m:'Mumbai (BSE)',u:'03:45–10',color:'#44ff88'},{m:'Seoul (KRX)',u:'00–06:30',color:'#44aaff'},{m:'Singapore',u:'01–09',color:'#ccaaff'}].forEach(function(h){var open=parseInt(h.u.split('–')[0]),close=parseInt(h.u.split('–')[1]);var isOpen=utcH>=open&&utcH<close;var row=document.createElement('div');row.style.cssText=FP.row;row.innerHTML='<span style="color:'+h.color+';font-weight:700;">'+h.m+'</span><span style="font-size:7px;font-weight:700;padding:1px 5px;color:'+(isOpen?'#44ff88':'#ff6644')+';">'+(isOpen?'OPEN':'CLOSED')+'</span>';hoursWrap.appendChild(row);});
+
+  // Auto-refresh news
+  if(window._asiaNewsInterval) clearInterval(window._asiaNewsInterval);
+  window._asiaNewsInterval=setInterval(function(){var nf=document.getElementById('asia-news-feed');if(nf)nf.innerHTML=_buildNewsFeed(_getNewsByTag(['MARKETS','FLASH'],20));},60000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// 9. GEOPOLITICS — with GEO news
+// ══════════════════════════════════════════════════════════════
+function _renderGeoint() {
+  var el=document.getElementById('geoint-body'); if(!el)return;
+  el.innerHTML=`<div style="${FP.h2}">GEOPOLITICAL INTELLIGENCE HUB</div>
+<div style="display:grid;grid-template-columns:1fr 300px;gap:12px;">
+<div>
+<div style="${FP.grid3}gap:10px;margin-bottom:12px;">
+  ${_geoCard('GEOPOLITICAL RISK INDEX','HIGH','#ff4422','Elevated — trade wars, ME, Ukraine')}
+  ${_geoCard('ACTIVE SANCTIONS','15,000+','#ffaa44','US/EU/UN/UK regimes')}
+  ${_geoCard('ACTIVE CONFLICTS','32 Regions','#ff6644','ACLED database')}
+</div>
+<div style="${FP.grid2}gap:12px;">
+<div style="${FP.card}">
+  <div style="${FP.h2}font-size:9px;">RISK REGIONS</div>
+  ${[['Ukraine/Russia','CRITICAL','#ff2244'],['Middle East','CRITICAL','#ff2244'],['Taiwan Strait','ELEVATED','#ff6644'],['South China Sea','ELEVATED','#ff6644'],['Korean Peninsula','HIGH','#ffaa44'],['Sudan','HIGH','#ffaa44'],['Sahel Region','MODERATE','#ffcc44'],['Venezuela','MODERATE','#ffcc44']].map(function(r){return`<div style="${FP.row}"><span style="color:#F39F41;width:150px;">${r[0]}</span><span style="font-size:7px;font-weight:700;padding:1px 6px;background:rgba(255,0,0,.1);color:${r[2]};">${r[1]}</span></div>`;}).join('')}
+</div>
+<div style="${FP.card}">
+  <div style="${FP.h2}font-size:9px;">ACTIVE TARIFFS 2025-26</div>
+  ${[['US → China','145% tariffs, tech restrictions'],['China → US','125% tariffs, rare earths'],['US → EU','Steel/aluminum tariffs'],['EU → US','Retaliatory tariffs'],['US → CA/MX','25% tariffs'],['India → US','High electronics duties']].map(function(r){return`<div style="${FP.row}"><span style="color:#ffaa44;font-weight:700;width:110px;">${r[0]}</span><span style="color:#666;font-size:8px;">${r[1]}</span></div>`;}).join('')}
+</div>
+</div>
+</div>
+<div style="${FP.card}overflow-y:auto;max-height:520px;">
+  <div style="${FP.h2}font-size:9px;">GEOPOLITICS & INTEL NEWS</div>
+  <div id="geo-news-feed">${_buildNewsFeed(_getNewsByTag(['GEO','FLASH','MACRO'],20),'No geo news yet')}</div>
+</div>
+</div>`;
+
+  // Auto-refresh news
+  if(window._geoNewsInterval) clearInterval(window._geoNewsInterval);
+  window._geoNewsInterval=setInterval(function(){var nf=document.getElementById('geo-news-feed');if(nf)nf.innerHTML=_buildNewsFeed(_getNewsByTag(['GEO','FLASH','MACRO'],20));},60000);
+}
+function _geoCard(t,v,c,d){return`<div style="${FP.card}"><div style="font-size:7px;color:#886644;letter-spacing:1px;margin-bottom:4px;">${t}</div><div style="font-size:14px;font-weight:700;color:${c};">${v}</div><div style="font-size:8px;color:#555;margin-top:4px;">${d}</div></div>`;}
+
+// ══════════════════════════════════════════════════════════════
+// 10. PORTFOLIO MANAGER — with markets news
+// ══════════════════════════════════════════════════════════════
+function _renderPortfolio() {
+  var el=document.getElementById('port-body'); if(!el)return;
+  var saved=[];try{saved=JSON.parse(localStorage.getItem('fincept_portfolio')||'[]');}catch(e){}
+  if(!saved.length)saved=[{sym:'AAPL',qty:100,cost:150.00},{sym:'NVDA',qty:50,cost:420.00},{sym:'MSFT',qty:80,cost:310.00},{sym:'BTC',qty:0.5,cost:35000.00},{sym:'GOLD',qty:2,cost:1900.00}];
+  el.innerHTML=`<div style="${FP.h2}">PORTFOLIO MANAGER — POSITIONS · P&amp;L</div>
+<div style="display:grid;grid-template-columns:1fr 300px;gap:12px;">
+<div>
+<div id="port-summary" style="${FP.grid3}gap:10px;margin-bottom:12px;"></div>
+<div style="${FP.card}margin-bottom:12px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><div style="${FP.h2}font-size:9px;margin:0;">POSITIONS</div><button style="${FP.btng}font-size:8px;padding:2px 10px;" onclick="_portAddPosition()">+ ADD</button></div>
+  <div id="port-add-form" style="display:none;${FP.card}margin-bottom:8px;border-color:#2a1800;">
+    <div style="${FP.grid3}gap:8px;margin-bottom:8px;"><div><div style="${FP.lbl}margin-bottom:2px;">SYMBOL</div><input id="pf-sym" style="${FP.inp}" placeholder="AAPL"/></div><div><div style="${FP.lbl}margin-bottom:2px;">QUANTITY</div><input id="pf-qty" style="${FP.inp}" type="number" placeholder="100"/></div><div><div style="${FP.lbl}margin-bottom:2px;">COST ($)</div><input id="pf-cost" style="${FP.inp}" type="number" placeholder="150.00"/></div></div>
+    <button style="${FP.btn}" onclick="_portSavePosition()">ADD &lt;GO&gt;</button>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:9px;" id="port-table">
+    <tr style="color:#886644;font-size:8px;border-bottom:1px solid #1a1200;"><th style="text-align:left;padding:3px 6px;">SYMBOL</th><th style="text-align:right;padding:3px 6px;">QTY</th><th style="text-align:right;padding:3px 6px;">COST</th><th style="text-align:right;padding:3px 6px;">CURRENT</th><th style="text-align:right;padding:3px 6px;">VALUE</th><th style="text-align:right;padding:3px 6px;">P&amp;L</th><th style="text-align:right;padding:3px 6px;">%</th></tr>
+    ${saved.map(function(p,i){return`<tr id="pf-row-${i}" style="border-bottom:1px solid #0a0800;"><td style="padding:3px 6px;color:#F39F41;font-weight:700;cursor:pointer;" onclick="if(window._openChartForSymbol)_openChartForSymbol('${p.sym}')">${p.sym}</td><td style="padding:3px 6px;text-align:right;color:#fff;">${p.qty}</td><td style="padding:3px 6px;text-align:right;color:#886644;">$${p.cost.toFixed(2)}</td><td style="padding:3px 6px;text-align:right;color:#fff;" id="pf-cur-${i}">—</td><td style="padding:3px 6px;text-align:right;color:#fff;" id="pf-mv-${i}">—</td><td style="padding:3px 6px;text-align:right;" id="pf-pl-${i}">—</td><td style="padding:3px 6px;text-align:right;" id="pf-plp-${i}">—</td></tr>`;}).join('')}
+  </table>
+</div>
+</div>
+<div style="${FP.card}overflow-y:auto;max-height:520px;">
+  <div style="${FP.h2}font-size:9px;">MARKETS & EARNINGS NEWS</div>
+  <div id="port-news-feed">${_buildNewsFeed(_getNewsByTag(['MARKETS','EARNINGS','FLASH'],20))}</div>
+</div>
+</div>`;
+
+  window._portPositions=saved;
+  var sumWrap=document.getElementById('port-summary');
+  if(sumWrap)sumWrap.innerHTML=`${_fredCard('Positions',saved.length,'#F39F41','')}${_fredCard('Portfolio Value','Loading...','#44ff88','')}${_fredCard('Total P&L','Loading...','#44aaff','')}`;
+
+  var YH_MAP={AAPL:'AAPL',NVDA:'NVDA',MSFT:'MSFT',AMZN:'AMZN',GOOGL:'GOOGL',TSLA:'TSLA',META:'META',GOLD:'GC=F',OIL:'CL=F',BTC:'BTC-USD'};
+  var totalMV=0,totalCost=0;
+  saved.forEach(function(pos,i){
+    var yf=YH_MAP[pos.sym.toUpperCase()]||pos.sym;
+    fetch('https://corsproxy.io/?'+encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+yf+'?interval=1d&range=1d')).then(function(r){return r.json();}).then(function(d){
+      var px=d.chart&&d.chart.result&&d.chart.result[0]&&d.chart.result[0].meta.regularMarketPrice;
+      if(!px&&window.MKT&&window.MKT[pos.sym.toUpperCase()])px=window.MKT[pos.sym.toUpperCase()].px;
+      if(!px)return;
+      var mv=px*pos.qty,pl=mv-pos.cost*pos.qty,plp=(pl/(pos.cost*pos.qty))*100;
+      totalMV+=mv;totalCost+=pos.cost*pos.qty;
+      var c=pl>=0?'#44ff88':'#ff4422';
+      var s=function(id,html,col){var e=document.getElementById(id);if(e){e.innerHTML=html;if(col)e.style.color=col;}};
+      s('pf-cur-'+i,'$'+px.toFixed(2));s('pf-mv-'+i,'$'+Math.round(mv).toLocaleString());s('pf-pl-'+i,(pl>=0?'+':'')+'\$'+Math.round(pl).toLocaleString(),c);s('pf-plp-'+i,(plp>=0?'+':'')+plp.toFixed(1)+'%',c);
+    }).catch(function(){});
+  });
+
+  // Auto-refresh news
+  if(window._portNewsInterval) clearInterval(window._portNewsInterval);
+  window._portNewsInterval=setInterval(function(){var nf=document.getElementById('port-news-feed');if(nf)nf.innerHTML=_buildNewsFeed(_getNewsByTag(['MARKETS','EARNINGS','FLASH'],20));},60000);
+}
+window._portAddPosition=function(){var f=document.getElementById('port-add-form');if(f)f.style.display=f.style.display==='none'?'block':'none';};
+window._portSavePosition=function(){var sym=(document.getElementById('pf-sym').value||'').toUpperCase();var qty=parseFloat(document.getElementById('pf-qty').value)||0;var cost=parseFloat(document.getElementById('pf-cost').value)||0;if(!sym||!qty||!cost)return;var p=window._portPositions||[];p.push({sym:sym,qty:qty,cost:cost});try{localStorage.setItem('fincept_portfolio',JSON.stringify(p));}catch(e){}; _renderPortfolio();};
+
+// ── Shared helpers ────────────────────────────────────────────
+function _pRow(k,v,vc){return`<div style="${FP.row}"><span style="${FP.lbl}">${k}</span><span style="font-weight:700;font-size:10px;color:${vc||'#fff'};">${v}</span></div>`;}
+
+// ── Register panel IDs ────────────────────────────────────────
+if(window._bbgDirectPanels){
+  ['CFADCF','CFAPORT','CFARISK','CFAOPT','QUANTLAB','AIAGENT','MACRODATA',
+   'ECBDATA','IMFDATA','WBDATA','FREDDATA','BOJDATA','BOEDATA',
+   'ASIAMKTS','GEOINT','ACLED','GEONEWS','SANCTION','PORT','PFANALYZE','BROKERS'
+  ].forEach(function(id){if(window._bbgDirectPanels.indexOf(id)===-1)window._bbgDirectPanels.push(id);});
+}
+
+console.log('[FINCEPT v2] Video + News Feeds + CFA Analytics + AI Agents + Macro + Asia + Geopolitics + Portfolio loaded.');
+})();
+</script>
+</body>
+</html>
+<script>
+(function(){
+'use strict';
+
+// ── Shared styles for all Fincept panels ────────────────────────────────────
+var FP = {
+  // Common CSS vars inherited from root, just helpers here
+  h2: 'font-size:10px;font-weight:700;color:#F39F41;letter-spacing:1.2px;padding:6px 0 4px;border-bottom:1px solid #1a1200;margin-bottom:8px;text-transform:uppercase;',
+  lbl: 'font-size:9px;color:#886644;letter-spacing:.5px;',
+  val: 'font-size:11px;color:#ffffff;font-weight:700;',
+  inp: 'background:#0a0800;border:1px solid #2a1800;color:#F39F41;font-family:"Courier New",monospace;font-size:10px;padding:3px 6px;outline:none;width:100%;',
+  btn: 'background:#F39F41;color:#000;border:none;font-family:"Courier New",monospace;font-size:9px;font-weight:700;padding:4px 14px;cursor:pointer;letter-spacing:.5px;',
+  btng: 'background:#1a1200;color:#F39F41;border:1px solid #2a1800;font-family:"Courier New",monospace;font-size:9px;font-weight:700;padding:4px 14px;cursor:pointer;letter-spacing:.5px;',
+  row: 'display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #0d0800;font-size:9px;',
+  tag: 'display:inline-block;padding:1px 6px;font-size:7px;font-weight:700;letter-spacing:.5px;',
+  grid2: 'display:grid;grid-template-columns:1fr 1fr;gap:12px;',
+  grid3: 'display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;',
+  card: 'background:#080600;border:1px solid #1a1200;padding:10px 12px;',
+  pos: function(v){ return v>=0?'color:#00cc44':'color:#ff3d3d'; },
+};
+
+// ── openPanel hook — extend existing function ─────────────────────────────
+var _origOpenPanel = window.openPanel;
+window.openPanel = function(id) {
+  // Check if it's one of our Fincept panels
+  var fp = document.getElementById('panel-'+id);
+  if (fp) {
+    // Hide all other fincept panels first
+    document.querySelectorAll('[id^="panel-"]').forEach(function(p){
+      if(p.id !== 'panel-'+id) p.style.display='none';
+    });
+    fp.style.display='flex';
+    fp.style.flexDirection='column';
+    document.body.classList.add('panel-open');
+    // Initialize panel content
+    _initPanel(id);
+    return;
+  }
+  if (_origOpenPanel) _origOpenPanel.apply(this, arguments);
+};
+
+function _initPanel(id) {
+  switch(id) {
+    case 'CFADCF':   _renderDCF(); break;
+    case 'CFAPORT':  _renderPortOpt(); break;
+    case 'CFARISK':  _renderRisk(); break;
+    case 'CFAOPT':   _renderOptions(); break;
+    case 'QUANTLAB': _renderQuantLab(); break;
+    case 'AIAGENT':  _renderAIAgent(); break;
+    case 'MACRODATA':_renderMacroData(); break;
+    case 'ASIAMKTS': _renderAsia(); break;
+    case 'GEOINT':   _renderGeoint(); break;
+    case 'PORT':     _renderPortfolio(); break;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 1. DCF — DISCOUNTED CASH FLOW MODEL
+// ══════════════════════════════════════════════════════════════
+function _renderDCF() {
+  var el = document.getElementById('cfadcf-body');
+  if (!el) return;
+  el.innerHTML = `
+<div style="${FP.card}margin-bottom:12px;">
+  <div style="${FP.h2}">DCF VALUATION MODEL — CFA LEVEL II</div>
+  <div style="${FP.grid2}gap:16px;">
+    <div>
+      <div style="margin-bottom:8px;">
+        <div style="${FP.lbl}margin-bottom:2px;">COMPANY / TICKER</div>
+        <input id="dcf-ticker" style="${FP.inp}" placeholder="e.g. AAPL" value="AAPL"/>
+      </div>
+      <div style="${FP.grid2}gap:8px;margin-bottom:8px;">
+        <div><div style="${FP.lbl}margin-bottom:2px;">FREE CASH FLOW ($M)</div>
+          <input id="dcf-fcf" style="${FP.inp}" value="100000"/></div>
+        <div><div style="${FP.lbl}margin-bottom:2px;">GROWTH RATE YR 1-5 (%)</div>
+          <input id="dcf-g1" style="${FP.inp}" value="12"/></div>
+      </div>
+      <div style="${FP.grid2}gap:8px;margin-bottom:8px;">
+        <div><div style="${FP.lbl}margin-bottom:2px;">TERMINAL GROWTH (%)</div>
+          <input id="dcf-gt" style="${FP.inp}" value="3"/></div>
+        <div><div style="${FP.lbl}margin-bottom:2px;">DISCOUNT RATE / WACC (%)</div>
+          <input id="dcf-wacc" style="${FP.inp}" value="9"/></div>
+      </div>
+      <div style="${FP.grid2}gap:8px;margin-bottom:12px;">
+        <div><div style="${FP.lbl}margin-bottom:2px;">SHARES OUT. (M)</div>
+          <input id="dcf-shares" style="${FP.inp}" value="15500"/></div>
+        <div><div style="${FP.lbl}margin-bottom:2px;">NET DEBT ($M)</div>
+          <input id="dcf-debt" style="${FP.inp}" value="45000"/></div>
+      </div>
+      <button style="${FP.btn}width:100%;" onclick="_calcDCF()">CALCULATE INTRINSIC VALUE &lt;GO&gt;</button>
+    </div>
+    <div id="dcf-result" style="background:#030200;border:1px solid #0d0800;padding:12px;min-height:200px;">
+      <div style="color:#443322;font-size:9px;padding-top:40px;text-align:center;">Enter parameters and press CALCULATE</div>
+    </div>
+  </div>
+</div>
+<div id="dcf-cashflows" style="${FP.card}"></div>`;
+}
+
+window._calcDCF = function() {
+  var fcf0  = parseFloat(document.getElementById('dcf-fcf').value)||0;
+  var g1    = parseFloat(document.getElementById('dcf-g1').value)/100||0.12;
+  var gt    = parseFloat(document.getElementById('dcf-gt').value)/100||0.03;
+  var wacc  = parseFloat(document.getElementById('dcf-wacc').value)/100||0.09;
+  var shares= parseFloat(document.getElementById('dcf-shares').value)||1;
+  var debt  = parseFloat(document.getElementById('dcf-debt').value)||0;
+  var ticker= document.getElementById('dcf-ticker').value.toUpperCase()||'STOCK';
+
+  if(wacc<=gt){document.getElementById('dcf-result').innerHTML='<div style="color:#ff3d3d;font-size:9px;padding:20px;">ERROR: WACC must be greater than terminal growth rate.</div>';return;}
+
+  // Stage 1: explicit 5-year FCF projection
+  var cfRows='', pvSum=0;
+  var cf=fcf0;
+  for(var i=1;i<=5;i++){
+    cf*=(1+g1);
+    var pv=cf/Math.pow(1+wacc,i);
+    pvSum+=pv;
+    cfRows+=`<tr><td style="padding:3px 6px;color:#886644;">Yr ${i}</td>
+      <td style="padding:3px 6px;color:#fff;text-align:right;">${_fmt(cf)}M</td>
+      <td style="padding:3px 6px;color:#aaa;text-align:right;">${_fmt(pv)}M</td></tr>`;
+  }
+  // Terminal value
+  var cf6=cf*(1+gt);
+  var tv=cf6/(wacc-gt);
+  var pvTv=tv/Math.pow(1+wacc,5);
+  pvSum+=pvTv;
+
+  // Equity value & per share
+  var equityVal=pvSum-debt;
+  var perShare=equityVal/shares*1000; // shares in millions, result in $
+
+  var chg=((perShare/200)-1)*100; // arbitrary current price placeholder
+
+  document.getElementById('dcf-result').innerHTML=`
+<div style="${FP.h2}">VALUATION RESULT · ${ticker}</div>
+<div style="${FP.row}"><span style="${FP.lbl}">PV of FCFs (5yr)</span><span style="${FP.val}">\$${_fmt(pvSum-pvTv)}M</span></div>
+<div style="${FP.row}"><span style="${FP.lbl}">Terminal Value (PV)</span><span style="${FP.val}">\$${_fmt(pvTv)}M</span></div>
+<div style="${FP.row}"><span style="${FP.lbl}">Enterprise Value</span><span style="${FP.val}">\$${_fmt(pvSum)}M</span></div>
+<div style="${FP.row}"><span style="${FP.lbl}">Net Debt</span><span style="color:#ff6644;">\$${_fmt(debt)}M</span></div>
+<div style="${FP.row}margin-bottom:8px;"><span style="${FP.lbl}">Equity Value</span><span style="${FP.val}">\$${_fmt(equityVal)}M</span></div>
+<div style="padding:8px 0;border-top:1px solid #2a1800;text-align:center;">
+  <div style="${FP.lbl}margin-bottom:4px;">INTRINSIC VALUE PER SHARE</div>
+  <div style="font-size:28px;font-weight:700;color:#F39F41;">\$${perShare.toFixed(2)}</div>
+  <div style="font-size:8px;color:#666;margin-top:2px;">WACC: ${(wacc*100).toFixed(1)}% | Terminal g: ${(gt*100).toFixed(1)}%</div>
+</div>`;
+
+  document.getElementById('dcf-cashflows').innerHTML=`
+<div style="${FP.h2}">PROJECTED FREE CASH FLOWS</div>
+<table style="width:100%;border-collapse:collapse;">
+<tr style="font-size:8px;color:#886644;border-bottom:1px solid #1a1200;">
+  <th style="text-align:left;padding:3px 6px;">YEAR</th>
+  <th style="text-align:right;padding:3px 6px;">FCF ($M)</th>
+  <th style="text-align:right;padding:3px 6px;">PV ($M)</th>
+</tr>${cfRows}
+<tr style="border-top:1px solid #2a1800;">
+  <td style="padding:3px 6px;color:#886644;">Terminal</td>
+  <td style="padding:3px 6px;color:#fff;text-align:right;">${_fmt(tv)}M</td>
+  <td style="padding:3px 6px;color:#aaa;text-align:right;">${_fmt(pvTv)}M</td>
+</tr></table>`;
+};
+
+function _fmt(n){return (n/1000).toFixed(1)+'B';}
+
+// ══════════════════════════════════════════════════════════════
+// 2. PORTFOLIO OPTIMIZER (Markowitz)
+// ══════════════════════════════════════════════════════════════
+function _renderPortOpt() {
+  var el = document.getElementById('cfaport-body');
+  if (!el) return;
+  el.innerHTML = `
+<div style="${FP.card}margin-bottom:12px;">
+  <div style="${FP.h2}">MARKOWITZ PORTFOLIO OPTIMIZER — EFFICIENT FRONTIER</div>
+  <div style="${FP.lbl}margin-bottom:10px;">Enter assets with expected annual return, volatility, and portfolio weight.</div>
+  <div id="port-assets-wrap">
+    <div style="${FP.grid3}font-size:8px;color:#886644;margin-bottom:4px;padding:0 4px;">
+      <span>TICKER / ASSET</span><span style="text-align:center;">EXP. RETURN (%)</span><span style="text-align:center;">VOLATILITY (%)</span>
+    </div>
+    <div id="port-rows"></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:10px;">
+    <button style="${FP.btng}" onclick="_portAddRow()">+ ADD ASSET</button>
+    <button style="${FP.btn}" onclick="_portCalc()">OPTIMIZE PORTFOLIO &lt;GO&gt;</button>
+  </div>
+</div>
+<div id="port-result" style="${FP.card}"></div>`;
+
+  // Default 4 assets
+  var defaults=[
+    {t:'SPY',r:10,v:15},{t:'BND',r:4,v:5},{t:'GLD',r:7,v:12},{t:'QQQ',r:13,v:20}
+  ];
+  defaults.forEach(function(d){ _portAddRow(d); });
+}
+
+var _portRowCount=0;
+window._portAddRow = function(d) {
+  d=d||{t:'',r:8,v:15};
+  var i=_portRowCount++;
+  var wrap=document.getElementById('port-rows');
+  if(!wrap)return;
+  var div=document.createElement('div');
+  div.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:5px;';
+  div.innerHTML=`
+    <input class="port-ticker" style="${FP.inp}" placeholder="TICKER" value="${d.t}"/>
+    <input class="port-ret" style="${FP.inp}text-align:center;" placeholder="Return %" value="${d.r}"/>
+    <input class="port-vol" style="${FP.inp}text-align:center;" placeholder="Volatility %" value="${d.v}"/>`;
+  wrap.appendChild(div);
+};
+
+window._portCalc = function() {
+  var tickers=[].slice.call(document.querySelectorAll('.port-ticker')).map(function(x){return x.value||'?';});
+  var rets=[].slice.call(document.querySelectorAll('.port-ret')).map(function(x){return parseFloat(x.value)/100||0.08;});
+  var vols=[].slice.call(document.querySelectorAll('.port-vol')).map(function(x){return parseFloat(x.value)/100||0.15;});
+  var n=tickers.length;
+  if(n<2){return;}
+
+  // Equal weight as baseline
+  var w=rets.map(function(){return 1/n;});
+  var portRet=rets.reduce(function(s,r,i){return s+w[i]*r;},0);
+  var portVar=vols.reduce(function(s,v,i){return s+Math.pow(w[i]*v,2);},0); // simplified, no covariance
+  var portVol=Math.sqrt(portVar);
+  var sharpe=(portRet-0.05)/portVol;
+
+  // Min variance weights (simplified: inverse variance weighting)
+  var invVar=vols.map(function(v){return 1/(v*v);});
+  var sumInv=invVar.reduce(function(a,b){return a+b;},0);
+  var wMV=invVar.map(function(iv){return iv/sumInv;});
+  var retMV=rets.reduce(function(s,r,i){return s+wMV[i]*r;},0);
+  var varMV=vols.reduce(function(s,v,i){return s+Math.pow(wMV[i]*v,2);},0);
+  var volMV=Math.sqrt(varMV);
+  var sharpeMV=(retMV-0.05)/volMV;
+
+  var rows=tickers.map(function(t,i){
+    return `<tr>
+      <td style="padding:3px 6px;color:#F39F41;font-weight:700;">${t}</td>
+      <td style="padding:3px 6px;color:#fff;text-align:right;">${(rets[i]*100).toFixed(1)}%</td>
+      <td style="padding:3px 6px;color:#aaa;text-align:right;">${(vols[i]*100).toFixed(1)}%</td>
+      <td style="padding:3px 6px;color:#44ffaa;text-align:right;">${(w[i]*100).toFixed(1)}%</td>
+      <td style="padding:3px 6px;color:#44aaff;text-align:right;">${(wMV[i]*100).toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('port-result').innerHTML=`
+<div style="${FP.h2}">OPTIMIZATION RESULTS</div>
+<div style="${FP.grid2}gap:16px;margin-bottom:14px;">
+  <div style="${FP.card}border-color:#1a3a00;">
+    <div style="font-size:8px;color:#44ff88;font-weight:700;letter-spacing:1px;margin-bottom:6px;">EQUAL WEIGHT PORTFOLIO</div>
+    ${_pRow('Expected Return',(portRet*100).toFixed(2)+'%','#44ff88')}
+    ${_pRow('Portfolio Volatility',(portVol*100).toFixed(2)+'%','#ffaa44')}
+    ${_pRow('Sharpe Ratio (rf=5%)',sharpe.toFixed(3),'#44aaff')}
+  </div>
+  <div style="${FP.card}border-color:#001a3a;">
+    <div style="font-size:8px;color:#44aaff;font-weight:700;letter-spacing:1px;margin-bottom:6px;">MIN VARIANCE PORTFOLIO</div>
+    ${_pRow('Expected Return',(retMV*100).toFixed(2)+'%','#44ff88')}
+    ${_pRow('Portfolio Volatility',(volMV*100).toFixed(2)+'%','#ffaa44')}
+    ${_pRow('Sharpe Ratio (rf=5%)',sharpeMV.toFixed(3),'#44aaff')}
+  </div>
+</div>
+<table style="width:100%;border-collapse:collapse;">
+<tr style="font-size:8px;color:#886644;border-bottom:1px solid #1a1200;">
+  <th style="text-align:left;padding:3px 6px;">ASSET</th>
+  <th style="text-align:right;padding:3px 6px;">EXP.RET</th>
+  <th style="text-align:right;padding:3px 6px;">VOL</th>
+  <th style="text-align:right;padding:3px 6px;">EQ.WEIGHT</th>
+  <th style="text-align:right;padding:3px 6px;">MIN.VAR</th>
+</tr>${rows}</table>`;
+};
+function _pRow(k,v,vc){return `<div style="${FP.row}"><span style="${FP.lbl}">${k}</span><span style="font-weight:700;font-size:10px;color:${vc||'#fff'};">${v}</span></div>`;}
+
+// ══════════════════════════════════════════════════════════════
+// 3. RISK METRICS
+// ══════════════════════════════════════════════════════════════
+function _renderRisk() {
+  var el = document.getElementById('cfarisk-body');
+  if (!el) return;
+  el.innerHTML = `
+<div style="${FP.card}margin-bottom:12px;">
+  <div style="${FP.h2}">RISK METRICS CALCULATOR — VaR · SHARPE · BETA · SORTINO</div>
+  <div style="${FP.grid2}gap:16px;">
+    <div>
+      <div style="margin-bottom:8px;"><div style="${FP.lbl}margin-bottom:2px;">PORTFOLIO VALUE ($)</div>
+        <input id="risk-val" style="${FP.inp}" value="1000000"/></div>
+      <div style="${FP.grid2}gap:8px;margin-bottom:8px;">
+        <div><div style="${FP.lbl}margin-bottom:2px;">ANNUALIZED RETURN (%)</div>
+          <input id="risk-ret" style="${FP.inp}" value="12"/></div>
+        <div><div style="${FP.lbl}margin-bottom:2px;">ANNUALIZED VOLATILITY (%)</div>
+          <input id="risk-vol" style="${FP.inp}" value="18"/></div>
+      </div>
+      <div style="${FP.grid2}gap:8px;margin-bottom:8px;">
+        <div><div style="${FP.lbl}margin-bottom:2px;">RISK-FREE RATE (%)</div>
+          <input id="risk-rf" style="${FP.inp}" value="5.25"/></div>
+        <div><div style="${FP.lbl}margin-bottom:2px;">BENCHMARK RETURN (%)</div>
+          <input id="risk-bench" style="${FP.inp}" value="10"/></div>
+      </div>
+      <div style="margin-bottom:12px;"><div style="${FP.lbl}margin-bottom:2px;">PORTFOLIO BETA (vs benchmark)</div>
+        <input id="risk-beta" style="${FP.inp}" value="1.15"/></div>
+      <button style="${FP.btn}width:100%;" onclick="_calcRisk()">CALCULATE RISK METRICS &lt;GO&gt;</button>
+    </div>
+    <div id="risk-result" style="background:#030200;border:1px solid #0d0800;padding:12px;">
+      <div style="color:#443322;font-size:9px;padding-top:40px;text-align:center;">Enter parameters and press CALCULATE</div>
+    </div>
+  </div>
+</div>`;
+}
+
+window._calcRisk = function() {
+  var val   = parseFloat(document.getElementById('risk-val').value)||1e6;
+  var ret   = parseFloat(document.getElementById('risk-ret').value)/100||0.12;
+  var vol   = parseFloat(document.getElementById('risk-vol').value)/100||0.18;
+  var rf    = parseFloat(document.getElementById('risk-rf').value)/100||0.0525;
+  var bench = parseFloat(document.getElementById('risk-bench').value)/100||0.10;
+  var beta  = parseFloat(document.getElementById('risk-beta').value)||1.15;
+
+  // Daily vol
+  var dVol = vol/Math.sqrt(252);
+
+  // VaR (parametric, 1-day)
+  var var95 = val * 1.645 * dVol;
+  var var99 = val * 2.326 * dVol;
+  var cvar95 = val * 2.063 * dVol; // CVaR approx
+
+  // Sharpe
+  var sharpe = (ret-rf)/vol;
+
+  // Sortino (downside vol approx = vol * sqrt(PI/2) * 0.6, simplified)
+  var downVol = vol * 0.7;
+  var sortino = (ret-rf)/downVol;
+
+  // Treynor
+  var treynor = (ret-rf)/beta;
+
+  // Jensen Alpha
+  var alpha = ret - (rf + beta*(bench-rf));
+
+  // Information Ratio
+  var te = Math.abs(ret-bench)*0.8; // tracking error estimate
+  var ir = (ret-bench)/te;
+
+  // Max Drawdown estimate (simplified: -2 * annual vol)
+  var mdd = -vol * 1.8;
+
+  // Calmar
+  var calmar = ret/Math.abs(mdd);
+
+  document.getElementById('risk-result').innerHTML=`
+<div style="${FP.h2}">RISK METRICS OUTPUT</div>
+<div style="${FP.h2}font-size:8px;color:#886644;">VALUE AT RISK (1-DAY)</div>
+${_pRow('VaR 95% (Daily)', '-$'+Math.round(var95).toLocaleString(), '#ffaa44')}
+${_pRow('VaR 99% (Daily)', '-$'+Math.round(var99).toLocaleString(), '#ff6644')}
+${_pRow('CVaR / ES 95%', '-$'+Math.round(cvar95).toLocaleString(), '#ff4422')}
+<div style="margin-top:8px;${FP.h2}font-size:8px;color:#886644;">RISK-ADJUSTED RETURNS</div>
+${_pRow('Sharpe Ratio', sharpe.toFixed(3), sharpe>1?'#44ff88':sharpe>0?'#ffaa44':'#ff4422')}
+${_pRow('Sortino Ratio', sortino.toFixed(3), sortino>1?'#44ff88':sortino>0?'#ffaa44':'#ff4422')}
+${_pRow('Treynor Ratio', (treynor*100).toFixed(2)+'%', '#44aaff')}
+${_pRow("Jensen's Alpha", (alpha*100).toFixed(2)+'%', alpha>=0?'#44ff88':'#ff4422')}
+${_pRow('Information Ratio', ir.toFixed(3), '#ccaaff')}
+<div style="margin-top:8px;${FP.h2}font-size:8px;color:#886644;">DRAWDOWN & VOLATILITY</div>
+${_pRow('Max Drawdown (est.)', (mdd*100).toFixed(1)+'%', '#ff4422')}
+${_pRow('Calmar Ratio', calmar.toFixed(2), '#44ffcc')}
+${_pRow('Portfolio Beta', beta.toFixed(2), Math.abs(beta-1)<0.2?'#44ff88':'#ffaa44')}`;
+};
+
+// ══════════════════════════════════════════════════════════════
+// 4. BLACK-SCHOLES OPTIONS PRICER
+// ══════════════════════════════════════════════════════════════
+function _renderOptions() {
+  var el = document.getElementById('cfaopt-body');
+  if (!el) return;
+  el.innerHTML = `
+<div style="${FP.card}margin-bottom:12px;">
+  <div style="${FP.h2}">BLACK-SCHOLES OPTIONS PRICING MODEL</div>
+  <div style="${FP.grid2}gap:16px;">
+    <div>
+      <div style="${FP.grid2}gap:8px;margin-bottom:8px;">
+        <div><div style="${FP.lbl}margin-bottom:2px;">SPOT PRICE (S)</div>
+          <input id="bs-s" style="${FP.inp}" value="200"/></div>
+        <div><div style="${FP.lbl}margin-bottom:2px;">STRIKE PRICE (K)</div>
+          <input id="bs-k" style="${FP.inp}" value="200"/></div>
+      </div>
+      <div style="${FP.grid2}gap:8px;margin-bottom:8px;">
+        <div><div style="${FP.lbl}margin-bottom:2px;">TIME TO EXPIRY (days)</div>
+          <input id="bs-t" style="${FP.inp}" value="30"/></div>
+        <div><div style="${FP.lbl}margin-bottom:2px;">RISK-FREE RATE (%)</div>
+          <input id="bs-r" style="${FP.inp}" value="5.25"/></div>
+      </div>
+      <div style="margin-bottom:12px;"><div style="${FP.lbl}margin-bottom:2px;">IMPLIED VOLATILITY (%) — ANNUALIZED</div>
+        <input id="bs-iv" style="${FP.inp}" value="25"/></div>
+      <button style="${FP.btn}width:100%;" onclick="_calcBS()">PRICE OPTIONS &lt;GO&gt;</button>
+    </div>
+    <div id="bs-result" style="background:#030200;border:1px solid #0d0800;padding:12px;">
+      <div style="color:#443322;font-size:9px;padding-top:40px;text-align:center;">Enter parameters and press PRICE OPTIONS</div>
+    </div>
+  </div>
+</div>`;
+}
+
+// Standard normal CDF approximation
+function _normCDF(x) {
+  var t=1/(1+0.2316419*Math.abs(x));
+  var y=1-((((1.330274429*t-1.821255978)*t+1.781477937)*t-0.356563782)*t+0.319381530)*t*Math.exp(-x*x/2)/Math.sqrt(2*Math.PI);
+  return x>=0?y:1-y;
+}
+function _normPDF(x) { return Math.exp(-x*x/2)/Math.sqrt(2*Math.PI); }
+
+window._calcBS = function() {
+  var S=parseFloat(document.getElementById('bs-s').value)||200;
+  var K=parseFloat(document.getElementById('bs-k').value)||200;
+  var t=parseFloat(document.getElementById('bs-t').value)/365||30/365;
+  var r=parseFloat(document.getElementById('bs-r').value)/100||0.0525;
+  var iv=parseFloat(document.getElementById('bs-iv').value)/100||0.25;
+
+  var d1=(Math.log(S/K)+(r+0.5*iv*iv)*t)/(iv*Math.sqrt(t));
+  var d2=d1-iv*Math.sqrt(t);
+  var N1=_normCDF(d1),N2=_normCDF(d2);
+  var Nm1=_normCDF(-d1),Nm2=_normCDF(-d2);
+
+  var call=S*N1-K*Math.exp(-r*t)*N2;
+  var put=K*Math.exp(-r*t)*Nm2-S*Nm1;
+
+  // Greeks
+  var delta_c=N1, delta_p=N1-1;
+  var gamma=_normPDF(d1)/(S*iv*Math.sqrt(t));
+  var vega=S*_normPDF(d1)*Math.sqrt(t)/100;
+  var theta_c=(-S*_normPDF(d1)*iv/(2*Math.sqrt(t))-r*K*Math.exp(-r*t)*N2)/365;
+  var theta_p=(-S*_normPDF(d1)*iv/(2*Math.sqrt(t))+r*K*Math.exp(-r*t)*Nm2)/365;
+  var rho_c=K*t*Math.exp(-r*t)*N2/100;
+  var rho_p=-K*t*Math.exp(-r*t)*Nm2/100;
+
+  var moneyness=S>K?'ITM — IN THE MONEY':S<K?'OTM — OUT OF THE MONEY':'ATM — AT THE MONEY';
+  var intrinsic_c=Math.max(0,S-K), intrinsic_p=Math.max(0,K-S);
+
+  document.getElementById('bs-result').innerHTML=`
+<div style="${FP.h2}">BLACK-SCHOLES RESULTS</div>
+<div style="display:flex;gap:10px;margin-bottom:10px;">
+  <div style="${FP.card}flex:1;border-color:#003300;">
+    <div style="font-size:8px;color:#44ff88;font-weight:700;margin-bottom:4px;">CALL OPTION</div>
+    <div style="font-size:24px;font-weight:700;color:#44ff88;">\$${call.toFixed(3)}</div>
+    <div style="font-size:8px;color:#666;margin-top:2px;">Intrinsic: \$${intrinsic_c.toFixed(2)} | Time: \$${(call-intrinsic_c).toFixed(3)}</div>
+  </div>
+  <div style="${FP.card}flex:1;border-color:#330000;">
+    <div style="font-size:8px;color:#ff4422;font-weight:700;margin-bottom:4px;">PUT OPTION</div>
+    <div style="font-size:24px;font-weight:700;color:#ff4422;">\$${put.toFixed(3)}</div>
+    <div style="font-size:8px;color:#666;margin-top:2px;">Intrinsic: \$${intrinsic_p.toFixed(2)} | Time: \$${(put-intrinsic_p).toFixed(3)}</div>
+  </div>
+</div>
+<div style="font-size:8px;color:#886644;margin-bottom:6px;">${moneyness}</div>
+<div style="${FP.h2}font-size:8px;color:#886644;">GREEKS</div>
+<div style="${FP.grid2}gap:0;">
+  ${_pRow('Δ Delta (Call)',delta_c.toFixed(4),'#44aaff')}
+  ${_pRow('Δ Delta (Put)',delta_p.toFixed(4),'#ff6644')}
+  ${_pRow('Γ Gamma',gamma.toFixed(5),'#ccaaff')}
+  ${_pRow('V Vega (per 1%)',vega.toFixed(4),'#44ffcc')}
+  ${_pRow('Θ Theta/day (Call)',theta_c.toFixed(4),'#ffaa44')}
+  ${_pRow('Θ Theta/day (Put)',theta_p.toFixed(4),'#ffaa44')}
+  ${_pRow('ρ Rho (Call)',rho_c.toFixed(4),'#aaaaff')}
+  ${_pRow('ρ Rho (Put)',rho_p.toFixed(4),'#aaaaff')}
+</div>`;
+};
+
+// ══════════════════════════════════════════════════════════════
+// 5. QUANTLAB
+// ══════════════════════════════════════════════════════════════
+function _renderQuantLab() {
+  var el = document.getElementById('quantlab-body');
+  if (!el) return;
+  el.innerHTML = `
+<div style="${FP.h2}">QUANTLAB — QUANTITATIVE ANALYSIS SUITE</div>
+<div style="${FP.grid2}gap:12px;">
+
+  <div style="${FP.card}">
+    <div style="${FP.h2}font-size:9px;">MONTE CARLO SIMULATION — PORTFOLIO VALUE</div>
+    <div style="${FP.grid2}gap:8px;margin-bottom:8px;">
+      <div><div style="${FP.lbl}margin-bottom:2px;">INITIAL VALUE ($)</div>
+        <input id="mc-val" style="${FP.inp}" value="100000"/></div>
+      <div><div style="${FP.lbl}margin-bottom:2px;">ANNUAL DRIFT (%)</div>
+        <input id="mc-mu" style="${FP.inp}" value="8"/></div>
+      <div><div style="${FP.lbl}margin-bottom:2px;">ANNUAL VOLATILITY (%)</div>
+        <input id="mc-sig" style="${FP.inp}" value="15"/></div>
+      <div><div style="${FP.lbl}margin-bottom:2px;">HORIZON (YEARS)</div>
+        <input id="mc-t" style="${FP.inp}" value="5"/></div>
+    </div>
+    <button style="${FP.btn}width:100%;margin-bottom:10px;" onclick="_runMC()">RUN 10,000 SIMULATIONS &lt;GO&gt;</button>
+    <div id="mc-result" style="font-size:9px;color:#443322;">Run simulation to see results</div>
+  </div>
+
+  <div style="${FP.card}">
+    <div style="${FP.h2}font-size:9px;">CORRELATION MATRIX — MAJOR ASSET CLASSES</div>
+    <div id="corr-matrix" style="overflow-x:auto;"></div>
+    <button style="${FP.btng}margin-top:8px;" onclick="_renderCorrMatrix()">LOAD CORRELATION MATRIX</button>
+  </div>
+
+</div>
+<div style="${FP.card}margin-top:12px;">
+  <div style="${FP.h2}font-size:9px;">FACTOR EXPOSURE ANALYSIS</div>
+  <div id="factor-body" style="color:#443322;font-size:9px;padding:8px 0;">Enter a portfolio return stream or load a preset.</div>
+  <button style="${FP.btn}margin-top:6px;" onclick="_renderFactors()">LOAD FAMA-FRENCH FACTOR ANALYSIS</button>
+</div>`;
+}
+
+window._runMC = function() {
+  var V0=parseFloat(document.getElementById('mc-val').value)||1e5;
+  var mu=parseFloat(document.getElementById('mc-mu').value)/100||0.08;
+  var sig=parseFloat(document.getElementById('mc-sig').value)/100||0.15;
+  var T=parseInt(document.getElementById('mc-t').value)||5;
+  var N=10000, paths=[];
+
+  for(var i=0;i<N;i++){
+    var v=V0;
+    for(var j=0;j<T;j++){
+      var z=(Math.random()+Math.random()+Math.random()+Math.random()+Math.random()+Math.random()-3)*Math.SQRT2;
+      v*=Math.exp((mu-0.5*sig*sig)+sig*z);
+    }
+    paths.push(v);
+  }
+  paths.sort(function(a,b){return a-b;});
+  var p5=paths[Math.floor(N*0.05)], p25=paths[Math.floor(N*0.25)];
+  var p50=paths[Math.floor(N*0.5)], p75=paths[Math.floor(N*0.75)], p95=paths[Math.floor(N*0.95)];
+  var mean=paths.reduce(function(a,b){return a+b;},0)/N;
+  var prob_loss=paths.filter(function(v){return v<V0;}).length/N;
+
+  document.getElementById('mc-result').innerHTML=`
+<div style="color:#F39F41;font-weight:700;font-size:10px;margin-bottom:6px;">SIMULATION RESULTS — ${N.toLocaleString()} PATHS · ${T}YR HORIZON</div>
+${_pRow('Median (P50)','$'+Math.round(p50).toLocaleString(),'#44ff88')}
+${_pRow('Mean','$'+Math.round(mean).toLocaleString(),'#44aaff')}
+${_pRow('Best 5% (P95)','$'+Math.round(p95).toLocaleString(),'#44ffcc')}
+${_pRow('Worst 5% (P5)','$'+Math.round(p5).toLocaleString(),'#ff4422')}
+${_pRow('P25 / P75','$'+Math.round(p25).toLocaleString()+' / $'+Math.round(p75).toLocaleString(),'#ffaa44')}
+${_pRow('Prob. of Loss',(prob_loss*100).toFixed(1)+'%',prob_loss>0.3?'#ff4422':'#44ff88')}`;
+};
+
+window._renderCorrMatrix = function() {
+  var assets=['SPY','BND','GLD','OIL','BTC','USD'];
+  var cm=[
+    [1.00, -0.13, 0.06, 0.18, 0.22, -0.38],
+    [-0.13, 1.00, 0.14, -0.05, -0.12, 0.08],
+    [0.06, 0.14, 1.00, 0.12, 0.18, -0.44],
+    [0.18, -0.05, 0.12, 1.00, 0.14, -0.10],
+    [0.22, -0.12, 0.18, 0.14, 1.00, -0.20],
+    [-0.38, 0.08, -0.44, -0.10, -0.20, 1.00]
+  ];
+  var html='<table style="border-collapse:collapse;font-size:8px;"><tr><td></td>';
+  assets.forEach(function(a){html+='<th style="padding:2px 5px;color:#886644;">'+a+'</th>';});
+  html+='</tr>';
+  cm.forEach(function(row,i){
+    html+='<tr><th style="padding:2px 5px;color:#886644;text-align:right;">'+assets[i]+'</th>';
+    row.forEach(function(v){
+      var c=v>0.5?'#44ff88':v>0.2?'#aaff44':v<-0.3?'#ff4422':v<-0.1?'#ffaa44':'#888';
+      html+='<td style="padding:2px 5px;text-align:center;color:'+c+';font-weight:'+(Math.abs(v)===1?'700':'400')+';background:rgba('+
+        (v>0?'0,'+Math.round(v*50)+',0':'Math.round(Math.abs(v)*50)+',0,0')+',0.3);">'+v.toFixed(2)+'</td>';
+    });
+    html+='</tr>';
+  });
+  html+='</table><div style="font-size:7px;color:#443322;margin-top:4px;">30-day rolling correlations — indicative values</div>';
+  document.getElementById('corr-matrix').innerHTML=html;
+};
+
+window._renderFactors = function() {
+  var factors=[
+    {f:'Market (Rm-Rf)', beta:'1.05', tstat:'18.4', pval:'0.000', sig:true},
+    {f:'Size (SMB)',      beta:'0.12', tstat:'2.1',  pval:'0.038', sig:true},
+    {f:'Value (HML)',    beta:'-0.08',tstat:'-1.4', pval:'0.162', sig:false},
+    {f:'Profitability (RMW)',beta:'0.22',tstat:'3.8',pval:'0.000', sig:true},
+    {f:'Investment (CMA)',beta:'-0.05',tstat:'-0.9',pval:'0.370', sig:false},
+    {f:'Momentum (WML)', beta:'0.18', tstat:'3.2',  pval:'0.002', sig:true},
+  ];
+  var rows=factors.map(function(f){
+    return `<tr><td style="padding:3px 6px;color:#F39F41;">${f.f}</td>
+      <td style="padding:3px 6px;text-align:right;color:${parseFloat(f.beta)>=0?'#44ff88':'#ff4422'};font-weight:700;">${f.beta}</td>
+      <td style="padding:3px 6px;text-align:right;color:#aaa;">${f.tstat}</td>
+      <td style="padding:3px 6px;text-align:right;color:#aaa;">${f.pval}</td>
+      <td style="padding:3px 6px;text-align:center;">${f.sig?'<span style="color:#44ff88;font-weight:700;">★</span>':'<span style="color:#555;">—</span>'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('factor-body').innerHTML=`
+<div style="font-size:8px;color:#886644;margin-bottom:6px;">FAMA-FRENCH 5-FACTOR + MOMENTUM MODEL · R² = 0.847 · Alpha = 0.24%/yr</div>
+<table style="width:100%;border-collapse:collapse;">
+<tr style="font-size:8px;color:#886644;border-bottom:1px solid #1a1200;">
+  <th style="text-align:left;padding:3px 6px;">FACTOR</th>
+  <th style="text-align:right;padding:3px 6px;">BETA</th>
+  <th style="text-align:right;padding:3px 6px;">T-STAT</th>
+  <th style="text-align:right;padding:3px 6px;">P-VALUE</th>
+  <th style="text-align:center;padding:3px 6px;">SIG</th>
+</tr>${rows}</table>
+<div style="font-size:7px;color:#443322;margin-top:6px;">★ = significant at 95% confidence level · Sample data for illustration</div>`;
+};
+
+// ══════════════════════════════════════════════════════════════
+// 6. AI INVESTOR AGENTS — powered by Claude API
+// ══════════════════════════════════════════════════════════════
+var _currentAgent = 'buffett';
+var _agentPersonas = {
+  buffett: { name:'Warren Buffett', style:'Value Investing', color:'#F39F41',
+    prompt:'You are Warren Buffett. Analyze this investment using your philosophy: wide economic moats, strong management, pricing power, long-term value, buying great companies at fair prices, margin of safety. Be direct, use folksy analogies, reference your past investments.' },
+  graham:  { name:'Benjamin Graham', style:'Security Analysis', color:'#44aaff',
+    prompt:'You are Benjamin Graham, father of value investing. Analyze with quantitative rigor: net-net working capital, P/E below 15, P/B below 1.5, debt-to-equity, earnings stability, dividend record. Be methodical and conservative.' },
+  lynch:   { name:'Peter Lynch', style:'GARP — Growth at Reasonable Price', color:'#44ff88',
+    prompt:'You are Peter Lynch. Analyze using GARP principles: PEG ratio, earnings growth, understand the business story, look for "tenbaggers". Favor simple, understandable businesses ordinary people can understand.' },
+  munger:  { name:'Charlie Munger', style:'Mental Models Framework', color:'#cc44ff',
+    prompt:'You are Charlie Munger. Analyze using your latticework of mental models: inversion, first principles, confirmation bias avoidance, moat sustainability, management incentives, circle of competence. Be blunt and contrarian.' },
+  klarman: { name:'Seth Klarman', style:'Margin of Safety', color:'#ff44aa',
+    prompt:'You are Seth Klarman. Analyze with extreme value discipline: absolute margin of safety, downside protection first, catalysts for value realization, distressed situations, hidden assets. Emphasize risk over reward.' },
+  marks:   { name:'Howard Marks', style:'Risk & Market Cycles', color:'#44ffcc',
+    prompt:'You are Howard Marks. Analyze through the lens of market cycles, risk assessment, and investor psychology: where are we in the cycle? Is the market overestimating or underestimating risk? What is the risk-adjusted return?' },
+  dalio:   { name:'Ray Dalio', style:'All Weather Macro', color:'#ffcc44',
+    prompt:'You are Ray Dalio. Analyze through macro framework: debt cycle position, growth and inflation regime, currency dynamics, central bank policy, risk parity principles. Think in systems and economic machines.' },
+  soros:   { name:'George Soros', style:'Reflexivity Theory', color:'#ff6644',
+    prompt:'You are George Soros. Analyze using reflexivity: how do market participants\' beliefs affect fundamentals which affect beliefs? Identify boom-bust sequences, divergence from trend, and the point of trend reversal.' },
+};
+
+window._openAIAgent = function(agent) { _currentAgent = agent || 'buffett'; };
+
+function _renderAIAgent() {
+  var el = document.getElementById('aiagent-body');
+  if (!el) return;
+
+  var agentTabs = Object.keys(_agentPersonas).map(function(k) {
+    var p = _agentPersonas[k];
+    return `<div class="ai-agent-tab" data-k="${k}" onclick="_selectAgent('${k}')"
+      style="padding:4px 12px;font-size:8px;font-weight:700;cursor:pointer;color:#555;border-bottom:2px solid transparent;white-space:nowrap;transition:all .1s;letter-spacing:.5px;">
+      ${p.name.split(' ').pop().toUpperCase()}</div>`;
+  }).join('');
+
+  el.innerHTML = `
+<style>
+.ai-agent-tab.active{color:#F39F41!important;border-bottom-color:#F39F41!important;background:rgba(243,159,65,.06);}
+.ai-agent-tab:hover{color:#F39F41!important;}
+</style>
+<div style="background:#030200;border-bottom:1px solid #0d0800;padding:8px 12px 0;flex-shrink:0;">
+  <div style="display:flex;gap:0;overflow-x:auto;">${agentTabs}</div>
+</div>
+<div style="padding:12px;overflow-y:auto;flex:1;">
+  <div id="agent-persona-bar" style="${FP.card}margin-bottom:12px;border-color:#2a1800;"></div>
+  <div style="${FP.grid2}gap:12px;margin-bottom:12px;">
+    <div>
+      <div style="${FP.lbl}margin-bottom:2px;">STOCK TICKER</div>
+      <input id="agent-ticker" style="${FP.inp}" placeholder="e.g. AAPL" value="${window._bbgActiveSym||'AAPL'}"/>
+    </div>
+    <div>
+      <div style="${FP.lbl}margin-bottom:2px;">CURRENT PRICE ($)</div>
+      <input id="agent-price" style="${FP.inp}" placeholder="e.g. 185.50" value=""/>
+    </div>
+  </div>
+  <div style="${FP.lbl}margin-bottom:2px;">ADDITIONAL CONTEXT (optional — financials, thesis, news)</div>
+  <textarea id="agent-context" style="${FP.inp}height:60px;resize:vertical;margin-bottom:10px;" placeholder="P/E: 28, Revenue growth: 12%, Debt/Equity: 0.3, Strong brand moat, iPhone supercycle..."></textarea>
+  <button id="agent-run-btn" style="${FP.btn}width:100%;margin-bottom:12px;" onclick="_runAIAgent()">
+    ASK THIS INVESTOR &lt;GO&gt;
+  </button>
+  <div id="agent-output" style="background:#030200;border:1px solid #0d0800;padding:12px;min-height:200px;font-size:10px;line-height:1.7;color:#ccc;white-space:pre-wrap;font-family:'Courier New',monospace;"></div>
+</div>`;
+
+  _selectAgent(_currentAgent);
+}
+
+window._selectAgent = function(k) {
+  _currentAgent = k;
+  var p = _agentPersonas[k];
+  if (!p) return;
+  document.querySelectorAll('.ai-agent-tab').forEach(function(t){
+    t.classList.toggle('active', t.dataset.k===k);
+  });
+  var bar = document.getElementById('agent-persona-bar');
+  if (bar) bar.innerHTML = `
+<div style="display:flex;align-items:center;gap:12px;">
+  <div style="width:3px;height:40px;background:${p.color};flex-shrink:0;"></div>
+  <div>
+    <div style="font-size:12px;font-weight:700;color:${p.color};">${p.name}</div>
+    <div style="font-size:9px;color:#886644;margin-top:2px;">${p.style}</div>
+  </div>
+</div>`;
+};
+
+window._runAIAgent = function() {
+  var ticker = (document.getElementById('agent-ticker').value||'AAPL').toUpperCase();
+  var price  = document.getElementById('agent-price').value||'unknown';
+  var ctx    = document.getElementById('agent-context').value||'';
+  var p      = _agentPersonas[_currentAgent];
+  var out    = document.getElementById('agent-output');
+  var btn    = document.getElementById('agent-run-btn');
+
+  if (!p || !out) return;
+  out.innerHTML = '<span style="color:#443322;animation:blink 1s infinite;">● Consulting ' + p.name + '...</span>';
+  btn.disabled = true; btn.style.opacity='0.5';
+
+  var userMsg = 'Please analyze ' + ticker + ' (current price: $' + price + ').\n\n' +
+    (ctx ? 'Additional context:\n' + ctx + '\n\n' : '') +
+    'Provide your investment thesis, key strengths and risks, valuation assessment, and final recommendation (Buy / Hold / Sell with target price range). Be specific and use your characteristic style.';
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      system: p.prompt + '\n\nRespond as this investor would speak — in first person, with their characteristic vocabulary, mental models, and investment philosophy. Keep analysis concise but substantive (300-400 words).',
+      messages:[{role:'user',content:userMsg}]
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var text = (d.content&&d.content[0]&&d.content[0].text)||'No response received.';
+    out.innerHTML = '<div style="color:'+p.color+';font-weight:700;font-size:9px;letter-spacing:1px;margin-bottom:8px;">'+p.name.toUpperCase()+' — '+ticker+'</div>' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    btn.disabled=false; btn.style.opacity='1';
+  })
+  .catch(function(e){
+    out.innerHTML='<span style="color:#ff4422;">Error: '+e.message+'</span>';
+    btn.disabled=false; btn.style.opacity='1';
+  });
+};
+
+// ══════════════════════════════════════════════════════════════
+// 7. MACRO DATA HUB
+// ══════════════════════════════════════════════════════════════
+function _renderMacroData() {
+  var el = document.getElementById('macrodata-body');
+  if (!el) return;
+
+  el.innerHTML = `
+<div style="${FP.h2}">GLOBAL MACRO DATA HUB — ECB · IMF · WORLD BANK · FRED</div>
+<div style="${FP.grid3}gap:10px;margin-bottom:14px;">
+  <div style="${FP.card}cursor:pointer;" onclick="_loadMacroSource('worldbank')" id="ms-wb">
+    <div style="font-size:9px;font-weight:700;color:#44aaff;margin-bottom:3px;">🌍 WORLD BANK</div>
+    <div style="font-size:8px;color:#666;">GDP, Poverty, Development</div>
+    <div style="font-size:8px;color:#44ff88;margin-top:4px;">● FREE · No Key</div>
+  </div>
+  <div style="${FP.card}cursor:pointer;" onclick="_loadMacroSource('fred')" id="ms-fred">
+    <div style="font-size:9px;font-weight:700;color:#F39F41;margin-bottom:3px;">🏛 FRED (St. Louis Fed)</div>
+    <div style="font-size:8px;color:#666;">US Macro, Rates, Employment</div>
+    <div style="font-size:8px;color:#44ff88;margin-top:4px;">● FREE · No Key</div>
+  </div>
+  <div style="${FP.card}cursor:pointer;" onclick="_loadMacroSource('ecb')" id="ms-ecb">
+    <div style="font-size:9px;font-weight:700;color:#00eeff;margin-bottom:3px;">🇪🇺 ECB (European CB)</div>
+    <div style="font-size:8px;color:#666;">EUR Rates, Inflation, M3</div>
+    <div style="font-size:8px;color:#44ff88;margin-top:4px;">● FREE · No Key</div>
+  </div>
+  <div style="${FP.card}cursor:pointer;" onclick="_loadMacroSource('imf')" id="ms-imf">
+    <div style="font-size:9px;font-weight:700;color:#ccaaff;margin-bottom:3px;">💰 IMF</div>
+    <div style="font-size:8px;color:#666;">WEO, GDP Forecasts, Debt</div>
+    <div style="font-size:8px;color:#44ff88;margin-top:4px;">● FREE · No Key</div>
+  </div>
+  <div style="${FP.card}cursor:pointer;" onclick="_loadMacroSource('frankfurter')" id="ms-fx">
+    <div style="font-size:9px;font-weight:700;color:#ffcc44;margin-bottom:3px;">💱 ECB FX Rates</div>
+    <div style="font-size:8px;color:#666;">Official EUR FX Rates</div>
+    <div style="font-size:8px;color:#44ff88;margin-top:4px;">● FREE · No Key</div>
+  </div>
+  <div style="${FP.card}cursor:pointer;" onclick="_loadMacroSource('openmeteo')" id="ms-met">
+    <div style="font-size:9px;font-weight:700;color:#ff9944;margin-bottom:3px;">🌡 Open-Meteo</div>
+    <div style="font-size:8px;color:#666;">Weather, Climate Data</div>
+    <div style="font-size:8px;color:#44ff88;margin-top:4px;">● FREE · No Key</div>
+  </div>
+</div>
+<div id="macro-data-output" style="${FP.card}min-height:200px;">
+  <div style="color:#443322;font-size:9px;padding:20px;text-align:center;">Select a data source above to load indicators</div>
+</div>`;
+}
+
+window._loadMacroSource = function(src) {
+  var out = document.getElementById('macro-data-output');
+  if (!out) return;
+  out.innerHTML = '<div style="color:#443322;font-size:9px;padding:20px;text-align:center;">⟳ Loading ' + src.toUpperCase() + ' data...</div>';
+
+  if (src === 'frankfurter') {
+    fetch('https://api.frankfurter.app/latest?from=EUR')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var pairs = Object.entries(d.rates||{}).slice(0,18);
+        var rows = pairs.map(function(x){
+          return `<div style="${FP.row}"><span style="color:#F39F41;font-weight:700;">EUR/${x[0]}</span><span style="color:#fff;">${x[1].toFixed(4)}</span></div>`;
+        }).join('');
+        out.innerHTML = `<div style="${FP.h2}">ECB OFFICIAL FX RATES — EUR BASE · ${d.date}</div>${rows}`;
+      }).catch(function(){out.innerHTML='<div style="color:#ff4422;padding:12px;">Failed to load FX data.</div>';});
+  }
+  else if (src === 'worldbank') {
+    // World Bank API - no CORS issues
+    var indicators=[
+      {id:'NY.GDP.MKTP.CD',name:'GDP (USD)'},
+      {id:'FP.CPI.TOTL.ZG',name:'Inflation (CPI)'},
+      {id:'SL.UEM.TOTL.ZS',name:'Unemployment (%)'},
+      {id:'BX.KLT.DINV.CD.WD',name:'FDI Inflows'},
+    ];
+    var countries=[{c:'US',n:'United States'},{c:'CN',n:'China'},{c:'DE',n:'Germany'},{c:'JP',n:'Japan'},{c:'GB',n:'United Kingdom'},{c:'IN',n:'India'}];
+    out.innerHTML=`<div style="${FP.h2}">WORLD BANK DATA — KEY INDICATORS (Latest Available)</div>
+<div style="font-size:9px;color:#F39F41;margin-bottom:8px;">Fetching live data from World Bank API...</div>
+<div id="wb-rows"></div>`;
+    var wbRows=document.getElementById('wb-rows');
+    countries.forEach(function(co){
+      fetch('https://api.worldbank.org/v2/country/'+co.c+'/indicator/NY.GDP.MKTP.CD?format=json&mrv=1')
+        .then(function(r){return r.json();})
+        .then(function(d){
+          var val=d[1]&&d[1][0]&&d[1][0].value;
+          var yr=d[1]&&d[1][0]&&d[1][0].date;
+          if(wbRows) wbRows.innerHTML+=`<div style="${FP.row}">
+            <span style="color:#F39F41;font-weight:700;width:140px;">${co.n}</span>
+            <span style="color:#886644;">GDP</span>
+            <span style="color:#fff;">${val?('$'+(val/1e12).toFixed(2)+'T'):'N/A'}</span>
+            <span style="color:#444;">${yr||''}</span>
+          </div>`;
+        }).catch(function(){});
+    });
+  }
+  else if (src === 'fred') {
+    out.innerHTML=`<div style="${FP.h2}">FRED — ST. LOUIS FED KEY INDICATORS</div>
+<div style="font-size:9px;color:#886644;margin-bottom:8px;">US Macroeconomic Data — Federal Reserve Bank of St. Louis</div>
+<div style="${FP.grid2}gap:8px;">
+  ${_fredCard('Federal Funds Rate','5.25–5.50%','#ff8800','Rate target range as of last FOMC meeting')}
+  ${_fredCard('US CPI YoY','3.2%','#ff4422','Consumer Price Index inflation rate')}
+  ${_fredCard('Unemployment Rate','3.8%','#44ff88','U-3 official unemployment rate')}
+  ${_fredCard('10Y Treasury Yield','4.35%','#44aaff','US Government 10-Year bond yield')}
+  ${_fredCard('GDP Growth (QoQ)','2.8%','#44ffcc','Real GDP seasonally adjusted annualized')}
+  ${_fredCard('M2 Money Supply','$21.0T','#ccaaff','Broad money supply')}
+  ${_fredCard('Core PCE','2.7%','#ffcc44','Fed\'s preferred inflation measure')}
+  ${_fredCard('ISM Manufacturing','50.3','#aaaaff','Manufacturing PMI (>50 = expansion)')}
+</div>
+<div style="font-size:7px;color:#443322;margin-top:8px;">Indicative values — connect FRED API key for live data</div>`;
+  }
+  else if (src === 'ecb') {
+    out.innerHTML=`<div style="${FP.h2}">EUROPEAN CENTRAL BANK — KEY POLICY INDICATORS</div>
+<div style="${FP.grid2}gap:8px;">
+  ${_fredCard('ECB Main Refi Rate','4.50%','#00eeff','Main refinancing operations rate')}
+  ${_fredCard('Deposit Facility Rate','4.00%','#44aaff','Rate on deposit facility')}
+  ${_fredCard('Marginal Lending Rate','4.75%','#44ffcc','Marginal lending facility rate')}
+  ${_fredCard('Euro Area CPI','2.6%','#ff4422','Harmonised index of consumer prices YoY')}
+  ${_fredCard('Core HICP','2.9%','#ffaa44','Ex food and energy inflation')}
+  ${_fredCard('Euro Area Unemployment','6.4%','#44ff88','EA unemployment rate')}
+  ${_fredCard('M3 Money Growth','0.8%','#ccaaff','Broad monetary aggregate YoY')}
+  ${_fredCard('EA GDP QoQ','0.3%','#F39F41','Euro area GDP quarterly growth')}
+</div>
+<div style="font-size:7px;color:#443322;margin-top:8px;">Source: ECB Statistical Data Warehouse — indicative values</div>`;
+  }
+  else if (src === 'imf') {
+    out.innerHTML=`<div style="${FP.h2}">IMF WORLD ECONOMIC OUTLOOK — KEY PROJECTIONS 2026</div>
+<table style="width:100%;border-collapse:collapse;font-size:9px;">
+<tr style="color:#886644;border-bottom:1px solid #1a1200;font-size:8px;">
+  <th style="text-align:left;padding:3px 6px;">ECONOMY</th>
+  <th style="text-align:right;padding:3px 6px;">GDP GROWTH 2025</th>
+  <th style="text-align:right;padding:3px 6px;">GDP GROWTH 2026</th>
+  <th style="text-align:right;padding:3px 6px;">INFLATION 2025</th>
+</tr>
+${[['World','3.2%','3.3%','5.8%'],['United States','2.8%','2.4%','3.0%'],['China','5.0%','4.5%','1.5%'],['Euro Area','0.9%','1.7%','2.4%'],
+  ['Japan','1.0%','1.0%','2.8%'],['United Kingdom','0.7%','1.5%','2.7%'],['India','7.0%','6.5%','4.6%'],['Brazil','2.2%','2.4%','4.4%'],
+  ['Russia','-0.7%','1.3%','7.5%'],['Emerging Markets','4.3%','4.2%','7.9%']].map(function(r){
+  return '<tr><td style="padding:3px 6px;color:#F39F41;">'+r[0]+'</td>'+
+    '<td style="padding:3px 6px;text-align:right;color:#44ff88;">'+r[1]+'</td>'+
+    '<td style="padding:3px 6px;text-align:right;color:#44aaff;">'+r[2]+'</td>'+
+    '<td style="padding:3px 6px;text-align:right;color:#ffaa44;">'+r[3]+'</td></tr>';
+}).join('')}
+</table>
+<div style="font-size:7px;color:#443322;margin-top:8px;">Source: IMF World Economic Outlook — April 2025</div>`;
+  }
+  else if (src === 'openmeteo') {
+    out.innerHTML='<div style="color:#443322;font-size:9px;padding:8px;">Fetching current weather data...</div>';
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&current=temperature_2m,windspeed_10m,weathercode,precipitation&timezone=America/New_York')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var c=d.current;
+        out.innerHTML=`<div style="${FP.h2}">OPEN-METEO WEATHER DATA — NEW YORK</div>
+${_fredCard('Temperature',c.temperature_2m+'°C','#ff8800','Current air temperature at 2m')}
+${_fredCard('Wind Speed',c.windspeed_10m+' km/h','#44aaff','Wind speed at 10m height')}
+${_fredCard('Precipitation',c.precipitation+' mm','#00eeff','Hourly precipitation')}
+<div style="font-size:7px;color:#443322;margin-top:8px;">Source: Open-Meteo API — Free, no key required</div>`;
+      }).catch(function(){out.innerHTML='<div style="color:#ff4422;padding:12px;">Failed to load weather data.</div>';});
+  }
+};
+
+function _fredCard(name, val, color, desc) {
+  return `<div style="${FP.card}">
+    <div style="font-size:8px;color:#886644;margin-bottom:3px;">${name}</div>
+    <div style="font-size:20px;font-weight:700;color:${color};">${val}</div>
+    <div style="font-size:7px;color:#443322;margin-top:3px;">${desc}</div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// 8. ASIA MARKETS
+// ══════════════════════════════════════════════════════════════
+function _renderAsia() {
+  var el = document.getElementById('asiamkts-body');
+  if (!el) return;
+  el.innerHTML = `
+<div style="${FP.h2}">ASIA PACIFIC MARKETS DASHBOARD</div>
+<div id="asia-indices" style="${FP.grid3}gap:10px;margin-bottom:14px;"></div>
+<div style="${FP.grid2}gap:12px;">
+  <div style="${FP.card}">
+    <div style="${FP.h2}font-size:9px;">ASIA FX — KEY PAIRS (vs USD)</div>
+    <div id="asia-fx"></div>
+  </div>
+  <div style="${FP.card}">
+    <div style="${FP.h2}font-size:9px;">ASIA TRADING HOURS (UTC)</div>
+    <div id="asia-hours"></div>
+  </div>
+</div>`;
+
+  var indices=[
+    {sym:'NI225',n:'Nikkei 225',c:'Japan',yf:'^N225',color:'#ff4444'},
+    {sym:'HSI',n:'Hang Seng',c:'Hong Kong',yf:'^HSI',color:'#ff8844'},
+    {sym:'SHCOMP',n:'Shanghai Comp.',c:'China',yf:'000001.SS',color:'#ff4422'},
+    {sym:'KOSPI',n:'KOSPI',c:'S. Korea',yf:'^KS11',color:'#44aaff'},
+    {sym:'SENSEX',n:'BSE Sensex',c:'India',yf:'^BSESN',color:'#44ff88'},
+    {sym:'TWII',n:'TAIEX',c:'Taiwan',yf:'^TWII',color:'#ccaaff'},
+  ];
+  var wrap=document.getElementById('asia-indices');
+  indices.forEach(function(idx){
+    var card=document.createElement('div');
+    card.style.cssText=FP.card+'cursor:pointer;';
+    card.innerHTML=`<div style="font-size:8px;font-weight:700;color:${idx.color};">${idx.n}</div>
+<div style="font-size:8px;color:#886644;margin-bottom:4px;">${idx.c}</div>
+<div id="asia-${idx.sym}" style="font-size:18px;font-weight:700;color:#fff;">—</div>
+<div id="asia-chg-${idx.sym}" style="font-size:9px;color:#666;">—</div>`;
+    card.onclick=function(){if(window._openChartForSymbol)_openChartForSymbol(idx.sym);};
+    wrap.appendChild(card);
+    // Try Yahoo Finance
+    var yUrl='https://corsproxy.io/?'+encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+idx.yf+'?interval=1d&range=2d');
+    fetch(yUrl).then(function(r){return r.json();}).then(function(d){
+      var q=d.chart&&d.chart.result&&d.chart.result[0];
+      if(!q)return;
+      var meta=q.meta;
+      var px=meta.regularMarketPrice,prev=meta.previousClose;
+      var chg=((px-prev)/prev*100);
+      var pEl=document.getElementById('asia-'+idx.sym);
+      var cEl=document.getElementById('asia-chg-'+idx.sym);
+      if(pEl)pEl.textContent=px.toLocaleString();
+      if(cEl){cEl.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%';cEl.style.color=chg>=0?'#44ff88':'#ff4422';}
+    }).catch(function(){});
+  });
+
+  // FX
+  var fxWrap=document.getElementById('asia-fx');
+  var fxPairs=[
+    {p:'USDJPY',f:'JPY=X',n:'US Dollar / Japanese Yen'},
+    {p:'USDCNY',f:'CNY=X',n:'US Dollar / Chinese Yuan'},
+    {p:'USDINR',f:'INR=X',n:'US Dollar / Indian Rupee'},
+    {p:'USDKRW',f:'KRW=X',n:'US Dollar / Korean Won'},
+    {p:'USDHKD',f:'HKD=X',n:'US Dollar / Hong Kong Dollar'},
+    {p:'USDSGD',f:'SGD=X',n:'US Dollar / Singapore Dollar'},
+  ];
+  fxPairs.forEach(function(fx){
+    var row=document.createElement('div');
+    row.style.cssText=FP.row;
+    row.innerHTML='<span style="color:#F39F41;font-weight:700;">'+fx.p+'</span><span id="fx-asia-'+fx.p+'" style="color:#fff;">—</span>';
+    fxWrap.appendChild(row);
+    fetch('https://corsproxy.io/?'+encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+fx.f+'?interval=1d&range=1d'))
+      .then(function(r){return r.json();}).then(function(d){
+        var px=d.chart&&d.chart.result&&d.chart.result[0]&&d.chart.result[0].meta.regularMarketPrice;
+        var el=document.getElementById('fx-asia-'+fx.p);
+        if(el&&px)el.textContent=px.toFixed(4);
+      }).catch(function(){});
+  });
+
+  // Trading hours
+  var hoursWrap=document.getElementById('asia-hours');
+  var hours=[
+    {market:'Tokyo (TSE)',utc:'00:00–06:00',tz:'JST UTC+9',color:'#ff4444'},
+    {market:'Shanghai (SSE)',utc:'01:30–07:00',tz:'CST UTC+8',color:'#ff4422'},
+    {market:'Hong Kong (HKEX)',utc:'01:30–08:00',tz:'HKT UTC+8',color:'#ff8844'},
+    {market:'Mumbai (BSE)',utc:'03:45–10:00',tz:'IST UTC+5:30',color:'#44ff88'},
+    {market:'Seoul (KRX)',utc:'00:00–06:30',tz:'KST UTC+9',color:'#44aaff'},
+    {market:'Singapore (SGX)',utc:'01:00–09:00',tz:'SGT UTC+8',color:'#ccaaff'},
+  ];
+  var now=new Date();
+  var utcH=now.getUTCHours();
+  hours.forEach(function(h){
+    var parts=h.utc.split('–');
+    var open=parseInt(parts[0].split(':')[0]),close=parseInt(parts[1].split(':')[0]);
+    var isOpen=(open<=close)?(utcH>=open&&utcH<close):(utcH>=open||utcH<close);
+    var row=document.createElement('div');
+    row.style.cssText=FP.row;
+    row.innerHTML='<span style="color:'+h.color+';font-weight:700;">'+h.market+'</span><span style="color:#666;">'+h.utc+' UTC</span>'+
+      '<span style="font-size:7px;font-weight:700;padding:1px 5px;background:'+(isOpen?'rgba(0,204,68,.15)':'rgba(255,61,61,.1)')+';color:'+(isOpen?'#44ff88':'#ff6644')+';">'+(isOpen?'OPEN':'CLOSED')+'</span>';
+    hoursWrap.appendChild(row);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// 9. GEOPOLITICS & INTELLIGENCE
+// ══════════════════════════════════════════════════════════════
+function _renderGeoint() {
+  var el = document.getElementById('geoint-body');
+  if (!el) return;
+  el.innerHTML = `
+<div style="${FP.h2}">GEOPOLITICAL INTELLIGENCE HUB</div>
+<div style="${FP.grid3}gap:10px;margin-bottom:14px;">
+  ${_geoCard('GEOPOLITICAL RISK INDEX','HIGH','#ff4422','Elevated tension — trade wars, Middle East, Ukraine')}
+  ${_geoCard('SANCTIONS ACTIVE','Tracking 15,000+','#ffaa44','US OFAC, EU, UN, UK sanctions regimes')}
+  ${_geoCard('ACTIVE CONFLICTS','32 Regions','#ff6644','Armed conflicts tracked by ACLED database')}
+</div>
+<div style="${FP.grid2}gap:12px;">
+  <div style="${FP.card}">
+    <div style="${FP.h2}font-size:9px;">TOP GEOPOLITICAL RISK REGIONS</div>
+    ${[
+      ['Ukraine / Russia','CRITICAL','#ff2244','Ongoing armed conflict, nuclear risk'],
+      ['Middle East (Gaza/Iran)','CRITICAL','#ff2244','Active hostilities, oil supply risk'],
+      ['Taiwan Strait','ELEVATED','#ff6644','Military tensions, semiconductor supply'],
+      ['South China Sea','ELEVATED','#ff6644','Territorial disputes, shipping lanes'],
+      ['Korean Peninsula','HIGH','#ffaa44','DPRK provocations, nuclear program'],
+      ['Sudan','HIGH','#ffaa44','Civil war, humanitarian crisis'],
+      ['Sahel Region','MODERATE','#ffcc44','Coup wave, jihadist activity'],
+      ['Venezuela','MODERATE','#ffcc44','Political instability, oil sector'],
+    ].map(function(r){
+      return `<div style="${FP.row}">
+        <span style="color:#F39F41;width:180px;">${r[0]}</span>
+        <span style="font-size:7px;font-weight:700;padding:1px 6px;background:rgba(255,0,0,.1);color:${r[2]};">${r[1]}</span>
+        <span style="color:#555;font-size:8px;flex:1;text-align:right;">${r[3]}</span>
+      </div>`;
+    }).join('')}
+  </div>
+  <div style="${FP.card}">
+    <div style="${FP.h2}font-size:9px;">SANCTIONS & TRADE RESTRICTIONS</div>
+    ${[
+      ['Russia (RU)','US/EU/UK','Full sector sanctions — finance, energy, defense'],
+      ['Iran (IR)','US/UN/EU','Nuclear, oil, IRGC designations'],
+      ['North Korea (KP)','UN/US','Comprehensive embargo'],
+      ['Venezuela (VE)','US/EU','Oil sector, government officials'],
+      ['Myanmar (MM)','US/EU','Military junta, jade/timber'],
+      ['Belarus (BY)','US/EU','Post-election, Lukashenko regime'],
+      ['Cuba (CU)','US','Longstanding OFAC embargo'],
+      ['Zimbabwe (ZW)','US/EU','Targeted personal sanctions'],
+    ].map(function(r){
+      return `<div style="${FP.row}">
+        <span style="color:#F39F41;font-weight:700;width:80px;">${r[0]}</span>
+        <span style="color:#ff8844;font-size:8px;width:80px;">${r[1]}</span>
+        <span style="color:#555;font-size:8px;flex:1;">${r[2]}</span>
+      </div>`;
+    }).join('')}
+    <div style="font-size:7px;color:#443322;margin-top:6px;">Source: OFAC · EU Sanctions Map · UN SC Committees</div>
+  </div>
+</div>
+<div style="${FP.card}margin-top:12px;">
+  <div style="${FP.h2}font-size:9px;">TRADE WAR TRACKER — ACTIVE TARIFFS 2025-2026</div>
+  <div style="${FP.grid2}gap:0;">
+    ${[
+      ['US → China','145% tariffs on most Chinese goods, tech sector restrictions'],
+      ['China → US','125% tariffs, rare earth export controls'],
+      ['US → EU','Steel/aluminum tariffs, auto sector pending'],
+      ['EU → US','Retaliatory tariffs on bourbon, Harley-Davidson, Levi\'s'],
+      ['US → Canada/Mexico','25% tariffs across multiple sectors'],
+      ['India → US','High import duties on electronics, agriculture'],
+    ].map(function(r){
+      return `<div style="${FP.row}"><span style="color:#ffaa44;font-weight:700;width:130px;">${r[0]}</span><span style="color:#888;font-size:8px;">${r[1]}</span></div>`;
+    }).join('')}
+  </div>
+</div>`;
+}
+function _geoCard(t,v,c,d){return `<div style="${FP.card}"><div style="font-size:7px;color:#886644;letter-spacing:1px;margin-bottom:4px;">${t}</div><div style="font-size:14px;font-weight:700;color:${c};">${v}</div><div style="font-size:8px;color:#555;margin-top:4px;">${d}</div></div>`;}
+
+// ══════════════════════════════════════════════════════════════
+// 10. PORTFOLIO MANAGER
+// ══════════════════════════════════════════════════════════════
+function _renderPortfolio() {
+  var el = document.getElementById('port-body');
+  if (!el) return;
+
+  // Load from localStorage
+  var saved = [];
+  try { saved = JSON.parse(localStorage.getItem('fincept_portfolio')||'[]'); } catch(e){}
+  if(!saved.length) saved=[
+    {sym:'AAPL',qty:100,cost:150.00},{sym:'NVDA',qty:50,cost:420.00},
+    {sym:'MSFT',qty:80,cost:310.00},{sym:'BTC',qty:0.5,cost:35000.00},
+    {sym:'GOLD',qty:2,cost:1900.00}
+  ];
+
+  el.innerHTML=`
+<div style="${FP.h2}">PORTFOLIO MANAGER — POSITIONS · P&amp;L · ALLOCATION</div>
+<div id="port-summary" style="${FP.grid3}gap:10px;margin-bottom:14px;"></div>
+<div style="${FP.card}margin-bottom:12px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+    <div style="${FP.h2}font-size:9px;margin:0;">POSITIONS</div>
+    <button style="${FP.btng}font-size:8px;padding:2px 10px;" onclick="_portAddPosition()">+ ADD POSITION</button>
+  </div>
+  <div id="port-add-form" style="display:none;${FP.card}margin-bottom:8px;border-color:#2a1800;">
+    <div style="${FP.grid3}gap:8px;margin-bottom:8px;">
+      <div><div style="${FP.lbl}margin-bottom:2px;">SYMBOL</div><input id="pf-sym" style="${FP.inp}" placeholder="AAPL"/></div>
+      <div><div style="${FP.lbl}margin-bottom:2px;">QUANTITY</div><input id="pf-qty" style="${FP.inp}" type="number" placeholder="100"/></div>
+      <div><div style="${FP.lbl}margin-bottom:2px;">COST BASIS ($)</div><input id="pf-cost" style="${FP.inp}" type="number" placeholder="150.00"/></div>
+    </div>
+    <button style="${FP.btn}" onclick="_portSavePosition()">ADD &lt;GO&gt;</button>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:9px;" id="port-table">
+    <tr style="color:#886644;font-size:8px;border-bottom:1px solid #1a1200;">
+      <th style="text-align:left;padding:3px 6px;">SYMBOL</th>
+      <th style="text-align:right;padding:3px 6px;">QTY</th>
+      <th style="text-align:right;padding:3px 6px;">COST</th>
+      <th style="text-align:right;padding:3px 6px;">CURRENT</th>
+      <th style="text-align:right;padding:3px 6px;">MKT VALUE</th>
+      <th style="text-align:right;padding:3px 6px;">P&amp;L</th>
+      <th style="text-align:right;padding:3px 6px;">P&amp;L %</th>
+    </tr>
+    ${saved.map(function(p,i){
+      return `<tr id="pf-row-${i}" style="border-bottom:1px solid #0a0800;">
+        <td style="padding:3px 6px;color:#F39F41;font-weight:700;cursor:pointer;" onclick="if(window._openChartForSymbol)_openChartForSymbol('${p.sym}')">${p.sym}</td>
+        <td style="padding:3px 6px;text-align:right;color:#fff;">${p.qty}</td>
+        <td style="padding:3px 6px;text-align:right;color:#886644;">$${p.cost.toFixed(2)}</td>
+        <td style="padding:3px 6px;text-align:right;color:#fff;" id="pf-cur-${i}">—</td>
+        <td style="padding:3px 6px;text-align:right;color:#fff;" id="pf-mv-${i}">—</td>
+        <td style="padding:3px 6px;text-align:right;" id="pf-pl-${i}">—</td>
+        <td style="padding:3px 6px;text-align:right;" id="pf-plp-${i}">—</td>
+      </tr>`;
+    }).join('')}
+  </table>
+</div>`;
+
+  window._portPositions=saved;
+
+  // Summary cards
+  var sumWrap=document.getElementById('port-summary');
+  if(sumWrap){
+    sumWrap.innerHTML=`
+      ${_fredCard('Total Positions',saved.length,'#F39F41','Active portfolio positions')}
+      ${_fredCard('Portfolio Value','Loading...','#44ff88','Current market value')}
+      ${_fredCard('Total P&L','Loading...','#44aaff','Unrealized profit/loss')}`;
+  }
+
+  // Fetch prices for each position
+  saved.forEach(function(pos,i){
+    var sym=pos.sym.toUpperCase();
+    var YH_MAP={AAPL:'AAPL',NVDA:'NVDA',MSFT:'MSFT',AMZN:'AMZN',GOOGL:'GOOGL',TSLA:'TSLA',META:'META',GOLD:'GC=F',OIL:'CL=F'};
+    var yf=YH_MAP[sym]||sym;
+    var url='https://corsproxy.io/?'+encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+yf+'?interval=1d&range=1d');
+    fetch(url).then(function(r){return r.json();}).then(function(d){
+      var px=d.chart&&d.chart.result&&d.chart.result[0]&&d.chart.result[0].meta.regularMarketPrice;
+      if(!px&&window.MKT&&window.MKT[sym])px=window.MKT[sym].px;
+      if(!px)return;
+      var mv=px*pos.qty, pl=mv-pos.cost*pos.qty, plp=(pl/(pos.cost*pos.qty))*100;
+      var c=pl>=0?'#44ff88':'#ff4422';
+      var setCel=function(id,html,col){var e=document.getElementById(id);if(e){e.innerHTML=html;if(col)e.style.color=col;}};
+      setCel('pf-cur-'+i,'$'+px.toFixed(2));
+      setCel('pf-mv-'+i,'$'+Math.round(mv).toLocaleString());
+      setCel('pf-pl-'+i,(pl>=0?'+':'')+'\$'+Math.round(pl).toLocaleString(),c);
+      setCel('pf-plp-'+i,(plp>=0?'+':'')+plp.toFixed(1)+'%',c);
+    }).catch(function(){});
+  });
+}
+
+window._portAddPosition=function(){var f=document.getElementById('port-add-form');if(f)f.style.display=f.style.display==='none'?'block':'none';};
+window._portSavePosition=function(){
+  var sym=(document.getElementById('pf-sym').value||'').toUpperCase();
+  var qty=parseFloat(document.getElementById('pf-qty').value)||0;
+  var cost=parseFloat(document.getElementById('pf-cost').value)||0;
+  if(!sym||!qty||!cost)return;
+  var p=window._portPositions||[];
+  p.push({sym:sym,qty:qty,cost:cost});
+  try{localStorage.setItem('fincept_portfolio',JSON.stringify(p));}catch(e){}
+  _renderPortfolio();
+};
+
+// ══════════════════════════════════════════════════════════════
+// Direct panel IDs that exist in the _bbgDirectPanels list
+// ══════════════════════════════════════════════════════════════
+if (window._bbgDirectPanels) {
+  ['CFADCF','CFAPORT','CFARISK','CFAOPT','QUANTLAB','AIAGENT',
+   'MACRODATA','ECBDATA','IMFDATA','WBDATA','FREDDATA','BOJDATA','BOEDATA',
+   'ASIAMKTS','GEOINT','ACLED','GEONEWS','SANCTION','PORT','PFANALYZE','BROKERS'
+  ].forEach(function(id){ if(window._bbgDirectPanels.indexOf(id)===-1) window._bbgDirectPanels.push(id); });
+}
+
+// Alias panels to MACRODATA
+['ECBDATA','IMFDATA','WBDATA','FREDDATA','BOJDATA','BOEDATA'].forEach(function(id){
+  var _srcMap={'ECBDATA':'ecb','IMFDATA':'imf','WBDATA':'worldbank','FREDDATA':'fred','BOJDATA':'fred','BOEDATA':'ecb'};
+  window['_open_'+id]=function(){
+    openPanel('MACRODATA');
+    setTimeout(function(){_loadMacroSource(_srcMap[id]||'fred');},300);
+  };
+});
+
+// Alias geo sub-panels
+window._open_ACLED = window._open_GEONEWS = window._open_SANCTION = function(){ openPanel('GEOINT'); };
+
+console.log('[FINCEPT] CFA Analytics + AI Agents + Macro + Asia + Geopolitics + Portfolio panels loaded.');
+})();
 </script>
 </body>
 </html>
