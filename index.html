@@ -452,7 +452,7 @@ body.sat-active .m-wrap{opacity:1!important;}
 .mk:hover{background:#0f0a00;}
 .mk.sel{background:rgba(255,255,255,.04);border-left:2px solid var(--am);}
 .mk-s{color:#ff9900;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;}
-.mk-n{color:var(--wh2);font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mk-n{color:#cccccc!important;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mk-p{color:#f0e8d0;font-size:10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-feature-settings:"tnum" 1;letter-spacing:.2px;font-family:var(--fn-num);font-weight:600;}
 .mk-c{font-size:10px;font-weight:700;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-family:var(--fn-num);}
 .rh{font-size:8px;color:#ff8800;font-weight:700;letter-spacing:2px;padding:4px 6px 3px;border-bottom:1px solid #1a0a00;background:#0a0500;}
@@ -7955,7 +7955,7 @@ function buildCRYPTOMktCap(data){
       <td style="padding:2px 4px;text-align:right;color:#F39F41;font-size:8.5px;font-weight:700;font-variant-numeric:tabular-nums">${c.rank}</td>
       <td style="padding:2px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
         <span style="color:#F39F41;font-weight:800;font-size:10.5px">${c.s}</span>
-        <span style="color:#cc9900;font-size:8.5px;margin-left:5px">${c.n}</span>
+        <span style="color:#cccccc;font-size:8.5px;margin-left:5px">${c.n}</span>
       </td>
       <td id="cp-px-${c.id}" style="padding:2px 6px;text-align:right;color:#F39F41;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fmtCryptoPx(c.px)}</td>
       <td id="cp-chg-${c.id}" style="padding:2px 5px;text-align:right;color:${chgCol(c.chg)};font-weight:900;font-size:10.5px;font-variant-numeric:tabular-nums">${chgStr(c.chg)}</td>
