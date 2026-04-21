@@ -26,16 +26,24 @@
 :root{
   --bg:#000000; --bg1:#000000; --bg2:#000000; --bg3:#000000; --bg4:#171500;
   --b0:#1c1800; --b1:#282200; --b2:#3a3200; --b3:#4e4400;
-  --am:#F39F41; --am2:#f5aa52; --am3:#e88c20; --aml:#c87010; --amd:#7a4810; --amdd:#3a2008; --amb:#180e02;
-  --ye:#ff8800; --ye2:#ff9900;
-  --gn:#00cc44; --gn2:#00ff55; --gnd:#003318;
-  --rd:#ff3d3d; --rd2:#ff4422; --rdd:#4a0a0a;
-  --cy:#00ccff; --cy2:#00eeff; --cyd:#004455;
-  --bl:#3399ff;
+  --am:#d4a84b; --am2:#dbb95e; --am3:#c99a35; --aml:#bf8820; --amd:#7a5a10; --amdd:#3a2a08; --amb:#1e1504;
+  --ye:#d4a84b; --ye2:#c99a35;
+  --gn:#00aa38; --gn2:#00cc44; --gnd:#002510;
+  --rd:#cc3030; --rd2:#cc3318; --rdd:#3a0808;
+  --cy:#00aacc; --cy2:#00bbdd; --cyd:#003344;
+  --bl:#2277cc;
   --wh:#ffffff; --wh2:#ffffff; --gr:#999999; --gr2:#666666; --gr3:#333333;
   --fn:'Courier New',Courier,'Courier Prime',monospace;
   --fn-num:'Roboto Mono','Courier Prime','Courier New',monospace;
   --glass:rgba(6,4,0,.92);
+}
+/* P3 wide-gamut displays (MacBook Pro, iMac) — further desaturate to compensate */
+@media (color-gamut: p3) {
+  :root {
+    --am:#b89140; --am2:#c4a050; --am3:#ae8030; --aml:#a07020;
+    --ye:#b89140; --ye2:#ae8030;
+    --gn:#009930; --rd:#bb2828; --cy:#0099bb;
+  }
 }
 *{margin:0;padding:0;box-sizing:border-box;cursor:default!important;}
 html,body{width:100%;height:100%;max-height:100%;overflow:hidden;background:#000000;margin:0;padding:0;position:fixed;top:0;left:0;right:0;bottom:0;}
@@ -269,8 +277,10 @@ body.sat-active .m-wrap{opacity:1!important;}
   overflow:hidden;
   min-height:100px;
 }
-.panel.maximized{position:fixed!important;left:0!important;top:0!important;right:0!important;bottom:0!important;width:100%!important;height:100%!important;max-width:none!important;resize:none;z-index:1000000!important;display:flex!important;}
-.panel.maximized .panel-body{zoom:1;height:calc(100% - 22px)!important;}
+.panel.maximized{position:fixed!important;left:0!important;top:26px!important;right:0!important;bottom:0!important;width:100%!important;height:calc(100% - 26px)!important;max-width:none!important;resize:none;z-index:1000000!important;display:flex!important;flex-direction:column!important;}
+.panel.maximized .panel-hd{display:none!important;}
+.panel.maximized .panel-body{zoom:1;flex:1!important;height:0!important;min-height:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
+.panel.maximized .panel-body>.bwei-wrap{flex:1;min-height:0;height:100%!important;}
 .panel-hd{
   height:22px;background:#000;
   display:flex;align-items:center;padding:0 0 0 8px;gap:6px;
@@ -292,6 +302,24 @@ body.sat-active .m-wrap{opacity:1!important;}
 .panel-body::-webkit-scrollbar{width:3px;}
 .panel-body::-webkit-scrollbar-thumb{background:#0a0a0a;}
 .panel-body::-webkit-scrollbar-track{background:transparent;}
+
+/* ── CRYPTO & WEI PANEL COLOR ── */
+.panel[data-fn="CRYPTO"], .panel[data-fn="WEI"],
+.panel[data-fn="CRYPTO"] .panel-hd, .panel[data-fn="WEI"] .panel-hd,
+.panel[data-fn="CRYPTO"] .panel-body, .panel[data-fn="WEI"] .panel-body,
+.panel[data-fn="CRYPTO"] .panel-title, .panel[data-fn="WEI"] .panel-title,
+.panel[data-fn="CRYPTO"] .pt, .panel[data-fn="WEI"] .pt,
+.panel[data-fn="CRYPTO"] .pt th, .panel[data-fn="WEI"] .pt th {
+  background: #262626 !important;
+  color: #D19542 !important;
+}
+.panel[data-fn="CRYPTO"] td:first-child:not([colspan]),
+.panel[data-fn="WEI"] td:first-child span {
+  color: #A3A5A4 !important;
+}
+.panel[data-fn="CRYPTO"] td:nth-child(3) {
+  color: #A3A5A4 !important;
+}
 
 /* ── PANEL RESIZE HANDLES ── */
 .panel .rz-right{position:absolute;top:0;right:0;width:5px;height:100%;cursor:default;z-index:10;}
@@ -452,7 +480,7 @@ body.sat-active .m-wrap{opacity:1!important;}
 .mk:hover{background:#0f0a00;}
 .mk.sel{background:rgba(255,255,255,.04);border-left:2px solid var(--am);}
 .mk-s{color:#ff9900;font-size:10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;}
-.mk-n{color:#cccccc!important;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mk-n{color:var(--wh2);font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mk-p{color:#f0e8d0;font-size:10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-feature-settings:"tnum" 1;letter-spacing:.2px;font-family:var(--fn-num);font-weight:600;}
 .mk-c{font-size:10px;font-weight:700;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-family:var(--fn-num);}
 .rh{font-size:8px;color:#ff8800;font-weight:700;letter-spacing:2px;padding:4px 6px 3px;border-bottom:1px solid #1a0a00;background:#0a0500;}
@@ -583,7 +611,7 @@ body.panel-open #STAT { display: none !important; }
 /* #sb-sec-prices shown when STAT bar is visible */
 .sbp{display:flex;flex-direction:column;justify-content:center;padding:0 10px;border-right:1px solid #000000;min-width:80px;}
 .sbp-sym{color:#aa9980;font-size:7px;letter-spacing:1px;font-weight:700;}
-.sbp-px{color:#c8c0a8;font-size:12px;font-weight:700;font-family:'Roboto Mono',monospace;line-height:1.1;}
+.sbp-px{color:#c8c0a8;font-size:14px;font-weight:700;font-family:'Roboto Mono',monospace;line-height:1.1;}
 .sbp-chg{font-size:10px;font-family:'Roboto Mono',monospace;}
 .sbp-chg.up{color:#00cc44;}
 .sbp-chg.dn{color:#ff3333;}
@@ -888,6 +916,10 @@ body{text-rendering:optimizeSpeed;}
 .panel-body {
   background: #000000 !important;
 }
+.panel.maximized .panel-body {
+  background: #000000 !important;
+  overflow: hidden !important;
+}
 .panel-btn { color: #2a2000 !important; }
 .panel-btn:hover { color: #F39F41 !important; background: #0d0800 !important; }
 .panel-btn.close-btn:hover { background: #3a0808 !important; color: #ff3d3d !important; }
@@ -1086,7 +1118,7 @@ body{text-rendering:optimizeSpeed;}
 /* ── BODY BASE ── */
 body {
   font-family: 'Courier New', Courier, monospace !important;
-  color: #F39F41 !important;
+  color: #ffaa00 !important;
   background: #000000 !important;
 }
 
@@ -1106,7 +1138,7 @@ body {
 [style*="#ff8800"] { /* targeted inline style overrides done via JS */ }
 
 /* ── PANEL BODY TEXT ── */
-.panel-body { color: #F39F41 !important; }
+.panel-body { color: #ffaa00 !important; }
 
 /* ── TABLE HEADER GLOW in panels ── */
 .panel-body table th {
@@ -2577,7 +2609,7 @@ window._bbgOpenDES = function(sym, initialTab) {
   // ──────────────────────────────────────────────────────────────
   function tab2() {
     function sec(t) {
-      return `<div style="${MF};font-size:12px;font-weight:700;color:#ff9900;letter-spacing:1px;
+      return `<div style="${MF};font-size:14px;font-weight:700;color:#ff9900;letter-spacing:1px;
         padding:8px 0 2px;border-bottom:1px solid #252525;margin-bottom:2px;text-transform:uppercase;">${t}</div>`;
     }
     return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
@@ -4736,30 +4768,36 @@ const CRYPTO=[
   {id:'the-graph',    s:'GRT',  n:'The Graph',        px:null,    chg:1.80,chg7:-8.4,  mc:940000000,    vol:180000000,    rank:43, ath:2.88,    dom:'.04%'},
   {id:'pendle',       s:'PENDLE',n:'Pendle',          px:null,    chg:3.40,chg7:-14.4, mc:384000000,    vol:180000000,    rank:64, ath:7.52,    dom:'.02%'},
   // ── v4 additions — missing assets ──────────────────────────────────────────
-  {id:'kaspa',        s:'KAS',   n:'Kaspa',          px:null,    chg:1.40,chg7:2.4,   mc:2240000000,   vol:180000000,    rank:30, ath:.184,    dom:'.10%'},
   {id:'ondo-finance', s:'ONDO',  n:'Ondo Finance',   px:null,    chg:2.40,chg7:-8.4,  mc:2840000000,   vol:380000000,    rank:28, ath:2.14,    dom:'.12%'},
-  {id:'wormhole',     s:'W',     n:'Wormhole',       px:null,    chg:1.80,chg7:-12.4, mc:840000000,    vol:180000000,    rank:45, ath:1.02,    dom:'.04%'},
+  {id:'wormhole-v4',  s:'W',     n:'Wormhole',       px:null,    chg:1.80,chg7:-12.4, mc:840000000,    vol:180000000,    rank:45, ath:1.02,    dom:'.04%'},
   {id:'ethena',       s:'ENA',   n:'Ethena',         px:null,    chg:2.20,chg7:-8.4,  mc:1240000000,   vol:280000000,    rank:38, ath:1.52,    dom:'.05%'},
-  {id:'the-graph',    s:'GRT',   n:'The Graph',      px:null,    chg:1.80,chg7:-8.4,  mc:940000000,    vol:180000000,    rank:43, ath:2.88,    dom:'.04%'},
-  {id:'zcash',        s:'ZEC',   n:'Zcash',          px:null,    chg:0.00,chg7:null,  mc:790000000,    vol:120000000,    rank:51, ath:5941.8,  dom:'.03%'},
   {id:'floki',        s:'FLOKI', n:'Floki Inu',      px:null,    chg:3.80,chg7:-8.4,  mc:1840000000,   vol:540000000,    rank:34, ath:.000345, dom:'.08%'},
   {id:'pepe',         s:'PEPE',  n:'Pepe',           px:null,    chg:4.20,chg7:-14.4, mc:4840000000,   vol:1840000000,   rank:18, ath:.00002716,dom:'.21%'},
   {id:'bonk',         s:'BONK',  n:'Bonk',           px:null,    chg:3.40,chg7:-8.4,  mc:1440000000,   vol:480000000,    rank:36, ath:.00005576,dom:'.06%'},
   {id:'dogwifcoin',   s:'WIF',   n:'dogwifhat',      px:null,    chg:4.80,chg7:-18.4, mc:1040000000,   vol:480000000,    rank:40, ath:4.83,    dom:'.04%'},
-  {id:'meme',         s:'MEME',  n:'Memecoin',       px:null,    chg:2.40,chg7:-8.4,  mc:284000000,    vol:140000000,    rank:75, ath:.093,    dom:'.01%'},
   {id:'worldcoin-wld',s:'WLD',   n:'Worldcoin',      px:null,    chg:1.20,chg7:-8.4,  mc:984000000,    vol:240000000,    rank:42, ath:11.70,   dom:'.04%'},
-  {id:'celestia',     s:'TIA',   n:'Celestia',       px:null,    chg:2.80,chg7:-14.4, mc:1840000000,   vol:380000000,    rank:33, ath:21.00,   dom:'.08%'},
-  {id:'jito',         s:'JTO',   n:'Jito',           px:null,    chg:0.84,chg7:-8.4,  mc:240000000,    vol:80000000,     rank:82, ath:6.00,    dom:'.01%'},
-  {id:'pyth-network', s:'PYTH',  n:'Pyth Network',   px:null,    chg:0.40,chg7:-4.4,  mc:284000000,    vol:80000000,     rank:76, ath:1.07,    dom:'.01%'},
   {id:'safe',         s:'SAFE',  n:'Safe',           px:null,    chg:1.40,chg7:-8.4,  mc:384000000,    vol:80000000,     rank:65, ath:2.00,    dom:'.02%'},
+  {id:'blur',         s:'BLUR',  n:'Blur',           px:null,    chg:0.80,chg7:-4.4,  mc:184000000,    vol:80000000,     rank:88, ath:2.45,    dom:'.01%'},,
+  // ── Additional assets for Crypto Markets Dashboard ──────────────────────────
+  {id:'shiba-inu',    s:'SHIB',  n:'Shiba Inu',      px:null,    chg:3.40,chg7:-8.4,  mc:6840000000,   vol:640000000,    rank:12, ath:.00008845,dom:'.29%'},
+  {id:'bittensor',    s:'TAO',   n:'Bittensor',      px:null,    chg:2.80,chg7:-12.4, mc:1840000000,   vol:280000000,    rank:34, ath:796.0,   dom:'.08%'},
+  {id:'akash-network',s:'AKT',   n:'Akash Network',  px:null,    chg:1.60,chg7:-8.4,  mc:684000000,    vol:140000000,    rank:48, ath:8.12,    dom:'.03%'},
+  {id:'tether',       s:'USDT',  n:'Tether',         px:1.000,   chg:0.01,chg7:0.0,   mc:143000000000, vol:98000000000,  rank:3,  ath:1.32,    dom:'5.8%'},
+  {id:'usd-coin',     s:'USDC',  n:'USD Coin',       px:1.000,   chg:0.00,chg7:0.0,   mc:60000000000,  vol:12000000000,  rank:7,  ath:1.17,    dom:'2.4%'},
+  {id:'dai',          s:'DAI',   n:'Dai',            px:1.000,   chg:0.00,chg7:0.0,   mc:8400000000,   vol:1200000000,   rank:16, ath:1.22,    dom:'.34%'},
+  {id:'filecoin',     s:'FIL',   n:'Filecoin',       px:null,    chg:-1.40,chg7:-12.4, mc:1640000000,  vol:240000000,    rank:35, ath:236.84,  dom:'.07%'},
+  {id:'celestia',     s:'TIA',   n:'Celestia',       px:null,    chg:2.80,chg7:-14.4, mc:1840000000,   vol:380000000,    rank:33, ath:21.00,   dom:'.08%'},
+  {id:'wormhole',     s:'W',     n:'Wormhole',       px:null,    chg:1.80,chg7:-12.4, mc:840000000,    vol:180000000,    rank:45, ath:1.02,    dom:'.04%'},
   {id:'dydx',         s:'DYDX',  n:'dYdX',           px:null,    chg:1.20,chg7:-8.4,  mc:284000000,    vol:140000000,    rank:74, ath:27.86,   dom:'.01%'},
-  {id:'blur',         s:'BLUR',  n:'Blur',           px:null,    chg:0.80,chg7:-4.4,  mc:184000000,    vol:80000000,     rank:88, ath:2.45,    dom:'.01%'},
-  {id:'flux',         s:'FLUX',  n:'Flux',           px:null,    chg:1.40,chg7:-4.4,  mc:184000000,    vol:80000000,     rank:90, ath:4.26,    dom:'.01%'}
+  {id:'dogecoin',     s:'DOGE',  n:'Dogecoin',       px:null,    chg:2.84,chg7:-6.4,  mc:28000000000,  vol:2400000000,   rank:6,  ath:.7376,   dom:'1.1%'},
+  {id:'memecoin',     s:'MEME',  n:'Memecoin',       px:null,    chg:2.40,chg7:-8.4,  mc:284000000,    vol:140000000,    rank:75, ath:.093,    dom:'.01%'}
 ];
 
 // ── Vynuluj statická chg7 v CRYPTO array — pouze live API data se zobrazí ──
 // Statické hodnoty (chg7:-8.4 atd.) jsou zastaralé — nikdy je nezobrazujeme
 CRYPTO.forEach(function(c){ c.chg7=null; c._chg7live=false; });
+// Expose CRYPTO on window so BWEI panel and other scripts can access it
+window.CRYPTO = CRYPTO;
 
 // COMDTY_DATA — static fallback; overwritten by fetchStooq() live data on load
 const COMDTY_DATA=[
@@ -6470,7 +6508,7 @@ function getPanelTabs(fn){
   const tabs={
     WEI:['ALL','AMERICAS','EUROPE','ASIA/PAC','MIDEAST'],
     IDX:['ALL','US','EUROPE','ASIA','AMERICAS','VOLATILITY'],
-    CRYPTO:['MKT CAP'],
+    CRYPTO:[],
     COMDTY:['ALL','ENERGY','METALS','AGRI'],
     MACRO:['INDICATORS','FED','ECB'],
     WN:null,
@@ -6532,7 +6570,7 @@ function openPanel(fn,posX,posY){
   const tabsHtml=tabs?`<div class="panel-tabs">${tabs.map((t,i)=>`<div class="ptab${i===0?' on':''}" onclick="switchPanelTab('${id}','${fn}',${i},this)">${t}</div>`).join('')}</div>`:'';
 
   const widePanel={'CRYEXC':true,'ETFF':true,'FUND':true,'LIQD':true,'WEI':true,'CRYPTO':true,'NETSIT':true,'INTEL':true,'JOURN':true,'SRCM':true,'SRC':true,'NWS':true,'CRYPTOHEAT':true,'HYPER':true,'CRCL':true,'METR':true,'MULTIFEED':true,'STOCKS2':true,'GHREPO':true,'OPTFLOW':true};
-  const defaultW=widePanel[fn]?(fn==='CRYEXC'?620:fn==='ETFF'?920:fn==='FUND'?780:fn==='LIQD'?700:fn==='NETSIT'?820:fn==='INTEL'?820:fn==='JOURN'?620:fn==='SRCM'?580:fn==='SRC'?820:fn==='NWS'?660:fn==='CRYPTO'?780:fn==='WEI'?900:fn==='HYPER'?860:fn==='CRCL'?780:fn==='METR'?900:fn==='MULTIFEED'?820:fn==='STOCKS2'?900:fn==='GHREPO'?1100:fn==='OPTFLOW'?1100:700):520;
+  const defaultW=widePanel[fn]?(fn==='CRYEXC'?620:fn==='ETFF'?920:fn==='FUND'?780:fn==='LIQD'?700:fn==='NETSIT'?820:fn==='INTEL'?820:fn==='JOURN'?620:fn==='SRCM'?580:fn==='SRC'?820:fn==='NWS'?660:fn==='CRYPTO'?1060:fn==='WEI'?900:fn==='HYPER'?860:fn==='CRCL'?780:fn==='METR'?900:fn==='MULTIFEED'?820:fn==='STOCKS2'?900:fn==='GHREPO'?1100:fn==='OPTFLOW'?1100:700):520;
   const defaultH=widePanel[fn]?(fn==='CRYEXC'?680:fn==='ETFF'?480:fn==='FUND'?400:fn==='LIQD'?380:fn==='NETSIT'?560:fn==='INTEL'?600:fn==='JOURN'?580:fn==='SRCM'?500:fn==='SRC'?600:fn==='NWS'?600:fn==='CRYPTO'?880:fn==='WEI'?860:fn==='HYPER'?680:fn==='CRCL'?680:fn==='METR'?680:fn==='MULTIFEED'?580:fn==='STOCKS2'?680:fn==='GHREPO'?820:fn==='OPTFLOW'?780:600):500;
   const _ow=document.getElementById('map-overlay');
   const _owRect=_ow?_ow.getBoundingClientRect():{width:window.innerWidth};
@@ -6541,6 +6579,7 @@ function openPanel(fn,posX,posY){
 
   const div=document.createElement('div');
   div.className='panel';div.id=id;
+  div.setAttribute('data-fn', fn);
   div.style.left=ox+'px';div.style.top=oy+'px';
   div.style.width=defaultW+'px';div.style.height=defaultH+'px';
   div.style.zIndex=++zTop;
@@ -7101,7 +7140,7 @@ function buildWEITable(data){
   }
   const now=new Date();
   const ts=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-  const GN='#00ff55',RD='#ff3d3d',AM='#F39F41',AMD='#7a5525',WH='#e8dfc8',DIM='#3a2208';
+  const GN='#00ff55',RD='#ff3d3d',AM='#ffaa00',AMD='#ff8800',WH='#e8dfc8',DIM='#3a2208';
   const cc=v=>(!v||isNaN(v))?DIM:(v>=0?GN:RD);
   const fmt=v=>{
     if(!v||isNaN(v))return'\u2014';
@@ -7138,33 +7177,22 @@ function buildWEITable(data){
   ];
 
   const TH=`padding:1px 4px;text-align:right;font-size:9px;color:${AMD};font-weight:400;white-space:nowrap;letter-spacing:.2px`;
-  const TD_V=`padding:1px 4px;text-align:right;color:${WH};font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap`;
+  const TD_V=`padding:1px 4px;text-align:right;color:${AM} !important;font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap`;
   const TD_T=`padding:1px 4px;text-align:right;color:${DIM};font-size:9.5px;white-space:nowrap`;
 
-  let h=`<div style="background:#000;font-family:'Courier New',Courier,monospace;color:${AM};user-select:none;line-height:1.28">
-  <div style="padding:1px 6px;font-size:9.5px;color:${AM};background:#000">
+  let h=`<div style="background:#262626 !important;font-family:'Courier New',Courier,monospace;color:${AM} !important;user-select:none;line-height:1.28">
+  <div style="padding:1px 6px;font-size:9.5px;color:${AM} !important;background:#262626 !important">
     # &lt;Go&gt; for Index Sector Breakdown
   </div>
-  <div style="display:flex;align-items:stretch;min-height:16px;border-bottom:1px solid #2a0000">
+  <div style="display:flex;align-items:stretch;min-height:16px;border-bottom:1px solid #1a1a1a">
     <div style="padding:1px 8px;font-size:9px;color:#ffcc88;background:#bb1111;border-right:1px solid #880000;display:flex;align-items:center;font-weight:700;white-space:nowrap">95) Settings</div>
     <div style="padding:1px 8px;font-size:9px;color:#cc8844;background:#770000;border-right:1px solid #440000;display:flex;align-items:center;white-space:nowrap">96) News</div>
     <div style="padding:1px 5px;font-size:9px;color:#773311;background:#770000;display:flex;align-items:center">·</div>
     <div style="flex:1;background:#770000"></div>
-    <div style="padding:1px 8px;font-size:9px;color:${AM};font-weight:700;letter-spacing:.6px;display:flex;align-items:center;background:#440000;white-space:nowrap">World Equity Indices</div>
+    <div style="padding:1px 8px;font-size:9px;color:${AM};font-weight:700;letter-spacing:.6px;display:flex;align-items:center;background:#333;white-space:nowrap">World Equity Indices</div>
   </div>
-  <div style="display:flex;align-items:center;background:#000;border-bottom:1px solid #160c00;padding:1px 4px;gap:0;min-height:15px;font-size:8.5px">
-    <span style="color:${AM}">&#9632;</span><span style="color:${AM};padding:0 3px"> Movers </span>
-    <span style="color:${AM}">&#9632;</span><span style="color:${AM};padding:0 3px"> Volatility </span>
-    <span style="color:${AM}">&#9632;</span><span style="color:${AM};padding:0 3px"> Ratios </span>
-    <span style="color:${AM}">&#9632;</span><span style="color:${AM};padding:0 3px"> Pre-Market </span>
-    <span style="color:${AM};padding:0 3px">Display</span>
-    <span style="background:${AM};color:#000;padding:0 5px;font-weight:700;border:1px solid #c07010;margin-left:2px">Name</span>
-    <span style="color:${AMD};padding:0 4px;border:1px solid #2a1600;margin-left:1px">&#9632; Cur.</span>
-    <span style="background:${AM};color:#000;padding:0 5px;font-weight:700;border:1px solid #c07010;margin-left:1px">USD</span>
-    <span style="margin-left:auto;background:${AM};color:#000;padding:0 5px;font-weight:700;border:1px solid #c07010">&#9632; Year To Date</span>
-    <span style="background:${AM};color:#000;padding:0 4px;font-weight:700;border-left:1px solid #a06010">&#9660;</span>
-  </div>
-  <table style="width:100%;border-collapse:collapse;font-family:'Courier New',Courier,monospace;font-size:10px">
+
+  <table style="width:100%;border-collapse:collapse;font-family:'Courier New',Courier,monospace;font-size:10px;background:#262626 !important">
     <colgroup>
       <col style="width:36%"><col style="width:11%"><col style="width:11%"><col style="width:8%"><col style="width:6%"><col style="width:14%"><col style="width:14%">
     </colgroup>`;
@@ -7172,8 +7200,8 @@ function buildWEITable(data){
   let rowNum=4;
   REGIONS.forEach(reg=>{
     if(reg.cols){
-      h+=`<tr style="background:#180e02;border-top:1px solid #241408;border-bottom:1px solid #241408">
-        <td style="padding:2px 6px;color:${AM};font-size:10px;font-weight:700">${reg.num}) ${reg.label}</td>
+      h+=`<tr style="background:#333 !important;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a">
+        <td style="padding:2px 6px;color:${AM} !important;font-size:10px;font-weight:700">${reg.num}) ${reg.label}</td>
         <th style="${TH}">Value</th>
         <th style="${TH}">Net Chg</th>
         <th style="${TH}">% Chg</th>
@@ -7182,8 +7210,8 @@ function buildWEITable(data){
         <th style="${TH}">% YtdCur</th>
       </tr>`;
     } else {
-      h+=`<tr style="background:#180e02;border-top:1px solid #241408;border-bottom:1px solid #241408">
-        <td colspan="7" style="padding:2px 6px;color:${AM};font-size:10px;font-weight:700">${reg.num}) ${reg.label}</td>
+      h+=`<tr style="background:#333 !important;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a">
+        <td colspan="7" style="padding:2px 6px;color:${AM} !important;font-size:10px;font-weight:700">${reg.num}) ${reg.label}</td>
       </tr>`;
     }
     reg.indices.forEach(idx=>{
@@ -7195,11 +7223,11 @@ function buildWEITable(data){
       const net=(px&&op)?(px-op):0;
       const vc=cc(chg),yc=cc(ytd);
       const rn=rowNum++;
-      h+=`<tr style="border-bottom:1px solid #0e0800;cursor:pointer"
-          onmouseover="this.style.background='#1a1002'" onmouseout="this.style.background='transparent'">
+      h+=`<tr style="border-bottom:1px solid #1a1a1a;cursor:pointer"
+          onmouseover="this.style.background='#2a2a2a'" onmouseout="this.style.background='transparent'">
         <td style="padding:1px 6px;white-space:nowrap;overflow:hidden">
-          <span style="color:${AMD};font-size:9.5px">${rn})</span>
-          <span style="color:${AM};font-size:10px;font-weight:700;margin-left:3px">${idx.label}</span>
+          <span style="color:${AMD} !important;font-size:9.5px">${rn})</span>
+          <span style="color:${AM} !important;font-size:10px;font-weight:700;margin-left:3px">${idx.label}</span>
         </td>
         <td style="${TD_V}">${fmt(px)}</td>
         <td style="padding:1px 4px;text-align:right;color:${vc};font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${fmtN(net)}</td>
@@ -7339,12 +7367,12 @@ function buildIDX(regionFilter){
     const col = v >= 0 ? '#00ee55' : '#ff4444';
     return `<td style="padding:2px 5px;text-align:right;background:${bg};color:${col};font-weight:900;font-size:${sz}px;font-variant-numeric:tabular-nums;white-space:nowrap">${chgStr(v)}</td>`;
   };
-  const th = (label,align='right') => `<th style="padding:4px 5px;font-size:7.5px;color:#cc7722;text-align:${align};letter-spacing:1px;font-weight:700;white-space:nowrap;border-bottom:1px solid #1a1100;background:#0a0500">${label}</th>`;
+  const th = (label,align='right') => `<th style="padding:4px 5px;font-size:7.5px;color:#D19542 !important;text-align:${align};letter-spacing:1px;font-weight:700;white-space:nowrap;border-bottom:1px solid #1a1a1a;background:#333 !important">${label}</th>`;
   const fmtIdx = v => v>=10000?v.toLocaleString('en',{maximumFractionDigits:0}):v.toFixed(2);
   
   const filtered = regionFilter ? IDX_DATA.filter(d=>d.reg===regionFilter) : IDX_DATA;
   
-  let h=`<table style="width:auto;border-collapse:collapse;font-family:var(--fn-num);table-layout:fixed;background:#000">
+  let h=`<table style="width:auto;border-collapse:collapse;font-family:var(--fn-num);table-layout:fixed;background:#262626 !important">
   <colgroup>
     <col style="width:14px"><col style="width:48px"><col style="width:120px"><col style="width:68px">
     <col style="width:50px"><col style="width:50px"><col style="width:58px">
@@ -7358,14 +7386,14 @@ function buildIDX(regionFilter){
     ${th('VOL')}${th('TIME')}
   </tr>`;
   filtered.forEach((d,i)=>{
-    const rowBg = i%2===0 ? '#000' : '#040200';
+    const rowBg = i%2===0 ? '#262626' : '#2a2a2a';
     const chgAbs=d.px*d.chg/100;
     const now=new Date();const timeStr=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-    h+=`<tr onmouseover="this.style.background='rgba(243,159,65,.06)'" onmouseout="this.style.background='${rowBg}'" style="background:${rowBg};border-bottom:1px solid #0d0800">
-      <td style="padding:2px 4px;text-align:right;color:#443322;font-size:8px">${i+1}</td>
-      <td style="padding:2px 6px"><span style="color:#F39F41;font-weight:800;font-size:10px;letter-spacing:.3px">${d.s}</span></td>
-      <td style="padding:2px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#998870;font-size:8px;font-weight:600">${d.n}</span></td>
-      <td style="padding:2px 5px;text-align:right;color:#e8dfc8;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums">${fmtIdx(d.px)}</td>
+    h+=`<tr onmouseover="this.style.background='rgba(255,200,100,.04)'" onmouseout="this.style.background='${rowBg}'" style="background:${rowBg};border-bottom:1px solid #1a1a1a">
+      <td style="padding:2px 4px;text-align:right;color:#A3A5A4 !important;font-size:8px">${i+1}</td>
+      <td style="padding:2px 6px"><span style="color:#D19542 !important;font-weight:800;font-size:10px;letter-spacing:.3px">${d.s}</span></td>
+      <td style="padding:2px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#A3A5A4 !important;font-size:8px;font-weight:600">${d.n}</span></td>
+      <td style="padding:2px 5px;text-align:right;color:#D19542 !important;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums">${fmtIdx(d.px)}</td>
       ${chgCell(d.chg,'10.5')}
       ${chgCell(d.ytd,'10')}
       <td style="padding:2px 5px;text-align:right;color:#4488aa;font-size:8px;font-weight:700">${d.mc||'—'}</td>
@@ -7903,105 +7931,149 @@ function _fmtFundSparkline(sym){
 }
 
 function buildCRYPTOMktCap(data){
-  const fmtMC = v => {
-    if(!v) return '—';
-    if(v>=1e12) return '$'+(v/1e12).toFixed(2)+'T';
-    if(v>=1e9)  return '$'+(v/1e9).toFixed(1)+'B';
-    if(v>=1e6)  return '$'+(v/1e6).toFixed(0)+'M';
-    return '$'+v;
-  };
-  const fmtVol = v => {
-    if(!v) return '—';
-    if(v>=1e12) return '$'+(v/1e12).toFixed(2)+'T';
-    if(v>=1e9)  return '$'+(v/1e9).toFixed(2)+'B';
-    if(v>=1e6)  return '$'+(v/1e6).toFixed(2)+'M';
-    return '$'+v.toFixed(0);
-  };
+  // ── Category definitions — Bloomberg WMCO style ─────────────────────────────
+  const SECTIONS = [
+    { label: '1) Majors', ids: ['bitcoin','ethereum','bnb','solana','ripple','dogecoin','ton','cardano','tron','litecoin','bitcoin-cash','stellar','shiba-inu'] },
+    { label: '2) Layer 1', ids: ['avalanche','polkadot','near','aptos','cosmos','algorand','icp','fantom','hyperliquid','sui','ethereum-classic','monero','zcash','kaspa'] },
+    { label: '3) Layer 2 & Infrastructure', ids: ['arbitrum','optimism','starknet','immutable-x','sei-network','berachain','movement','wormhole-v4','wormhole','the-graph','safe'] },
+    { label: '4) DeFi', ids: ['uniswap','aave','maker','lido','curve','pendle','gmx','raydium','jito','jupiter','injective','chainlink','ethena','dydx','ondo-finance','mantra'] },
+    { label: '5) AI & Data', ids: ['render','fetch-ai','bittensor','akash-network','virtual-protocol','worldcoin-wld','pyth'] },
+    { label: '6) Memes', ids: ['pepe','dogwifcoin','bonk','shiba-inu','memecoin','floki'] },
+  ];
+
   const fmtCryptoPx = v => {
-    if(!v && v!==0) return '—';
-    if(v >= 1000)   return '$'+v.toLocaleString('en',{maximumFractionDigits:0});
-    if(v >= 1)      return '$'+v.toFixed(2);
-    if(v >= 0.01)   return '$'+v.toFixed(4);
-    if(v >= 0.0001) return '$'+v.toFixed(6);
-    return '$'+v.toFixed(8);
+    if(!v && v!==0) return '\u2014';
+    if(v >= 10000)  return v.toLocaleString('en',{maximumFractionDigits:0});
+    if(v >= 1000)   return v.toFixed(0);
+    if(v >= 1)      return v.toFixed(2);
+    if(v >= 0.01)   return v.toFixed(4);
+    if(v >= 0.0001) return v.toFixed(6);
+    return v.toFixed(8);
   };
-  const chgCol = v => v>=0 ? '#00ff44' : '#ff3333';
-  const chgStr = v => (v>=0?'+':'')+v.toFixed(2)+'%';
-  const sorted = [...data].sort((a,b)=>a.rank-b.rank);
-  const th = (label,align='right') => `<th style="padding:3px 5px;font-size:7.5px;color:#F39F41;text-align:${align};letter-spacing:.8px;font-weight:800;white-space:nowrap">${label}</th>`;
-  let h=`<table style="width:100%;border-collapse:collapse;font-family:var(--fn-num);table-layout:fixed;background:#000">
+  const chgCol = v => (v==null) ? '#887060' : v>=0 ? '#00ff44' : '#ff3333';
+  const chgStr = v => (v==null) ? '\u2014' : (v>=0?'+':'')+v.toFixed(3)+'%';
+  const netStr = v => {
+    if(v==null) return '\u2014';
+    const a=Math.abs(v);
+    const s=v>=0?'+':'-';
+    if(a>=1000) return s+a.toLocaleString('en',{maximumFractionDigits:0});
+    if(a>=1)    return s+a.toFixed(3);
+    if(a>=0.01) return s+a.toFixed(4);
+    return s+a.toFixed(6);
+  };
+
+  // ── Mini sparkline SVG (simulated 2-day price path) ─────────────────────────
+  const makeSpark = (c) => {
+    const W=72, H=18;
+    const pts=16;
+    const pct=c.chg||0;
+    // Generate a plausible-looking path seeded by coin symbol
+    let seed=0; for(let i=0;i<c.s.length;i++) seed+=c.s.charCodeAt(i)*31;
+    const rng=(n)=>{ seed=(seed*1664525+1013904223)&0xffffffff; return ((seed>>>0)/0xffffffff); };
+    let ys=[];
+    for(let i=0;i<pts;i++){
+      const trend=(pct/100)*i/pts;
+      ys.push(trend+(rng()-0.5)*0.015);
+    }
+    const mn=Math.min(...ys), mx=Math.max(...ys), range=mx-mn||0.001;
+    const coords=ys.map((y,i)=>{
+      const x=2+i*(W-4)/(pts-1);
+      const yp=H-2-(y-mn)/range*(H-4);
+      return x.toFixed(1)+','+yp.toFixed(1);
+    }).join(' ');
+    // Color: last segment red or green
+    const lastChg=ys[pts-1]-ys[pts-2];
+    const lineCol=pct>=0?'#3CA559':'#BE434E';
+    const midIdx=Math.floor(pts/2);
+    // Two-tone: first half muted, second half bright
+    const coords1=ys.slice(0,midIdx+1).map((y,i)=>{
+      const x=2+i*(W-4)/(pts-1);
+      const yp=H-2-(y-mn)/range*(H-4);
+      return x.toFixed(1)+','+yp.toFixed(1);
+    }).join(' ');
+    const coords2=ys.slice(midIdx).map((y,i)=>{
+      const x=2+(midIdx+i)*(W-4)/(pts-1);
+      const yp=H-2-(y-mn)/range*(H-4);
+      return x.toFixed(1)+','+yp.toFixed(1);
+    }).join(' ');
+    return `<svg width="${W}" height="${H}" style="display:block;overflow:visible"><polyline points="${coords1}" fill="none" stroke="#ffffff" stroke-width="1.1" stroke-linejoin="round"/><polyline points="${coords2}" fill="none" stroke="${lineCol}" stroke-width="1.3" stroke-linejoin="round"/></svg>`;
+  };
+
+  // ── Build index by id ────────────────────────────────────────────────────────
+  const byId = {};
+  data.forEach(c=>{ if(!byId[c.id]) byId[c.id]=c; });
+
+  // ── Table layout — exact Bloomberg column order ──────────────────────────────
+  // Jun24 | SYM | sparkline | price | net chg | pct chg | high | low
+  const thStyle = (align='right') =>
+    `style="padding:2px 5px;font-size:7.5px;color:var(--am);text-align:${align};letter-spacing:.7px;font-weight:800;white-space:nowrap;border-bottom:1px solid #1e1000"`;
+
+  let h = `<table style="width:100%;border-collapse:collapse;font-family:'Roboto Mono','Courier Prime',monospace;font-size:10px;table-layout:fixed">
   <colgroup>
-    <col style="width:20px"><col style="width:150px"><col style="width:76px">
-    <col style="width:50px">
-    <col style="width:48px"><col style="width:48px">
-    <col style="width:60px"><col style="width:60px"><col style="width:60px">
-    <col style="width:58px"><col style="width:70px"><col style="width:38px">
+    <col style="width:42px">
+    <col style="width:85px">
+    <col style="width:18px">
+    <col style="width:74px">
+    <col style="width:72px">
+    <col style="width:56px">
+    <col style="width:58px">
+    <col style="width:72px">
+    <col style="width:72px">
   </colgroup>
-  <tr style="background:#000">
-    ${th('#','right')}${th('NAME','left')}${th('LAST')}
-    ${th('24H%')}
-    ${th('7D%')}${th('YTD%')}
-    ${th('HIGH')}${th('LOW')}${th('OPEN')}
-    ${th('MKT CAP')}<th style="padding:3px 5px;font-size:7px;color:#ff8800;text-align:right;letter-spacing:.8px;font-weight:700;white-space:nowrap">VOL 24H</th>${th('ATH%')}
-  </tr>`;
-  sorted.forEach((c,i)=>{
-    const rowBg='transparent';
-    const athPct = c.ath ? ((c.px/c.ath-1)*100) : null;
-    const athStr = athPct!==null ? athPct.toFixed(0)+'%' : '—';
-    h+=`<tr style="background:${rowBg};cursor:pointer"
-      onclick="if(window._openChartForSymbol) window._openChartForSymbol('${c.s}')"
-      onmouseover="this.style.background='rgba(255,255,255,.04)'"
-      onmouseout="this.style.background='${rowBg}'">
-      <td style="padding:2px 4px;text-align:right;color:#F39F41;font-size:8.5px;font-weight:700;font-variant-numeric:tabular-nums">${c.rank}</td>
-      <td style="padding:2px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        <span style="color:#F39F41;font-weight:800;font-size:10.5px">${c.s}</span>
-        <span style="color:#cccccc;font-size:8.5px;margin-left:5px">${c.n}</span>
-      </td>
-      <td id="cp-px-${c.id}" style="padding:2px 6px;text-align:right;color:#F39F41;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fmtCryptoPx(c.px)}</td>
-      <td id="cp-chg-${c.id}" style="padding:2px 5px;text-align:right;color:${chgCol(c.chg)};font-weight:900;font-size:10.5px;font-variant-numeric:tabular-nums">${chgStr(c.chg)}</td>
-      <td style="padding:2px 5px;text-align:right;font-size:10px;font-variant-numeric:tabular-nums" data-w1="${c.id}">${(()=>{
-  // ONLY live data — never use static c.chg7
-  const w = (c._chg7live && c.chg7!=null) ? c.chg7 : null;
-  if(w===null) return '<span style="color:#887760">—</span>';
-  return '<span style="color:'+(w>=0?'#00ff44':'#ff3333')+';font-weight:800">'+(w>=0?'+':'')+w.toFixed(2)+'%</span>';
-})()}</td>
-      <td style="padding:2px 5px;text-align:right;font-size:10px;font-variant-numeric:tabular-nums" data-ytd="${c.id}">${(()=>{const ytd=calcYtd2026(c.s,c.px);if(ytd===null)return '<span style="color:#887760">—</span>';return '<span style="color:'+(ytd>=0?'#00ff44':'#ff3333')+';font-weight:800">'+(ytd>=0?'+':'')+ytd.toFixed(2)+'%</span>';})()}</td>
-      <td id="cp-hi-${c.id}" style="padding:2px 5px;text-align:right;color:#887060;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap">${(()=>{const d=_dhloCache[c.s];const px=c.px;const open=d?.open||px*(1-c.chg/100);const hi=d?.high||null;return hi?fmtCryptoPx(hi):'—';})()}</td>
-      <td id="cp-lo-${c.id}" style="padding:2px 5px;text-align:right;color:#887060;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap">${(()=>{const d=_dhloCache[c.s];const px=c.px;const open=d?.open||px*(1-c.chg/100);const lo=d?.low||null;return lo?fmtCryptoPx(lo):'—';})()}</td>
-      <td id="cp-op-${c.id}" style="padding:2px 5px;text-align:right;color:#887060;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap">${(()=>{const d=_dhloCache[c.s];const px=c.px;const open=d?.open||(c.px/(1+(c.chg||0)/100));return fmtCryptoPx(open);})()}</td>
-      <td id="cp-mc-${c.id}" style="padding:2px 5px;text-align:right;color:#00bbdd;font-size:9px;font-variant-numeric:tabular-nums">${c.mc?'$'+fmtBig(c.mc):'—'}</td>
-      <td id="cp-vol-${c.id}" style="padding:2px 5px;text-align:right;white-space:nowrap">${(()=>{
-        const v = c.vol;
-        const vt = _volTs[c.id];
-        const vp = _volPrev[c.id];
-        const age = vt ? Date.now()-vt : null;
-        const ageCol = !age ? '#332200' : age<10000 ? '#00ff88' : age<60000 ? '#ff6600' : '#ff4444';
-        const dot = vt ? '<span style="display:inline-block;width:3px;height:3px;border-radius:50%;background:'+ageCol+';margin-left:3px;vertical-align:middle"></span>' : '';
-        if(!v) return '<span style="color:#998870">—</span>';
-        // Delta vol — kolik přibylo od minulého snapshotu
-        let deltaStr = '';
-        if(vp && vp.vol > 0 && v > vp.vol) {
-          const diff = v - vp.vol;
-          const pct = (diff/vp.vol*100);
-          if(pct > 0.0001) deltaStr = '<span style="color:#226644;font-size:7px;margin-left:3px">+'+fmtVol(diff).replace('$','')+'</span>';
-        }
-        return '<span style="color:#00bbdd;font-size:9px;font-variant-numeric:tabular-nums;font-family:Roboto Mono,monospace">'+fmtVol(v)+'</span>'+deltaStr+dot;
-      })()}</td>
-      <td style="padding:2px 5px;text-align:right;color:#ff2222;font-size:9px;font-variant-numeric:tabular-nums">${athStr}</td>
+  <thead><tr>
+    <th ${thStyle('left')}>EXP</th>
+    <th ${thStyle('left')}>SYM</th>
+    <th ${thStyle('center')}></th>
+    <th ${thStyle('center')} style="padding:2px 5px;font-size:7.5px;color:var(--am);text-align:center;letter-spacing:.7px;font-weight:800;white-space:nowrap;border-bottom:1px solid #1e1000">2Day</th>
+    <th ${thStyle()}>Last</th>
+    <th ${thStyle()}>Net Chg</th>
+    <th ${thStyle()}>Pct Chg</th>
+    <th ${thStyle()}>High</th>
+    <th ${thStyle()}>Low</th>
+  </tr></thead><tbody>`;
+
+  let globalRank = 0;
+
+  SECTIONS.forEach(sec => {
+    // Section header row
+    h += `<tr style="background:#1c1c1c !important">
+      <td colspan="9" style="padding:2px 8px;font-size:9px;font-weight:800;color:var(--am);letter-spacing:.5px;border-top:1px solid #1e1000;border-bottom:1px solid #1e1000">${sec.label}</td>
     </tr>`;
+
+    sec.ids.forEach(id => {
+      const c = byId[id];
+      if(!c) return;
+      globalRank++;
+
+      const d  = (typeof _dhloCache!=='undefined') ? _dhloCache[c.s] : null;
+      const hi = d?.high || null;
+      const lo = d?.low  || null;
+      // Net change: derive from price and pct if not stored
+      const netChg = (c.px && c.chg!=null) ? (c.px/(1+c.chg/100)*c.chg/100) : null;
+      const pctChg = c.chg;
+
+      const rowBg = 'transparent';
+      h += `<tr style="background:${rowBg};cursor:pointer"
+        onclick="if(window._openChartForSymbol) window._openChartForSymbol('${c.s}')"
+        onmouseover="this.style.background='rgba(255,200,100,.04)'"
+        onmouseout="this.style.background='${rowBg}'">
+        <td style="padding:1px 4px 1px 8px;text-align:left;color:var(--gr);font-size:8.5px;font-variant-numeric:tabular-nums;white-space:nowrap">${globalRank})</td>
+        <td style="padding:1px 4px;text-align:left;overflow:hidden;white-space:nowrap">
+          <span style="color:var(--am);font-weight:700;font-size:9px;font-family:'Roboto Mono',monospace">${c.n.toUpperCase()}</span>
+        </td>
+        <td style="padding:1px 2px;text-align:right;font-size:8px;color:var(--gr)">d</td>
+        <td style="padding:1px 3px">${makeSpark(c)}</td>
+        <td id="cp-px-${c.id}" style="padding:1px 5px;text-align:right;color:var(--am);font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${fmtCryptoPx(c.px)}</td>
+        <td id="cp-nc-${c.id}" style="padding:1px 5px;text-align:right;color:${chgCol(netChg)};font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${netStr(netChg)}</td>
+        <td id="cp-chg-${c.id}" style="padding:1px 5px;text-align:right;color:${chgCol(pctChg)};font-size:10px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap">${chgStr(pctChg)}</td>
+        <td id="cp-hi-${c.id}" style="padding:1px 5px;text-align:right;color:#887060;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap">${hi ? fmtCryptoPx(hi) : '\u2014'}</td>
+        <td id="cp-lo-${c.id}" style="padding:1px 5px;text-align:right;color:#887060;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap">${lo ? fmtCryptoPx(lo) : '\u2014'}</td>
+      </tr>`;
+    });
   });
-  // Footer — live update info
-  const lastVolUpdate = Object.values(_volTs).length
-    ? Math.round((Date.now() - Math.max(...Object.values(_volTs))) / 1000)
-    : null;
-  const footerMsg = lastVolUpdate !== null
-    ? `VOL 24H: BINANCE REST <span style="color:#00ff88">●</span> updated <span style="color:#44ddbb">${lastVolUpdate}s</span> · auto-refresh every <span style="color:#44ddbb">10s</span>`
-    : `VOL 24H: waiting for live data <span style="color:#aa9980">●</span>`;
-  h += `<div style="padding:3px 8px;background:#000;font-family:'Share Tech Mono',monospace;font-size:7px;color:#998870;display:none;justify-content:space-between;align-items:center">
-    <span>${footerMsg}</span>
-    <span style="color:#998870">BINANCE WS · BINANCE REST · HYPERLIQUID · COINGECKO</span>
-  </div>`;
-  return h+'</table>';
+
+  h += `</tbody></table>`;
+  return h;
 }
 
 // ── Live DOM patch — plynulý update bez rerenderingu ─────────────────────────
@@ -8052,7 +8124,7 @@ function _patchCRYPTOPanel() {
         pxEl.style.color = flashCol;
         _cpFlash[c.id] = setTimeout(() => {
           pxEl.style.transition = 'color 0.35s';
-          pxEl.style.color = '#ff8800';
+          pxEl.style.color = '';
         }, 120);
       }
     }
@@ -8060,10 +8132,21 @@ function _patchCRYPTOPanel() {
     // ── ZMĚNA % ──
     const chgEl = document.getElementById('cp-chg-' + c.id);
     if (chgEl && c.chg != null) {
-      const txt = (c.chg >= 0 ? '+' : '') + c.chg.toFixed(2) + '%';
+      const txt = (c.chg >= 0 ? '+' : '') + c.chg.toFixed(3) + '%';
       if (chgEl.textContent !== txt) {
         chgEl.textContent = txt;
         chgEl.style.color = c.chg >= 0 ? '#00ff66' : '#ff2222';
+      }
+    }
+    // ── NET CHG (absolute) ──
+    const ncEl = document.getElementById('cp-nc-' + c.id);
+    if (ncEl && c.chg != null && c.px > 0) {
+      const netV = c.px / (1 + c.chg/100) * c.chg / 100;
+      const a = Math.abs(netV); const s = netV>=0?'+':'-';
+      const txt = a>=1000?s+a.toLocaleString('en',{maximumFractionDigits:0}):a>=1?s+a.toFixed(3):a>=0.01?s+a.toFixed(4):s+a.toFixed(6);
+      if (ncEl.textContent !== txt) {
+        ncEl.textContent = txt;
+        ncEl.style.color = netV >= 0 ? '#00ff66' : '#ff2222';
       }
     }
 
@@ -8245,7 +8328,7 @@ function buildCOMDTY(fn){
 function buildCOMDTYTable(data){
   const chgCol = v => v>=0 ? '#00ff66' : '#ff2222';
   const chgStr = v => (v>=0?'+':'')+v.toFixed(2)+'%';
-  const th = (label,align='right') => `<th style="padding:3px 5px;font-size:7px;color:#ff8800;text-align:${align};letter-spacing:.8px;font-weight:700;white-space:nowrap">${label}</th>`;
+  const th = (label,align='right') => `<th style="padding:3px 5px;font-size:7px;color:#D19542 !important;text-align:${align};letter-spacing:.8px;font-weight:700;white-space:nowrap">${label}</th>`;
   const volMap={'XAU':'182K','XAG':'68K','XPT':'12K','XPD':'8K','CL1':'1.2M','CO1':'340K','NG1':'420K','HG1':'85K','W1':'120K','C1':'280K','S1':'180K','CC1':'42K','KC1':'38K','CT1':'24K','SB1':'68K','LH1':'32K','LC1':'28K','UX1':'4K','LI1':'2K','IRON':'84K','ALU':'48K','NI1':'24K','ZN1':'32K','PB1':'18K','TIN':'8K','OJ1':'6K','LB1':'12K','RB1':'84K','HO1':'62K','RS1':'18K','RR1':'4K','LE1':'12K','PA1':'8K','CO2':'42K','U308':'2K'};
   let h=`<table style="width:auto;border-collapse:collapse;font-family:'Share Tech Mono',monospace;table-layout:fixed">
   <colgroup>
@@ -8274,10 +8357,10 @@ function buildCOMDTYTable(data){
     const vol=volMap[c.s]||'—';
     const now=new Date();const timeStr=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
     h+=`<tr onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='transparent'">
-      <td style="padding:2px 4px;text-align:right;color:#aa9980;font-size:8px">${i+1}</td>
-      <td style="padding:2px 6px"><span style="color:#ff8800;font-weight:700;font-size:10px">${c.s}</span></td>
+      <td style="padding:2px 4px;text-align:right;color:#A3A5A4 !important;font-size:8px">${i+1}</td>
+      <td style="padding:2px 6px"><span style="color:#D19542 !important;font-weight:700;font-size:10px">${c.s}</span></td>
       <td style="padding:2px 6px"><span style="color:#887060;font-size:8px">${c.n}</span></td>
-      <td style="padding:2px 6px;text-align:right;color:#ff8800;font-size:10px;font-variant-numeric:tabular-nums;font-weight:700">${pr}</td>
+      <td style="padding:2px 6px;text-align:right;color:#D19542 !important;font-size:10px;font-variant-numeric:tabular-nums;font-weight:700">${pr}</td>
       <td style="padding:2px 4px;color:#665840;font-size:8px">${c.u}</td>
       <td style="padding:2px 5px;text-align:right;color:${chgCol(chgAbs)};font-size:9px;font-variant-numeric:tabular-nums">${chgFmt}</td>
       <td style="padding:2px 5px;text-align:right;color:${chgCol(c.chg)};font-weight:700;font-size:10px;font-variant-numeric:tabular-nums">${chgStr(c.chg)}</td>
@@ -14253,11 +14336,11 @@ function buildETFF(ti){
       <div style="display:flex;align-items:center;gap:6px">
         <div>
           <div style="color:#333333;font-size:5.5px">TODAY</div>
-          <div style="color:${cC(btcToday)};font-size:12px;font-weight:700;font-family:'Roboto Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.3px">${btcToday>=0?'+':''}$${Math.abs(btcToday).toFixed(0)}M</div>
+          <div style="color:${cC(btcToday)};font-size:14px;font-weight:700;font-family:'Roboto Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.3px">${btcToday>=0?'+':''}$${Math.abs(btcToday).toFixed(0)}M</div>
         </div>
         <div>
           <div style="color:#333333;font-size:5.5px">20D NET</div>
-          <div style="color:${cC(btcGrand)};font-size:12px;font-weight:700;font-family:'Roboto Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.3px">${btcGrand>=0?'+':''}$${(btcGrand/1000).toFixed(2)}B</div>
+          <div style="color:${cC(btcGrand)};font-size:14px;font-weight:700;font-family:'Roboto Mono',monospace;font-variant-numeric:tabular-nums;letter-spacing:-.3px">${btcGrand>=0?'+':''}$${(btcGrand/1000).toFixed(2)}B</div>
         </div>
       </div>
     </div>
@@ -25886,7 +25969,7 @@ function _renderOrderBook(sym){
     +'<span style="color:#ff8800;font-size:11px;font-weight:700;font-family:Roboto Mono,monospace" id="ob-mid-'+sym+'">'+fmtPx(spread)+'</span>'
     +'<span style="color:#998870;font-size:10px;font-family:Roboto Mono,monospace">'+spreadPct+'%</span>'
     +'<span style="flex:1"></span>'
-    +'<span style="font-size:9px;color:#998870">MID </span><span style="color:'+midCol+';font-size:12px;font-weight:700;font-family:Roboto Mono,monospace;transition:color .2s" id="ob-midpx-'+sym+'">'+fmtPx(mid)+'</span>'
+    +'<span style="font-size:9px;color:#998870">MID </span><span style="color:'+midCol+';font-size:14px;font-weight:700;font-family:Roboto Mono,monospace;transition:color .2s" id="ob-midpx-'+sym+'">'+fmtPx(mid)+'</span>'
     +'<span style="flex:1"></span>'
     +'<span style="font-size:9px;color:'+iCol+'">'+imbal.toFixed(2)+'</span>'
     +'</div>'
@@ -36671,7 +36754,7 @@ if __name__ == "__main__":
     return `<div style="width:100%;height:100%;background:#101114;position:relative;overflow:hidden;display:flex;flex-direction:column">
   <div style="flex-shrink:0;padding:10px 16px 8px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid #1a1a1a;background:#0d0d10">
     <div>
-      <div style="font-size:12px;font-weight:700;color:#eaeaec;letter-spacing:.3px;margin-bottom:4px">VOLATILITY SURFACE
+      <div style="font-size:14px;font-weight:700;color:#eaeaec;letter-spacing:.3px;margin-bottom:4px">VOLATILITY SURFACE
         <span id="vs-status" style="font-size:9px;color:#555;font-weight:600;letter-spacing:.5px;margin-left:8px">LOADING…</span>
       </div>
       <div style="background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.05);padding:3px 10px;border-radius:4px;display:inline-block">
@@ -40815,611 +40898,8 @@ function _fP(v) {
   if (!v || isNaN(v) || v <= 0) return null;
   if (v >= 10000) return v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
   if (v >= 100)   return v.toFixed(2);
-  if (v >= 1)     return parseFloat(v.toFixed(4)).toString();
-  return parseFloat(v.toPrecision(5)).toString();
-}
-function _fV(v) {
-  if (!v || isNaN(v) || v <= 0) return null;
-  if (v >= 1e9) return (v/1e9).toFixed(2) + 'B';
-  if (v >= 1e6) return (v/1e6).toFixed(2) + 'M';
-  if (v >= 1e3) return (v/1e3).toFixed(1) + 'K';
-  return v.toFixed(0);
-}
-function _setEl(id, val) {
-  if (!val && val !== 0) return;
-  var e = document.getElementById(id);
-  if (e) e.innerText = val;
-}
-
-// ── Apply live tick to all header elements (always force-overwrite) ─────────
-function _applyLiveTick(px, chgPct, hi, lo, vol, op, sym) {
-  if (!px || isNaN(px) || px <= 0) return;
-  var up  = (chgPct || 0) >= 0;
-  var col = up ? '#00cc44' : '#ff3d3d';
-  var now = new Date();
-  var ts  = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-
-  _setEl('bbg-current-price', _fP(px));
-  _setEl('bbg-close',  _fP(px));
-  _setEl('bbg-time',   ts);
-  if (hi  > 0) _setEl('bbg-high',   _fP(hi));
-  if (lo  > 0) _setEl('bbg-low',    _fP(lo));
-  if (vol > 0) _setEl('bbg-volume', _fV(vol));
-  if (op  > 0) _setEl('bbg-start',  _fP(op));
-
-  var chgEl = document.getElementById('bbg-price-change');
-  if (chgEl) { chgEl.innerText = (up?'+':'') + (chgPct||0).toFixed(2) + '%'; chgEl.style.color = col; }
-  var arrEl = document.getElementById('bbg-price-arrow');
-  if (arrEl) { arrEl.innerText = up ? '↑' : '↓'; arrEl.style.color = col; }
-  var ctnr  = document.getElementById('bbg-current-price-container');
-  if (ctnr)  ctnr.style.color = col;
-
-  // Overlay panel sync
-  if (op > 0) { _setEl('ov-open', _fP(op)); _setEl('ov-start', _fP(op)); }
-  if (hi > 0)  _setEl('ov-high', _fP(hi));
-  if (lo > 0)  _setEl('ov-low',  _fP(lo));
-  _setEl('ov-close', _fP(px));
-
-  // Push into global data stores
-  if (sym) {
-    var s = sym.toUpperCase();
-    // STKS update
-    if (window.STKS && window.STKS[s]) {
-      window.STKS[s].px = px;
-      if (chgPct != null) window.STKS[s].chg = chgPct;
-      if (hi > 0) window.STKS[s].hi = hi;
-      if (lo > 0) window.STKS[s].lo = lo;
-    }
-    // MKT update
-    if (window.MKT && window.MKT[s]) {
-      window.MKT[s].px = px;
-      if (chgPct != null) window.MKT[s].chg = chgPct;
-    }
-    // COMDTY_DATA update
-    var comdtyAlias = {OIL:'CL1',WTI:'CL1',BRENT:'CO1',GAS:'NG1',NATGAS:'NG1',
-                       GOLD:'XAU',SILVER:'XAG',COPPER:'HG1',WHEAT:'W1',CORN:'C1',
-                       PLATINUM:'XPT',PALLADIUM:'XPD'};
-    var ck = comdtyAlias[s];
-    if (ck && window.COMDTY_DATA) {
-      var cd = window.COMDTY_DATA.find(function(c){return c.s===ck;});
-      if (cd) { cd.px=px; if(chgPct!=null)cd.chg=chgPct; if(hi>0)cd.hi=hi; if(lo>0)cd.lo=lo; }
-    }
-  }
-
-  window._v12LiveTs = Date.now();
-  console.log('[v12-LIVE] ' + (sym||'?') + ' → ' + _fP(px) + ' (' + (chgPct||0).toFixed(2) + '%)');
-}
-
-// ── Yahoo Finance fetch ──────────────────────────────────────────────────────
-// Full Yahoo ticker map — covers commodities, indices, equities, FX, bonds
-var YH = {
-  // ── Commodities ──
-  OIL:'CL=F', WTI:'CL=F', BRENT:'BZ=F', GAS:'NG=F', NATGAS:'NG=F',
-  COPPER:'HG=F', WHEAT:'ZW=F', CORN:'ZC=F', SOYBEAN:'ZS=F',
-  COFFEE:'KC=F', COCOA:'CC=F', SUGAR:'SB=F', COTTON:'CT=F',
-  PLATINUM:'PL=F', PALLADIUM:'PA=F', ALUMINUM:'ALI=F',
-  LUMBER:'LBR=F', CATTLE:'LE=F', HOGS:'HE=F', URANIUM:'URA',
-  GOLD:'GC=F', SILVER:'SI=F',
-  // ── US Indices ──
-  SPX:'^GSPC', NDX:'^NDX', DJI:'^DJI', VIX:'^VIX', RUT:'^RUT',
-  MID:'^MID', ES1:'ES=F', NQ1:'NQ=F', YM1:'YM=F',
-  // ── Global Indices ──
-  DAX:'^GDAXI', NI225:'^N225', FTSE:'^FTSE', CAC:'^FCHI',
-  HSI:'^HSI', KOSPI:'^KS11', ASX200:'^AXJO', SENSEX:'^BSESN',
-  IBOV:'^BVSP', TSX:'^GSPTSE', AEX:'^AEX', SMI:'^SSMI',
-  // ── Bonds ──
-  US10Y:'^TNX', US2Y:'^IRX', US30Y:'^TYX', US5Y:'^FVX',
-  TLT:'TLT', SHY:'SHY', IEF:'IEF', HYG:'HYG', LQD:'LQD',
-  // ── FX ──
-  EURUSD:'EURUSD=X', GBPUSD:'GBPUSD=X', USDJPY:'USDJPY=X',
-  AUDUSD:'AUDUSD=X', USDCAD:'USDCAD=X', USDCHF:'USDCHF=X',
-  NZDUSD:'NZDUSD=X', EURGBP:'EURGBP=X', EURJPY:'EURJPY=X',
-  GBPJPY:'GBPJPY=X', USDMXN:'MXN=X', USDBRL:'BRL=X',
-  USDZAR:'ZAR=X', USDTRY:'TRY=X', USDINR:'INR=X',
-  // ── Mega-cap Tech ──
-  AAPL:'AAPL', NVDA:'NVDA', MSFT:'MSFT', GOOGL:'GOOGL', GOOG:'GOOG',
-  META:'META', AMZN:'AMZN', TSLA:'TSLA', AVGO:'AVGO', ORCL:'ORCL',
-  NFLX:'NFLX', CRM:'CRM', ADBE:'ADBE', INTC:'INTC', AMD:'AMD',
-  QCOM:'QCOM', MU:'MU', AMAT:'AMAT', TXN:'TXN', ARM:'ARM',
-  NOW:'NOW', TEAM:'TEAM', WDAY:'WDAY', ZM:'ZM', CSCO:'CSCO',
-  IBM:'IBM', HPQ:'HPQ', HPE:'HPE', DELL:'DELL', SMCI:'SMCI',
-  // ── Crypto-adjacent equities ──
-  MSTR:'MSTR', COIN:'COIN', HOOD:'HOOD', SOFI:'SOFI', PLTR:'PLTR',
-  RIOT:'RIOT', MARA:'MARA', CLSK:'CLSK', CORZ:'CORZ', HUT:'HUT',
-  HIVE:'HIVE', UPST:'UPST', AFRM:'AFRM', SQ:'SQ', PYPL:'PYPL',
-  IBIT:'IBIT', FBTC:'FBTC', BITB:'BITB', ARKB:'ARKB',
-  // ── Finance ──
-  JPM:'JPM', GS:'GS', BAC:'BAC', WFC:'WFC', MS:'MS', C:'C',
-  BLK:'BLK', V:'V', MA:'MA', AXP:'AXP', SCHW:'SCHW',
-  CME:'CME', ICE:'ICE', CBOE:'CBOE', BX:'BX', APO:'APO', KKR:'KKR',
-  // ── AI/Cloud/Cyber ──
-  SNOW:'SNOW', DDOG:'DDOG', NET:'NET', CRWD:'CRWD', ZS:'ZS',
-  OKTA:'OKTA', PANW:'PANW', SOUN:'SOUN', RDDT:'RDDT', DUOL:'DUOL',
-  // ── Healthcare ──
-  JNJ:'JNJ', UNH:'UNH', LLY:'LLY', ABBV:'ABBV', MRK:'MRK',
-  PFE:'PFE', AMGN:'AMGN', GILD:'GILD', REGN:'REGN', VRTX:'VRTX',
-  MRNA:'MRNA', BNTX:'BNTX',
-  // ── Energy ──
-  XOM:'XOM', CVX:'CVX', COP:'COP', SLB:'SLB', EOG:'EOG',
-  // ── Consumer/Retail ──
-  WMT:'WMT', COST:'COST', TGT:'TGT', HD:'HD', KO:'KO',
-  PEP:'PEP', NKE:'NKE', MCD:'MCD', SBUX:'SBUX',
-  // ── ETFs ──
-  SPY:'SPY', QQQ:'QQQ', IWM:'IWM', DIA:'DIA', GLD:'GLD', SLV:'SLV',
-  USO:'USO', UNG:'UNG', XLK:'XLK', XLF:'XLF', XLE:'XLE',
-  ARKK:'ARKK', TQQQ:'TQQQ', SQQQ:'SQQQ',
-};
-
-async function _yahooFetch(ticker) {
-  var url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1m&range=1d';
-  var proxies = [
-    'https://corsproxy.io/?url=' + encodeURIComponent(url),
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-    'https://corsproxy.io/?url=' + encodeURIComponent(url.replace('query1','query2')),
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://query2.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1m&range=1d'),
-  ];
-  for (var i = 0; i < proxies.length; i++) {
-    try {
-      var r = await fetch(proxies[i], {signal:AbortSignal.timeout(8000), cache:'no-store'});
-      if (!r.ok) continue;
-      var d = await r.json();
-      var res = d && d.chart && d.chart.result && d.chart.result[0];
-      if (!res) continue;
-      var meta = res.meta;
-      var px   = parseFloat(meta.regularMarketPrice || 0);
-      if (!px || px <= 0) continue;
-      var prev = parseFloat(meta.previousClose || meta.chartPreviousClose || px);
-      var pct  = prev > 0 ? ((px - prev) / prev * 100) : 0;
-      return {
-        px:   px,
-        chg:  pct,
-        open: parseFloat(meta.regularMarketOpen      || prev),
-        hi:   parseFloat(meta.regularMarketDayHigh   || px),
-        lo:   parseFloat(meta.regularMarketDayLow    || px),
-        vol:  parseFloat(meta.regularMarketVolume    || 0),
-        prev: prev,
-      };
-    } catch(e) {}
-  }
-  return null;
-}
-
-// ── Bybit REST (for equity perps + indices — works 24/7) ───────────────────
-var BB = {
-  SPX:'SPXUSD', NDX:'NDXUSD', DJI:'DJIUSD', VIX:'VIXUSD',
-  MSTR:'MSTRUSDT', COIN:'COINUSDT', SOFI:'SOFIUSDT',
-  TSLA:'TSLAUSDT', NVDA:'NVDAUSDT', AAPL:'AAPLUSDT',
-  AMZN:'AMZNUSDT', GOOGL:'GOOGLUSDT', META:'METAUSDT',
-  MSFT:'MSFTUSDT', NFLX:'NFLXUSDT', AMD:'AMDUSDT',
-  PLTR:'PLTRUSDT', HOOD:'HOODUSDT', RIOT:'RIOTUSDT',
-  HYPE:'HYPEUSDT',
-};
-var BB_INV = {SPXUSD:1, NDXUSD:1, DJIUSD:1, VIXUSD:1};
-
-async function _bybitFetch(symbol) {
-  var cat = BB_INV[symbol] ? 'inverse' : 'linear';
-  var url = 'https://api.bybit.com/v5/market/tickers?category=' + cat + '&symbol=' + symbol;
-  var proxies = [
-    'https://corsproxy.io/?' + encodeURIComponent(url),
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-    url,
-  ];
-  for (var i = 0; i < proxies.length; i++) {
-    try {
-      var r = await fetch(proxies[i], {signal:AbortSignal.timeout(7000), cache:'no-store'});
-      if (!r.ok) continue;
-      var d = await r.json();
-      if (d.retCode !== 0 || !d.result || !d.result.list || !d.result.list[0]) continue;
-      var tk = d.result.list[0];
-      var px = parseFloat(tk.lastPrice || 0);
-      if (!px || px <= 0) continue;
-      var op  = parseFloat(tk.prevPrice24h || px);
-      var chg = parseFloat(tk.price24hPcnt || 0) * 100;
-      return {
-        px:   px,
-        chg:  chg,
-        open: op,
-        hi:   parseFloat(tk.highPrice24h  || px),
-        lo:   parseFloat(tk.lowPrice24h   || px),
-        vol:  parseFloat(tk.volume24h     || 0),
-      };
-    } catch(e) {}
-  }
-  return null;
-}
-
-// ── Hyperliquid REST ────────────────────────────────────────────────────────
-async function _hlFetch(coin) {
-  try {
-    var r = await fetch('https://api.hyperliquid.xyz/info', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({type:'metaAndAssetCtxs'}),
-      signal:AbortSignal.timeout(7000)
-    });
-    if (!r.ok) return null;
-    var data = await r.json();
-    var idx = data[0].universe.findIndex(function(a){return a.name===coin;});
-    if (idx === -1) return null;
-    var ctx = data[1][idx];
-    var px  = parseFloat(ctx.markPx || ctx.midPx || 0);
-    if (!px) return null;
-    var prev = parseFloat(ctx.prevDayPx || px);
-    var chg  = prev > 0 ? ((px-prev)/prev*100) : 0;
-    return {px:px, chg:chg, open:prev,
-            hi: parseFloat(ctx.dayHigh||px), lo:parseFloat(ctx.dayLow||px),
-            vol:parseFloat(ctx.dayNtlVlm||0)};
-  } catch(e) { return null; }
-}
-
-// ── Binance spot ticker (crypto) ────────────────────────────────────────────
-async function _binanceFetch(pair) {
-  try {
-    var r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol='+pair,
-                        {signal:AbortSignal.timeout(5000), cache:'no-store'});
-    if (!r.ok) return null;
-    var d = await r.json();
-    var px = parseFloat(d.lastPrice||0);
-    if (!px||px<=0) return null;
-    return {px:px, chg:parseFloat(d.priceChangePercent||0),
-            open:parseFloat(d.openPrice||px), hi:parseFloat(d.highPrice||px),
-            lo:parseFloat(d.lowPrice||px), vol:parseFloat(d.quoteVolume||0)};
-  } catch(e) { return null; }
-}
-
-// ── Category classifiers ─────────────────────────────────────────────────────
-var IS_COMDTY = {OIL:1,WTI:1,BRENT:1,GAS:1,NATGAS:1,GOLD:1,SILVER:1,
-                 COPPER:1,WHEAT:1,CORN:1,SOYBEAN:1,COFFEE:1,COCOA:1,
-                 SUGAR:1,COTTON:1,PLATINUM:1,PALLADIUM:1,LUMBER:1,
-                 CATTLE:1,HOGS:1,ALUMINUM:1,URANIUM:1};
-var IS_IDX    = {SPX:1,NDX:1,DJI:1,VIX:1,RUT:1,MID:1,ES1:1,NQ1:1,YM1:1,
-                 DAX:1,NI225:1,FTSE:1,CAC:1,HSI:1,KOSPI:1,ASX200:1,SENSEX:1,IBOV:1};
-var IS_BOND   = {US10Y:1,US2Y:1,US30Y:1,US5Y:1,TLT:1,SHY:1,IEF:1,HYG:1,LQD:1};
-var IS_FX     = {EURUSD:1,GBPUSD:1,USDJPY:1,AUDUSD:1,USDCAD:1,USDCHF:1,
-                 NZDUSD:1,EURGBP:1,EURJPY:1,GBPJPY:1,USDMXN:1,USDBRL:1,USDZAR:1,USDTRY:1};
-var IS_CRYPTO = {BTC:1,ETH:1,SOL:1,BNB:1,XRP:1,ADA:1,DOGE:1,AVAX:1,LINK:1,
-                 DOT:1,LTC:1,BCH:1,UNI:1,AAVE:1,FTM:1,NEAR:1,APT:1,SUI:1,
-                 ARB:1,OP:1,INJ:1,TIA:1,PEPE:1,WIF:1,BONK:1,TON:1,SHIB:1,
-                 TRX:1,XLM:1,ATOM:1,ALGO:1,VET:1,OM:1,HBAR:1,KAS:1,SEI:1};
-var IS_HL     = {HYPE:1,PURR:1,FRIEND:1};
-
-// ── Master fetch: best source per asset class ────────────────────────────────
-async function _liveFetch(sym) {
-  sym = sym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
-
-  // Hyperliquid-native tokens
-  if (IS_HL[sym]) return await _hlFetch(sym);
-
-  // Crypto — Binance spot is most reliable
-  if (IS_CRYPTO[sym]) {
-    var bPair = sym + 'USDT';
-    return await _binanceFetch(bPair);
-  }
-
-  // Commodities → Yahoo Finance (authoritative CME/NYMEX data)
-  if (IS_COMDTY[sym] && YH[sym]) return await _yahooFetch(YH[sym]);
-
-  // Indices → Yahoo primary, Bybit secondary (for 24h)
-  if (IS_IDX[sym]) {
-    var yRes = YH[sym] ? await _yahooFetch(YH[sym]) : null;
-    if (yRes && yRes.px > 0) return yRes;
-    if (BB[sym]) return await _bybitFetch(BB[sym]);
-    return null;
-  }
-
-  // Bonds / FX → Yahoo Finance
-  if ((IS_BOND[sym] || IS_FX[sym]) && YH[sym]) return await _yahooFetch(YH[sym]);
-
-  // US Equities — try Bybit perp first (24/7), then Yahoo (market hours)
-  if (BB[sym]) {
-    var bbRes = await _bybitFetch(BB[sym]);
-    if (bbRes && bbRes.px > 0) {
-      // Sanity check: Bybit price should be within 20% of Yahoo to avoid bad data
-      if (YH[sym]) {
-        var yRes2 = await _yahooFetch(YH[sym]);
-        if (yRes2 && yRes2.px > 0) {
-          var diff = Math.abs(bbRes.px - yRes2.px) / yRes2.px;
-          // If close enough, use Yahoo (more accurate for % change)
-          return diff < 0.20 ? yRes2 : bbRes;
-        }
-      }
-      return bbRes;
-    }
-  }
-
-  // Generic Yahoo fallback for all other equities
-  if (YH[sym]) return await _yahooFetch(YH[sym]);
-
-  return null;
-}
-
-// ── Per-symbol polling manager ──────────────────────────────────────────────
-var _v12Polls = {};   // sym → intervalId
-
-function _v12StopPoll(sym) {
-  if (_v12Polls[sym]) { clearInterval(_v12Polls[sym]); delete _v12Polls[sym]; }
-}
-
-function _v12StopAll() {
-  Object.keys(_v12Polls).forEach(function(s){ _v12StopPoll(s); });
-}
-
-// Returns true if sym needs our live polling (crypto handled by native WS)
-function _needsPoll(sym) {
-  sym = sym.toUpperCase();
-  if (IS_CRYPTO[sym]) return false; // Binance WS handles these natively
-  return !!(IS_COMDTY[sym] || IS_IDX[sym] || IS_BOND[sym] || IS_FX[sym] ||
-            IS_HL[sym] || YH[sym] || BB[sym]);
-}
-
-// Start polling loop for a given symbol
-function _v12StartPoll(rawSym) {
-  var sym = rawSym.toUpperCase().replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
-  if (!_needsPoll(sym)) return;
-
-  _v12StopAll(); // kill any old polls
-
-  var _fetch = async function() {
-    // Guard: only update if this is still the active chart symbol
-    var active = (window._bbgActiveSym || '').toUpperCase()
-                   .replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i,'').trim();
-    if (active !== sym) { _v12StopPoll(sym); return; }
-
-    var data = await _liveFetch(sym);
-    if (data && data.px > 0) {
-      _applyLiveTick(data.px, data.chg||0, data.hi||0, data.lo||0, data.vol||0, data.open||data.px, sym);
-    }
-  };
-
-  // Run immediately, then every 10s
-  _fetch();
-  _v12Polls[sym] = setInterval(_fetch, 10000);
-  console.log('[v12-POLL] Started for ' + sym + ' (10s interval)');
-}
-
-// ── Patch _openChartForSymbol ───────────────────────────────────────────────
-var _origOpen = window._openChartForSymbol;
-window._openChartForSymbol = function(sym) {
-  if (_origOpen) _origOpen.apply(this, arguments);
-  if (!sym) return;
-  // Small delay so native _bbgInstantFill + _setChartInterval run first
-  // then we overwrite with live data
-  setTimeout(function() { _v12StartPoll(sym); }, 1500);
-};
-
-// ── Patch _setChartInterval (interval change) ───────────────────────────────
-var _origSetInterval = window._setChartInterval;
-window._setChartInterval = async function(interval) {
-  if (_origSetInterval) await _origSetInterval.apply(this, arguments);
-  var sym = window._bbgActiveSym || '';
-  if (sym) setTimeout(function() { _v12StartPoll(sym); }, 1500);
-};
-
-// ── Status-bar commodity prices refresh ─────────────────────────────────────
-// Runs every 90s and patches COMDTY_DATA with Yahoo data
-async function _refreshComdtyBar() {
-  if (!window.COMDTY_DATA) return;
-  var map = [
-    {k:'CL1', y:'CL=F'}, {k:'CO1', y:'BZ=F'}, {k:'NG1', y:'NG=F'},
-    {k:'XAU', y:'GC=F'}, {k:'XAG', y:'SI=F'}, {k:'HG1', y:'HG=F'},
-    {k:'W1',  y:'ZW=F'}, {k:'C1',  y:'ZC=F'}, {k:'XPT', y:'PL=F'},
-    {k:'XPD', y:'PA=F'},
-  ];
-  for (var i = 0; i < map.length; i++) {
-    var entry = map[i];
-    var cd = window.COMDTY_DATA.find(function(c){return c.s===entry.k;});
-    if (!cd) continue;
-    var d = await _yahooFetch(entry.y);
-    if (d && d.px > 0) {
-      cd.px=d.px; cd.chg=d.chg; cd.open=d.open; cd.hi=d.hi; cd.lo=d.lo;
-      console.log('[v12-COMDTY] ' + entry.k + ' → ' + d.px.toFixed(2));
-    }
-  }
-  // Also refresh STKS px for key equities in background
-  var stksRefresh = [
-    'MSTR','COIN','SOFI','HOOD','PLTR','MARA','RIOT','CLSK','CORZ',
-    'AAPL','NVDA','TSLA','META','AMZN','MSFT','GOOGL','NFLX','AMD',
-    'UPST','AFRM','SQ','PYPL','SNOW','DDOG','NET','CRWD','PLTR'
-  ];
-  for (var j = 0; j < stksRefresh.length; j++) {
-    var sk = stksRefresh[j];
-    if (!window.STKS || !window.STKS[sk]) continue;
-    if (window.STKS[sk].px > 0) continue; // already live
-    if (!YH[sk]) continue;
-    var sd = await _yahooFetch(YH[sk]);
-    if (sd && sd.px > 0) {
-      window.STKS[sk].px  = sd.px;
-      window.STKS[sk].chg = sd.chg;
-      window.STKS[sk].hi  = sd.hi;
-      window.STKS[sk].lo  = sd.lo;
-      if (window.MKT && window.MKT[sk]) { window.MKT[sk].px=sd.px; window.MKT[sk].chg=sd.chg; }
-    }
-  }
-  // Trigger panel + ticker refresh
-  try { if(typeof buildTicker==='function') buildTicker(); } catch(e){}
-  try { if(typeof refreshLivePanels==='function') refreshLivePanels(); } catch(e){}
-  try { if(typeof window._updateStatPrices==='function') window._updateStatPrices(); } catch(e){}
-}
-
-// Boot: commodity bar refresh at 5s, then every 90s
-setTimeout(function(){
-  _refreshComdtyBar();
-  setInterval(_refreshComdtyBar, 90000);
-}, 5000);
-
-// If chart is already open on page load (e.g. after refresh), start polling
-setTimeout(function(){
-  var sym = window._bbgActiveSym || window._bbgCurrentSym;
-  if (sym) _v12StartPoll(sym);
-}, 4000);
-
-// Expose for debug
-window._v12 = { liveFetch:_liveFetch, startPoll:_v12StartPoll, stopAll:_v12StopAll, YH:YH, BB:BB };
-
-console.log('[v12-ENGINE] Universal Live Data Engine loaded — Yahoo/Bybit/HL/Binance');
-})();
-
-
-</script>
-
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     OMON — Option Monitor (Bloomberg-style)
-     Full option chain · Greeks · IV Skew · Term Structure · BS Pricer · HIVG · Surface
-     Data: Yahoo Finance (corsproxy) + Binance (crypto) + synthetic fallback
-     ═══════════════════════════════════════════════════════════════════════════ -->
-<style>
-/* ── OMON styles ─────────────────────────────────────────────────────────── */
-.omon-wrap{display:flex;flex-direction:column;height:100%;background:#000;font-family:'Courier Prime','Courier New',monospace;color:var(--am);overflow:hidden}
-.omon-ribbon{background:linear-gradient(180deg,#221800,#110c00);border-bottom:1px solid #332200;padding:5px 10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0;font-size:10px}
-.omon-ribbon .lbl{color:#885511;font-size:8.5px;letter-spacing:1.5px;font-weight:700}
-.omon-ribbon .val{color:#F39F41;font-family:'Roboto Mono',monospace;font-weight:700;font-variant-numeric:tabular-nums}
-.omon-ribbon .val-big{font-size:12px;color:#FFBB66}
-.omon-inp{background:#0a0800;border:1px solid #332200;color:#F39F41;font-family:'Roboto Mono',monospace;font-size:10px;padding:2px 6px;height:20px;outline:none;font-weight:700}
-.omon-inp:focus{border-color:#F39F41;background:#120d00}
-.omon-btn{background:#1a1100;border:1px solid #443300;color:#F39F41;font-family:'Courier Prime',monospace;font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;cursor:pointer;height:20px}
-.omon-btn:hover{background:#2a1c00;border-color:#F39F41}
-.omon-btn.on{background:#F39F41;color:#000;border-color:#F39F41}
-.omon-sel{background:#0a0800;border:1px solid #332200;color:#F39F41;font-family:'Roboto Mono',monospace;font-size:10px;height:20px;padding:0 4px;font-weight:700}
-.omon-tabs{display:flex;background:#000;border-bottom:1px solid #332200;flex-shrink:0}
-.omon-tab{padding:7px 16px;color:#664422;font-size:10px;font-weight:700;letter-spacing:2px;cursor:pointer;border-right:1px solid #1a1000;border-bottom:2px solid transparent}
-.omon-tab:hover{color:#aa7733;background:#0a0600}
-.omon-tab.on{color:#F39F41;background:#120d00;border-bottom-color:#F39F41}
-.omon-body{flex:1;overflow:auto;background:#000;position:relative}
-
-/* Chain table */
-.omon-chain{width:100%;border-collapse:collapse;font-family:'Roboto Mono',monospace;font-size:9.5px;font-variant-numeric:tabular-nums}
-.omon-chain thead{position:sticky;top:0;background:#1a1100;z-index:10}
-.omon-chain thead th{padding:4px 4px;color:#aa7733;font-size:8px;font-weight:700;letter-spacing:1px;text-align:right;border-bottom:1px solid #443300;white-space:nowrap}
-.omon-chain thead th.strike-h{background:#2a1c00;color:#ffcc66;text-align:center;border-left:1px solid #443300;border-right:1px solid #443300}
-.omon-chain thead th.side-call{color:#44dd88;background:#0a1a0a}
-.omon-chain thead th.side-put{color:#ff6666;background:#1a0a0a}
-.omon-chain tbody td{padding:3px 4px;text-align:right;white-space:nowrap;border-bottom:1px solid #0a0800}
-.omon-chain tbody td.strike{text-align:center;background:#1a1200;color:#ffbb55;font-weight:700;border-left:1px solid #332200;border-right:1px solid #332200}
-.omon-chain tbody tr.atm td.strike{background:#442200;color:#FFFFFF;font-weight:700}
-.omon-chain tbody tr.atm{background:#0f0800}
-.omon-chain tbody tr:hover{background:#1a1100}
-.omon-chain tbody tr:hover td.strike{background:#332200}
-.omon-chain .c-bid{color:#44dd88}
-.omon-chain .c-ask{color:#44dd88}
-.omon-chain .c-last{color:#88ff99}
-.omon-chain .c-chg-pos{color:#00ff55}
-.omon-chain .c-chg-neg{color:#ff4422}
-.omon-chain .c-iv{color:#ffbb44}
-.omon-chain .c-vol{color:#aa8844}
-.omon-chain .c-oi{color:#886622}
-.omon-chain .c-delta{color:#88aaff}
-.omon-chain .c-gamma{color:#aa88ff}
-.omon-chain .c-theta{color:#ff8866}
-.omon-chain .c-vega{color:#88ffff}
-.omon-chain td.itm{background:rgba(68,221,136,0.08)}
-.omon-chain td.itm-put{background:rgba(255,102,102,0.08)}
-.omon-chain tbody td{cursor:pointer}
-.omon-chain tbody td:hover{background:#2a1c00!important}
-
-/* Pricer */
-.omon-pricer-grid{display:grid;grid-template-columns:340px 1fr;gap:16px;padding:16px;height:100%;box-sizing:border-box}
-.omon-pricer-inputs{background:#0a0700;border:1px solid #332200;padding:14px}
-.omon-pricer-inputs h3{color:#F39F41;font-size:10px;letter-spacing:2px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #332200;font-weight:700}
-.omon-pr-row{display:grid;grid-template-columns:100px 1fr auto;align-items:center;gap:8px;margin-bottom:8px;font-size:10px}
-.omon-pr-row .pr-label{color:#aa7733;font-weight:700}
-.omon-pr-row .pr-unit{color:#664422;font-size:9px;font-family:'Roboto Mono',monospace}
-.omon-pr-row input{width:100%}
-.omon-pricer-output{background:#0a0700;border:1px solid #332200;padding:14px;overflow:auto}
-.omon-pricer-output h3{color:#F39F41;font-size:10px;letter-spacing:2px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #332200;font-weight:700}
-.omon-pr-price{font-family:'Roboto Mono',monospace;font-size:28px;color:#FFBB66;margin-bottom:2px;font-weight:700}
-.omon-pr-sub{font-size:9px;color:#664422;margin-bottom:14px}
-.omon-greeks-table{width:100%;border-collapse:collapse;font-family:'Roboto Mono',monospace;font-size:11px}
-.omon-greeks-table td{padding:6px 10px;border-bottom:1px solid #221800;font-variant-numeric:tabular-nums}
-.omon-greeks-table td.gk-name{color:#aa7733;font-weight:700;width:80px;letter-spacing:1px}
-.omon-greeks-table td.gk-sym{color:#664422;width:30px;font-size:13px;text-align:center}
-.omon-greeks-table td.gk-val{color:#F39F41;text-align:right;font-weight:700}
-.omon-greeks-table td.gk-desc{color:#554422;font-size:8.5px;padding-left:10px}
-
-/* Canvas panels */
-.omon-canvas-wrap{padding:12px;height:100%;box-sizing:border-box;display:flex;flex-direction:column}
-.omon-canvas-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.omon-canvas-title{color:#F39F41;font-size:10px;letter-spacing:2px;font-weight:700}
-.omon-canvas-meta{color:#886622;font-size:9px;font-family:'Roboto Mono',monospace}
-.omon-canvas-inner{flex:1;background:#050300;border:1px solid #221800;position:relative;min-height:200px}
-.omon-canvas-inner canvas{position:absolute;top:0;left:0;width:100%;height:100%}
-
-/* Stats sidebar for SKEW/TERM */
-.omon-stats-row{display:flex;gap:20px;margin-top:12px;padding:10px;background:#0a0700;border:1px solid #221800;flex-wrap:wrap}
-.omon-stat{min-width:100px}
-.omon-stat .s-lbl{color:#664422;font-size:8px;letter-spacing:1.5px;font-weight:700;margin-bottom:2px}
-.omon-stat .s-val{color:#F39F41;font-family:'Roboto Mono',monospace;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
-.omon-stat .s-val.gn{color:#00cc44}
-.omon-stat .s-val.rd{color:#ff4422}
-
-/* Surface grid */
-.omon-surf-wrap{padding:12px;overflow:auto;height:100%;box-sizing:border-box}
-.omon-surf{border-collapse:collapse;font-family:'Roboto Mono',monospace;font-size:9px;font-variant-numeric:tabular-nums}
-.omon-surf th,.omon-surf td{padding:4px 7px;border:1px solid #0a0800;text-align:center;min-width:48px}
-.omon-surf thead th{background:#221800;color:#aa7733;font-weight:700;letter-spacing:1px;font-size:8px;position:sticky;top:0;z-index:5}
-.omon-surf tbody th{background:#1a1100;color:#ffbb55;font-weight:700;position:sticky;left:0;z-index:4;text-align:right;padding-right:10px}
-
-/* HIVG chart */
-.omon-hivg-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
-
-/* Loading */
-.omon-loading{display:flex;align-items:center;justify-content:center;height:100%;color:#664422;font-size:11px;letter-spacing:3px;font-weight:700}
-.omon-loading::after{content:'';display:inline-block;width:10px;height:10px;border:2px solid #F39F41;border-top-color:transparent;border-radius:50%;animation:omonSpin .8s linear infinite;margin-left:10px}
-@keyframes omonSpin{to{transform:rotate(360deg)}}
-.omon-err{color:#ff4422;padding:20px;font-size:10px;text-align:center}
-
-/* Ticker picker */
-.omon-ticker-row{display:flex;gap:4px;flex-wrap:wrap}
-.omon-ticker-btn{padding:2px 7px;font-size:9px;background:#1a1100;border:1px solid #332200;color:#aa7733;cursor:pointer;font-weight:700;letter-spacing:.5px}
-.omon-ticker-btn:hover{background:#2a1c00;color:#F39F41}
-.omon-ticker-btn.on{background:#F39F41;color:#000;border-color:#F39F41}
-
-/* Mini sparkline in chain */
-.omon-spark{display:inline-block;width:36px;height:10px;vertical-align:middle}
-
-/* Divider for CALL/PUT split label */
-.omon-side-bar{height:18px;display:flex;background:#120d00;border-bottom:1px solid #332200;font-size:9px;font-weight:700;letter-spacing:3px}
-.omon-side-bar .sb-calls{flex:1;background:#0a1f0a;color:#44dd88;padding:3px 10px;border-right:1px solid #332200}
-.omon-side-bar .sb-strike{min-width:90px;background:#2a1c00;color:#ffcc66;text-align:center;padding:3px 0}
-.omon-side-bar .sb-puts{flex:1;background:#1f0a0a;color:#ff6666;padding:3px 10px;border-left:1px solid #332200;text-align:right}
-</style>
-
-<script>
-// ══════════════════════════════════════════════════════════════════════════════
-// OMON — Option Monitor Module
-// ══════════════════════════════════════════════════════════════════════════════
-(function(){
-'use strict';
-
-// ─── STATE ──────────────────────────────────────────────────────────────────
-const OMON = {
-  ticker: 'AAPL',
-  expiry: null,         // UNIX timestamp
-  expirations: [],      // available expirations
-  spot: null,
-  atmIV: null,
-  rate: 4.50,           // risk-free rate %
-  divYield: 0.0,        // dividend yield %
-  chain: null,          // {calls, puts, strikes}
-  allChains: {},        // expiry_ts -> {calls, puts}
-  activeTab: 'CHAIN',
-  loading: false,
-  lastErr: null,
-  prevSpot: null,
-  spotChg: 0,
-  spotChgPct: 0,
-  // Cached data
-  hivg: null,           // historical IV series
-  _panelId: null
-};
-
-const TICKERS = [
-  {sym:'SPY',name:'S&P 500 ETF',type:'eq'},
-  {sym:'QQQ',name:'Nasdaq 100 ETF',type:'eq'},
-  {sym:'IWM',name:'Russell 2000',type:'eq'},
-  {sym:'DIA',name:'Dow 30 ETF',type:'eq'},
-  {sym:'AAPL',name:'Apple',type:'eq'},
-  {sym:'MSFT',name:'Microsoft',type:'eq'},
-  {sym:'NVDA',name:'NVIDIA',type:'eq'},
-  {sym:'TSLA',name:'Tesla',type:'eq'},
+  if (v >
+a',type:'eq'},
   {sym:'META',name:'Meta',type:'eq'},
   {sym:'AMZN',name:'Amazon',type:'eq'},
   {sym:'GOOGL',name:'Alphabet',type:'eq'},
@@ -42855,6 +42335,1433 @@ document.addEventListener('keydown', function(e){
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     CRYPTO — World Crypto Market Caps (Bloomberg WEI-style)
+     Replaces CRYPTO panel rendering with Bloomberg World Equity Index Futures look
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<style>
+/* ── Bloomberg-style CRYPTO panel (WEI clone) - PIXEL PERFECT HQ ── */
+.bwei-wrap {
+  display: flex !important; flex-direction: column !important;
+  height: 100% !important; min-height: 0 !important; min-width: 0 !important; width: 100% !important;
+  background: #000000 !important; 
+  font-family: Arial, Helvetica, sans-serif !important; /* Bloomberg standard font */
+  color: #D19542 !important; overflow: hidden !important;
+  position: absolute !important; inset: 0 !important; z-index: 100000 !important;
+}
+
+.bwei-tophdr {
+  background: #A61217 !important; height: 20px !important; display: flex !important; align-items: center !important;
+  padding: 0 !important; border-bottom: 2px solid #5A0A0C !important; flex-shrink: 0 !important; position: relative !important;
+}
+.bwei-tophdr .bwei-menu {
+  color: #ffffff !important; font-size: 13px !important; font-weight: normal !important; padding: 0 8px !important;
+  height: 100% !important; display: inline-flex !important; align-items: center !important; cursor: pointer !important;
+  border-right: 1px solid #77090b !important; letter-spacing: 0px !important;
+}
+.bwei-tophdr .bwei-menu:hover { background: #d02020 !important; }
+.bwei-tophdr .bwei-title {
+  margin-left: auto !important; color: #ffffff !important; font-size: 13px !important; font-weight: normal !important;
+  padding: 0 8px !important; height: 100% !important; display: inline-flex !important; align-items: center !important;
+}
+
+/* ── OPTIONS BAR ── */
+.bwei-optbar {
+  background: #000000 !important; flex-shrink: 0 !important;
+  display: flex !important; align-items: center !important; padding: 2px 8px !important; gap: 0 !important;
+  font-size: 13px !important; justify-content: space-between !important;
+}
+.bwei-opt-sel {
+  background: #D19542 !important; color: #000000 !important; font-weight: bold !important; font-size: 13px !important;
+  padding: 1px 8px !important; border: none !important; cursor: pointer !important;
+}
+.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 4px !important; color: #D19542 !important; cursor: pointer !important; font-size: 13px !important; font-weight: normal !important; }
+.bwei-opt-chk input[type=checkbox] { 
+  appearance: none !important; -webkit-appearance: none !important;
+  width: 12px !important; height: 12px !important; cursor: pointer !important; 
+  background: #444444 !important; border: 1px solid #222 !important; margin: 0 !important;
+  display: inline-flex !important; align-items: center !important; justify-content: center !important;
+}
+.bwei-opt-chk input[type=checkbox]:checked { background: #1B75D0 !important; border-color: #1B75D0 !important; }
+.bwei-opt-chk input[type=checkbox]:checked::after { content: '✔'; color: #000; font-size: 10px; font-weight: bold; }
+.bwei-opt-dd {
+  background: #D19542 !important; color: #000000 !important; font-weight: bold !important; font-size: 13px !important;
+  padding: 0 4px !important; border: 1px solid #000 !important; cursor: pointer !important; height: 18px !important; outline: none !important;
+  appearance: none !important; -webkit-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='10' viewBox='0 0 8 10'%3E%3Cpath d='M4 0L8 4H0L4 0zM4 10L0 6H8L4 10z' fill='%23000'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 3px center !important;
+  padding-right: 16px !important;
+}
+.bwei-opt-sep { width: 1px !important; height: 14px !important; background: #555 !important; margin: 0 6px !important; display: inline-block !important; }
+
+.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; }
+
+/* ── Category header ── */
+.bwei-cat {
+  background: #333333 !important; 
+  display: grid !important;
+  grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  padding: 0 !important; align-items: stretch !important;
+  border-top: 1px solid rgba(255,255,255,0.15) !important;
+  border-bottom: 3px solid #000 !important;
+  min-height: 32px !important;
+}
+.bwei-cat > div {
+  border-right: none !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  color: #ffffff !important; font-size: 18px !important; font-weight: bold !important; padding: 0 4px !important;
+}
+.bwei-cat > div:nth-child(4) { border-right: none !important; }
+.bwei-cat > div:nth-child(7) { border-right: none !important; }
+
+.bwei-cat > div:last-child {
+  border-right: none !important;
+}
+/* Category number cell — large white, Bloomberg style */
+.bwei-cat .c-num {
+  font-size: 20px !important; font-weight: bold !important;
+  color: #ffffff !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border-right: 1px solid #2a2a2a !important;
+  letter-spacing: -1px !important;
+}
+.bwei-cat .c-name { font-size: 20px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 10px !important; justify-content: flex-start !important; color: #ffffff !important; }
+.bwei-cat .c-rmi { justify-content: center !important; font-size: 16px !important; }
+.bwei-cat .c-spark { justify-content: center !important; }
+
+/* ── Data row ── */
+.bwei-row {
+  display: grid !important;
+  grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  padding: 0 !important; font-size: 21px !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.4px !important;
+  cursor: pointer !important; border: 0 !important;
+  line-height: 1.35 !important;
+  font-weight: bold !important;
+}
+.bwei-row:hover { background: #0d0d0d !important; } 
+.bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
+
+.bwei-row > div { 
+  padding: 0 8px !important; white-space: nowrap !important; overflow: hidden !important; 
+  text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
+  border-right: 1px solid #333 !important;
+}
+/* No dividers on right-side data columns */
+.bwei-row .r-chg { border-right: none !important; }
+.bwei-row .r-pct { border-right: none !important; }
+.bwei-row .r-avat { border-right: none !important; }
+.bwei-row .r-time { border-right: none !important; }
+.bwei-row .r-ytd { border-right: none !important; }
+.bwei-row .r-spark { border-right: 2px solid #303030 !important; border-left: 1px solid #333 !important; } /* Split 1 */
+.bwei-row .r-value { border-right: 2px solid #303030 !important; } /* Split 2 */
+.bwei-row > div:last-child { border-right: none !important; }
+
+/* Row number cell — matches Bloomberg sub-number style: amber, right-aligned */
+.bwei-row .r-num {
+  color: #848484 !important;
+  justify-content: flex-end !important;
+  font-weight: bold !important;
+  font-size: 16px !important;
+  padding-right: 6px !important;
+  background: transparent !important;
+  border-right: 1px solid #2a2a2a !important;
+}
+.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 17px !important; justify-content: flex-start !important; padding-left: 6px !important; text-transform: uppercase !important; border-right: none !important; }
+.bwei-row .r-rmi { justify-content: center !important; padding: 0 !important; gap: 0 !important; border-right: none !important; }
+.bwei-row .r-spark { padding: 0 !important; justify-content: center !important; overflow: visible !important; background: transparent !important; }
+.bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 28px !important; overflow: visible !important; }
+
+/* Data colors */
+.bwei-row .r-future { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-mispx { font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-value { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-chg { font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-pct { font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-avat { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-avat.avat-pos { color: #DDC09E !important; }
+.bwei-row .r-avat.avat-neg { color: #A3A5A4 !important; }
+.bwei-row .r-time { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; font-size: 20px !important; }
+.bwei-row .r-ytd { font-weight: bold !important; justify-content: flex-end !important; }
+
+/* Bottom action bar */
+.bwei-actionbar { background: #000044 !important; border-top: 1px solid #000044 !important; padding: 2px 10px !important; font-size: 14px !important; display: flex !important; align-items: center !important; gap: 20px !important; flex-shrink: 0 !important; justify-content: flex-end !important;}
+.bwei-actionbar .ab-item { color: #ffffff !important; cursor: pointer !important; font-weight: bold !important; letter-spacing: 0.5px !important; }
+
+.bwei-newsticker { background: #000055 !important; padding: 0 !important; max-height: 110px !important; overflow: hidden !important; flex-shrink: 0 !important; border-top: none !important; border-bottom: 1px solid #000 !important; }
+.bwei-news-line { display: grid !important; grid-template-columns: 40px 48px 55px 1fr !important; padding: 2px 10px !important; font-size: 16px !important; color: #D19542 !important; border-bottom: none !important; cursor: pointer !important; align-items: center !important; letter-spacing: -0.3px !important; }
+.bwei-news-line .n-id { color: #D19542 !important; font-weight: normal !important; text-align: left !important; padding-right: 4px !important; }
+.bwei-news-line .n-src { color: #D19542 !important; font-weight: normal !important; }
+.bwei-news-line .n-time { color: #D19542 !important; font-weight: normal !important; text-align: left !important;}
+.n-txt { color: #D19542 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; padding-right: 8px !important; font-weight: bold !important; }
+
+/* ── Suggested functions footer bar ── */
+.bwei-footbar {
+  background: #111111 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: stretch !important;
+  font-size: 18px !important;
+  flex-shrink: 0 !important;
+  border-top: 2px solid #222 !important;
+  min-height: 48px !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+.bwei-footbar .fb-sf {
+  color: #E8922A !important;
+  font-weight: bold !important;
+  font-size: 18px !important;
+  padding: 0 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  border-right: 1px solid #2a2a2a !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+.bwei-footbar .fb-center {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-right: 1px solid #1e1e1e !important;
+}
+.bwei-footbar .fb-right {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+}
+.bwei-footbar .fb-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.bwei-footbar .fb-key {
+  color: #E8922A !important;
+  font-weight: bold !important;
+  font-size: 18px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+.bwei-footbar .fb-desc {
+  color: #A3A5A4 !important;
+  font-weight: normal !important;
+  font-size: 18px !important;
+  white-space: nowrap !important;
+}
+.bwei-footbar .fb-icon {
+  color: #555555 !important;
+  font-size: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Suffix letters — Small and Dimmed ── */
+.bwei-sfx-d, .bwei-sfx-c, .bwei-sfx-y, .bwei-sfx-s { 
+  color: #777777 !important; 
+  font-size: 11px !important; 
+  font-weight: normal !important; 
+  margin-left: 2px !important;
+  vertical-align: baseline !important;
+}
+
+/* ── Colors — Bloomberg exact shades ── */
+.bwei-gn { color: #3CA559 !important; }
+.bwei-rd { color: #BE434E !important; }
+
+/* Live dot pulse */
+@keyframes bwei-live-pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+#bwei-live-tag { animation: bwei-live-pulse 1.8s ease-in-out infinite !important; }
+
+/* ── Suffix letters ── */
+.bwei-sfx-y { color: #BBBBBB !important; font-size: 13px !important; margin-left: 2px !important; font-weight: normal !important; }
+.bwei-sfx-s { color: #BBBBBB !important; font-size: 13px !important; margin-left: 2px !important; font-weight: normal !important; }
+.bwei-sfx-d { color: #BBBBBB !important; font-size: 14px !important; font-weight: normal !important; margin-left: 3px !important; }
+.bwei-sfx-c { color: #BBBBBB !important; font-size: 14px !important; font-weight: normal !important; margin-left: 3px !important; }
+
+.bwei-row.dense > div { padding-top: 0 !important; padding-bottom: 0 !important; }
+</style>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// BWEI — Bloomberg World Equity Index Futures style panel for CRYPTO
+// ══════════════════════════════════════════════════════════════════════════════
+(function(){
+'use strict';
+
+// ─── CATEGORY MAPPING ──────────────────────────────────────────────────────
+// Groups crypto assets by sector — mimics Bloomberg "Americas / EMEA / Asia-Pacific"
+const BWEI_CATEGORIES = [
+  {
+    name: 'Majors',
+    nameT: ' ',
+    tickers: ['BTC','ETH','BNB','SOL','XRP','DOGE','TON','ADA','TRX','LTC','BCH','XLM']
+  },
+  {
+    name: 'Layer 1',
+    nameT: ' ',
+    tickers: ['AVAX','DOT','NEAR','APT','ATOM','ALGO','ICP','FTM','HYPE','SUI','ETC','XMR','ZEC','KAS','VET','FIL','TIA','ETC']
+  },
+  {
+    name: 'Layer 2 & Infrastructure',
+    nameT: ' ',
+    tickers: ['ARB','OP','STRK','IMX','SEI','BERA','MOVE','W','GRT','FLUX','SAFE']
+  },
+  {
+    name: 'DeFi',
+    nameT: ' ',
+    tickers: ['UNI','AAVE','MKR','LDO','CRV','PENDLE','GMX','RAY','JTO','JUP','INJ','LINK','ENA','DYDX','ONDO','OM']
+  },
+  {
+    name: 'AI & Data',
+    nameT: ' ',
+    tickers: ['RENDER','FET','TAO','AKT','VIRTUAL','WLD','PYTH']
+  },
+  {
+    name: 'Memes',
+    nameT: ' ',
+    tickers: ['PEPE','WIF','BONK','SHIB','FLOKI','MEME','BLUR']
+  },
+  {
+    name: 'Stablecoins & RWA',
+    nameT: ' ',
+    tickers: ['USDT','USDC','DAI']
+  }
+];
+
+// ─── MONTH CODES (CME futures style) ────────────────────────────────────────
+// J=Jan  K=May  M=Jun  N=Jul  Q=Aug  U=Sep  V=Oct  X=Nov  Z=Dec  F=Jan next
+// Actually: F=Jan G=Feb H=Mar J=Apr K=May M=Jun N=Jul Q=Aug U=Sep V=Oct X=Nov Z=Dec
+const MONTH_CODES = ['F','G','H','J','K','M','N','Q','U','V','X','Z'];
+function getFutureTag(){
+  // Generate a "Jun26" style label for the current approximate futures month
+  const d = new Date();
+  // Next quarterly expiry (Mar/Jun/Sep/Dec)
+  const quarterlyMonths = [2,5,8,11]; // 0-indexed
+  let m = d.getMonth(), y = d.getFullYear();
+  let target = quarterlyMonths.find(qm => qm >= m);
+  if(target == null){ target = quarterlyMonths[0]; y++; }
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return {
+    label: monthNames[target] + String(y).slice(-2),
+    code: MONTH_CODES[target] + String(y).slice(-1)
+  };
+}
+
+// ─── SPARKLINE from 24h kline data (_klineCache) ────────────────────────────
+function renderSparkline(sym, chg){
+  // Try to get last N points from various caches
+  let points = null;
+  try {
+    if(window._klineCache && window._klineCache[sym+'USDT']){
+      const arr = window._klineCache[sym+'USDT'];
+      if(arr && arr.length) points = arr.slice(-40).map(k => +k[4]);
+    } else if(window._sparklineCache && window._sparklineCache[sym]){
+      points = window._sparklineCache[sym].slice(-40);
+    }
+  } catch(e){}
+
+  // Synthesize if nothing available
+  if(!points || points.length < 4){
+    const n = 32;
+    const trend = (chg||0)/100;
+    const base = 100;
+    points = [];
+    let px = base * (1 - trend * 0.8);
+    for(let i=0;i<n;i++){
+      const drift = trend/n;
+      const noise = (Math.sin(i*1.3 + sym.charCodeAt(0)*0.01)*0.6 + Math.cos(i*0.7)*0.4)*0.003;
+      px *= (1 + drift + noise);
+      points.push(px);
+    }
+  }
+
+  // Top-tier 2Day sparkline identical to Bloomberg: 50% split with a central vertical divider
+  const splitIdx = Math.floor(points.length * 0.5);
+  const leftPts  = points.slice(0, splitIdx);
+  const rightPts = points.slice(splitIdx - 1);
+
+  const W = 100, H = 20; // Internal SVG units, stretches via viewBox
+  const leftW  = 49;
+  const rightW = 49;
+
+  function makePath(pts, panelW){
+    const mn = Math.min(...pts), mx = Math.max(...pts);
+    const rng = mx - mn || 1;
+    const step = panelW / (pts.length - 1 || 1);
+    return pts.map((p,i)=>{
+      const x = (i * step).toFixed(1);
+      // Small vertical padding
+      const y = (H - ((p-mn)/rng)*(H-2) - 1).toFixed(1);
+      return (i===0?'M':'L') + x + ',' + y;
+    }).join('');
+  }
+
+  const pathGrey  = makePath(leftPts, leftW);
+  const pathColor = makePath(rightPts, rightW);
+  const color = chg >= 0 ? '#3CA559' : '#BE434E';
+
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="display:block;width:100%;height:100%;background:#0a0a0a">
+    <path d="${pathGrey}" stroke="#888888" stroke-width="1.3" fill="none" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+    <line x1="50" y1="0" x2="50" y2="${H}" stroke="#444" stroke-width="0.8" vector-effect="non-scaling-stroke"/>
+    <g transform="translate(51,0)">
+      <path d="${pathColor}" stroke="${color}" stroke-width="1.3" fill="none" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+    </g>
+  </svg>`;
+}
+
+// ─── FORMAT HELPERS ────────────────────────────────────────────────────────
+function fmtPx(v){
+  if(!v && v!==0) return '';
+  if(v >= 100)   return v.toFixed(2);
+  if(v >= 1)     return v.toFixed(3);
+  if(v >= 0.01)  return v.toFixed(4);
+  if(v >= 0.0001)return v.toFixed(6);
+  return v.toFixed(8);
+}
+function fmtFuture(v){
+  if(!v && v!==0) return '';
+  if(v >= 100)  return v.toFixed(2);
+  if(v >= 1)    return v.toFixed(3);
+  return v.toFixed(4);
+}
+function fmtChg(v){
+  if(!v && v!==0) return '';
+  const s = v >= 0 ? '+' : '';
+  const abs = Math.abs(v);
+  if(abs >= 100) return s+v.toFixed(2);
+  if(abs >= 10)  return s+v.toFixed(2);
+  if(abs >= 1)   return s+v.toFixed(2);
+  return s+v.toFixed(4);
+}
+function fmtPct(v){
+  if(!v && v!==0) return '';
+  const s = v >= 0 ? '+' : '';
+  return s+v.toFixed(2)+'%';
+}
+function fmtMisPx(v){
+  if(!v && v!==0) return '';
+  const s = v >= 0 ? '+' : '';
+  return s+v.toFixed(3)+'%';
+}
+function fmtYtd(v){
+  if(!v && v!==0) return '';
+  return (v>=0?'+':'')+v.toFixed(2)+'%';
+}
+function fmtAvat(v){
+  if(!v && v!==0) return '';
+  return (v>=0?'+':'')+v.toFixed(2)+'%';
+}
+function getTimeNow(){
+  const d = new Date();
+  const mo = String(d.getMonth()+1).padStart(2,'0');
+  const da = String(d.getDate()).padStart(2,'0');
+  return mo+'/'+da;
+}
+function getTimeHM(){
+  const d = new Date();
+  const h = String(d.getHours()).padStart(2,'0');
+  const m = String(d.getMinutes()).padStart(2,'0');
+  return h+':'+m;
+}
+
+// ─── BUILD ROW ──────────────────────────────────────────────────────────────
+function buildRow(item, rowNum, futTag){
+  const c = item;
+  const chg = c.chg || 0;
+  const chgUsd = c.px ? (c.px * chg/100) : 0;
+
+  // Future price — simulate a small basis spread from spot
+  const basisBps = (Math.sin(c.s.charCodeAt(0)*0.37)*15 + 5); // -10 to +20 bps
+  const futurePx = c.px ? c.px * (1 + basisBps/10000) : 0;
+
+  // %MisPx — basis between future and spot
+  const misPx = c.px ? ((futurePx/c.px - 1) * 100) : 0;
+
+  // Δ AVAT
+  const avatSeed = (c.s.charCodeAt(0)*17 + (c.s.charCodeAt(1)||0)*31) % 100;
+  const avat = ((avatSeed - 50) * 0.8);
+
+  // %YtdCur
+  const ytd = c.ytd || (chg * (2.5 + Math.sin(c.s.charCodeAt(0))*1.5));
+
+  // Time
+  const timeStr = getTimeNow();
+
+  const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const ytdClass = ytd >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const misPxClass = misPx >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const avatClass = avat >= 0 ? 'avat-pos' : 'avat-neg';
+
+  const shortName = c.n ? (c.n.length > 16 ? c.n.slice(0,15)+'…' : c.n) : c.s;
+
+  return `<div class="bwei-row" data-sym="${c.s}" onclick="if(window._openChartForSymbol) window._openChartForSymbol('${c.s}')">
+    <div class="r-num">${rowNum})</div>
+    <div class="r-name">${shortName}</div>
+    <div class="r-rmi"></div>
+    <div class="r-spark">${renderSparkline(c.s, chg)}</div>
+    <div class="r-future">${fmtFuture(futurePx)}<span class="bwei-sfx-d">d</span></div>
+    <div class="r-mispx ${misPxClass}">${fmtMisPx(misPx)}</div>
+    <div class="r-value">${fmtPx(c.px)}<span class="bwei-sfx-d">d</span></div>
+    <div class="r-chg ${chgClass}">${fmtChg(chgUsd)}</div>
+    <div class="r-pct ${chgClass}">${fmtPct(chg)}</div>
+    <div class="r-avat ${avatClass}">${fmtAvat(avat)}</div>
+    <div class="r-time">${timeStr}<span class="bwei-sfx-c">c</span></div>
+    <div class="r-ytd ${ytdClass}">${fmtYtd(ytd)}</div>
+  </div>`;
+}
+
+function buildBWEI(data){
+  const futTag = getFutureTag();
+  const dataMap = {};
+  (data || []).forEach(c => { dataMap[c.s] = c; });
+
+  let html = `
+  <div class="bwei-wrap">
+
+    <div class="bwei-tophdr">
+      <span class="bwei-menu">News<span class="bwei-arr">▾</span></span>
+      <span class="bwei-menu">Settings<span class="bwei-arr">▾</span></span>
+      <span class="bwei-title">CRYPTO MARKETS DASHBOARD &nbsp;<span style="font-size:11px;color:#ff9999;letter-spacing:1px;font-weight:normal" id="bwei-live-tag">● LIVE</span></span>
+    </div>
+
+    <div class="bwei-optbar">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;">
+        <span class="bwei-opt-sel">Standard <span style="font-size:10px">▼</span></span>
+        <span class="bwei-opt-sep"></span>
+        <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
+        <span class="bwei-opt-sep"></span>
+        <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
+        <span class="bwei-opt-sep"></span>
+        <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
+        <span class="bwei-opt-sep"></span>
+        <label class="bwei-opt-chk"><input type="checkbox" checked> Futures</label>
+        <span class="bwei-opt-sep"></span>
+        <label class="bwei-opt-chk"><input type="checkbox" checked> &Delta; AVAT</label>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <select class="bwei-opt-dd"><option>10D </option></select>
+        <select class="bwei-opt-dd"><option>%Chg YTD </option></select>
+        <select class="bwei-opt-dd"><option>USD </option></select>
+      </div>
+    </div>
+
+    <div class="bwei-body">`;
+
+  let catIdx = 1;
+  let rowIdx = 1;
+  BWEI_CATEGORIES.forEach(cat => {
+    // Top headers only appear in the first category ("1) MAJORS")
+    if (catIdx === 1) {
+      html += `
+      <div class="bwei-cat" style="border-top: 1px solid #666666 !important;">
+        <div class="c-num">${catIdx})</div>
+        <div class="c-name">${cat.name}</div>
+        <div class="c-rmi">RMI</div>
+        <div class="c-spark">2Day</div>
+        <div>Future</div>
+        <div>%MisPx</div>
+        <div>Value</div>
+        <div>Net Chg</div>
+        <div>%Chg</div>
+        <div>&Delta; AVAT</div>
+        <div>Time</div>
+        <div>%YtdCur</div>
+      </div>`;
+    } else {
+      html += `
+      <div class="bwei-cat">
+        <div class="c-num">${catIdx})</div>
+        <div class="c-name">${cat.name}</div>
+        <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+      </div>`;
+    }
+    cat.tickers.forEach(tk => {
+      const item = dataMap[tk];
+      if(!item) return;
+      const rn = catIdx*10 + rowIdx;
+      html += buildRow(item, rn, futTag);
+      rowIdx++;
+    });
+    catIdx++;
+    rowIdx = 1;
+  });
+
+  // Calculate fallback news to strictly match image IDs and format
+  const fallbackNews = [
+    {id: '411', src: 'CBC', time: '19:03', txt: 'CBC: Watermark cancels season, and everything will change for 2026'},
+    {id: '410', src: 'DML', time: '19:02', txt: 'Daily Mail: Jim Edmonds donates plasma after recovering from COVID'},
+    {id: '409', src: 'ESD', time: '19:02', txt: 'British Museum identifies Middle East clay antiques as fakes'},
+    {id: '408', src: 'ESD', time: '19:02', txt: 'Tottenham midfielder Harry Winks not relishing prospect of Premier'}
+  ];
+  
+  let newsHtml = '';
+  fallbackNews.forEach(n => {
+    const srcClass = 'n-src-' + n.src.toLowerCase();
+    newsHtml += `<div class="bwei-news-line">
+      <div class="n-id">${n.id}</div>
+      <div class="n-src ${srcClass}">${n.src}</div>
+      <div class="n-time">${n.time}</div>
+      <div class="n-txt">${n.txt}</div>
+    </div>`;
+  });
+
+  html += `</div>
+
+    <div class="bwei-actionbar">
+      <span class="ab-item"><span style="color:#aaaaaa; font-weight:normal;">300)</span> Edit Panel</span>
+      <span class="ab-item"><span style="color:#aaaaaa; font-weight:normal;">301)</span> Expand Panel</span>
+    </div>
+
+    <div class="bwei-newsticker" id="bwei-newsticker">${newsHtml}</div>
+
+    <div class="bwei-footbar">
+      <span class="fb-sf">Suggested Functions</span>
+      <span class="fb-center">
+        <span class="fb-item"><span class="fb-key">ECO</span> <span class="fb-desc">See upcoming economic releases &amp; events</span></span>
+      </span>
+      <span class="fb-right">
+        <span class="fb-item"><span class="fb-key">CVID</span> <span class="fb-desc">Chart current coronavirus infection data</span></span>
+        <span class="fb-icon">&#x1F5B9;</span>
+      </span>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+function getTimeStr(){
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+// ─── MONKEY-PATCH THE EXISTING buildPanelContent ────────────────────────────
+(function _patchCrypto(){
+  // 1. Patch buildCRYPTOMktCap directly (used at build time)
+  const _origBuild = window.buildCRYPTOMktCap;
+  window.buildCRYPTOMktCap = function(data){
+    try { return buildBWEI(data); }
+    catch(e){
+      console.error('[BWEI] render failed, falling back to original:', e);
+      return typeof _origBuild === 'function' ? _origBuild(data) : '';
+    }
+  };
+
+  // 2. Patch buildPanelContent wrapper (covers all code paths)
+  const _origPanel = window.buildPanelContent;
+  if(typeof _origPanel === 'function'){
+    window.buildPanelContent = function(fn, ...args){
+      if(fn === 'CRYPTO'){
+        try {
+          const data = window.CRYPTO || [];
+          return buildBWEI(data);
+        } catch(e){
+          console.error('[BWEI] panel build failed:', e);
+        }
+      }
+      return _origPanel.apply(this, [fn, ...args]);
+    };
+  }
+
+  // 2b. Make sure we auto-maximize it when opened, to mimic full screen
+  setInterval(() => {
+    try {
+      const panel = document.querySelector('.panel');
+      if(panel && panel.innerHTML.includes('CRYPTO MARKETS DASHBOARD') && !panel.classList.contains('maximized')) {
+        panel.classList.add('maximized');
+        // Hide topbar/statbar to make it perfectly full screen as requested
+        document.body.classList.add('panel-open', 'hide-stat-bar');
+      }
+    } catch(e){}
+  }, 100);
+
+  // 3. Live-update hook — refresh sparklines & prices when fresh data arrives
+  //    Hook into the existing price update tick
+  function _refreshBWEI(){
+    try {
+      const panel = document.querySelector('.bwei-wrap');
+      if(!panel) return;
+      const data = window.CRYPTO || [];
+      const dataMap = {};
+      data.forEach(c => dataMap[c.s] = c);
+
+      panel.querySelectorAll('.bwei-row').forEach(row => {
+        const sym = row.dataset.sym;
+        const item = dataMap[sym];
+        if(!item) return;
+        const chg = item.chg || 0;
+        const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
+        const chgUsd = item.px ? item.px * chg/100 : 0;
+
+        const basisBps = (Math.sin(sym.charCodeAt(0)*0.37)*15 + 5);
+        const futurePx = item.px ? item.px * (1 + basisBps/10000) : 0;
+        const misPx = item.px ? ((futurePx/item.px - 1) * 100) : 0;
+        const avatSeed = (sym.charCodeAt(0)*17 + (sym.charCodeAt(1)||0)*31) % 100;
+        const avat = ((avatSeed - 50) * 0.8);
+        const ytd = item.ytd || (chg * (2.5 + Math.sin(sym.charCodeAt(0))*1.5));
+        const ytdClass = ytd >= 0 ? 'bwei-gn' : 'bwei-rd';
+        const avatClass = avat >= 0 ? 'bwei-gn' : 'bwei-rd';
+        const misPxClass = misPx >= 0 ? 'bwei-gn' : 'bwei-rd';
+
+        const futureEl = row.querySelector('.r-future');
+        const mispxEl = row.querySelector('.r-mispx');
+        const valueEl = row.querySelector('.r-value');
+        const chgEl = row.querySelector('.r-chg');
+        const pctEl = row.querySelector('.r-pct');
+        const avatEl = row.querySelector('.r-avat');
+        const timeEl = row.querySelector('.r-time');
+        const ytdEl = row.querySelector('.r-ytd');
+        const sparkEl = row.querySelector('.r-spark');
+
+        if(futureEl) futureEl.innerHTML = fmtFuture(futurePx)+'<span class="bwei-sfx-d">d</span>';
+        if(mispxEl){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
+        if(valueEl) valueEl.innerHTML = fmtPx(item.px)+'<span class="bwei-sfx-d">d</span>';
+        if(chgEl){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
+        if(pctEl){ pctEl.className = 'r-pct '+chgClass; pctEl.textContent = fmtPct(chg); }
+        if(avatEl){ 
+          avatEl.className = 'r-avat ' + (avat >= 0 ? 'avat-pos' : 'avat-neg'); 
+          avatEl.textContent = fmtAvat(avat); 
+        }
+        if(timeEl) timeEl.innerHTML = getTimeNow()+'<span class="bwei-sfx-c">c</span>';
+        if(ytdEl){ ytdEl.className = 'r-ytd '+ytdClass; ytdEl.textContent = fmtYtd(ytd); }
+        if(sparkEl) sparkEl.innerHTML = renderSparkline(sym, chg);
+      });
+    } catch(e){ /* silent */ }
+  }
+
+  // Refresh every 3s if panel is open
+  setInterval(_refreshBWEI, 3000);
+
+  console.log('[BWEI] Bloomberg-style CRYPTO panel loaded');
+})();
+
+// Expose for debug
+window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     CRYPTO — World Crypto Market Caps (Bloomberg WEI-style)
+     Replaces CRYPTO panel rendering with Bloomberg World Equity Index Futures look
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<style>
+/* ── Bloomberg-style CRYPTO panel (WEI clone) - PIXEL PERFECT HQ ── */
+.bwei-wrap {
+  display: flex !important; flex-direction: column !important;
+  height: 100% !important; min-height: 0 !important; min-width: 0 !important; width: 100% !important;
+  background: #000000 !important; 
+  font-family: Arial, Helvetica, sans-serif !important; /* Bloomberg standard font */
+  color: #FFAA00 !important; overflow: hidden !important;
+  position: absolute !important; inset: 0 !important; z-index: 100000 !important;
+}
+
+.bwei-tophdr {
+  background: #A61217 !important; height: 20px !important; display: flex !important; align-items: center !important;
+  padding: 0 !important; border-bottom: 2px solid #5A0A0C !important; flex-shrink: 0 !important; position: relative !important;
+}
+.bwei-tophdr .bwei-menu {
+  color: #ffffff !important; font-size: 13px !important; font-weight: normal !important; padding: 0 8px !important;
+  height: 100% !important; display: inline-flex !important; align-items: center !important; cursor: pointer !important;
+  border-right: 1px solid #77090b !important; letter-spacing: 0px !important;
+}
+.bwei-tophdr .bwei-menu:hover { background: #d02020 !important; }
+.bwei-tophdr .bwei-title {
+  margin-left: auto !important; color: #ffffff !important; font-size: 13px !important; font-weight: normal !important;
+  padding: 0 8px !important; height: 100% !important; display: inline-flex !important; align-items: center !important;
+}
+
+/* ── OPTIONS BAR ── */
+.bwei-optbar {
+  background: #000000 !important; flex-shrink: 0 !important;
+  display: flex !important; align-items: center !important; padding: 2px 8px !important; gap: 0 !important;
+  font-size: 13px !important; justify-content: space-between !important;
+}
+.bwei-opt-sel {
+  background: #D19542 !important; color: #000000 !important; font-weight: bold !important; font-size: 13px !important;
+  padding: 1px 8px !important; border: none !important; cursor: pointer !important;
+}
+.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 4px !important; color: #FFAA00 !important; cursor: pointer !important; font-size: 13px !important; font-weight: normal !important; }
+.bwei-opt-chk input[type=checkbox] { 
+  appearance: none !important; -webkit-appearance: none !important;
+  width: 12px !important; height: 12px !important; cursor: pointer !important; 
+  background: #444444 !important; border: 1px solid #222 !important; margin: 0 !important;
+  display: inline-flex !important; align-items: center !important; justify-content: center !important;
+}
+.bwei-opt-chk input[type=checkbox]:checked { background: #1B75D0 !important; border-color: #1B75D0 !important; }
+.bwei-opt-chk input[type=checkbox]:checked::after { content: '✔'; color: #000; font-size: 10px; font-weight: bold; }
+.bwei-opt-dd {
+  background: #D19542 !important; color: #000000 !important; font-weight: bold !important; font-size: 13px !important;
+  padding: 0 4px !important; border: 1px solid #000 !important; cursor: pointer !important; height: 18px !important; outline: none !important;
+  appearance: none !important; -webkit-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='10' viewBox='0 0 8 10'%3E%3Cpath d='M4 0L8 4H0L4 0zM4 10L0 6H8L4 10z' fill='%23000'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 3px center !important;
+  padding-right: 16px !important;
+}
+.bwei-opt-sep { width: 1px !important; height: 14px !important; background: #555 !important; margin: 0 6px !important; display: inline-block !important; }
+
+.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; }
+
+/* ── Category header ── */
+.bwei-cat {
+  background: #333333 !important; 
+  display: grid !important;
+  grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  padding: 0 !important; align-items: stretch !important;
+  border-top: 1px solid rgba(255,255,255,0.15) !important;
+  border-bottom: 3px solid #000 !important;
+  min-height: 32px !important;
+}
+.bwei-cat > div {
+  border-right: none !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  color: #ffffff !important; font-size: 18px !important; font-weight: bold !important; padding: 0 4px !important;
+}
+.bwei-cat > div:nth-child(4) { border-right: none !important; }
+.bwei-cat > div:nth-child(7) { border-right: none !important; }
+
+.bwei-cat > div:last-child {
+  border-right: none !important;
+}
+/* Category number cell — large white, Bloomberg style */
+.bwei-cat .c-num {
+  font-size: 20px !important; font-weight: bold !important;
+  color: #ffffff !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border-right: 1px solid #2a2a2a !important;
+  letter-spacing: -1px !important;
+}
+.bwei-cat .c-name { font-size: 20px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 10px !important; justify-content: flex-start !important; color: #ffffff !important; }
+.bwei-cat .c-rmi { justify-content: center !important; font-size: 16px !important; }
+.bwei-cat .c-spark { justify-content: center !important; }
+
+/* ── Data row ── */
+.bwei-row {
+  display: grid !important;
+  grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  padding: 0 !important; font-size: 21px !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.4px !important;
+  cursor: pointer !important; border: 0 !important;
+  line-height: 1.35 !important;
+  font-weight: bold !important;
+}
+.bwei-row:hover { background: #0d0d0d !important; } 
+.bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
+
+.bwei-row > div { 
+  padding: 0 8px !important; white-space: nowrap !important; overflow: hidden !important; 
+  text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
+  border-right: 1px solid #333 !important;
+}
+/* No dividers on right-side data columns */
+.bwei-row .r-chg { border-right: none !important; }
+.bwei-row .r-pct { border-right: none !important; }
+.bwei-row .r-avat { border-right: none !important; }
+.bwei-row .r-time { border-right: none !important; }
+.bwei-row .r-ytd { border-right: none !important; }
+.bwei-row .r-spark { border-right: 2px solid #303030 !important; border-left: 1px solid #333 !important; } /* Split 1 */
+.bwei-row .r-value { border-right: 2px solid #303030 !important; } /* Split 2 */
+.bwei-row > div:last-child { border-right: none !important; }
+
+/* Row number cell — matches Bloomberg sub-number style: amber, right-aligned */
+.bwei-row .r-num {
+  color: #848484 !important;
+  justify-content: flex-end !important;
+  font-weight: bold !important;
+  font-size: 16px !important;
+  padding-right: 6px !important;
+  background: transparent !important;
+  border-right: 1px solid #2a2a2a !important;
+}
+.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 17px !important; justify-content: flex-start !important; padding-left: 6px !important; text-transform: uppercase !important; border-right: none !important; }
+.bwei-row .r-rmi { justify-content: center !important; padding: 0 !important; gap: 0 !important; border-right: none !important; }
+.bwei-row .r-spark { padding: 0 !important; justify-content: center !important; overflow: visible !important; background: transparent !important; }
+.bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 28px !important; overflow: visible !important; }
+
+/* Data colors */
+.bwei-row .r-future { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-mispx { font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-value { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-chg { font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-pct { font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-avat { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-avat.avat-pos { color: #DDC09E !important; }
+.bwei-row .r-avat.avat-neg { color: #C86F2C !important; }
+.bwei-row .r-time { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; font-size: 20px !important; }
+.bwei-row .r-ytd { font-weight: bold !important; justify-content: flex-end !important; }
+
+/* Bottom action bar */
+.bwei-actionbar { background: #000044 !important; border-top: 1px solid #000044 !important; padding: 2px 10px !important; font-size: 14px !important; display: flex !important; align-items: center !important; gap: 20px !important; flex-shrink: 0 !important; justify-content: flex-end !important;}
+.bwei-actionbar .ab-item { color: #ffffff !important; cursor: pointer !important; font-weight: bold !important; letter-spacing: 0.5px !important; }
+
+.bwei-newsticker { background: #000055 !important; padding: 0 !important; max-height: 110px !important; overflow: hidden !important; flex-shrink: 0 !important; border-top: none !important; border-bottom: 1px solid #000 !important; }
+.bwei-news-line { display: grid !important; grid-template-columns: 40px 48px 55px 1fr !important; padding: 2px 10px !important; font-size: 16px !important; color: #FFAA00 !important; border-bottom: none !important; cursor: pointer !important; align-items: center !important; letter-spacing: -0.3px !important; }
+.bwei-news-line .n-id { color: #FFAA00 !important; font-weight: normal !important; text-align: left !important; padding-right: 4px !important; }
+.bwei-news-line .n-src { color: #FFAA00 !important; font-weight: normal !important; }
+.bwei-news-line .n-time { color: #FFAA00 !important; font-weight: normal !important; text-align: left !important;}
+.n-txt { color: #FFAA00 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; padding-right: 8px !important; font-weight: bold !important; }
+
+/* ── Suggested functions footer bar ── */
+.bwei-footbar {
+  background: #111111 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: stretch !important;
+  font-size: 18px !important;
+  flex-shrink: 0 !important;
+  border-top: 2px solid #222 !important;
+  min-height: 48px !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+.bwei-footbar .fb-sf {
+  color: #FFAA00 !important;
+  font-weight: bold !important;
+  font-size: 18px !important;
+  padding: 0 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  border-right: 1px solid #2a2a2a !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+.bwei-footbar .fb-center {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-right: 1px solid #1e1e1e !important;
+}
+.bwei-footbar .fb-right {
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+}
+.bwei-footbar .fb-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+.bwei-footbar .fb-key {
+  color: #ffffff !important;
+  font-weight: bold !important;
+  font-size: 18px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+.bwei-footbar .fb-desc {
+  color: #cccccc !important;
+  font-weight: normal !important;
+  font-size: 18px !important;
+  white-space: nowrap !important;
+}
+.bwei-footbar .fb-icon {
+  color: #555555 !important;
+  font-size: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Suffix letters — Small and Dimmed ── */
+.bwei-sfx-d, .bwei-sfx-c, .bwei-sfx-y, .bwei-sfx-s { 
+  color: #777777 !important; 
+  font-size: 11px !important; 
+  font-weight: normal !important; 
+  margin-left: 2px !important;
+  vertical-align: baseline !important;
+}
+
+/* ── Colors — Bloomberg exact shades ── */
+.bwei-gn { color: #3CA559 !important; }
+.bwei-rd { color: #BE434E !important; }
+
+/* Live dot pulse */
+@keyframes bwei-live-pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+#bwei-live-tag { animation: bwei-live-pulse 1.8s ease-in-out infinite !important; }
+
+/* ── Suffix letters ── */
+.bwei-sfx-y { color: #BBBBBB !important; font-size: 13px !important; margin-left: 2px !important; font-weight: normal !important; }
+.bwei-sfx-s { color: #BBBBBB !important; font-size: 13px !important; margin-left: 2px !important; font-weight: normal !important; }
+.bwei-sfx-d { color: #BBBBBB !important; font-size: 14px !important; font-weight: normal !important; margin-left: 3px !important; }
+.bwei-sfx-c { color: #BBBBBB !important; font-size: 14px !important; font-weight: normal !important; margin-left: 3px !important; }
+
+.bwei-row.dense > div { padding-top: 0 !important; padding-bottom: 0 !important; }
+</style>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// BWEI — Bloomberg World Equity Index Futures style panel for CRYPTO
+// ══════════════════════════════════════════════════════════════════════════════
+(function(){
+'use strict';
+
+// ─── CATEGORY MAPPING ──────────────────────────────────────────────────────
+// Groups crypto assets by sector — mimics Bloomberg "Americas / EMEA / Asia-Pacific"
+const BWEI_CATEGORIES = [
+  {
+    name: 'Majors',
+    nameT: ' ',
+    tickers: ['BTC','ETH','BNB','SOL','XRP','DOGE','TON','ADA','TRX','LTC','BCH','XLM']
+  },
+  {
+    name: 'Layer 1',
+    nameT: ' ',
+    tickers: ['AVAX','DOT','NEAR','APT','ATOM','ALGO','ICP','FTM','HYPE','SUI','ETC','XMR','ZEC','KAS','VET','FIL','TIA','ETC']
+  },
+  {
+    name: 'Layer 2 & Infrastructure',
+    nameT: ' ',
+    tickers: ['ARB','OP','STRK','IMX','SEI','BERA','MOVE','W','GRT','FLUX','SAFE']
+  },
+  {
+    name: 'DeFi',
+    nameT: ' ',
+    tickers: ['UNI','AAVE','MKR','LDO','CRV','PENDLE','GMX','RAY','JTO','JUP','INJ','LINK','ENA','DYDX','ONDO','OM']
+  },
+  {
+    name: 'AI & Data',
+    nameT: ' ',
+    tickers: ['RENDER','FET','TAO','AKT','VIRTUAL','WLD','PYTH']
+  },
+  {
+    name: 'Memes',
+    nameT: ' ',
+    tickers: ['PEPE','WIF','BONK','SHIB','FLOKI','MEME','BLUR']
+  },
+  {
+    name: 'Stablecoins & RWA',
+    nameT: ' ',
+    tickers: ['USDT','USDC','DAI']
+  }
+];
+
+// ─── MONTH CODES (CME futures style) ────────────────────────────────────────
+// J=Jan  K=May  M=Jun  N=Jul  Q=Aug  U=Sep  V=Oct  X=Nov  Z=Dec  F=Jan next
+// Actually: F=Jan G=Feb H=Mar J=Apr K=May M=Jun N=Jul Q=Aug U=Sep V=Oct X=Nov Z=Dec
+const MONTH_CODES = ['F','G','H','J','K','M','N','Q','U','V','X','Z'];
+function getFutureTag(){
+  // Generate a "Jun26" style label for the current approximate futures month
+  const d = new Date();
+  // Next quarterly expiry (Mar/Jun/Sep/Dec)
+  const quarterlyMonths = [2,5,8,11]; // 0-indexed
+  let m = d.getMonth(), y = d.getFullYear();
+  let target = quarterlyMonths.find(qm => qm >= m);
+  if(target == null){ target = quarterlyMonths[0]; y++; }
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return {
+    label: monthNames[target] + String(y).slice(-2),
+    code: MONTH_CODES[target] + String(y).slice(-1)
+  };
+}
+
+// ─── SPARKLINE from 24h kline data (_klineCache) ────────────────────────────
+function renderSparkline(sym, chg){
+  // Try to get last N points from various caches
+  let points = null;
+  try {
+    if(window._klineCache && window._klineCache[sym+'USDT']){
+      const arr = window._klineCache[sym+'USDT'];
+      if(arr && arr.length) points = arr.slice(-40).map(k => +k[4]);
+    } else if(window._sparklineCache && window._sparklineCache[sym]){
+      points = window._sparklineCache[sym].slice(-40);
+    }
+  } catch(e){}
+
+  // Synthesize if nothing available
+  if(!points || points.length < 4){
+    const n = 32;
+    const trend = (chg||0)/100;
+    const base = 100;
+    points = [];
+    let px = base * (1 - trend * 0.8);
+    for(let i=0;i<n;i++){
+      const drift = trend/n;
+      const noise = (Math.sin(i*1.3 + sym.charCodeAt(0)*0.01)*0.6 + Math.cos(i*0.7)*0.4)*0.003;
+      px *= (1 + drift + noise);
+      points.push(px);
+    }
+  }
+
+  // Top-tier 2Day sparkline identical to Bloomberg: 50% split with a central vertical divider
+  const splitIdx = Math.floor(points.length * 0.5);
+  const leftPts  = points.slice(0, splitIdx);
+  const rightPts = points.slice(splitIdx - 1);
+
+  const W = 100, H = 20; // Internal SVG units, stretches via viewBox
+  const leftW  = 49;
+  const rightW = 49;
+
+  function makePath(pts, panelW){
+    const mn = Math.min(...pts), mx = Math.max(...pts);
+    const rng = mx - mn || 1;
+    const step = panelW / (pts.length - 1 || 1);
+    return pts.map((p,i)=>{
+      const x = (i * step).toFixed(1);
+      // Small vertical padding
+      const y = (H - ((p-mn)/rng)*(H-2) - 1).toFixed(1);
+      return (i===0?'M':'L') + x + ',' + y;
+    }).join('');
+  }
+
+  const pathGrey  = makePath(leftPts, leftW);
+  const pathColor = makePath(rightPts, rightW);
+  const color = chg >= 0 ? '#3CA559' : '#BE434E';
+
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="display:block;width:100%;height:100%;background:#0a0a0a">
+    <path d="${pathGrey}" stroke="#888888" stroke-width="1.3" fill="none" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+    <line x1="50" y1="0" x2="50" y2="${H}" stroke="#444" stroke-width="0.8" vector-effect="non-scaling-stroke"/>
+    <g transform="translate(51,0)">
+      <path d="${pathColor}" stroke="${color}" stroke-width="1.3" fill="none" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+    </g>
+  </svg>`;
+}
+
+// ─── FORMAT HELPERS ────────────────────────────────────────────────────────
+function fmtPx(v){
+  if(!v && v!==0) return '';
+  if(v >= 100)   return v.toFixed(2);
+  if(v >= 1)     return v.toFixed(3);
+  if(v >= 0.01)  return v.toFixed(4);
+  if(v >= 0.0001)return v.toFixed(6);
+  return v.toFixed(8);
+}
+function fmtFuture(v){
+  if(!v && v!==0) return '';
+  if(v >= 100)  return v.toFixed(2);
+  if(v >= 1)    return v.toFixed(3);
+  return v.toFixed(4);
+}
+function fmtChg(v){
+  if(!v && v!==0) return '';
+  const s = v >= 0 ? '+' : '';
+  const abs = Math.abs(v);
+  if(abs >= 100) return s+v.toFixed(2);
+  if(abs >= 10)  return s+v.toFixed(2);
+  if(abs >= 1)   return s+v.toFixed(2);
+  return s+v.toFixed(4);
+}
+function fmtPct(v){
+  if(!v && v!==0) return '';
+  const s = v >= 0 ? '+' : '';
+  return s+v.toFixed(2)+'%';
+}
+function fmtMisPx(v){
+  if(!v && v!==0) return '';
+  const s = v >= 0 ? '+' : '';
+  return s+v.toFixed(3)+'%';
+}
+function fmtYtd(v){
+  if(!v && v!==0) return '';
+  return (v>=0?'+':'')+v.toFixed(2)+'%';
+}
+function fmtAvat(v){
+  if(!v && v!==0) return '';
+  return (v>=0?'+':'')+v.toFixed(2)+'%';
+}
+function getTimeNow(){
+  const d = new Date();
+  const mo = String(d.getMonth()+1).padStart(2,'0');
+  const da = String(d.getDate()).padStart(2,'0');
+  return mo+'/'+da;
+}
+function getTimeHM(){
+  const d = new Date();
+  const h = String(d.getHours()).padStart(2,'0');
+  const m = String(d.getMinutes()).padStart(2,'0');
+  return h+':'+m;
+}
+
+// ─── BUILD ROW ──────────────────────────────────────────────────────────────
+function buildRow(item, rowNum, futTag){
+  const c = item;
+  const chg = c.chg || 0;
+  const chgUsd = c.px ? (c.px * chg/100) : 0;
+
+  // Future price — simulate a small basis spread from spot
+  const basisBps = (Math.sin(c.s.charCodeAt(0)*0.37)*15 + 5); // -10 to +20 bps
+  const futurePx = c.px ? c.px * (1 + basisBps/10000) : 0;
+
+  // %MisPx — basis between future and spot
+  const misPx = c.px ? ((futurePx/c.px - 1) * 100) : 0;
+
+  // Δ AVAT
+  const avatSeed = (c.s.charCodeAt(0)*17 + (c.s.charCodeAt(1)||0)*31) % 100;
+  const avat = ((avatSeed - 50) * 0.8);
+
+  // %YtdCur
+  const ytd = c.ytd || (chg * (2.5 + Math.sin(c.s.charCodeAt(0))*1.5));
+
+  // Time
+  const timeStr = getTimeNow();
+
+  const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const ytdClass = ytd >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const misPxClass = misPx >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const avatClass = avat >= 0 ? 'avat-pos' : 'avat-neg';
+
+  const shortName = c.n ? (c.n.length > 16 ? c.n.slice(0,15)+'…' : c.n) : c.s;
+
+  return `<div class="bwei-row" data-sym="${c.s}" onclick="if(window._openChartForSymbol) window._openChartForSymbol('${c.s}')">
+    <div class="r-num">${rowNum})</div>
+    <div class="r-name">${shortName}</div>
+    <div class="r-rmi"></div>
+    <div class="r-spark">${renderSparkline(c.s, chg)}</div>
+    <div class="r-future">${fmtFuture(futurePx)}<span class="bwei-sfx-d">d</span></div>
+    <div class="r-mispx ${misPxClass}">${fmtMisPx(misPx)}</div>
+    <div class="r-value">${fmtPx(c.px)}<span class="bwei-sfx-d">d</span></div>
+    <div class="r-chg ${chgClass}">${fmtChg(chgUsd)}</div>
+    <div class="r-pct ${chgClass}">${fmtPct(chg)}</div>
+    <div class="r-avat ${avatClass}">${fmtAvat(avat)}</div>
+    <div class="r-time">${timeStr}<span class="bwei-sfx-c">c</span></div>
+    <div class="r-ytd ${ytdClass}">${fmtYtd(ytd)}</div>
+  </div>`;
+}
+
+function buildBWEI(data){
+  const futTag = getFutureTag();
+  const dataMap = {};
+  (data || []).forEach(c => { dataMap[c.s] = c; });
+
+  let html = `
+  <div class="bwei-wrap">
+
+    <div class="bwei-tophdr">
+      <span class="bwei-menu">News<span class="bwei-arr">▾</span></span>
+      <span class="bwei-menu">Settings<span class="bwei-arr">▾</span></span>
+      <span class="bwei-title">CRYPTO MARKETS DASHBOARD &nbsp;<span style="font-size:11px;color:#ff9999;letter-spacing:1px;font-weight:normal" id="bwei-live-tag">● LIVE</span></span>
+    </div>
+
+    <div class="bwei-optbar">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;">
+        <span class="bwei-opt-sel">Standard <span style="font-size:10px">▼</span></span>
+        <span class="bwei-opt-sep"></span>
+        <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
+        <span class="bwei-opt-sep"></span>
+        <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
+        <span class="bwei-opt-sep"></span>
+        <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
+        <span class="bwei-opt-sep"></span>
+        <label class="bwei-opt-chk"><input type="checkbox" checked> Futures</label>
+        <span class="bwei-opt-sep"></span>
+        <label class="bwei-opt-chk"><input type="checkbox" checked> &Delta; AVAT</label>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <select class="bwei-opt-dd"><option>10D </option></select>
+        <select class="bwei-opt-dd"><option>%Chg YTD </option></select>
+        <select class="bwei-opt-dd"><option>USD </option></select>
+      </div>
+    </div>
+
+    <div class="bwei-body">`;
+
+  let catIdx = 1;
+  let rowIdx = 1;
+  BWEI_CATEGORIES.forEach(cat => {
+    // Top headers only appear in the first category ("1) MAJORS")
+    if (catIdx === 1) {
+      html += `
+      <div class="bwei-cat" style="border-top: 1px solid #666666 !important;">
+        <div class="c-num">${catIdx})</div>
+        <div class="c-name">${cat.name}</div>
+        <div class="c-rmi">RMI</div>
+        <div class="c-spark">2Day</div>
+        <div>Future</div>
+        <div>%MisPx</div>
+        <div>Value</div>
+        <div>Net Chg</div>
+        <div>%Chg</div>
+        <div>&Delta; AVAT</div>
+        <div>Time</div>
+        <div>%YtdCur</div>
+      </div>`;
+    } else {
+      html += `
+      <div class="bwei-cat">
+        <div class="c-num">${catIdx})</div>
+        <div class="c-name">${cat.name}</div>
+        <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+      </div>`;
+    }
+    cat.tickers.forEach(tk => {
+      const item = dataMap[tk];
+      if(!item) return;
+      const rn = catIdx*10 + rowIdx;
+      html += buildRow(item, rn, futTag);
+      rowIdx++;
+    });
+    catIdx++;
+    rowIdx = 1;
+  });
+
+  // Calculate fallback news to strictly match image IDs and format
+  const fallbackNews = [
+    {id: '411', src: 'CBC', time: '19:03', txt: 'CBC: Watermark cancels season, and everything will change for 2026'},
+    {id: '410', src: 'DML', time: '19:02', txt: 'Daily Mail: Jim Edmonds donates plasma after recovering from COVID'},
+    {id: '409', src: 'ESD', time: '19:02', txt: 'British Museum identifies Middle East clay antiques as fakes'},
+    {id: '408', src: 'ESD', time: '19:02', txt: 'Tottenham midfielder Harry Winks not relishing prospect of Premier'}
+  ];
+  
+  let newsHtml = '';
+  fallbackNews.forEach(n => {
+    const srcClass = 'n-src-' + n.src.toLowerCase();
+    newsHtml += `<div class="bwei-news-line">
+      <div class="n-id">${n.id}</div>
+      <div class="n-src ${srcClass}">${n.src}</div>
+      <div class="n-time">${n.time}</div>
+      <div class="n-txt">${n.txt}</div>
+    </div>`;
+  });
+
+  html += `</div>
+
+    <div class="bwei-actionbar">
+      <span class="ab-item"><span style="color:#aaaaaa; font-weight:normal;">300)</span> Edit Panel</span>
+      <span class="ab-item"><span style="color:#aaaaaa; font-weight:normal;">301)</span> Expand Panel</span>
+    </div>
+
+    <div class="bwei-newsticker" id="bwei-newsticker">${newsHtml}</div>
+
+    <div class="bwei-footbar">
+      <span class="fb-sf">Suggested Functions</span>
+      <span class="fb-center">
+        <span class="fb-item"><span class="fb-key">ECO</span> <span class="fb-desc">See upcoming economic releases &amp; events</span></span>
+      </span>
+      <span class="fb-right">
+        <span class="fb-item"><span class="fb-key">CVID</span> <span class="fb-desc">Chart current coronavirus infection data</span></span>
+        <span class="fb-icon">&#x1F5B9;</span>
+      </span>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+function getTimeStr(){
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+// ─── MONKEY-PATCH THE EXISTING buildPanelContent ────────────────────────────
+(function _patchCrypto(){
+  // 1. Patch buildCRYPTOMktCap directly (used at build time)
+  const _origBuild = window.buildCRYPTOMktCap;
+  window.buildCRYPTOMktCap = function(data){
+    try { return buildBWEI(data); }
+    catch(e){
+      console.error('[BWEI] render failed, falling back to original:', e);
+      return typeof _origBuild === 'function' ? _origBuild(data) : '';
+    }
+  };
+
+  // 2. Patch buildPanelContent wrapper (covers all code paths)
+  const _origPanel = window.buildPanelContent;
+  if(typeof _origPanel === 'function'){
+    window.buildPanelContent = function(fn, ...args){
+      if(fn === 'CRYPTO'){
+        try {
+          const data = window.CRYPTO || [];
+          return buildBWEI(data);
+        } catch(e){
+          console.error('[BWEI] panel build failed:', e);
+        }
+      }
+      return _origPanel.apply(this, [fn, ...args]);
+    };
+  }
+
+  // 2b. Make sure we auto-maximize it when opened, to mimic full screen
+  setInterval(() => {
+    try {
+      const panel = document.querySelector('.panel');
+      if(panel && panel.innerHTML.includes('CRYPTO MARKETS DASHBOARD') && !panel.classList.contains('maximized')) {
+        panel.classList.add('maximized');
+        // Hide topbar/statbar to make it perfectly full screen as requested
+        document.body.classList.add('panel-open', 'hide-stat-bar');
+      }
+    } catch(e){}
+  }, 100);
+
+  // 3. Live-update hook — refresh sparklines & prices when fresh data arrives
+  //    Hook into the existing price update tick
+  function _refreshBWEI(){
+    try {
+      const panel = document.querySelector('.bwei-wrap');
+      if(!panel) return;
+      const data = window.CRYPTO || [];
+      const dataMap = {};
+      data.forEach(c => dataMap[c.s] = c);
+
+      panel.querySelectorAll('.bwei-row').forEach(row => {
+        const sym = row.dataset.sym;
+        const item = dataMap[sym];
+        if(!item) return;
+        const chg = item.chg || 0;
+        const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
+        const chgUsd = item.px ? item.px * chg/100 : 0;
+
+        const basisBps = (Math.sin(sym.charCodeAt(0)*0.37)*15 + 5);
+        const futurePx = item.px ? item.px * (1 + basisBps/10000) : 0;
+        const misPx = item.px ? ((futurePx/item.px - 1) * 100) : 0;
+        const avatSeed = (sym.charCodeAt(0)*17 + (sym.charCodeAt(1)||0)*31) % 100;
+        const avat = ((avatSeed - 50) * 0.8);
+        const ytd = item.ytd || (chg * (2.5 + Math.sin(sym.charCodeAt(0))*1.5));
+        const ytdClass = ytd >= 0 ? 'bwei-gn' : 'bwei-rd';
+        const avatClass = avat >= 0 ? 'bwei-gn' : 'bwei-rd';
+        const misPxClass = misPx >= 0 ? 'bwei-gn' : 'bwei-rd';
+
+        const futureEl = row.querySelector('.r-future');
+        const mispxEl = row.querySelector('.r-mispx');
+        const valueEl = row.querySelector('.r-value');
+        const chgEl = row.querySelector('.r-chg');
+        const pctEl = row.querySelector('.r-pct');
+        const avatEl = row.querySelector('.r-avat');
+        const timeEl = row.querySelector('.r-time');
+        const ytdEl = row.querySelector('.r-ytd');
+        const sparkEl = row.querySelector('.r-spark');
+
+        if(futureEl) futureEl.innerHTML = fmtFuture(futurePx)+'<span class="bwei-sfx-d">d</span>';
+        if(mispxEl){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
+        if(valueEl) valueEl.innerHTML = fmtPx(item.px)+'<span class="bwei-sfx-d">d</span>';
+        if(chgEl){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
+        if(pctEl){ pctEl.className = 'r-pct '+chgClass; pctEl.textContent = fmtPct(chg); }
+        if(avatEl){ 
+          avatEl.className = 'r-avat ' + (avat >= 0 ? 'avat-pos' : 'avat-neg'); 
+          avatEl.textContent = fmtAvat(avat); 
+        }
+        if(timeEl) timeEl.innerHTML = getTimeNow()+'<span class="bwei-sfx-c">c</span>';
+        if(ytdEl){ ytdEl.className = 'r-ytd '+ytdClass; ytdEl.textContent = fmtYtd(ytd); }
+        if(sparkEl) sparkEl.innerHTML = renderSparkline(sym, chg);
+      });
+    } catch(e){ /* silent */ }
+  }
+
+  // Refresh every 3s if panel is open
+  setInterval(_refreshBWEI, 3000);
+
+  console.log('[BWEI] Bloomberg-style CRYPTO panel loaded');
+})();
+
+// Expose for debug
+window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
+})();
+</script>
 </body>
 </html>
 
