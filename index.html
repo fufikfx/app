@@ -42368,8 +42368,25 @@ document.addEventListener('keydown', function(e){
 /* ── OPTIONS BAR ── */
 .bwei-optbar {
   background: #000000 !important; flex-shrink: 0 !important;
-  display: flex !important; align-items: center !important; padding: 2px 8px !important; gap: 8px !important;
-  font-size: 14px !important; justify-content: flex-start !important;
+  display: flex !important; align-items: center !important;
+  padding: 2px 4px !important;
+  font-size: 12px !important; justify-content: flex-start !important;
+  width: 100% !important; box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+.bwei-optbar-standard {
+  display: inline-flex !important; align-items: center !important;
+  flex: 0 0 auto !important;
+}
+.bwei-optbar-checks {
+  display: flex !important; align-items: center !important;
+  flex: 1 1 0 !important; min-width: 0 !important;
+  justify-content: space-evenly !important;
+  padding: 0 12px !important;
+}
+.bwei-optbar-right {
+  display: inline-flex !important; align-items: center !important;
+  flex: 0 0 auto !important; margin-left: auto !important; margin-right: 10px !important; gap: 2px !important;
 }
 .bwei-opt-sel {
   background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 15px !important;
@@ -42386,7 +42403,7 @@ document.addEventListener('keydown', function(e){
   vertical-align: middle !important;
 }
 .bwei-opt-arr:hover { background: #555 !important; }
-.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 6px !important; color: #FFAA00 !important; cursor: pointer !important; font-size: 15px !important; font-weight: normal !important; margin-right: 4px !important; }
+.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 4px !important; color: #FFAA00 !important; cursor: pointer !important; font-size: 12px !important; font-weight: normal !important; white-space: nowrap !important; }
 .bwei-opt-chk input[type=checkbox] { 
   appearance: none !important; -webkit-appearance: none !important;
   width: 14px !important; height: 14px !important; cursor: pointer !important; 
@@ -42846,23 +42863,22 @@ function buildBWEI(data){
     </div>
 
     <div class="bwei-optbar">
-      <div style="display:flex;align-items:center;gap:8px;flex:1;">
-        <div style="display:flex;align-items:center;"><span class="bwei-opt-sel">Standard</span><span class="bwei-opt-arr">▼</span></div>
-        <span class="bwei-opt-sep"></span>
+      <div class="bwei-optbar-standard">
+        <span class="bwei-opt-sel">Standard</span><span class="bwei-opt-arr">▼</span>
+      </div>
+      <div class="bwei-optbar-checks">
         <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
-        <span class="bwei-opt-sep"></span>
         <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
-        <span class="bwei-opt-sep"></span>
         <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
-        <span class="bwei-opt-sep"></span>
         <label class="bwei-opt-chk"><input type="checkbox" checked> Futures</label>
-        <span class="bwei-opt-sep"></span>
         <label class="bwei-opt-chk"><input type="checkbox" checked> &Delta; AVAT</label>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div style="display:flex;align-items:center;"><span class="bwei-opt-sel">10D</span><span class="bwei-opt-arr">▼</span></div>
-        <div style="display:flex;align-items:center;"><span class="bwei-opt-sel">%Chg YTD</span><span class="bwei-opt-arr">▼</span></div>
-        <div style="display:flex;align-items:center;"><span class="bwei-opt-sel">USD</span><span class="bwei-opt-arr">▼</span></div>
+      <div class="bwei-optbar-right">
+        <span class="bwei-opt-sel">10D</span><span class="bwei-opt-arr">▼</span>
+        <span style="width:3px;flex-shrink:0;"></span>
+        <span class="bwei-opt-sel">%Chg YTD</span><span class="bwei-opt-arr">▼</span>
+        <span style="width:3px;flex-shrink:0;"></span>
+        <span class="bwei-opt-sel">USD</span><span class="bwei-opt-arr">▼</span>
       </div>
     </div>
 
@@ -43093,8 +43109,25 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 /* ── OPTIONS BAR ── */
 .bwei-optbar {
   background: #000000 !important; flex-shrink: 0 !important;
-  display: flex !important; align-items: center !important; padding: 2px 8px !important; gap: 8px !important;
-  font-size: 14px !important; justify-content: flex-start !important;
+  display: flex !important; align-items: center !important;
+  padding: 2px 4px !important;
+  font-size: 12px !important; justify-content: flex-start !important;
+  width: 100% !important; box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+.bwei-optbar-standard {
+  display: inline-flex !important; align-items: center !important;
+  flex: 0 0 auto !important;
+}
+.bwei-optbar-checks {
+  display: flex !important; align-items: center !important;
+  flex: 1 1 0 !important; min-width: 0 !important;
+  justify-content: space-evenly !important;
+  padding: 0 12px !important;
+}
+.bwei-optbar-right {
+  display: inline-flex !important; align-items: center !important;
+  flex: 0 0 auto !important; margin-left: auto !important; margin-right: 10px !important; gap: 2px !important;
 }
 .bwei-opt-sel {
   background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 15px !important;
@@ -43111,7 +43144,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   vertical-align: middle !important;
 }
 .bwei-opt-arr:hover { background: #555 !important; }
-.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 6px !important; color: #FFAA00 !important; cursor: pointer !important; font-size: 15px !important; font-weight: normal !important; margin-right: 4px !important; }
+.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 4px !important; color: #FFAA00 !important; cursor: pointer !important; font-size: 12px !important; font-weight: normal !important; white-space: nowrap !important; }
 .bwei-opt-chk input[type=checkbox] { 
   appearance: none !important; -webkit-appearance: none !important;
   width: 14px !important; height: 14px !important; cursor: pointer !important; 
@@ -43572,21 +43605,21 @@ function buildBWEI(data){
     </div>
 
     <div class="bwei-optbar">
-      <div style="display:flex;align-items:center;margin-right:16px;">
+      <div class="bwei-optbar-standard">
         <span class="bwei-opt-sel">Standard</span><span class="bwei-opt-arr">▼</span>
       </div>
-      <span class="bwei-opt-sep"></span>
-      <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
-      <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
-      <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
-      <label class="bwei-opt-chk"><input type="checkbox" checked> Futures</label>
-      <label class="bwei-opt-chk"><input type="checkbox" checked> &Delta; AVAT</label>
-      <span class="bwei-opt-sep"></span>
-      <div style="display:flex;align-items:center;margin-left:auto;gap:4px;">
+      <div class="bwei-optbar-checks">
+        <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
+        <label class="bwei-opt-chk"><input type="checkbox" checked> Futures</label>
+        <label class="bwei-opt-chk"><input type="checkbox" checked> &Delta; AVAT</label>
+      </div>
+      <div class="bwei-optbar-right">
         <span class="bwei-opt-sel">10D</span><span class="bwei-opt-arr">▼</span>
-        <span style="width:6px;"></span>
+        <span style="width:3px;flex-shrink:0;"></span>
         <span class="bwei-opt-sel">%Chg YTD</span><span class="bwei-opt-arr">▼</span>
-        <span style="width:6px;"></span>
+        <span style="width:3px;flex-shrink:0;"></span>
         <span class="bwei-opt-sel">USD</span><span class="bwei-opt-arr">▼</span>
       </div>
     </div>
