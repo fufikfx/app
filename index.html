@@ -5835,9 +5835,15 @@ function _getSatLayer(){
     _renderCryptoDash();
   };
 
+  let _lastDashRender = 0;
   function _renderCryptoDash() {
     const container = document.getElementById('cdash-body');
     if (!container) return;
+
+    // Throttle to 1s to prevent flickering/performance issues
+    const now = Date.now();
+    if (now - _lastDashRender < 1000) return;
+    _lastDashRender = now;
     
     let html = '';
     
@@ -43280,12 +43286,11 @@ function buildBWEI(data){
     rowIdx = 1;
   });
 
-  // Calculate fallback news to strictly match image IDs and format
-  const fallbackNews = [
-    {id: '411', src: 'CBC', time: '19:03', txt: 'CBC: Watermark cancels season, and everything will change for 2026'},
-    {id: '410', src: 'DML', time: '19:02', txt: 'Daily Mail: Jim Edmonds donates plasma after recovering from COVID'},
-    {id: '409', src: 'ESD', time: '19:02', txt: 'British Museum identifies Middle East clay antiques as fakes'},
-    {id: '408', src: 'ESD', time: '19:02', txt: 'Tottenham midfielder Harry Winks not relishing prospect of Premier'}
+  const fallbackNews = typeof window._bweiFreshNews === 'function' ? window._bweiFreshNews() : [
+    {id: '411', src: 'CBC', time: getTimeHM(), txt: 'Bitcoin ETF inflows surge as institutional demand spikes'},
+    {id: '410', src: 'DML', time: getTimeHM(), txt: 'Ethereum staking yields reach new yearly high'},
+    {id: '409', src: 'ESD', time: getTimeHM(), txt: 'SEC review of crypto custody rules expected next month'},
+    {id: '408', src: 'ESD', time: getTimeHM(), txt: 'Market Analysis: BTC consolidation continues above $90k'}
   ];
   
   let newsHtml = '';
@@ -43314,7 +43319,7 @@ function buildBWEI(data){
         <span class="fb-item"><span class="fb-key">ECO</span> <span class="fb-desc">See upcoming economic releases &amp; events</span></span>
       </span>
       <span class="fb-right">
-        <span class="fb-item"><span class="fb-key">CVID</span> <span class="fb-desc">Chart current coronavirus infection data</span></span>
+        <span class="fb-item"><span class="fb-key">HYPE</span> <span class="fb-desc">Hyperliquid L1 scaling & liquidity solutions</span></span>
         <span class="fb-icon">&#x1F5B9;</span>
       </span>
     </div>
@@ -44026,12 +44031,11 @@ function buildBWEI(data){
     rowIdx = 1;
   });
 
-  // Calculate fallback news to strictly match image IDs and format
-  const fallbackNews = [
-    {id: '411', src: 'CBC', time: '19:03', txt: 'CBC: Watermark cancels season, and everything will change for 2026'},
-    {id: '410', src: 'DML', time: '19:02', txt: 'Daily Mail: Jim Edmonds donates plasma after recovering from COVID'},
-    {id: '409', src: 'ESD', time: '19:02', txt: 'British Museum identifies Middle East clay antiques as fakes'},
-    {id: '408', src: 'ESD', time: '19:02', txt: 'Tottenham midfielder Harry Winks not relishing prospect of Premier'}
+  const fallbackNews = typeof window._bweiFreshNews === 'function' ? window._bweiFreshNews() : [
+    {id: '411', src: 'CBC', time: getTimeHM(), txt: 'Bitcoin ETF inflows surge as institutional demand spikes'},
+    {id: '410', src: 'DML', time: getTimeHM(), txt: 'Ethereum staking yields reach new yearly high'},
+    {id: '409', src: 'ESD', time: getTimeHM(), txt: 'SEC review of crypto custody rules expected next month'},
+    {id: '408', src: 'ESD', time: getTimeHM(), txt: 'Market Analysis: BTC consolidation continues above $90k'}
   ];
   
   let newsHtml = '';
@@ -44060,7 +44064,7 @@ function buildBWEI(data){
         <span class="fb-item"><span class="fb-key">ECO</span> <span class="fb-desc">See upcoming economic releases &amp; events</span></span>
       </span>
       <span class="fb-right">
-        <span class="fb-item"><span class="fb-key">CVID</span> <span class="fb-desc">Chart current coronavirus infection data</span></span>
+        <span class="fb-item"><span class="fb-key">HYPE</span> <span class="fb-desc">Hyperliquid L1 scaling & liquidity solutions</span></span>
         <span class="fb-icon">&#x1F5B9;</span>
       </span>
     </div>
@@ -44217,6 +44221,90 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
       <!-- Sections injected by JS -->
     </div>
   </div>
+  <!-- Seamless BWEI News Updater -->
+  <script>
+  (function(){
+    const newsPool = [
+      {src:'CBC', txt:'BTC: Institutional adoption acceleration continues as ETFs hit record volumes'},
+      {src:'CBC', txt:'Crypto: Global regulatory clarity improves as major economies draft new frameworks'},
+      {src:'CBC', txt:'Market: Tech sector rotation favors decentralized infrastructure plays'},
+      {src:'DML', txt:'Daily Mail: Bitcoin whales move massive amounts to cold storage as supply tightens'},
+      {src:'DML', txt:'Alert: Major exchange reports record low BTC balances as bulls take control'},
+      {src:'DML', txt:'DeFi: Ethereum Layer 2 activity hits all-time high as gas fees stabilize'},
+      {src:'ESD', txt:'British Analyst: Digital assets now represent critical portfolio hedge'},
+      {src:'ESD', txt:'Report: Solana ecosystem growth outpaces competitors in active addresses'},
+      {src:'ESD', txt:'Economy: Inflation data supports case for alternative store-of-value assets'},
+      {src:'CBC', txt:'BTC: Mining difficulty hits new peak as network security reaches record levels'},
+      {src:'DML', txt:'Crypto: Venture capital funding for blockchain startups rebounds in Q1'},
+      {src:'ESD', txt:'Analysis: On-chain metrics signal strong accumulation phase for major tokens'}
+    ];
+    
+    let baseId = 412;
+    
+    window._bweiFreshNews = function() {
+      // Pick 4 random news from the pool
+      const shuffled = [...newsPool].sort(() => 0.5 - Math.random());
+      
+      return shuffled.slice(0, 4).map((n, i) => {
+        // Stagger times slightly for realism (e.g. current time, -2 mins, -5 mins, -9 mins)
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - (i * Math.floor(Math.random() * 3 + 1))); 
+        const time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+        
+        return {
+          id: String(baseId + i),
+          src: n.src,
+          time: time,
+          txt: n.txt
+        };
+      });
+    };
+
+    function updateNewsSeamlessly() {
+      const ticker = document.getElementById('bwei-newsticker');
+      if (!ticker) return;
+      
+      const lines = ticker.querySelectorAll('.bwei-news-line');
+      if (lines.length === 0) return;
+      
+      const fresh = window._bweiFreshNews();
+      baseId += 4; // Increment IDs like a real terminal
+      
+      lines.forEach((line, i) => {
+        if (!fresh[i]) return;
+        const idEl = line.querySelector('.n-id');
+        const srcEl = line.querySelector('.n-src');
+        const timeEl = line.querySelector('.n-time');
+        const txtEl = line.querySelector('.n-txt');
+        
+        if (idEl) idEl.textContent = fresh[i].id;
+        if (srcEl) {
+          srcEl.textContent = fresh[i].src;
+          srcEl.className = 'n-src n-src-' + fresh[i].src.toLowerCase();
+        }
+        if (timeEl) timeEl.textContent = fresh[i].time;
+        if (txtEl) txtEl.textContent = fresh[i].txt;
+      });
+      
+      console.log('[BWEI] News updated seamlessly');
+    }
+
+    // Update every 5 minutes
+    setInterval(updateNewsSeamlessly, 5 * 60 * 1000);
+    
+    // Also try to update footbar if it exists outside of the template
+    setInterval(() => {
+      const cvid = document.querySelector('.fb-key');
+      if(cvid && cvid.textContent === 'CVID') {
+        const item = cvid.closest('.fb-item');
+        if(item) {
+          item.querySelector('.fb-key').textContent = 'HYPE';
+          item.querySelector('.fb-desc').textContent = 'Hyperliquid L1 scaling & liquidity solutions';
+        }
+      }
+    }, 1000);
+  })();
+  </script>
 </body>
 </html>
 
