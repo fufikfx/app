@@ -509,77 +509,266 @@ body.sat-active .m-wrap{opacity:1!important;}
 .pp-btn:hover{background:var(--am);color:#000;border-color:var(--am);}
 .pp-btn.am{background:var(--am);color:#000;border-color:var(--am);}
 
-/* ══ AIS SHIPS ══ */
+/* ══ AIS SHIPS (Preserved maplibregl) ══ */
 @keyframes ais-blink{0%,100%{opacity:1}}
 .ais-live-dot { animation: ais-blink 2s infinite ease-in-out; }
 .maplibregl-popup-content{background:transparent!important;padding:0!important;border:none!important;box-shadow:none!important;}
-#ais-panel{
-  position:absolute;top:0;right:0;bottom:28px;z-index:2500;width:360px;
-  background:rgba(2,1,0,.97);border-left:1px solid #000000;
-  font-family:var(--fn);font-size:10.5px;display:none;
-  flex-direction:column;
-  backdrop-filter:none;-webkit-backdrop-filter:none;
-  box-shadow:-6px 0 24px rgba(0,0,0,0.5);
-}
-#ais-ship-list table.pt th { background: transparent; border-bottom: 1px solid #1a1200; color: #887766; padding-bottom:5px; padding-top:8px; font-weight:700; font-size:9.5px; letter-spacing:0.5px; }
-#ais-panel.open{display:flex;}
-#ais-panel-hd{
-  background:#0a0600;border-bottom:1px solid #000000;padding:6px 10px;
-  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
-}
-#ais-panel-hd .title{color:#ff8800;font-weight:700;font-size:10px;letter-spacing:1.5px;display:flex;align-items:center;gap:6px;}
-#ais-panel-hd .title::before{content:'◆';font-size:8px;color:#ff6600;}
-#ais-panel-hd .close{color:#444;cursor:pointer;font-size:12px;padding:0 4px;}
-#ais-panel-hd .close:hover{color:#ff4400;}
-#ais-stats{
-  display:flex;gap:0;border-bottom:1px solid #000000;flex-shrink:0;
-}
-.ais-stat{
-  flex:1;padding:5px 8px;text-align:center;border-right:1px solid #000000;
-}
-.ais-stat:last-child{border-right:none;}
-.ais-stat .val{font-family:var(--fn-num);font-size:14px;font-weight:700;line-height:1.3;}
-.ais-stat .lbl{color:#665840;font-size:7px;letter-spacing:.5px;}
-#ais-filters{
-  display:flex;gap:4px;padding:6px 8px;border-bottom:1px solid #111;flex-shrink:0;
-}
-.ais-filter{
-  padding:3px 8px;border:1px solid #000000;color:#554422;font-size:7px;
-  cursor:pointer;font-family:var(--fn);letter-spacing:.8px;transition:all .12s;background:transparent;font-weight:700;
-}
-.ais-filter:hover{border-color:#ff6600;color:#ff8800;background:rgba(255,102,0,.03);}
-.ais-filter.on{background:#ff6600;color:#000;border-color:#ff6600;font-weight:700;}
-#ais-ship-list{
-  flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;
-  scrollbar-width:thin;scrollbar-color:#1a1200 #000;
-}
-#ais-ship-list::-webkit-scrollbar{width:3px;}
-#ais-ship-list::-webkit-scrollbar-thumb{background:#1a1200;}
-#ais-ship-list::-webkit-scrollbar-track{background:#000;}
-.ais-ship-row{
-  display:flex;align-items:center;padding:4px 8px;border-bottom:1px solid #0a0800;
-  cursor:pointer;transition:background .1s;gap:6px;
-}
-.ais-ship-row:hover{background:#0a0600;}
-.ais-ship-row .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.ais-ship-row .name{flex:1;color:#d8d0b8;font-size:8.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ais-ship-row .type{color:#665840;font-size:7px;width:50px;text-align:right;flex-shrink:0;}
-.ais-ship-row .speed{font-family:var(--fn-num);color:#ff8800;font-size:8px;width:40px;text-align:right;flex-shrink:0;}
 
-/* AIS key dialog removed */
+/* ═══════════════════════════════════════════════════════════════════════════
+   CRYPTO MARKET DASHBOARD — Bloomberg WEI Style Panel
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-#ais-toggle-btn{
-  position:absolute;top:8px;right:8px;z-index:2400;
-  background:rgba(0,0,0,.9);border:1px solid #000000;
-  color:#ff8800;font-family:var(--fn);font-size:8px;
-  padding:4px 10px;cursor:pointer;letter-spacing:1px;
-  display:flex;align-items:center;gap:5px;transition:all .12s;
+/* ── Panel Container ── */
+#crypto-dash-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 28px;
+  width: auto;
+  background: #000;
+  border-left: 1px solid #1a1a00;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  display: none;
+  flex-direction: column;
+  z-index: 99999;
+  overflow: hidden;
 }
-#ais-toggle-btn:hover{border-color:#ff6600;background:#0a0600;}
-#ais-toggle-btn .cnt{font-family:var(--fn-num);color:#00ddff;font-weight:700;}
-#ais-toggle-btn .live-ind{width:5px;height:5px;border-radius:50%;background:#222;}
-#ais-toggle-btn .live-ind.on{background:#00cc44;animation:blink 2s ease-in-out infinite;}
-#ais-toggle-btn .live-ind.err{background:#ff2222;}
+
+#crypto-dash-panel.open {
+  display: flex;
+}
+
+/* ── Top Header Bar (Red Bloomberg style) ── */
+.cdash-header {
+  height: 24px;
+  background: #8B0000;
+  display: flex;
+  justify-content: center; /* Center the inner content */
+  padding: 0;
+  flex-shrink: 0;
+  border-bottom: 1px solid #000;
+}
+
+.cdash-inner {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  height: 100%;
+}
+
+.cdash-header-btn {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 8px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+}
+
+.cdash-header-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.cdash-header-title {
+  margin-left: auto;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* ── Filter Bar (Amber/Orange chips) ── */
+.cdash-filters {
+  height: 24px;
+  background: #000;
+  display: flex;
+  justify-content: center; /* Center the inner content */
+  padding: 0;
+  flex-shrink: 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.cdash-filter-chip {
+  height: 16px;
+  padding: 0 10px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid #000;
+  background: #d4a84b;
+  color: #000;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cdash-filter-chip.off {
+  background: #1a1a1a;
+  color: #887760;
+  border-color: #000;
+}
+
+.cdash-filter-chip .check {
+  font-size: 9px;
+}
+
+/* Dropdown arrow inside chip */
+.cdash-filter-chip .arrow {
+  font-size: 7px;
+  margin-left: 2px;
+}
+
+/* ── Table Container ── */
+.cdash-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #000;
+  width: 100%;
+}
+
+.cdash-body::-webkit-scrollbar {
+  width: 3px;
+}
+
+.cdash-body::-webkit-scrollbar-thumb {
+  background: #2a2010;
+}
+
+/* ── Section Headers (Americas, EMEA, Asia) ── */
+.cdash-section {
+  margin-bottom: 2px;
+}
+
+.cdash-sec-header {
+  background: #1a1a1a;
+  color: #F39F41;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-bottom: 1px solid #000;
+  border-top: 1px solid #000;
+}
+
+/* ── Data Table ── */
+.cdash-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 10px;
+  margin-bottom: 20px;
+}
+
+.cdash-table th {
+  background: #0a0a0a;
+  color: #887760;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: right;
+  padding: 3px 6px;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid #1a1a00;
+  white-space: nowrap;
+}
+
+.cdash-table th:first-child {
+  text-align: left;
+  padding-left: 8px;
+}
+
+.cdash-table td {
+  padding: 2px 6px;
+  border-bottom: 1px solid #0d0d0d;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Roboto Mono', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+  color: #d4a84b; /* Amber/Gold for values */
+}
+
+.cdash-table td:first-child {
+  text-align: left;
+  padding-left: 8px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.cdash-up { color: #00ff00 !important; }
+.cdash-dn { color: #ff3333 !important; }
+.cdash-grey { color: #887760 !important; }
+
+/* Row hover */
+.cdash-table tr:hover {
+  background: #111;
+}
+.cdash-table tr:hover td {
+  background: #0f0f0f;
+}
+
+/* Selected row */
+.cdash-table tr.sel td {
+  background: #1a1500;
+}
+
+/* Colors */
+.cdash-up { color: #00cc44 !important; }
+.cdash-dn { color: #ff3d3d !important; }
+.cdash-amber { color: #F39F41 !important; }
+.cdash-grey { color: #666 !important; }
+
+/* Mini sparkline cell */
+.cdash-spark {
+  width: 40px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* ── Toggle Button (top-right corner) ── */
+#crypto-dash-toggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2600;
+  background: rgba(0,0,0,0.95);
+  border: 1px solid #F39F41;
+  color: #F39F41;
+  font-family: 'Courier New', monospace;
+  font-size: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.12s;
+}
+
+#crypto-dash-toggle:hover {
+  background: #F39F41;
+  color: #000;
+}
+
+#crypto-dash-toggle .live-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #00cc44;
+  animation: ais-blink 2s ease-in-out infinite;
+}
 
 /* ══ LEGEND ══ */
 
@@ -3754,16 +3943,16 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ql-folder open" id="ql-maritime-folder-main" onclick="event.stopPropagation()">
         <div class="ql-folder-hd" onclick="this.parentElement.classList.toggle('open')">
           <span class="ql-folder-arrow">▶</span>
-          <span class="ql-folder-name">Maritime Intelligence &amp; AIS</span>
+          <span class="ql-folder-name">Crypto Markets &amp; DASH</span>
         </div>
         <div class="ql-folder-body">
-          <div class="ql-it" id="ql-ais-status-item" onclick="toggleAISPanel();closeAllQL()" style="padding-left:22px;">
+          <div class="ql-it" id="ql-ais-status-item" onclick="_toggleCryptoDash();closeAllQL()" style="padding-left:22px;">
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="color:#665840;font-size:10px;">○</span>
-              <span style="color:var(--am2);font-weight:700;font-size:9px">LIVE DATA FEED (RIGHT PANEL)</span>
+              <span style="color:var(--am2);font-weight:700;font-size:9px">LIVE CRYPTO DASHBOARD (FULL PAGE)</span>
             </div>
           </div>
-          <div class="ql-it" onclick="toggleAISPanel();closeAllQL()"><div class="ql-it-desc"><span style="color:#665840;margin-right:8px;">○</span>MARITIME TRACKER &amp; MAP (RIGHT SIDE)</div></div>
+          <div class="ql-it" onclick="_toggleCryptoDash();closeAllQL()"><div class="ql-it-desc"><span style="color:#665840;margin-right:8px;">○</span>MARKET DATA PANEL (RIGHT SIDE)</div></div>
         </div>
       </div>
 
@@ -4168,47 +4357,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   <!-- PANEL CONTAINER (absolute positioned panels inside) -->
   <!-- AIS PANEL (Right side) -->
-  <div id="ais-panel">
-    <!-- Minimal top bar - just filters + close -->
-    <div style="display:flex;align-items:center;padding:4px 6px;background:#030200;border-bottom:1px solid #0a0800;flex-shrink:0;gap:3px;">
-      <span id="ais-live-indicator" style="width:5px;height:5px;border-radius:50%;background:#333;flex-shrink:0;"></span>
-      <span id="ais-status-text" style="font-size:7px;font-weight:700;padding:1px 5px;background:#0a0800;color:#443322;letter-spacing:.5px;">OFFLINE</span>
-      <button class="ais-filter on" data-f="all" onclick="_aisFilter('all',this)">ALL</button>
-      <button class="ais-filter" data-f="moving" onclick="_aisFilter('moving',this)">MOVING</button>
-      <button class="ais-filter" data-f="tanker" onclick="_aisFilter('tanker',this)">TNK</button>
-      <button class="ais-filter" data-f="cargo" onclick="_aisFilter('cargo',this)">CGO</button>
-      <button class="ais-filter" data-f="passenger" onclick="_aisFilter('passenger',this)">PAX</button>
-      <button class="ais-filter" data-f="anchored" onclick="_aisFilter('anchored',this)">ANCHOR</button>
-      <span style="flex:1"></span>
-      <span id="ais-pkt-counter" style="font-size:6px;color:#221800;font-family:var(--fn-num);">—</span>
-      <span onclick="_aisConnect()" style="font-size:9px;cursor:pointer;color:#332200;padding:0 2px;" onmouseover="this.style.color='#ff8800'" onmouseout="this.style.color='#332200'">↻</span>
-      <span onclick="toggleAISPanel()" style="color:#221800;font-size:8px;cursor:pointer;padding:0 2px;" onmouseover="this.style.color='#ff4400'" onmouseout="this.style.color='#221800'">✕</span>
-    </div>
-
-    <!-- Ship List - takes all space -->
-    <div id="ais-ship-list" class="sbl" style="flex:1;overflow-y:auto;background:transparent;min-height:80px;"></div>
-
-    <!-- Vessel Detail Pane -->
-    <div id="ais-detail-pane" style="display:none;background:#050400;border-top:1px solid #1a1000;padding:8px 10px;flex-shrink:0;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span id="ais-det-name" style="color:#F39F41;font-weight:700;font-size:10px;letter-spacing:1px;text-transform:uppercase;">VESSEL NAME</span>
-        <span onclick="document.getElementById('ais-detail-pane').style.display='none'" style="cursor:pointer;color:#444;font-size:10px;padding:2px 4px;" onmouseover="this.style.color='#f22'" onmouseout="this.style.color='#444'">✕</span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:4px 10px;">
-        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">MMSI</div><div id="ais-det-mmsi" style="color:#c8c8c8;font-size:8px;font-family:var(--fn-num);">—</div></div>
-        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">FLAG</div><div id="ais-det-flag" style="color:#c8c8c8;font-size:9px;">—</div></div>
-        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">TYPE</div><div id="ais-det-type" style="color:#c8c8c8;font-size:8px;">—</div></div>
-        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">SPEED</div><div id="ais-det-speed" style="color:#00ddff;font-size:9px;font-weight:700;font-family:var(--fn-num);">0.0 KN</div></div>
-        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">STATUS</div><div id="ais-det-status" style="color:#998870;font-size:7px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div></div>
-        <div><div style="color:#665840;font-size:6px;letter-spacing:.5px;">DESTINATION</div><div id="ais-det-dest" style="color:#998870;font-size:7px;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div></div>
-      </div>
-    </div>
-
-    <!-- Bottom bar -->
-    <div style="display:flex;padding:3px 8px;background:#020100;border-top:1px solid #060400;flex-shrink:0;align-items:center;">
-      <span style="font-size:5px;color:#332200;font-family:var(--fn);letter-spacing:1px;" id="ais-pkt-rate">—</span>
-    </div>
-  </div>
+  <!-- CRYPTO DASH PANEL (Full width over right side) -->
 
 
   <!-- AIS key dialog removed — key hardcoded -->
@@ -5648,14 +5797,215 @@ function _getSatLayer(){
     document.getElementById('ais-det-dest').textContent = dst;
   };
   
-  window.toggleAISPanel = function() {
-    const p = document.getElementById('ais-panel');
+  // Mock data mimicking standard crypto pairs
+  const _cryptoDashData = [
+    { sec: 'MAJORS', pairs: [
+      { name: 'BTC/USD', last: '63251.40', chg: '2.14', up: true },
+      { name: 'ETH/USD', last: '3452.15', chg: '1.42', up: true },
+      { name: 'SOL/USD', last: '142.82', chg: '-0.51', up: false },
+      { name: 'BNB/USD', last: '582.40', chg: '0.12', up: true },
+      { name: 'XRP/USD', last: '0.6214', chg: '-1.25', up: false },
+      { name: 'ADA/USD', last: '0.4521', chg: '0.84', up: true }
+    ]},
+    { sec: 'LAYER 1S', pairs: [
+      { name: 'AVAX/USD', last: '34.22', chg: '4.21', up: true },
+      { name: 'NEAR/USD', last: '6.84', chg: '2.15', up: true },
+      { name: 'DOT/USD', last: '7.12', chg: '-1.04', up: false },
+      { name: 'MATIC/USD', last: '0.72', chg: '-2.41', up: false },
+      { name: 'FTM/USD', last: '0.88', chg: '5.12', up: true }
+    ]},
+    { sec: 'DEFI', pairs: [
+      { name: 'UNI/USD', last: '7.45', chg: '1.12', up: true },
+      { name: 'AAVE/USD', last: '88.40', chg: '-0.85', up: false },
+      { name: 'MKR/USD', last: '2842.10', chg: '3.42', up: true },
+      { name: 'LINK/USD', last: '14.25', chg: '0.54', up: true }
+    ]}
+  ];
+
+  let _cryptoDashFilter = 'MARKETS';
+  let _cryptoDashTimer = null;
+
+  window._setCryptoDashFilter = function(f) {
+    _cryptoDashFilter = f;
+    // Update active state in UI
+    document.querySelectorAll('.cdash-header-btn').forEach(btn => {
+      if (btn.textContent.includes(f)) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+    _renderCryptoDash();
+  };
+
+  function _renderCryptoDash() {
+    const container = document.getElementById('cdash-body');
+    if (!container) return;
+    
+    let html = '';
+    
+    if (_cryptoDashFilter === 'NEWS') {
+      const news = (window._newsCache || []).filter(n => n.tag === 'CRYPTO' || n.title.toLowerCase().includes('btc') || n.title.toLowerCase().includes('crypto')).slice(0, 40);
+      const items = news.length > 0 ? news : (window._newsCache || []).slice(0, 40);
+      
+      html += `
+        <div class="cdash-section">
+          <div class="cdash-sec-header">
+            <div class="cdash-inner">LATEST CRYPTO NEWS</div>
+          </div>
+          <div class="cdash-inner" style="display:block;">
+            <table class="cdash-table">
+              <thead>
+                <tr>
+                  <th style="width: 10%">Time</th>
+                  <th style="width: 15%">Source</th>
+                  <th style="width: 75%">Headline</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+      
+      items.forEach(item => {
+        const time = new Date(item.ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        const isFlash = item.tag === 'FLASH' || item.tier === 1;
+        const srcCol = item.src === 'BINANCE' ? '#f3ba2f' : item.src === 'X' ? '#1da1f2' : '#d4a84b';
+        
+        html += `
+          <tr onclick="if(window._wnOpenDetail) _wnOpenDetail(${window._newsCache.indexOf(item)})" style="cursor:pointer">
+            <td class="cdash-grey">${time}</td>
+            <td style="color:${srcCol}">${(item.src || 'NEWS').toUpperCase()}</td>
+            <td style="color:${isFlash ? '#ff4444' : '#fff'}">
+              ${isFlash ? '<span style="background:#8B0000;color:#fff;padding:1px 4px;font-size:9px;margin-right:6px">FLASH</span>' : ''}
+              ${item.title}
+            </td>
+          </tr>
+        `;
+      });
+      
+      html += `</tbody></table></div></div>`;
+    } else if (_cryptoDashFilter === 'MOVERS') {
+      const all = [...(window.CRYPTO || [])].sort((a,b) => Math.abs(b.chg) - Math.abs(a.chg)).slice(0, 30);
+      
+      html += `
+        <div class="cdash-section">
+          <div class="cdash-sec-header">
+            <div class="cdash-inner">TOP MARKET MOVERS (24H)</div>
+          </div>
+          <div class="cdash-inner" style="display:block;">
+            <table class="cdash-table">
+              <thead>
+                <tr>
+                  <th style="width: 25%">Asset</th>
+                  <th style="width: 15%">Price</th>
+                  <th style="width: 15%">Change %</th>
+                  <th style="width: 20%">Market Cap</th>
+                  <th style="width: 25%">24h Volume</th>
+                </tr>
+              </thead>
+              <tbody>
+      `;
+      
+      all.forEach(c => {
+        const colorCls = c.chg >= 0 ? 'cdash-up' : 'cdash-dn';
+        html += `
+          <tr>
+            <td style="cursor:pointer" onclick="if(window._openChartForSymbol)_openChartForSymbol('${c.s}')">${c.n} (${c.s})</td>
+            <td>$${fmtPx(c.px)}</td>
+            <td class="${colorCls}">${c.chg > 0 ? '+' : ''}${c.chg.toFixed(2)}%</td>
+            <td class="cdash-grey">$${(c.mc / 1e9).toFixed(1)}B</td>
+            <td class="cdash-grey">$${(c.vol / 1e6).toFixed(0)}M</td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table></div></div>`;
+    } else {
+      _cryptoDashData.forEach(section => {
+        html += `
+          <div class="cdash-section">
+            <div class="cdash-sec-header">
+              <div class="cdash-inner">${section.sec}</div>
+            </div>
+            <div class="cdash-inner" style="display:block;">
+              <table class="cdash-table">
+                <thead>
+                  <tr>
+                    <th style="width: 25%">Indices</th>
+                    <th style="width: 15%">Value</th>
+                    <th style="width: 12%">Net Chg</th>
+                    <th style="width: 12%">% Chg</th>
+                    <th style="width: 12%">10D</th>
+                    <th style="width: 12%">%Chg YTD</th>
+                    <th style="width: 12%">USD</th>
+                  </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        section.pairs.forEach(pair => {
+          // Try to get live data
+          const sym = pair.name.split('/')[0];
+          const live = (window.CRYPTO || []).find(c => c.s === sym);
+          const dhlo = (window._dhloCache || {})[sym];
+          
+          let last = pair.last;
+          let chg = pair.chg;
+          let up = pair.up;
+          
+          if (live) {
+            last = live.px.toFixed(live.px < 1 ? 4 : 2);
+            chg = live.chg.toFixed(2);
+            up = live.chg >= 0;
+          }
+          
+          const colorCls = up ? 'cdash-up' : 'cdash-dn';
+          const sign = up ? '+' : '';
+          const netChg = (parseFloat(last) * (parseFloat(chg)/100)).toFixed(live && live.px < 1 ? 4 : 2);
+          
+          // Use real YTD if available, else mock
+          const ytd = pair.ytd || (Math.random() * 50 - 5).toFixed(1);
+          const tenD = pair.tenD || (Math.random() * 20 - 10).toFixed(1);
+          const usd = pair.vol || (Math.random() * 1000 + 100).toFixed(0) + 'M';
+          
+          html += `
+            <tr>
+              <td style="cursor:pointer" onclick="if(window._openChartForSymbol)_openChartForSymbol('${sym}')">${pair.name}</td>
+              <td class="${colorCls}">${last}</td>
+              <td class="${colorCls}">${sign}${netChg}</td>
+              <td class="${colorCls}">${chg}%</td>
+              <td class="${parseFloat(tenD) >= 0 ? 'cdash-up' : 'cdash-dn'}">${tenD}%</td>
+              <td class="${parseFloat(ytd) >= 0 ? 'cdash-up' : 'cdash-dn'}">${ytd}%</td>
+              <td class="cdash-grey">${usd}</td>
+            </tr>
+          `;
+        });
+        
+        html += `
+              </tbody>
+            </table>
+          </div>
+        `;
+      });
+    }
+    
+    container.innerHTML = html;
+
+    // Auto-refresh if panel is open
+    const p = document.getElementById('crypto-dash-panel');
+    if (p && p.classList.contains('open')) {
+      if (_cryptoDashTimer) clearTimeout(_cryptoDashTimer);
+      _cryptoDashTimer = setTimeout(_renderCryptoDash, 2000);
+    }
+  }
+
+  window._toggleCryptoDash = function() {
+    const p = document.getElementById('crypto-dash-panel');
     if(!p) return;
     const isVisible = p.classList.toggle('open');
     if(isVisible) {
-      _aisUpdatePanel();
+      if(typeof fetchAllNews === 'function') fetchAllNews(true);
+      _renderCryptoDash();
+      document.body.classList.add('crypto-dash-open');
+    } else {
+      if (_cryptoDashTimer) clearTimeout(_cryptoDashTimer);
+      document.body.classList.remove('crypto-dash-open');
     }
-    // Status bar notification removed
   };
 
 
@@ -10947,6 +11297,9 @@ function _requestRender() {
     buildTicker();
     renderSidebar();
     _patchCRYPTOPanel();
+    if (document.getElementById('crypto-dash-panel')?.classList.contains('open')) {
+      if (typeof _renderCryptoDash === 'function') _renderCryptoDash();
+    }
     _needsRender = false;
   });
 }
@@ -42380,19 +42733,23 @@ document.addEventListener('keydown', function(e){
 }
 .bwei-optbar-checks {
   display: flex !important; align-items: center !important;
-  flex: 1 1 0 !important; min-width: 0 !important;
-  justify-content: space-evenly !important;
-  padding: 0 12px !important;
+  flex: 0 1 auto !important; min-width: 0 !important;
+  justify-content: flex-start !important;
+  gap: 24px !important;
+  padding: 0 16px !important;
+  overflow: hidden !important;
 }
 .bwei-optbar-right {
   display: inline-flex !important; align-items: center !important;
-  flex: 0 0 auto !important; margin-left: auto !important; margin-right: 10px !important; gap: 2px !important;
+  flex: 0 0 auto !important; margin-left: 0 !important; margin-right: 4px !important; gap: 2px !important;
+  flex-shrink: 0 !important;
 }
 .bwei-opt-sel {
-  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 15px !important;
+  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 14px !important;
   padding: 0 10px !important; border: 1px solid #000 !important; cursor: pointer !important;
   display: inline-flex !important; align-items: center !important; height: 21px !important;
   border-radius: 0 !important; transition: background 0.1s !important;
+  flex-shrink: 0 !important; white-space: nowrap !important;
 }
 .bwei-opt-sel:hover { background: #FFB31A !important; }
 .bwei-opt-arr {
@@ -42403,7 +42760,7 @@ document.addEventListener('keydown', function(e){
   vertical-align: middle !important;
 }
 .bwei-opt-arr:hover { background: #555 !important; }
-.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 4px !important; color: #FFAA00 !important; cursor: pointer !important; font-size: 12px !important; font-weight: normal !important; white-space: nowrap !important; }
+.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 5px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 13px !important; letter-spacing: 0.3px !important; cursor: pointer !important; font-size: 12px !important; font-weight: normal !important; white-space: nowrap !important; }
 .bwei-opt-chk input[type=checkbox] { 
   appearance: none !important; -webkit-appearance: none !important;
   width: 14px !important; height: 14px !important; cursor: pointer !important; 
@@ -43121,19 +43478,23 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 }
 .bwei-optbar-checks {
   display: flex !important; align-items: center !important;
-  flex: 1 1 0 !important; min-width: 0 !important;
-  justify-content: space-evenly !important;
-  padding: 0 12px !important;
+  flex: 0 1 auto !important; min-width: 0 !important;
+  justify-content: flex-start !important;
+  gap: 24px !important;
+  padding: 0 16px !important;
+  overflow: hidden !important;
 }
 .bwei-optbar-right {
   display: inline-flex !important; align-items: center !important;
-  flex: 0 0 auto !important; margin-left: auto !important; margin-right: 10px !important; gap: 2px !important;
+  flex: 0 0 auto !important; margin-left: 0 !important; margin-right: 4px !important; gap: 2px !important;
+  flex-shrink: 0 !important;
 }
 .bwei-opt-sel {
-  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 15px !important;
+  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 14px !important;
   padding: 0 10px !important; border: 1px solid #000 !important; cursor: pointer !important;
   display: inline-flex !important; align-items: center !important; height: 21px !important;
   border-radius: 0 !important; transition: background 0.1s !important;
+  flex-shrink: 0 !important; white-space: nowrap !important;
 }
 .bwei-opt-sel:hover { background: #FFB31A !important; }
 .bwei-opt-arr {
@@ -43144,7 +43505,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   vertical-align: middle !important;
 }
 .bwei-opt-arr:hover { background: #555 !important; }
-.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 4px !important; color: #FFAA00 !important; cursor: pointer !important; font-size: 12px !important; font-weight: normal !important; white-space: nowrap !important; }
+.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 5px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 13px !important; letter-spacing: 0.3px !important; cursor: pointer !important; font-size: 12px !important; font-weight: normal !important; white-space: nowrap !important; }
 .bwei-opt-chk input[type=checkbox] { 
   appearance: none !important; -webkit-appearance: none !important;
   width: 14px !important; height: 14px !important; cursor: pointer !important; 
@@ -43817,6 +44178,45 @@ function getTimeStr(){
 window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 })();
 </script>
+  <!-- CRYPTO DASH PANEL (Full width) -->
+  <button id="crypto-dash-toggle" onclick="_toggleCryptoDash()">
+    <div class="live-dot"></div>
+    <span class="cnt">CRYPTO DASH</span>
+  </button>
+  <div id="crypto-dash-panel">
+    <!-- Red Header Bar -->
+    <div class="cdash-header">
+      <div class="cdash-inner">
+        <button class="cdash-header-btn active" onclick="_setCryptoDashFilter('MARKETS')">Markets</button>
+        <button class="cdash-header-btn" onclick="_setCryptoDashFilter('NEWS')">News ▾</button>
+        <button class="cdash-header-btn" onclick="_setCryptoDashFilter('MOVERS')">Movers</button>
+        <span class="cdash-header-title">Crypto Market Dashboard</span>
+        <span onclick="_toggleCryptoDash()" style="color:#fff;font-size:12px;cursor:pointer;margin-left:12px;padding-right:4px;" onmouseover="this.style.color='#f55'" onmouseout="this.style.color='#fff'">✕</span>
+      </div>
+    </div>
+    
+    <!-- Filter Chips Bar -->
+    <div class="cdash-filters">
+      <div class="cdash-inner" style="gap:16px;">
+        <button class="cdash-filter-chip">Standard <span class="arrow">▼</span></button>
+        <button class="cdash-filter-chip off"><span class="check">☐</span> Movers</button>
+        <button class="cdash-filter-chip off"><span class="check">☐</span> Volatility</button>
+        <button class="cdash-filter-chip off"><span class="check">☐</span> Ratios</button>
+        <button class="cdash-filter-chip"><span class="check">☑</span> Futures</button>
+        <button class="cdash-filter-chip"><span class="check">☑</span> Δ AVAT</button>
+        <div style="margin-left: auto; display: flex; gap: 16px;">
+          <button class="cdash-filter-chip">10D <span class="arrow">▼</span></button>
+          <button class="cdash-filter-chip">%Chg YTD <span class="arrow">▼</span></button>
+          <button class="cdash-filter-chip">USD <span class="arrow">▼</span></button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Table Body -->
+    <div class="cdash-body" id="cdash-body">
+      <!-- Sections injected by JS -->
+    </div>
+  </div>
 </body>
 </html>
 
