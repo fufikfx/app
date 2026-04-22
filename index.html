@@ -43633,7 +43633,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-actionbar { background: #000044 !important; border-top: 1px solid #000044 !important; padding: 2px 10px !important; font-size: 14px !important; display: flex !important; align-items: center !important; gap: 20px !important; flex-shrink: 0 !important; justify-content: flex-end !important;}
 .bwei-actionbar .ab-item { color: #ffffff !important; cursor: pointer !important; font-weight: bold !important; letter-spacing: 0.5px !important; }
 
-.bwei-newsticker { background: #000055 !important; padding: 0 !important; max-height: 110px !important; overflow: hidden !important; flex-shrink: 0 !important; border-top: none !important; border-bottom: 1px solid #000 !important; }
+.bwei-newsticker { background: #000045 !important; padding: 0 !important; max-height: 125px !important; overflow: hidden !important; flex-shrink: 0 !important; border-top: none !important; border-bottom: 1px solid #000 !important; }
 .bwei-news-line { display: grid !important; grid-template-columns: 40px 48px 55px 1fr !important; padding: 2px 10px !important; font-size: 16px !important; color: #FFAA00 !important; border-bottom: none !important; cursor: pointer !important; align-items: center !important; letter-spacing: -0.3px !important; }
 .bwei-news-line .n-id { color: #FFAA00 !important; font-weight: normal !important; text-align: left !important; padding-right: 4px !important; }
 .bwei-news-line .n-src { color: #FFAA00 !important; font-weight: normal !important; }
@@ -44048,7 +44048,7 @@ function buildBWEI(data){
       <span class="ab-item"><span style="color:#aaaaaa; font-weight:normal;">301)</span> Expand Panel</span>
     </div>
 
-    <div class="bwei-newsticker" id="bwei-newsticker"></div>
+    <div class="bwei-newsticker" id="bwei-newsticker">${window._bweiCurrentNewsHTML || ''}</div>
 
     <div class="bwei-footbar">
       <span class="fb-sf">Suggested Functions</span>
@@ -44220,9 +44220,9 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 
     /* ── Config ───────────────────────────────────────────────────── */
     const NEWS_REFRESH_MS  = 5 * 60 * 1000;   // refresh data pool every 5 min
-    const TICKER_PUSH_MS   = 60 * 1000;        // new item every 60s
-    const NEWS_EXPIRE_MS   = 10 * 60 * 1000;   // remove after 10 minutes
-    const MAX_ROWS         = 4;
+    const TICKER_PUSH_MS   = 20 * 1000;        // new item every 20s
+    const NEWS_EXPIRE_MS   = 15 * 60 * 1000;   // remove after 15 minutes
+    const MAX_ROWS         = 5;
     const PROXY            = 'https://api.allorigins.win/get?url=';
 
     /* ── State ────────────────────────────────────────────────────── */
@@ -44279,6 +44279,15 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
         }
       } catch(e) {}
 
+      // 4. Try Thingproxy (Direct transparent)
+      try {
+        const r = await fetch(`https://thingproxy.freeboard.io/fetch/${feed.url}`);
+        if (r.ok) {
+          const t = await r.text();
+          return parseRSS(t, feed.src);
+        }
+      } catch(e) {}
+
       return [];
     }
 
@@ -44308,8 +44317,8 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
       results.forEach(r => { if (r.status === 'fulfilled') fresh.push(...r.value); });
       
       if (!fresh.length) {
-        // If pool is empty, retry soon to ensure we get REAL data
-        setTimeout(refreshPool, 10000);
+        // If pool is empty, retry VERY soon (3s) to ensure we get REAL data
+        setTimeout(refreshPool, 3000);
         return;
       }
       
@@ -44347,12 +44356,24 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 
     /* ── Paint rows into ONE ticker element ───────────────────────── */
     function paint(ticker) {
+      if (!ticker) return;
       const now = Date.now();
       // Prune expired
       rows = rows.filter(r => (now - r.addedAt) < NEWS_EXPIRE_MS);
 
       const visible = rows.slice(0, MAX_ROWS);
-      const visIds  = new Set(visible.map(r=>r.id));
+      
+      // Update Global Cache for buildBWEI re-renders
+      window._bweiCurrentNewsHTML = visible.map(r => {
+        return `<div class="bwei-news-line bwterm-live-row" data-nid="${r.id}" data-added="${r.addedAt}" title="Click to open source: ${r.url}" onclick="event.stopPropagation(); window.open('${r.url}', '_blank');">` +
+          `<div class="n-id">${r.id}</div>` +
+          `<div class="n-src n-src-${r.src.toLowerCase()}">${r.src}</div>` +
+          `<div class="n-time">${r.time}</div>` +
+          `<div class="n-txt">${r.txt}</div>` +
+        `</div>`;
+      }).join('');
+
+      const visIds = new Set(visible.map(r=>r.id));
 
       // Remove DOM rows not in visible set
       Array.from(ticker.querySelectorAll('[data-nid]')).forEach(el=>{
@@ -44383,12 +44404,12 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
         setTimeout(()=>el.classList.remove('bwterm-new'), 1800);
       });
 
-      if (!ticker.children.length) {
+      if (!ticker.children.length && !rows.length) {
         ticker.innerHTML = '<div class="bwei-news-line" style="opacity:.6; background:rgba(0,100,255,0.05);">' + 
           '<div class="n-id">---</div>' + 
-          '<div class="n-src">LIVE</div>' + 
+          '<div class="n-src">SYNC</div>' + 
           '<div class="n-time">'+ hhmm() +'</div>' + 
-          '<div class="n-txt" style="color:#00ffff !important; font-style:italic;">Connecting to Real-Time Crypto News Terminal...</div></div>';
+          '<div class="n-txt" style="color:#00ffff !important; font-style:italic;">Initializing Real-Time News Stream [9 Sources / 4 Proxies] ...</div></div>';
       }
     }
 
