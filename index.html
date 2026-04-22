@@ -43286,21 +43286,32 @@ function buildBWEI(data){
     rowIdx = 1;
   });
 
-  const fallbackNews = typeof window._bweiFreshNews === 'function' ? window._bweiFreshNews() : [
-    {id: '411', src: 'CBC', time: getTimeHM(), txt: 'Bitcoin ETF inflows surge as institutional demand spikes'},
-    {id: '410', src: 'DML', time: getTimeHM(), txt: 'Ethereum staking yields reach new yearly high'},
-    {id: '409', src: 'ESD', time: getTimeHM(), txt: 'SEC review of crypto custody rules expected next month'},
-    {id: '408', src: 'ESD', time: getTimeHM(), txt: 'Market Analysis: BTC consolidation continues above $90k'}
-  ];
+  let fallbackNews = typeof window._bweiGetInitialNews === 'function' ? window._bweiGetInitialNews() : null;
+  if (!fallbackNews) {
+    const now = new Date();
+    fallbackNews = [
+      {id: '411', src: 'CBC', txt: 'Bitcoin ETF inflows surge as institutional demand spikes'},
+      {id: '410', src: 'DML', txt: 'Ethereum staking yields reach new yearly high'},
+      {id: '409', src: 'ESD', txt: 'SEC review of crypto custody rules expected next month'},
+      {id: '408', src: 'ESD', txt: 'Market Analysis: BTC consolidation continues above $90k'}
+    ].map((n, i) => {
+      const t = new Date(now.getTime() - i * 60000 * (Math.floor(Math.random() * 3) + 1));
+      n.time = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+      return n;
+    });
+  }
   
   let newsHtml = '';
   fallbackNews.forEach(n => {
-    const srcClass = 'n-src-' + n.src.toLowerCase();
-    newsHtml += `<div class="bwei-news-line">
-      <div class="n-id">${n.id}</div>
-      <div class="n-src ${srcClass}">${n.src}</div>
-      <div class="n-time">${n.time}</div>
-      <div class="n-txt">${n.txt}</div>
+    const safeSrc = (n.src || 'SYS').toLowerCase();
+    const srcClass = 'n-src-' + safeSrc;
+    const safeLink = n.link ? n.link.replace(/'/g, "\\'").replace(/"/g, "%22") : '';
+    const linkAction = safeLink ? `onclick="window.open('${safeLink}', '_blank')"` : '';
+    newsHtml += `<div class="bwei-news-line" ${linkAction}>
+      <div class="n-id">${n.id || ''}</div>
+      <div class="n-src ${srcClass}">${n.src || ''}</div>
+      <div class="n-time">${n.time || ''}</div>
+      <div class="n-txt">${n.txt || ''}</div>
     </div>`;
   });
 
@@ -44031,21 +44042,32 @@ function buildBWEI(data){
     rowIdx = 1;
   });
 
-  const fallbackNews = typeof window._bweiFreshNews === 'function' ? window._bweiFreshNews() : [
-    {id: '411', src: 'CBC', time: getTimeHM(), txt: 'Bitcoin ETF inflows surge as institutional demand spikes'},
-    {id: '410', src: 'DML', time: getTimeHM(), txt: 'Ethereum staking yields reach new yearly high'},
-    {id: '409', src: 'ESD', time: getTimeHM(), txt: 'SEC review of crypto custody rules expected next month'},
-    {id: '408', src: 'ESD', time: getTimeHM(), txt: 'Market Analysis: BTC consolidation continues above $90k'}
-  ];
+  let fallbackNews = typeof window._bweiGetInitialNews === 'function' ? window._bweiGetInitialNews() : null;
+  if (!fallbackNews) {
+    const now = new Date();
+    fallbackNews = [
+      {id: '411', src: 'CBC', txt: 'Bitcoin ETF inflows surge as institutional demand spikes'},
+      {id: '410', src: 'DML', txt: 'Ethereum staking yields reach new yearly high'},
+      {id: '409', src: 'ESD', txt: 'SEC review of crypto custody rules expected next month'},
+      {id: '408', src: 'ESD', txt: 'Market Analysis: BTC consolidation continues above $90k'}
+    ].map((n, i) => {
+      const t = new Date(now.getTime() - i * 60000 * (Math.floor(Math.random() * 3) + 1));
+      n.time = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+      return n;
+    });
+  }
   
   let newsHtml = '';
   fallbackNews.forEach(n => {
-    const srcClass = 'n-src-' + n.src.toLowerCase();
-    newsHtml += `<div class="bwei-news-line">
-      <div class="n-id">${n.id}</div>
-      <div class="n-src ${srcClass}">${n.src}</div>
-      <div class="n-time">${n.time}</div>
-      <div class="n-txt">${n.txt}</div>
+    const safeSrc = (n.src || 'SYS').toLowerCase();
+    const srcClass = 'n-src-' + safeSrc;
+    const safeLink = n.link ? n.link.replace(/'/g, "\\'").replace(/"/g, "%22") : '';
+    const linkAction = safeLink ? `onclick="window.open('${safeLink}', '_blank')"` : '';
+    newsHtml += `<div class="bwei-news-line" ${linkAction}>
+      <div class="n-id">${n.id || ''}</div>
+      <div class="n-src ${srcClass}">${n.src || ''}</div>
+      <div class="n-time">${n.time || ''}</div>
+      <div class="n-txt">${n.txt || ''}</div>
     </div>`;
   });
 
@@ -44221,90 +44243,204 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
       <!-- Sections injected by JS -->
     </div>
   </div>
-  <!-- Seamless BWEI News Updater -->
+  <!-- Seamless BWEI News Updater – REAL DATA, US Eastern Time -->
   <script>
   (function(){
-    const newsPool = [
-      {src:'CBC', txt:'BTC: Institutional adoption acceleration continues as ETFs hit record volumes'},
-      {src:'CBC', txt:'Crypto: Global regulatory clarity improves as major economies draft new frameworks'},
-      {src:'CBC', txt:'Market: Tech sector rotation favors decentralized infrastructure plays'},
-      {src:'DML', txt:'Daily Mail: Bitcoin whales move massive amounts to cold storage as supply tightens'},
-      {src:'DML', txt:'Alert: Major exchange reports record low BTC balances as bulls take control'},
-      {src:'DML', txt:'DeFi: Ethereum Layer 2 activity hits all-time high as gas fees stabilize'},
-      {src:'ESD', txt:'British Analyst: Digital assets now represent critical portfolio hedge'},
-      {src:'ESD', txt:'Report: Solana ecosystem growth outpaces competitors in active addresses'},
-      {src:'ESD', txt:'Economy: Inflation data supports case for alternative store-of-value assets'},
-      {src:'CBC', txt:'BTC: Mining difficulty hits new peak as network security reaches record levels'},
-      {src:'DML', txt:'Crypto: Venture capital funding for blockchain startups rebounds in Q1'},
-      {src:'ESD', txt:'Analysis: On-chain metrics signal strong accumulation phase for major tokens'}
-    ];
-    
-    let baseId = 412;
-    
-    window._bweiFreshNews = function() {
-      // Pick 4 random news from the pool
-      const shuffled = [...newsPool].sort(() => 0.5 - Math.random());
-      
-      return shuffled.slice(0, 4).map((n, i) => {
-        // Stagger times slightly for realism (e.g. current time, -2 mins, -5 mins, -9 mins)
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - (i * Math.floor(Math.random() * 3 + 1))); 
-        const time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-        
-        return {
-          id: String(baseId + i),
-          src: n.src,
-          time: time,
-          txt: n.txt
-        };
-      });
-    };
+    'use strict';
 
-    function updateNewsSeamlessly() {
-      const ticker = document.getElementById('bwei-newsticker');
-      if (!ticker) return;
-      
-      const lines = ticker.querySelectorAll('.bwei-news-line');
-      if (lines.length === 0) return;
-      
-      const fresh = window._bweiFreshNews();
-      baseId += 4; // Increment IDs like a real terminal
-      
-      lines.forEach((line, i) => {
-        if (!fresh[i]) return;
-        const idEl = line.querySelector('.n-id');
-        const srcEl = line.querySelector('.n-src');
-        const timeEl = line.querySelector('.n-time');
-        const txtEl = line.querySelector('.n-txt');
-        
-        if (idEl) idEl.textContent = fresh[i].id;
-        if (srcEl) {
-          srcEl.textContent = fresh[i].src;
-          srcEl.className = 'n-src n-src-' + fresh[i].src.toLowerCase();
-        }
-        if (timeEl) timeEl.textContent = fresh[i].time;
-        if (txtEl) txtEl.textContent = fresh[i].txt;
+    /* ── Config ───────────────────────────────────────────────────── */
+    const NEWS_REFRESH_MS  = 5 * 60 * 1000;   // refresh pool every 5 min
+    const TICKER_PUSH_MS   = 45 * 1000;        // push 1 new item every 45 s
+    const PROXY            = 'https://api.allorigins.win/get?url=';
+    const CBC_RSS          = 'https://www.cbc.ca/cmlink/rss-topstories';
+    const ET_TZ            = 'America/New_York';  // US Eastern Time
+
+    const COINS = [
+      {id:'bitcoin',      sym:'BTC'},
+      {id:'ethereum',     sym:'ETH'},
+      {id:'ripple',       sym:'XRP'},
+      {id:'solana',       sym:'SOL'},
+      {id:'binancecoin',  sym:'BNB'},
+      {id:'cardano',      sym:'ADA'},
+      {id:'dogecoin',     sym:'DOGE'},
+      {id:'avalanche-2',  sym:'AVAX'},
+      {id:'chainlink',    sym:'LINK'},
+      {id:'polkadot',     sym:'DOT'},
+    ];
+
+    /* ── State ────────────────────────────────────────────────────── */
+    let livePool  = [];
+    let pushQueue = [];
+    let baseId    = 420;
+
+    /* ── US Eastern Time ──────────────────────────────────────────── */
+    function nowET() {
+      // Always returns HH:MM in US Eastern Time (auto-adjusts EDT/EST)
+      return new Date().toLocaleTimeString('en-US', {
+        hour:   '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: ET_TZ
       });
-      
-      console.log('[BWEI] News updated seamlessly');
     }
 
-    // Update every 5 minutes
-    setInterval(updateNewsSeamlessly, 5 * 60 * 1000);
-    
-    // Also try to update footbar if it exists outside of the template
-    setInterval(() => {
-      const cvid = document.querySelector('.fb-key');
-      if(cvid && cvid.textContent === 'CVID') {
-        const item = cvid.closest('.fb-item');
-        if(item) {
-          item.querySelector('.fb-key').textContent = 'HYPE';
-          item.querySelector('.fb-desc').textContent = 'Hyperliquid L1 scaling & liquidity solutions';
-        }
+    /* ── Formatting helpers ───────────────────────────────────────── */
+    function fmtPrice(n) {
+      if (n >= 1000) return '$' + n.toLocaleString('en-US',{maximumFractionDigits:0});
+      if (n >= 1)    return '$' + n.toFixed(2);
+      return '$' + n.toFixed(4);
+    }
+    function fmtChg(pct) {
+      return (pct >= 0 ? '▲' : '▼') + ' ' + Math.abs(pct).toFixed(2) + '%';
+    }
+
+    /* ── Fetch: CoinGecko live prices ─────────────────────────────── */
+    async function fetchCryptoItems() {
+      const ids = COINS.map(c => c.id).join(',');
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`;
+      const res  = await fetch(url);
+      if (!res.ok) throw new Error('CoinGecko ' + res.status);
+      const data = await res.json();
+      const time = nowET();
+      return COINS
+        .filter(c => data[c.id] && data[c.id].usd)
+        .map(c => ({
+          src: 'CGK',
+          time,
+          txt: c.sym + '  ' + fmtPrice(data[c.id].usd) + '  (' + fmtChg(data[c.id].usd_24h_change||0) + ')  — CoinGecko'
+        }));
+    }
+
+    /* ── Fetch: CBC RSS headlines ─────────────────────────────────── */
+    async function fetchCBCItems() {
+      const res  = await fetch(PROXY + encodeURIComponent(CBC_RSS));
+      if (!res.ok) throw new Error('CBC proxy ' + res.status);
+      const json = await res.json();
+      const xml  = new DOMParser().parseFromString(json.contents, 'text/xml');
+      const time = nowET();
+      return Array.from(xml.querySelectorAll('item')).slice(0, 8).map(el => ({
+        src: 'CBC',
+        time,
+        txt: (el.querySelector('title')?.textContent || '').replace(/\s+/g,' ').trim()
+      })).filter(i => i.txt.length > 5);
+    }
+
+    /* ── Fetch: USD exchange rates ────────────────────────────────── */
+    async function fetchFXItems() {
+      const res  = await fetch('https://open.er-api.com/v6/latest/USD');
+      if (!res.ok) throw new Error('FX ' + res.status);
+      const data = await res.json();
+      const r    = data.rates;
+      const time = nowET();
+      const items = [];
+      if (r.EUR && r.GBP)
+        items.push({ src: 'FX', time,
+          txt: 'Forex: USD/EUR ' + r.EUR.toFixed(4) + '  |  USD/GBP ' + r.GBP.toFixed(4) + (r.CZK ? '  |  USD/CZK ' + r.CZK.toFixed(2) : '') + '  — OpenER'
+        });
+      if (r.JPY && r.CNY)
+        items.push({ src: 'FX', time,
+          txt: 'Forex: USD/JPY ' + r.JPY.toFixed(2) + '  |  USD/CNY ' + r.CNY.toFixed(4) + '  — OpenER'
+        });
+      return items;
+    }
+
+    /* ── Refresh pool (deduplicated) ──────────────────────────────── */
+    async function refreshPool() {
+      try {
+        const [cryptoR, cbcR, fxR] = await Promise.allSettled([
+          fetchCryptoItems(),
+          fetchCBCItems(),
+          fetchFXItems()
+        ]);
+        const fresh = [];
+        if (cryptoR.status === 'fulfilled') fresh.push(...cryptoR.value);
+        if (cbcR.status    === 'fulfilled') fresh.push(...cbcR.value);
+        if (fxR.status     === 'fulfilled') fresh.push(...fxR.value);
+
+        if (!fresh.length) { console.warn('[BWEI] All sources failed'); return; }
+
+        const seen   = new Set();
+        livePool = fresh.filter(item => {
+          const key = item.txt.slice(0,60).toLowerCase().replace(/[^a-z0-9]/g,'');
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        pushQueue = [];
+        console.log('[BWEI] Pool refreshed:', livePool.length, 'items (ET:', nowET() + ')');
+      } catch(e) {
+        console.error('[BWEI] refreshPool error:', e);
       }
-    }, 1000);
+    }
+
+    /* ── Get next non-repeating item ──────────────────────────────── */
+    function getNextItem() {
+      if (!pushQueue.length) {
+        if (!livePool.length) return null;
+        pushQueue = [...livePool].sort(() => Math.random() - 0.5);
+      }
+      const item = pushQueue.pop();
+      return { ...item, time: nowET(), id: String(++baseId) };
+    }
+
+    /* ── Seed all ticker rows with real data ──────────────────────── */
+    async function seedTicker() {
+      await refreshPool();
+      if (!livePool.length) return;
+      document.querySelectorAll('.bwei-newsticker').forEach(ticker => {
+        ticker.querySelectorAll('.bwei-news-line').forEach(line => {
+          const item = getNextItem();
+          if (!item) return;
+          const q = s => line.querySelector(s);
+          if (q('.n-id'))   q('.n-id').textContent   = item.id;
+          if (q('.n-src'))  q('.n-src').textContent  = item.src;
+          if (q('.n-time')) q('.n-time').textContent = item.time;
+          if (q('.n-txt'))  q('.n-txt').textContent  = item.txt;
+        });
+      });
+    }
+
+    /* ── Push one new item to top of every ticker (scroll effect) ─── */
+    function pushNewsItem() {
+      const item = getNextItem();
+      if (!item) return;
+      document.querySelectorAll('.bwei-newsticker').forEach(ticker => {
+        const lines = ticker.querySelectorAll('.bwei-news-line');
+        if (lines.length < 2) return;
+        // Scroll rows down
+        for (let i = lines.length - 1; i > 0; i--) {
+          const c = lines[i], p = lines[i-1];
+          const qc = s => c.querySelector(s), qp = s => p.querySelector(s);
+          if (qc('.n-id')   && qp('.n-id'))   qc('.n-id').textContent   = qp('.n-id').textContent;
+          if (qc('.n-time') && qp('.n-time')) qc('.n-time').textContent = qp('.n-time').textContent;
+          if (qc('.n-txt')  && qp('.n-txt'))  qc('.n-txt').textContent  = qp('.n-txt').textContent;
+          if (qc('.n-src')  && qp('.n-src'))  {
+            qc('.n-src').textContent = qp('.n-src').textContent;
+            qc('.n-src').className   = qp('.n-src').className;
+          }
+        }
+        // Insert new item at top
+        const top = lines[0];
+        const qt  = s => top.querySelector(s);
+        if (qt('.n-id'))   qt('.n-id').textContent   = item.id;
+        if (qt('.n-src'))  { qt('.n-src').textContent = item.src; qt('.n-src').className = 'n-src n-src-' + item.src.toLowerCase(); }
+        if (qt('.n-time')) qt('.n-time').textContent = item.time;
+        if (qt('.n-txt'))  qt('.n-txt').textContent  = item.txt;
+        top.onclick = null;
+      });
+    }
+
+    /* ── Boot ─────────────────────────────────────────────────────── */
+    window._bweiGetInitialNews = null;
+    window._bweiFreshNewsItem  = function() { return getNextItem(); };
+
+    document.addEventListener('DOMContentLoaded', function() {
+      seedTicker();
+      setInterval(refreshPool,  NEWS_REFRESH_MS);
+      setInterval(pushNewsItem, TICKER_PUSH_MS);
+    });
+
   })();
   </script>
 </body>
 </html>
-
