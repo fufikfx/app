@@ -42882,12 +42882,12 @@ document.addEventListener('keydown', function(e){
 .bwei-actionbar { background: #000044 !important; border-top: 1px solid #000044 !important; padding: 2px 10px !important; font-size: 14px !important; display: flex !important; align-items: center !important; gap: 20px !important; flex-shrink: 0 !important; justify-content: flex-end !important;}
 .bwei-actionbar .ab-item { color: #ffffff !important; cursor: pointer !important; font-weight: bold !important; letter-spacing: 0.5px !important; }
 
-.bwei-newsticker { background: #000055 !important; padding: 0 !important; max-height: 110px !important; overflow: hidden !important; flex-shrink: 0 !important; border-top: none !important; border-bottom: 1px solid #000 !important; }
-.bwei-news-line { display: grid !important; grid-template-columns: 40px 48px 55px 1fr !important; padding: 2px 10px !important; font-size: 16px !important; color: #D19542 !important; border-bottom: none !important; cursor: pointer !important; align-items: center !important; letter-spacing: -0.3px !important; }
-.bwei-news-line .n-id { color: #D19542 !important; font-weight: normal !important; text-align: left !important; padding-right: 4px !important; }
-.bwei-news-line .n-src { color: #D19542 !important; font-weight: normal !important; }
-.bwei-news-line .n-time { color: #D19542 !important; font-weight: normal !important; text-align: left !important;}
-.n-txt { color: #D19542 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; padding-right: 8px !important; font-weight: bold !important; }
+.bwei-newsticker { background: #000033 !important; padding: 0 !important; max-height: 110px !important; overflow: hidden !important; flex-shrink: 0 !important; border-top: none !important; border-bottom: 1px solid #000 !important; }
+.bwei-news-line { display: grid !important; grid-template-columns: 44px 52px 60px 1fr !important; padding: 3px 12px !important; font-size: 17px !important; color: #FFB900 !important; border-bottom: none !important; cursor: pointer !important; align-items: center !important; letter-spacing: -0.2px !important; font-family: "Arial Black", Gadget, sans-serif !important; }
+.bwei-news-line .n-id { color: #E8922A !important; font-weight: normal !important; text-align: left !important; padding-right: 4px !important; font-size: 16px !important; }
+.bwei-news-line .n-src { color: #FFB900 !important; font-weight: bold !important; font-size: 16px !important; }
+.bwei-news-line .n-time { color: #FFB900 !important; font-weight: normal !important; text-align: left !important; font-size: 16px !important; }
+.n-txt { color: #FFB900 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; padding-right: 8px !important; font-weight: 900 !important; }
 
 /* ── Suggested functions footer bar ── */
 .bwei-footbar {
@@ -43029,24 +43029,32 @@ const BWEI_CATEGORIES = [
   }
 ];
 
-// ─── MONTH CODES (CME futures style) ────────────────────────────────────────
-// J=Jan  K=May  M=Jun  N=Jul  Q=Aug  U=Sep  V=Oct  X=Nov  Z=Dec  F=Jan next
-// Actually: F=Jan G=Feb H=Mar J=Apr K=May M=Jun N=Jul Q=Aug U=Sep V=Oct X=Nov Z=Dec
-const MONTH_CODES = ['F','G','H','J','K','M','N','Q','U','V','X','Z'];
-function getFutureTag(){
-  // Generate a "Jun26" style label for the current approximate futures month
-  const d = new Date();
-  // Next quarterly expiry (Mar/Jun/Sep/Dec)
-  const quarterlyMonths = [2,5,8,11]; // 0-indexed
-  let m = d.getMonth(), y = d.getFullYear();
-  let target = quarterlyMonths.find(qm => qm >= m);
-  if(target == null){ target = quarterlyMonths[0]; y++; }
-  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return {
-    label: monthNames[target] + String(y).slice(-2),
-    code: MONTH_CODES[target] + String(y).slice(-1)
-  };
-}
+// ─── GLOBAL NEWS STATE ──────────────────────────────────────────────────────
+window._bweiNewsState = [];
+(function _initNews(){
+  const _now = new Date();
+  for (let i = 0; i < 4; i++) {
+    const t = new Date(_now.getTime() - i * 45000);
+    window._bweiNewsState.push({
+      id: String(411 - i),
+      src: ['BBG', 'RTW', 'FT', 'WSJ'][i] || 'SYS',
+      time: String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0'),
+      txt: [
+        'S&P 500 futures edge higher as investors await key inflation data',
+        'Federal Reserve meeting minutes suggest cautious approach to rate cuts',
+        'Global bond yields stabilize following European Central Bank remarks',
+        'Market Analysis: US dollar strengthens against major currency pairs'
+      ][i],
+      link: 'https://www.google.com/search?q=' + encodeURIComponent([
+        'S&P 500 futures news',
+        'Fed meeting minutes',
+        'Global bond yields',
+        'US dollar strength'
+      ][i]),
+      created: t.getTime()
+    });
+  }
+})();
 
 // ─── SPARKLINE from 24h kline data (_klineCache) ────────────────────────────
 function renderSparkline(sym, chg){
@@ -43286,23 +43294,11 @@ function buildBWEI(data){
     rowIdx = 1;
   });
 
-  let fallbackNews = typeof window._bweiGetInitialNews === 'function' ? window._bweiGetInitialNews() : null;
-  if (!fallbackNews) {
-    const now = new Date();
-    fallbackNews = [
-      {id: '411', src: 'CBC', txt: 'Bitcoin ETF inflows surge as institutional demand spikes'},
-      {id: '410', src: 'DML', txt: 'Ethereum staking yields reach new yearly high'},
-      {id: '409', src: 'ESD', txt: 'SEC review of crypto custody rules expected next month'},
-      {id: '408', src: 'ESD', txt: 'Market Analysis: BTC consolidation continues above $90k'}
-    ].map((n, i) => {
-      const t = new Date(now.getTime() - i * 60000 * (Math.floor(Math.random() * 3) + 1));
-      n.time = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
-      return n;
-    });
-  }
+  const newsItems = window._bweiNewsState || [];
+
   
   let newsHtml = '';
-  fallbackNews.forEach(n => {
+  newsItems.forEach(n => {
     const safeSrc = (n.src || 'SYS').toLowerCase();
     const srcClass = 'n-src-' + safeSrc;
     const safeLink = n.link ? n.link.replace(/'/g, "\\'").replace(/"/g, "%22") : '';
@@ -44042,23 +44038,9 @@ function buildBWEI(data){
     rowIdx = 1;
   });
 
-  let fallbackNews = typeof window._bweiGetInitialNews === 'function' ? window._bweiGetInitialNews() : null;
-  if (!fallbackNews) {
-    const now = new Date();
-    fallbackNews = [
-      {id: '411', src: 'CBC', txt: 'Bitcoin ETF inflows surge as institutional demand spikes'},
-      {id: '410', src: 'DML', txt: 'Ethereum staking yields reach new yearly high'},
-      {id: '409', src: 'ESD', txt: 'SEC review of crypto custody rules expected next month'},
-      {id: '408', src: 'ESD', txt: 'Market Analysis: BTC consolidation continues above $90k'}
-    ].map((n, i) => {
-      const t = new Date(now.getTime() - i * 60000 * (Math.floor(Math.random() * 3) + 1));
-      n.time = String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
-      return n;
-    });
-  }
-  
+  const newsItems = window._bweiNewsState || [];
   let newsHtml = '';
-  fallbackNews.forEach(n => {
+  newsItems.forEach(n => {
     const safeSrc = (n.src || 'SYS').toLowerCase();
     const srcClass = 'n-src-' + safeSrc;
     const safeLink = n.link ? n.link.replace(/'/g, "\\'").replace(/"/g, "%22") : '';
@@ -44252,36 +44234,48 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
     const NEWS_REFRESH_MS  = 5 * 60 * 1000;   // refresh pool every 5 min
     const TICKER_PUSH_MS   = 45 * 1000;        // push 1 new item every 45 s
     const PROXY            = 'https://api.allorigins.win/get?url=';
-    const CBC_RSS          = 'https://www.cbc.ca/cmlink/rss-topstories';
-    const ET_TZ            = 'America/New_York';  // US Eastern Time
-
-    const COINS = [
-      {id:'bitcoin',      sym:'BTC'},
-      {id:'ethereum',     sym:'ETH'},
-      {id:'ripple',       sym:'XRP'},
-      {id:'solana',       sym:'SOL'},
-      {id:'binancecoin',  sym:'BNB'},
-      {id:'cardano',      sym:'ADA'},
-      {id:'dogecoin',     sym:'DOGE'},
-      {id:'avalanche-2',  sym:'AVAX'},
-      {id:'chainlink',    sym:'LINK'},
-      {id:'polkadot',     sym:'DOT'},
-    ];
+    const COINTELEGRAPH_RSS = 'https://cointelegraph.com/rss';
+    const COINDESK_RSS      = 'https://www.coindesk.com/arc/outboundfeeds/rss/';
+    const THEBLOCK_RSS      = 'https://www.theblock.co/rss.xml';
+    const DECRYPT_RSS       = 'https://decrypt.co/feed';
+    const BITCOINMAG_RSS    = 'https://bitcoinmagazine.com/.rss/full/';
+    const NEWSBTC_RSS       = 'https://www.newsbtc.com/feed/';
+    const CRYPTOSLATE_RSS   = 'https://cryptoslate.com/feed/';
 
     /* ── State ────────────────────────────────────────────────────── */
     let livePool  = [];
     let pushQueue = [];
     let baseId    = 420;
+    let currentNewsState = [];
+    let shownHistory = new Set(); // Global history to prevent repeats
+    
+    // Initialize with fallback static news
+    const _initNow = new Date();
+    const fallbacks = [
+        { src:'BLK', txt:'Crypto Market Analysis: Bitcoin dominance hits 3-year high as altcoins lag' },
+        { src:'DEC', txt:'Ethereum Foundation releases roadmap for Pectra upgrade and scalability' },
+        { src:'BMG', txt:'Major institutional players increase Bitcoin holdings amid ETF popularity' },
+        { src:'CTG', txt:'DeFi Ecosystem Update: Total Value Locked (TVL) surges across L2 networks' },
+        { src:'CDK', txt:'Global crypto regulation: New standards proposed for stablecoin issuers' },
+        { src:'SLT', txt:'Bitcoin miners increase hash rate following latest network difficulty adjustment' }
+    ];
+    for (let i = 0; i < 4; i++) {
+        const t = new Date(_initNow.getTime() - i * 45000);
+        const f = fallbacks[i];
+        currentNewsState.push({
+            id: String(411 - i),
+            src: f.src,
+            time: String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0'),
+            txt: f.txt,
+            created: t.getTime()
+        });
+        shownHistory.add(f.txt.slice(0,50).toLowerCase());
+    }
 
-    /* ── US Eastern Time ──────────────────────────────────────────── */
-    function nowET() {
-      // Always returns HH:MM in US Eastern Time (auto-adjusts EDT/EST)
-      return new Date().toLocaleTimeString('en-US', {
-        hour:   '2-digit',
-        minute: '2-digit',
-        hour12: false,
-        timeZone: ET_TZ
-      });
+    /* ── Local Time (matching terminal clock) ─────────────────────── */
+    function nowLocal() {
+      const n = new Date();
+      return String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
     }
 
     /* ── Formatting helpers ───────────────────────────────────────── */
@@ -44295,67 +44289,48 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
     }
 
     /* ── Fetch: CoinGecko live prices ─────────────────────────────── */
-    async function fetchCryptoItems() {
-      const ids = COINS.map(c => c.id).join(',');
-      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`;
-      const res  = await fetch(url);
-      if (!res.ok) throw new Error('CoinGecko ' + res.status);
-      const data = await res.json();
-      const time = nowET();
-      return COINS
-        .filter(c => data[c.id] && data[c.id].usd)
-        .map(c => ({
-          src: 'CGK',
-          time,
-          txt: c.sym + '  ' + fmtPrice(data[c.id].usd) + '  (' + fmtChg(data[c.id].usd_24h_change||0) + ')  — CoinGecko'
-        }));
+    /* ── Fetch: Crypto headlines (Multi-source) ───────────────────── */
+    async function fetchCryptoNews() {
+      const results = [];
+      try {
+        const feeds = [
+          { src: 'CTG', url: COINTELEGRAPH_RSS },
+          { src: 'CDK', url: COINDESK_RSS },
+          { src: 'BLK', url: THEBLOCK_RSS },
+          { src: 'DEC', url: DECRYPT_RSS },
+          { src: 'BMG', url: BITCOINMAG_RSS },
+          { src: 'BTC', url: NEWSBTC_RSS },
+          { src: 'SLT', url: CRYPTOSLATE_RSS }
+        ];
+        const time = nowLocal();
+        
+        for (const feed of feeds) {
+          try {
+            const res  = await fetch(PROXY + encodeURIComponent(feed.url));
+            if (!res.ok) continue;
+            const json = await res.json();
+            const xml  = new DOMParser().parseFromString(json.contents, 'text/xml');
+            const items = Array.from(xml.querySelectorAll('item')).slice(0, 6).map(el => ({
+              src: feed.src,
+              time,
+              txt: (el.querySelector('title')?.textContent || '').replace(/\s+/g,' ').trim()
+            })).filter(i => i.txt.length > 5);
+            results.push(...items);
+          } catch(e) {}
+        }
+      } catch(e) {}
+      return results;
     }
 
-    /* ── Fetch: CBC RSS headlines ─────────────────────────────────── */
-    async function fetchCBCItems() {
-      const res  = await fetch(PROXY + encodeURIComponent(CBC_RSS));
-      if (!res.ok) throw new Error('CBC proxy ' + res.status);
-      const json = await res.json();
-      const xml  = new DOMParser().parseFromString(json.contents, 'text/xml');
-      const time = nowET();
-      return Array.from(xml.querySelectorAll('item')).slice(0, 8).map(el => ({
-        src: 'CBC',
-        time,
-        txt: (el.querySelector('title')?.textContent || '').replace(/\s+/g,' ').trim()
-      })).filter(i => i.txt.length > 5);
-    }
-
-    /* ── Fetch: USD exchange rates ────────────────────────────────── */
-    async function fetchFXItems() {
-      const res  = await fetch('https://open.er-api.com/v6/latest/USD');
-      if (!res.ok) throw new Error('FX ' + res.status);
-      const data = await res.json();
-      const r    = data.rates;
-      const time = nowET();
-      const items = [];
-      if (r.EUR && r.GBP)
-        items.push({ src: 'FX', time,
-          txt: 'Forex: USD/EUR ' + r.EUR.toFixed(4) + '  |  USD/GBP ' + r.GBP.toFixed(4) + (r.CZK ? '  |  USD/CZK ' + r.CZK.toFixed(2) : '') + '  — OpenER'
-        });
-      if (r.JPY && r.CNY)
-        items.push({ src: 'FX', time,
-          txt: 'Forex: USD/JPY ' + r.JPY.toFixed(2) + '  |  USD/CNY ' + r.CNY.toFixed(4) + '  — OpenER'
-        });
-      return items;
-    }
 
     /* ── Refresh pool (deduplicated) ──────────────────────────────── */
     async function refreshPool() {
       try {
-        const [cryptoR, cbcR, fxR] = await Promise.allSettled([
-          fetchCryptoItems(),
-          fetchCBCItems(),
-          fetchFXItems()
+        const [cryptoR] = await Promise.allSettled([
+          fetchCryptoNews()
         ]);
         const fresh = [];
         if (cryptoR.status === 'fulfilled') fresh.push(...cryptoR.value);
-        if (cbcR.status    === 'fulfilled') fresh.push(...cbcR.value);
-        if (fxR.status     === 'fulfilled') fresh.push(...fxR.value);
 
         if (!fresh.length) { console.warn('[BWEI] All sources failed'); return; }
 
@@ -44367,7 +44342,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
           return true;
         });
         pushQueue = [];
-        console.log('[BWEI] Pool refreshed:', livePool.length, 'items (ET:', nowET() + ')');
+        console.log('[BWEI] Pool refreshed:', livePool.length, 'items (Local:', nowLocal() + ')');
       } catch(e) {
         console.error('[BWEI] refreshPool error:', e);
       }
@@ -44377,67 +44352,94 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
     function getNextItem() {
       if (!pushQueue.length) {
         if (!livePool.length) return null;
-        pushQueue = [...livePool].sort(() => Math.random() - 0.5);
+        // Refill pushQueue with items NOT in history
+        pushQueue = livePool.filter(item => {
+           const hash = item.txt.slice(0,50).toLowerCase();
+           return !shownHistory.has(hash);
+        });
+        // If all items shown, clear history and restart
+        if (!pushQueue.length) {
+           shownHistory.clear();
+           pushQueue = [...livePool];
+        }
+        pushQueue.sort(() => Math.random() - 0.5);
       }
+      
       const item = pushQueue.pop();
-      return { ...item, time: nowET(), id: String(++baseId) };
+      const hash = item.txt.slice(0,50).toLowerCase();
+      shownHistory.add(hash);
+      
+      // Keep history manageable
+      if (shownHistory.size > 150) {
+        const arr = Array.from(shownHistory);
+        shownHistory = new Set(arr.slice(50));
+      }
+
+      return { ...item, time: nowLocal(), id: String(++baseId), created: Date.now() };
     }
 
     /* ── Seed all ticker rows with real data ──────────────────────── */
     async function seedTicker() {
       await refreshPool();
       if (!livePool.length) return;
-      document.querySelectorAll('.bwei-newsticker').forEach(ticker => {
-        ticker.querySelectorAll('.bwei-news-line').forEach(line => {
-          const item = getNextItem();
-          if (!item) return;
-          const q = s => line.querySelector(s);
-          if (q('.n-id'))   q('.n-id').textContent   = item.id;
-          if (q('.n-src'))  q('.n-src').textContent  = item.src;
-          if (q('.n-time')) q('.n-time').textContent = item.time;
-          if (q('.n-txt'))  q('.n-txt').textContent  = item.txt;
-        });
-      });
+      
+      const newItems = [];
+      for(let i=0; i<4; i++) {
+         const it = getNextItem();
+         if(it) newItems.push(it);
+      }
+      if(newItems.length > 0) {
+         window._bweiNewsState = newItems;
+      }
+      seedTickerDOM();
     }
 
     /* ── Push one new item to top of every ticker (scroll effect) ─── */
     function pushNewsItem() {
       const item = getNextItem();
       if (!item) return;
-      document.querySelectorAll('.bwei-newsticker').forEach(ticker => {
-        const lines = ticker.querySelectorAll('.bwei-news-line');
-        if (lines.length < 2) return;
-        // Scroll rows down
-        for (let i = lines.length - 1; i > 0; i--) {
-          const c = lines[i], p = lines[i-1];
-          const qc = s => c.querySelector(s), qp = s => p.querySelector(s);
-          if (qc('.n-id')   && qp('.n-id'))   qc('.n-id').textContent   = qp('.n-id').textContent;
-          if (qc('.n-time') && qp('.n-time')) qc('.n-time').textContent = qp('.n-time').textContent;
-          if (qc('.n-txt')  && qp('.n-txt'))  qc('.n-txt').textContent  = qp('.n-txt').textContent;
-          if (qc('.n-src')  && qp('.n-src'))  {
-            qc('.n-src').textContent = qp('.n-src').textContent;
-            qc('.n-src').className   = qp('.n-src').className;
-          }
-        }
-        // Insert new item at top
-        const top = lines[0];
-        const qt  = s => top.querySelector(s);
-        if (qt('.n-id'))   qt('.n-id').textContent   = item.id;
-        if (qt('.n-src'))  { qt('.n-src').textContent = item.src; qt('.n-src').className = 'n-src n-src-' + item.src.toLowerCase(); }
-        if (qt('.n-time')) qt('.n-time').textContent = item.time;
-        if (qt('.n-txt'))  qt('.n-txt').textContent  = item.txt;
-        top.onclick = null;
-      });
+      
+      window._bweiNewsState.unshift(item);
+      if(window._bweiNewsState.length > 4) window._bweiNewsState.pop();
+      seedTickerDOM();
     }
 
-    /* ── Boot ─────────────────────────────────────────────────────── */
-    window._bweiGetInitialNews = null;
-    window._bweiFreshNewsItem  = function() { return getNextItem(); };
+    /* ── Expiry Check (Remove after 5 minutes) ───────────────────── */
+    function checkNewsExpiry() {
+      const now = Date.now();
+      const expiryMs = 5 * 60 * 1000;
+      let changed = false;
+      window._bweiNewsState = window._bweiNewsState.map(item => {
+        if (item && item.created && (now - item.created > expiryMs)) {
+          changed = true;
+          return { id:'', src:'', time:'', txt:'', created: 0 }; // Clear it
+        }
+        return item;
+      });
+      if (changed) seedTickerDOM();
+    }
+
+    function seedTickerDOM() {
+      document.querySelectorAll('.bwei-newsticker').forEach(ticker => {
+        ticker.querySelectorAll('.bwei-news-line').forEach((line, i) => {
+          const item = window._bweiNewsState[i];
+          const q = s => line.querySelector(s);
+          if (q('.n-id'))   q('.n-id').textContent   = (item && item.id) ? item.id : '';
+          if (q('.n-src'))  {
+            q('.n-src').textContent  = (item && item.src) ? item.src : '';
+            q('.n-src').className = 'n-src n-src-' + (item && item.src ? item.src.toLowerCase() : 'none');
+          }
+          if (q('.n-time')) q('.n-time').textContent = (item && item.time) ? item.time : '';
+          if (q('.n-txt'))  q('.n-txt').textContent  = (item && item.txt) ? item.txt : '';
+        });
+      });
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
       seedTicker();
       setInterval(refreshPool,  NEWS_REFRESH_MS);
       setInterval(pushNewsItem, TICKER_PUSH_MS);
+      setInterval(checkNewsExpiry, 10000);
     });
 
   })();
