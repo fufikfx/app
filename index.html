@@ -5990,7 +5990,9 @@ function _getSatLayer(){
       });
     }
     
+    const st = container.scrollTop;
     container.innerHTML = html;
+    container.scrollTop = st;
 
     // Auto-refresh if panel is open
     const p = document.getElementById('crypto-dash-panel');
@@ -6773,9 +6775,9 @@ function refreshAllPanels(){
         if(newBody) newBody.scrollTop = scrollTop;
         return;
       }
-      // CRYPTO má vlastní _patchCRYPTOPanel — přeskočit rerender pokud jsou DOM ID přítomná
-      // Přeskočíme vždy — patch loop se stará o update, rebuild by smazal live 7D% data
-      if(reg.fn==='CRYPTO' && body.querySelector('[id^="cp-px-"]')) return;
+      // CRYPTO má vlastní _patchCRYPTOPanel — přeskočit rerender pokud jsou DOM ID přítomná nebo je tam Bloomberg wrapper
+      // Přeskočíme vždy — patch loop se stará o update, rebuild by smazal live data a resetoval scroll
+      if(reg.fn==='CRYPTO' && (body.querySelector('[id^="cp-px-"]') || body.querySelector('.bwei-wrap'))) return;
       // INTEL/JOURN/SOURCES — use direct render, never rebuild outer shell (prevents flash/loop)
       if(reg.fn==='INTEL'){ if(typeof _renderINTEL==='function'&&document.getElementById('intel-feed'))_renderINTEL(); return; }
       if(reg.fn==='JOURN'){ if(typeof buildJOURN==='function'){body.innerHTML=buildJOURN(ti);} return; }
@@ -6792,23 +6794,36 @@ function refreshAllPanels(){
         return;
       }
       const html=ti>0?buildPanelContentTab(reg.fn,ti):buildPanelContent(reg.fn);
-      // Preserve outer scroll
+      // Preserve outer scroll and Bloomberg inner scroll
       const st=body.scrollTop;
       const sl=body.scrollLeft;
+      const bweiBody = body.querySelector('.bwei-body');
+      const bst = bweiBody ? bweiBody.scrollTop : 0;
+
       // For ETFF: capture the inner horizontal grid scroll by id
       let etffGridSL = 0;
       const etffGrid = body.querySelector('#etff-grid-scroll');
       if(etffGrid) etffGridSL = etffGrid.scrollLeft;
-      // Preserve ALL inner scrollable elements (e.g. ETFF horizontal grid)
+      // Preserve ALL inner scrollable elements (including those with class-based overflow)
       const innerScrolls=[];
-      body.querySelectorAll('[style*="overflow"]').forEach(el=>{
+      body.querySelectorAll('[style*="overflow"], .bwei-body, .wn-body, .nws-body').forEach(el=>{
         if(el.scrollLeft>0||el.scrollTop>0){
-          innerScrolls.push({idx:Array.from(body.querySelectorAll('[style*="overflow"]')).indexOf(el), sl:el.scrollLeft, st:el.scrollTop});
+          let selector = '';
+          if(el.id) selector = '#'+el.id;
+          else if(el.className && typeof el.className === 'string'){
+            const cls = el.className.trim().split(/\s+/)[0];
+            if(cls) selector = '.'+cls;
+          }
+          if(selector) innerScrolls.push({selector: selector, sl:el.scrollLeft, st:el.scrollTop});
         }
       });
       body.innerHTML=html;
       body.scrollTop=st;
       body.scrollLeft=sl;
+      if(bst>0){
+        const newBwei = body.querySelector('.bwei-body');
+        if(newBwei) newBwei.scrollTop = bst;
+      }
       // Restore ETFF grid scroll
       if(etffGridSL>0){
         const newGrid=body.querySelector('#etff-grid-scroll');
@@ -6816,9 +6831,10 @@ function refreshAllPanels(){
       }
       // Restore other inner scrolls
       if(innerScrolls.length){
-        const els=body.querySelectorAll('[style*="overflow"]');
-        innerScrolls.forEach(({idx,sl,st})=>{
-          if(els[idx]){els[idx].scrollLeft=sl;els[idx].scrollTop=st;}
+        innerScrolls.forEach(({selector,sl,st})=>{
+          if(!selector) return;
+          const el = body.querySelector(selector);
+          if(el){el.scrollLeft=sl;el.scrollTop=st;}
         });
       }
     }catch(_){}
@@ -11210,30 +11226,58 @@ setInterval(()=>_CITIES.forEach(c=>_fetchWeather(c)),600000);
    JITTER — smooth micro-movements
 ═══════════════════════════════════════════════════════ */
 function jitter(){
+  if(typeof MKT === 'undefined' || !MKT) return 0;
+  if(typeof CRYPTO === 'undefined' || !CRYPTO) return 0;
   Object.values(MKT).forEach(m=>{m.chg+=(Math.random()-.5)*.012;m.px=Math.max(m.px*(1+(Math.random()-.499)*.0005),.001);});
   CRYPTO.forEach(c=>{c.chg+=(Math.random()-.5)*.04;c.px=Math.max(c.px*(1+(Math.random()-.499)*.0005),.000001);});
-  buildTicker();renderSidebar();renderMarkers();
+  if(typeof buildTicker === 'function') buildTicker();
+  if(typeof renderSidebar === 'function') renderSidebar();
+  if(typeof renderMarkers === 'function') renderMarkers();
   // Update all crypto menu prices + colors
-  [['BTC','mn-btc'],['ETH','mn-eth'],['SOL','mn-sol'],['XRP','mn-xrp'],['BNB','mn-bnb']].forEach(([sym,id])=>{
-    const c=CRYPTO.find(x=>x.s===sym);
-    const el=document.getElementById(id);
-    if(c&&el){
-      el.textContent='$'+fmtPx(c.px);
-      el.style.color=c.chg>=0?'var(--gn)':'var(--rd)';
-    }
-  });
+  try {
+    [['BTC','mn-btc'],['ETH','mn-eth'],['SOL','mn-sol'],['XRP','mn-xrp'],['BNB','mn-bnb']].forEach(([sym,id])=>{
+      const c=CRYPTO.find(x=>x.s===sym);
+      const el=document.getElementById(id);
+      if(c&&el){
+        el.textContent='$'+fmtPx(c.px);
+        el.style.color=c.chg>=0?'var(--gn)':'var(--rd)';
+      }
+    });
+  } catch(e) {}
   // refresh open panels
-  document.querySelectorAll('.panel').forEach(p=>{
-    const fn=p.querySelector('.panel-tag')?.textContent;
-    const tabEl=p.querySelector('.ptab.on');
-    const body=p.querySelector('.panel-body');
-    if(!fn||!body)return;
-    if(['WEI','EQUITY','CRYPTO','COMDTY','MOVERS','MMAP'].includes(fn)){
-      const tabs=getPanelTabs(fn);
-      const ti=tabs&&tabEl?tabs.indexOf(tabEl.textContent):0;
-      body.innerHTML=ti>0?buildPanelContentTab(fn,ti):buildPanelContent(fn);
-    }
-  });
+  try {
+    document.querySelectorAll('.panel').forEach(p=>{
+      const fn=p.querySelector('.panel-tag')?.textContent;
+      const tabEl=p.querySelector('.ptab.on');
+      const body=p.querySelector('.panel-body');
+      if(!fn||!body)return;
+
+      // OPTIMIZATION: If this is a CRYPTO panel and it's already rendered, 
+      // skip the heavy innerHTML update. Live data is handled by _patchCRYPTOPanel & _refreshBWEI.
+      if(fn === 'CRYPTO' && body.querySelector('.bwei-wrap')) return;
+
+      if(['WEI','EQUITY','CRYPTO','COMDTY','MOVERS','MMAP'].includes(fn)){
+        // Save scroll positions before destructive innerHTML update
+        const st = body.scrollTop;
+        const innerBody = body.querySelector('.bwei-body');
+        const ist = innerBody ? innerBody.scrollTop : 0;
+
+        const tabs=(typeof getPanelTabs === 'function') ? getPanelTabs(fn) : null;
+        const ti=(tabs&&tabEl)?tabs.indexOf(tabEl.textContent):0;
+        
+        if(typeof buildPanelContent === 'function'){
+          body.innerHTML=(ti>0 && typeof buildPanelContentTab === 'function')?buildPanelContentTab(fn,ti):buildPanelContent(fn);
+          // Restore scroll positions
+          body.scrollTop = st;
+          if(innerBody) {
+            const newInner = body.querySelector('.bwei-body');
+            if(newInner) newInner.scrollTop = ist;
+          }
+        }
+      }
+    });
+  } catch(e) {}
+  return (Math.random() - 0.5) * 0.001;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -29739,8 +29783,15 @@ window.refreshLivePanels = function() {
             let ti = 0;
             if (pnl) pnl.querySelectorAll('.ptab').forEach((t, i) => { if (t.classList.contains('on')) ti = i; });
             const st = body.scrollTop;
+            const bweiBody = body.querySelector('.bwei-body');
+            const bst = bweiBody ? bweiBody.scrollTop : 0;
+
             body.innerHTML = ti > 0 ? buildPanelContentTab(reg.fn, ti) : buildPanelContent(reg.fn);
             body.scrollTop = st;
+            if (bst > 0) {
+                const newBwei = body.querySelector('.bwei-body');
+                if (newBwei) newBwei.scrollTop = bst;
+            }
         }
     });
 };
