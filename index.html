@@ -44229,7 +44229,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
     let pool      = [];   // fetched items
     let queue     = [];   // shuffled for next pushes
     let rows      = [];   // [{id,src,time,txt,addedAt,url}] newest-first, max MAX_ROWS
-    let nextId    = 500 + Math.floor(Math.random() * 100);
+    let nextId    = 500 + Math.floor(Math.random() * 200);
     let booted    = false;
 
     /* ── Helpers ──────────────────────────────────────────────────── */
@@ -44240,43 +44240,65 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 
     /* ── Crypto News RSS Sources ──────────────────────────────────── */
     const NEWS_FEEDS = [
-      { src: 'CDK', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
+      { src: 'CDK',  url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
       { src: 'CTEL', url: 'https://cointelegraph.com/rss' },
-      { src: 'DCR', url: 'https://decrypt.co/feed' },
-      { src: 'BTM', url: 'https://bitcoinmagazine.com/.rss/full/' },
-      { src: 'CPN', url: 'https://cryptopanic.com/news/rss/' },
-      { src: 'AMB', url: 'https://ambcrypto.com/feed/' },
-      { src: 'UTD', url: 'https://u.today/rss' }
+      { src: 'DCR',  url: 'https://decrypt.co/feed' },
+      { src: 'BTM',  url: 'https://bitcoinmagazine.com/.rss/full/' },
+      { src: 'CPN',  url: 'https://cryptopanic.com/news/rss/' },
+      { src: 'AMB',  url: 'https://ambcrypto.com/feed/' },
+      { src: 'UTD',  url: 'https://u.today/rss' },
+      { src: 'NBTC', url: 'https://www.newsbtc.com/feed/' },
+      { src: 'CSL',  url: 'https://cryptoslate.com/feed/' }
     ];
 
     async function fetchFeed(feed) {
-      // Try multiple proxies for reliability
-      const proxies = [
-        'https://api.allorigins.win/get?url=',
-        'https://corsproxy.io/?url='
-      ];
-      
-      for (const proxy of proxies) {
-        try {
-          const r = await fetch(proxy + encodeURIComponent(feed.url));
-          if (!r.ok) continue;
+      // 1. Try AllOrigins (JSON wrapper)
+      try {
+        const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(feed.url)}&_=${Date.now()}`);
+        if (r.ok) {
           const j = await r.json();
-          const content = j.contents || j; // allorigins uses .contents, corsproxy is direct
-          if (!content) continue;
-          
-          const xml = new DOMParser().parseFromString(content, 'text/xml');
-          const items = Array.from(xml.querySelectorAll('item')).slice(0, 8);
-          
-          return items.map(el => ({
-            src: feed.src,
-            txt: (el.querySelector('title')?.textContent || '').replace(/\s+/g,' ').replace(/&amp;/g,'&').replace(/&#039;/g,"'").replace(/&quot;/g,'"').trim(),
-            url: el.querySelector('link')?.textContent || '#'
-          })).filter(i => i.txt.length > 10);
-        } catch(e) {
-          console.warn(`[NEWS] Proxy ${proxy} failed for ${feed.src}`);
+          if (j.contents) return parseRSS(j.contents, feed.src);
         }
-      }
+      } catch(e) {}
+
+      // 2. Try Corsproxy.io (Direct transparent)
+      try {
+        const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(feed.url)}`);
+        if (r.ok) {
+          const t = await r.text();
+          return parseRSS(t, feed.src);
+        }
+      } catch(e) {}
+
+      // 3. Try Codetabs (Direct transparent)
+      try {
+        const r = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feed.url)}`);
+        if (r.ok) {
+          const t = await r.text();
+          return parseRSS(t, feed.src);
+        }
+      } catch(e) {}
+
       return [];
+    }
+
+    function parseRSS(xmlText, src) {
+      try {
+        const xml = new DOMParser().parseFromString(xmlText, 'text/xml');
+        const items = Array.from(xml.querySelectorAll('item')).slice(0, 12);
+        return items.map(el => {
+          let link = el.querySelector('link')?.textContent || '';
+          if (!link) {
+            const guid = el.querySelector('guid');
+            if (guid && (guid.getAttribute('isPermaLink') !== 'false')) link = guid.textContent;
+          }
+          return {
+            src: src,
+            txt: (el.querySelector('title')?.textContent || '').replace(/\s+/g,' ').replace(/&amp;/g,'&').replace(/&#039;/g,"'").replace(/&quot;/g,'"').trim(),
+            url: link.trim()
+          };
+        }).filter(i => i.txt.length > 15 && i.url && i.url.startsWith('http'));
+      } catch(e) { return []; }
     }
 
     /* ── Refresh data pool ────────────────────────────────────────── */
@@ -44286,57 +44308,27 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
       results.forEach(r => { if (r.status === 'fulfilled') fresh.push(...r.value); });
       
       if (!fresh.length) {
-        console.warn('[NEWS] No fresh news fetched from any source');
+        // If pool is empty, retry soon to ensure we get REAL data
+        setTimeout(refreshPool, 10000);
         return;
       }
       
-      // Deduplicate
+      // Deduplicate by text content
       const seen = new Set();
       pool = fresh.filter(x => {
         const k = x.txt.slice(0,60).toLowerCase().replace(/[^a-z0-9]/g,'');
         return seen.has(k) ? false : (seen.add(k), true);
       });
       queue = [];
-    }
-
-    /* ── Market Pulse ─────────────────────────────────────────────── */
-    function getMarketPulse() {
-      const crypto = window.CRYPTO || [];
-      if (!crypto.length) return null;
       
-      // Pick a significant mover
-      const movers = [...crypto].filter(c => Math.abs(c.chg) > 2);
-      if (!movers.length) return null;
-      
-      const item = movers[Math.floor(Math.random() * movers.length)];
-      const sign = item.chg >= 0 ? '▲' : '▼';
-      const dir  = item.chg >= 0 ? 'gains' : 'slides';
-      
-      return {
-        src: 'MKT',
-        txt: `MARKET ALERT: ${item.s} ${sign} $${item.px.toLocaleString()} (${item.chg > 0 ? '+' : ''}${item.chg.toFixed(2)}%) as market volatility ${dir}`,
-        url: '#'
-      };
+      // If we were empty, trigger immediate pushes
+      if (rows.length < MAX_ROWS) {
+        for(let i=0; i<MAX_ROWS; i++) push();
+      }
     }
 
     /* ── Pick next item (no repeats until pool exhausted) ─────────── */
     function nextItem() {
-      // 20% chance of market alert instead of news
-      if (Math.random() > 0.8) {
-        const pulse = getMarketPulse();
-        if (pulse) {
-          const now = new Date();
-          return {
-            id:      String(++nextId),
-            src:     pulse.src,
-            txt:     pulse.txt,
-            url:     pulse.url,
-            time:    hhmm(now),
-            addedAt: now.getTime()
-          };
-        }
-      }
-
       if (!queue.length) {
         if (!pool.length) return null;
         queue = [...pool].sort(()=>Math.random()-.5);
@@ -44348,7 +44340,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
         src:     raw.src,
         txt:     raw.txt,
         url:     raw.url,
-        time:    hhmm(now),   // FROZEN — stamped exactly once at arrival
+        time:    hhmm(now),
         addedAt: now.getTime()
       };
     }
@@ -44376,7 +44368,11 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
         el.className      = 'bwei-news-line bwterm-live-row bwterm-new';
         el.dataset.nid    = r.id;
         el.dataset.added  = r.addedAt;
-        el.onclick        = () => { if(r.url && r.url!=='#') window.open(r.url, '_blank'); };
+        el.title          = "Click to open source: " + r.url;
+        el.onclick        = (e) => { 
+          e.stopPropagation();
+          if(r.url && r.url.startsWith('http')) window.open(r.url, '_blank'); 
+        };
         
         el.innerHTML =
           '<div class="n-id">'  + r.id   + '</div>' +
@@ -44388,7 +44384,11 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
       });
 
       if (!ticker.children.length) {
-        ticker.innerHTML = '<div class="bwei-news-line" style="opacity:.35"><div class="n-id">—</div><div class="n-src">SYS</div><div class="n-time">'+ hhmm() +'</div><div class="n-txt">Synchronizing Real-Time Feeds…</div></div>';
+        ticker.innerHTML = '<div class="bwei-news-line" style="opacity:.6; background:rgba(0,100,255,0.05);">' + 
+          '<div class="n-id">---</div>' + 
+          '<div class="n-src">LIVE</div>' + 
+          '<div class="n-time">'+ hhmm() +'</div>' + 
+          '<div class="n-txt" style="color:#00ffff !important; font-style:italic;">Connecting to Real-Time Crypto News Terminal...</div></div>';
       }
     }
 
@@ -44400,44 +44400,21 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
     function push() {
       const item = nextItem();
       if (!item) return;
+      
+      // Prevent duplicates in rows
+      if (rows.some(r => r.txt === item.txt)) return;
+      
       rows.unshift(item);
-      rows = rows.filter(r=>(Date.now()-r.addedAt)<NEWS_EXPIRE_MS);
+      if (rows.length > MAX_ROWS * 2) rows = rows.slice(0, MAX_ROWS * 2);
       paintAll();
     }
 
-    /* ── Expiry check (every 30s) ─────────────────────────────────── */
-    function expire() {
-      const before = rows.length;
-      rows = rows.filter(r=>(Date.now()-r.addedAt)<NEWS_EXPIRE_MS);
-      if (rows.length !== before) paintAll();
-    }
-
-    /* ── Seed on first load ───────────────────────────────────────── */
+    /* ── Boot ─────────────────────────────────────────────────────── */
     async function seed() {
       if (booted) return;
       booted = true;
+      paintAll(); // Show initial connection state
       await refreshPool();
-
-      // Use real data if available, else high-quality fallback
-      const src = pool.length ? [...pool].sort(()=>Math.random()-.5).slice(0,MAX_ROWS) : [
-        {src:'MKT', txt:'BITCOIN (BTC) continues consolidation above key $95,000 psychological level', url:'#'},
-        {src:'DCR', txt:'Spot ETH ETF flows show increasing institutional interest in Q2', url:'#'},
-        {src:'CTEL', txt:'Major exchange updates listing requirements for DeFi governance tokens', url:'#'},
-        {src:'BTM', txt:'Mining difficulty reaches new ATH as hash rate stabilizes', url:'#'}
-      ];
-
-      // Stagger: oldest item is MAX_ROWS-1 minutes ago, newest is now
-      const now = Date.now();
-      rows = src.map((raw, i) => {
-        const ageMs = i * 60 * 1000;  // each 1 min apart
-        const d     = new Date(now - ageMs);
-        return { id: String(++nextId), src: raw.src, txt: raw.txt, url: raw.url, time: hhmm(d), addedAt: now - ageMs };
-      });
-
-      // Remove seeded from queue to avoid immediate repeat
-      queue = queue.filter(q => !src.some(s=>s.txt===q.txt));
-
-      paintAll();
     }
 
     /* ── Expose for compat ────────────────────────────────────────── */
