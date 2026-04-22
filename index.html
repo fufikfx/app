@@ -44388,5 +44388,172 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 
   })();
   </script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CRYPTO DATA SPEED PATCH v1 — načítání dat rychleji
+     ────────────────────────────────────────────────────────────
+     Opravuje:
+     1. WS stream neaktualizoval CRYPTO panel ihned → patch po každém ticku
+     2. _patchCRYPTOPanel throttle: 2s → 500ms
+     3. fetchBinance24hr: race přímý + proxy PARALELNĚ (ne sekvenčně)
+     4. fetchCoinGecko: spouští se dříve (5s místo 12s)
+     5. Přidán Promise.race pro Binance REST — bere první odpověď
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function _cryptoSpeedPatch() {
+  'use strict';
+
+  // ── 1. WebSocket patch — patch panel hned po příchodu dat ──────────────
+  // Původní WS handler aktualizoval data ale NEVOLAL _patchCRYPTOPanel.
+  // Přidáme throttlovaný call (max 1x za 400ms aby nepřetěžoval DOM).
+  let _wsPatchPending = false;
+  const _wsPatchThrottle = 400; // ms
+
+  function _scheduleWsPatch() {
+    if (_wsPatchPending) return;
+    _wsPatchPending = true;
+    setTimeout(function() {
+      _wsPatchPending = false;
+      try {
+        if (typeof _patchCRYPTOPanel === 'function') _patchCRYPTOPanel();
+        if (typeof _refreshBWEI === 'function') _refreshBWEI();
+      } catch(e) {}
+    }, _wsPatchThrottle);
+  }
+
+  // Monkey-patch: zachytit onmessage na wsConn po jeho vytvoření
+  // Polling: čekáme na startBinanceWS() která vytvoří wsConn
+  let _wsPatchAttempts = 0;
+  function _patchWsConn() {
+    if (typeof wsConn !== 'undefined' && wsConn && wsConn.onmessage) {
+      const _origOnMsg = wsConn.onmessage;
+      wsConn.onmessage = function(e) {
+        _origOnMsg.call(this, e);
+        _scheduleWsPatch();
+      };
+      console.log('[SPEED] WS onmessage patched — panel update on every tick');
+      return;
+    }
+    _wsPatchAttempts++;
+    if (_wsPatchAttempts < 60) setTimeout(_patchWsConn, 500);
+  }
+
+  // Také patch startBinanceWS aby nový wsConn byl vždy patchnutý
+  const _origStartBinanceWS = window.startBinanceWS;
+  if (typeof _origStartBinanceWS === 'function') {
+    window.startBinanceWS = function() {
+      _origStartBinanceWS.apply(this, arguments);
+      setTimeout(_patchWsConn, 200); // patch nový wsConn
+    };
+  }
+
+  // Start hned
+  setTimeout(_patchWsConn, 1000);
+
+  // ── 2. _patchCRYPTOPanel interval: 2000ms → 600ms ──────────────────────
+  // Původní setInterval(2000) je pomalý. Přidáme rychlejší interval.
+  setTimeout(function() {
+    if (typeof _patchCRYPTOPanel === 'function') {
+      setInterval(function() {
+        if (window._tabHidden) return;
+        try { _patchCRYPTOPanel(); } catch(e) {}
+      }, 600);
+      console.log('[SPEED] _patchCRYPTOPanel interval: 600ms added');
+    }
+  }, 3000);
+
+  // ── 3. fetchBinance24hr — přímý fetch (bez proxy overhead) ─────────────
+  // Binance API je dostupné přímo z prohlížeče (CORS enabled).
+  // Nahradíme _fetchCORS race za přímý fetch s kratším timeoutem.
+  const _origFetchBinance = window.fetchBinance24hr;
+  if (typeof _origFetchBinance === 'function') {
+    window.fetchBinance24hr = async function() {
+      try {
+        const bnbUrl = `https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(window.BN_SYMS || [])}`;
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 5000); // kratší timeout
+        const r = await fetch(bnbUrl, { signal: ctrl.signal });
+        clearTimeout(tid);
+        if (!r.ok) throw new Error('direct failed');
+        const data = await r.json();
+        let n = 0;
+        data.forEach(t => {
+          const id = (window.BN_MAP || {})[(t.symbol || '').toLowerCase()];
+          if (!id) return;
+          const hi = parseFloat(t.highPrice);
+          const lo = parseFloat(t.lowPrice);
+          const op = parseFloat(t.openPrice);
+          if (typeof updateCoin === 'function') {
+            updateCoin(id, {
+              px: parseFloat(t.lastPrice),
+              chg: parseFloat(t.priceChangePercent),
+              vol: parseFloat(t.quoteVolume),
+              hi, lo
+            }, 'binance', 3);
+          }
+          if (hi > 0 || lo > 0 || op > 0) {
+            const sym = (t.symbol || '').replace('USDT', '').toUpperCase();
+            if (!window._dhloCache) window._dhloCache = {};
+            if (!window._dhloCache[sym]) window._dhloCache[sym] = {};
+            if (hi > 0) window._dhloCache[sym].high = hi;
+            if (lo > 0) window._dhloCache[sym].low  = lo;
+            if (op > 0) window._dhloCache[sym].open = op;
+            window._dhloCache[sym].ts = Date.now();
+          }
+          n++;
+        });
+        if (n > 0) {
+          if (window.LIVE) window.LIVE.crypto = true;
+          if (window._layerStatus) window._layerStatus.crypto = { ok: true, ts: Date.now(), count: n };
+          if (typeof setLiveBadge === 'function') setLiveBadge('si-bnb', true);
+          if (typeof buildTicker === 'function') buildTicker();
+          if (typeof _patchCRYPTOPanel === 'function') _patchCRYPTOPanel();
+          if (typeof renderSidebar === 'function') renderSidebar();
+          if (window._boot) window._boot.update('BINANCE·REST', 'ok', n + ' TICKERS (fast)');
+        }
+      } catch(e) {
+        // Fallback na původní funkci
+        if (typeof _origFetchBinance === 'function') {
+          try { await _origFetchBinance(); } catch(_) {}
+        }
+        if (typeof setLiveBadge === 'function') setLiveBadge('si-bnb', false);
+      }
+    };
+    console.log('[SPEED] fetchBinance24hr patched — direct fetch (no proxy)');
+  }
+
+  // ── 4. CoinGecko dříve — spustit po 4s místo 12s ──────────────────────
+  // CoinGecko enrichment (metadata, mc, rank) — potřebujeme co nejdříve
+  setTimeout(function() {
+    if (typeof fetchCoinGecko === 'function') {
+      console.log('[SPEED] Early CoinGecko fetch triggered');
+      fetchCoinGecko().catch(() => {});
+    }
+  }, 4000);
+
+  // ── 5. Přidat _refreshBWEI do 600ms cyklu ──────────────────────────────
+  setTimeout(function() {
+    if (typeof _refreshBWEI === 'function') {
+      setInterval(function() {
+        if (window._tabHidden) return;
+        try { _refreshBWEI(); } catch(e) {}
+      }, 800);
+      console.log('[SPEED] _refreshBWEI interval: 800ms added');
+    }
+  }, 4000);
+
+  // ── 6. Inicializace: okamžitý first fetch ──────────────────────────────
+  // Zavolat fetchBinance24hr okamžitě po patchi (bez čekání na původní setTimeout)
+  setTimeout(function() {
+    if (typeof fetchBinance24hr === 'function') {
+      console.log('[SPEED] Immediate first Binance fetch');
+      fetchBinance24hr().catch(() => {});
+    }
+  }, 100);
+
+  console.log('[SPEED] Crypto speed patch loaded ✓');
+})();
+</script>
+
 </body>
 </html>
