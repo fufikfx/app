@@ -44693,3 +44693,29 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 
 </body>
 </html>
+
+<style>
+/* ═══ BLOOMBERG COMPACT FIX — pevné šířky sloupců ═══ */
+.bwei-cat,
+.bwei-row {
+  grid-template-columns: 32px 130px 28px 60px 100px 80px 100px 90px 80px 80px 75px 80px !important;
+  font-size: 11px !important;
+  height: 19px !important;
+  min-height: unset !important;
+  line-height: 1 !important;
+}
+.bwei-cat {
+  height: 22px !important;
+  border-bottom: 1px solid #222 !important;
+  font-size: 11px !important;
+}
+.bwei-cat > div { font-size: 11px !important; padding: 0 3px !important; }
+.bwei-cat .c-num { font-size: 11px !important; letter-spacing: 0 !important; }
+.bwei-cat .c-name { font-size: 11px !important; padding-left: 5px !important; }
+.bwei-cat .c-rmi { font-size: 10px !important; }
+.bwei-row .r-num { font-size: 10px !important; padding-right: 3px !important; }
+.bwei-row .r-name { font-size: 11px !important; padding-left: 4px !important; }
+.bwei-row .r-time { font-size: 11px !important; }
+.bwei-row > div { padding: 0 4px !important; }
+.bwei-row .r-spark svg { min-height: 17px !important; }
+</style>
