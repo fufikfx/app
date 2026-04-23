@@ -277,7 +277,7 @@ body.sat-active .m-wrap{opacity:1!important;}
   overflow:hidden;
   min-height:100px;
 }
-.panel.maximized{position:fixed!important;left:0!important;top:26px!important;right:0!important;bottom:0!important;width:100%!important;height:calc(100% - 26px)!important;max-width:none!important;resize:none;z-index:1000000!important;display:flex!important;flex-direction:column!important;}
+.panel.maximized{position:fixed!important;left:0!important;top:46px!important;right:0!important;bottom:0!important;width:100%!important;height:calc(100% - 46px)!important;max-width:none!important;resize:none;z-index:1000000!important;display:flex!important;flex-direction:column!important;}
 .panel.maximized .panel-hd{display:none!important;}
 .panel.maximized .panel-body{zoom:1;flex:1!important;height:0!important;min-height:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
 .panel.maximized .panel-body>.bwei-wrap{flex:1!important;min-height:0!important;height:auto!important;}
@@ -1037,6 +1037,7 @@ body{text-rendering:optimizeSpeed;}
   background: #000000 !important;
   border-top: 1px solid #000000 !important;
   height: 70px !important;
+  display: none !important;
 }
 
 /* UTC clock — Bloomberg amber, large */
@@ -44742,5 +44743,39 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   grid-template-columns: 32px 130px 28px 60px 100px 76px 100px 88px 76px 76px 72px 78px !important;
   min-width: 916px !important;
   width: 916px !important;
+}
+</style>
+
+<style>
+/* ═══ GAP FIX — odstranění černých mezer ═══ */
+/* Skrýt STAT bar (způsobuje gap nahoře i dole) */
+#STAT { display: none !important; }
+
+/* QUICKBAR wrapper — nulová výška aby nepřidával prostor */
+#QUICKBAR {
+  position: relative !important;
+  top: auto !important;
+}
+
+/* Zajistit že MAIN začíná hned pod QUICKBARem */
+#MAIN {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+</style>
+
+<style>
+/* ═══ FINAL WIDTH FIX — tabulka na celou šířku ale nepřesáhne rozumnou mez ═══ */
+.bwei-cat,
+.bwei-row {
+  grid-template-columns: 32px 1.4fr 28px 56px 1.0fr 0.85fr 1.0fr 0.9fr 0.85fr 0.85fr 0.75fr 0.8fr !important;
+  width: 100% !important;
+  min-width: unset !important;
+}
+.bwei-body {
+  overflow-x: hidden !important;
+}
+.bwei-wrap {
+  max-width: none !important;
 }
 </style>
