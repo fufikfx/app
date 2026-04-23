@@ -2,25 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=1280, initial-scale=1.0, user-scalable=no">
-<script>
-// Anti-zoom: counter-scale body so browser zoom has no visual effect
-(function(){
-  function applyAntiZoom(){
-    var ratio = window.devicePixelRatio || 1;
-    // detect CSS zoom level by comparing screen vs window dimensions
-    var zoom = Math.round((window.outerWidth / window.innerWidth) * 100) / 100;
-    if(zoom && zoom !== 1){
-      document.body.style.zoom = (1 / zoom);
-    } else {
-      document.body.style.zoom = '';
-    }
-  }
-  window.addEventListener('resize', applyAntiZoom);
-  document.addEventListener('DOMContentLoaded', applyAntiZoom);
-  applyAntiZoom();
-})();
-</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BLOOMBERG TERMINAL — PROFESSIONAL SYSTEM</title>
 <!-- v20260321-v14-AIS-enhanced -->
 <!-- Preconnect to key external resources for faster startup -->
@@ -64,7 +46,7 @@
   }
 }
 *{margin:0;padding:0;box-sizing:border-box;cursor:default!important;}
-html,body{width:100%;height:100%;max-height:100%;overflow:hidden;background:#000000;margin:0;padding:0;position:fixed;top:0;left:0;right:0;bottom:0;min-width:1280px;}
+html,body{width:100%;height:100%;max-height:100%;overflow:hidden;background:#000000;margin:0;padding:0;position:fixed;top:0;left:0;right:0;bottom:0;}
 html{-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}
 body{display:flex;flex-direction:column;font-family:var(--fn);font-size:11px;color:var(--am);height:100%;max-height:100%;overflow:hidden;
   font-feature-settings:"tnum" 1;
@@ -295,7 +277,7 @@ body.sat-active .m-wrap{opacity:1!important;}
   overflow:hidden;
   min-height:100px;
 }
-.panel.maximized{position:fixed!important;left:0!important;top:46px!important;right:0!important;bottom:0!important;width:100%!important;height:calc(100% - 46px)!important;max-width:none!important;resize:none;z-index:1000000!important;display:flex!important;flex-direction:column!important;}
+.panel.maximized{position:fixed!important;left:0!important;top:26px!important;right:0!important;bottom:0!important;width:100%!important;height:calc(100% - 26px)!important;max-width:none!important;resize:none;z-index:1000000!important;display:flex!important;flex-direction:column!important;}
 .panel.maximized .panel-hd{display:none!important;}
 .panel.maximized .panel-body{zoom:1;flex:1!important;height:0!important;min-height:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
 .panel.maximized .panel-body>.bwei-wrap{flex:1!important;min-height:0!important;height:auto!important;}
@@ -362,9 +344,9 @@ body.sat-active .m-wrap{opacity:1!important;}
 
 /* ── TABLE STYLES ── */
 .pt{width:100%;border-collapse:collapse;table-layout:fixed;background:#000;}
-.pt th{background:#000;color:#ff8800;font-size:8px;font-weight:900;text-align:left;padding:6px 8px;letter-spacing:0.5px;white-space:nowrap;position:sticky;top:0;z-index:1;border-bottom:1px solid #000000;}
+.pt th{background:#000;color:#ff8800;font-size:8px;font-weight:900;text-align:left;padding:3px 4px;letter-spacing:0.5px;white-space:nowrap;position:sticky;top:0;z-index:1;border-bottom:1px solid #000000;}
 .pt th.r{text-align:right;}
-.pt td{padding:4px 8px;font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;
+.pt td{padding:3px 4px;font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;
   font-family:var(--fn-num);
   font-variant-numeric:tabular-nums;
   font-feature-settings:"tnum" 1,"zero" 0;
@@ -409,7 +391,7 @@ body.sat-active .m-wrap{opacity:1!important;}
   z-index:2400 !important;
 }
 #MAIN {
-  margin-top:0px;
+  margin-top:20px;
 }
 .ql-tile{
   position:relative;display:flex;flex-direction:column;justify-content:center;
@@ -685,7 +667,7 @@ body.sat-active .m-wrap{opacity:1!important;}
   border-collapse: collapse;
   table-layout: fixed;
   font-size: 10px;
-  margin-bottom: 0px;
+  margin-bottom: 20px;
 }
 
 .cdash-table th {
@@ -800,7 +782,7 @@ body.sat-active .m-wrap{opacity:1!important;}
 #minimap-btn:hover{background:rgba(255,255,255,.04);}
 
 /* ══ STATUS BAR ══ */
-#STAT{height:72px;background:rgba(0,0,0,0.98);border-top:1px solid #000000;display:none;flex-direction:column;align-items:stretch;gap:0;padding:0;flex-shrink:0;font-size:8px;z-index:2000;position:relative;}
+#STAT{height:72px;background:rgba(0,0,0,0.98);border-top:1px solid #000000;display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0;flex-shrink:0;font-size:8px;z-index:2000;position:relative;}
 body.hide-stat-bar #STAT { display: none !important; }
 body.panel-open #STAT { display: none !important; }
 #stat-clocks-row{display:flex;align-items:stretch;height:44px;flex:1;padding-bottom:3px;}
@@ -1055,7 +1037,6 @@ body{text-rendering:optimizeSpeed;}
   background: #000000 !important;
   border-top: 1px solid #000000 !important;
   height: 70px !important;
-  display: none !important;
 }
 
 /* UTC clock — Bloomberg amber, large */
@@ -1164,10 +1145,10 @@ body{text-rendering:optimizeSpeed;}
   letter-spacing: 1px !important;
   font-weight: 700 !important;
   border-bottom: 1px solid #000000 !important;
-  padding: 3px 6px !important;
+  padding: 2px 3px !important;
 }
 .pt td {
-  padding: 3px 6px !important;
+  padding: 2px 3px !important;
   border-bottom: 1px solid #000000 !important;
 }
 .pt tr:hover td {
@@ -3802,7 +3783,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <!-- QUICK LAUNCH BAR -->
-<div style="display:flex;flex-shrink:0;background:transparent;width:100%;height:0;overflow:visible;">
+<div style="display:flex;flex-shrink:0;background:#000000;width:100%;">
 <div id="QUICKBAR" style="height:20px;background:#080a14;border:1px solid #0C57B3;border-left:3px solid #0C57B3;display:flex;align-items:center;flex-shrink:0;overflow:hidden;z-index:2400;position:relative;box-sizing:border-box;width:100%;max-width:100%;margin-left:0;">
 
   <!-- ASSET INPUT TAB -->
@@ -34422,7 +34403,7 @@ setInterval(() => _fetchMacroData(), POLL_MS);
   font-size: 7.5px !important;
   letter-spacing: 1px !important;
   font-weight: 700 !important;
-  padding: 4px 6px !important;
+  padding: 2px 3px !important;
 }
 
 /* ── TABLE ROWS — subtle alternation ── */
@@ -42777,6 +42758,7 @@ document.addEventListener('keydown', function(e){
   background: #000000 !important; 
   font-family: Arial, Helvetica, sans-serif !important; /* Bloomberg standard font */
   color: #D19542 !important; overflow: hidden !important;
+  font-size: 13px !important;
 }
 
 .bwei-tophdr {
@@ -42792,16 +42774,18 @@ document.addEventListener('keydown', function(e){
 .bwei-tophdr .bwei-title {
   margin-left: auto !important; color: #ffffff !important; font-size: 13px !important; font-weight: normal !important;
   padding: 0 8px !important; height: 100% !important; display: inline-flex !important; align-items: center !important;
+  margin-right: 0 !important;
 }
 
 /* ── OPTIONS BAR ── */
 .bwei-optbar {
   background: #000000 !important; flex-shrink: 0 !important;
   display: flex !important; align-items: center !important;
-  padding: 2px 4px !important;
+  padding: 2px 8px !important;
   font-size: 12px !important; justify-content: flex-start !important;
   width: 100% !important; box-sizing: border-box !important;
   overflow: hidden !important;
+  gap: 0 !important;
 }
 .bwei-optbar-standard {
   display: inline-flex !important; align-items: center !important;
@@ -42809,11 +42793,10 @@ document.addEventListener('keydown', function(e){
 }
 .bwei-optbar-checks {
   display: flex !important; align-items: center !important;
-  flex: 0 1 auto !important; min-width: 0 !important;
+  flex: 0 0 auto !important;
   justify-content: flex-start !important;
-  gap: 24px !important;
-  padding: 0 16px !important;
-  overflow: hidden !important;
+  gap: 16px !important;
+  padding: 0 10px !important;
 }
 .bwei-optbar-right {
   display: inline-flex !important; align-items: center !important;
@@ -42821,7 +42804,7 @@ document.addEventListener('keydown', function(e){
   flex-shrink: 0 !important;
 }
 .bwei-opt-sel {
-  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 14px !important;
+  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 11px !important;
   padding: 0 10px !important; border: 1px solid #000 !important; cursor: pointer !important;
   display: inline-flex !important; align-items: center !important; height: 21px !important;
   border-radius: 0 !important; transition: background 0.1s !important;
@@ -42836,7 +42819,7 @@ document.addEventListener('keydown', function(e){
   vertical-align: middle !important;
 }
 .bwei-opt-arr:hover { background: #555 !important; }
-.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 5px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 13px !important; letter-spacing: 0.3px !important; cursor: pointer !important; font-size: 12px !important; font-weight: normal !important; white-space: nowrap !important; }
+.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 4px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 11px !important; letter-spacing: 0.2px !important; cursor: pointer !important; font-weight: normal !important; white-space: nowrap !important; }
 .bwei-opt-chk input[type=checkbox] { 
   appearance: none !important; -webkit-appearance: none !important;
   width: 14px !important; height: 14px !important; cursor: pointer !important; 
@@ -42856,23 +42839,22 @@ document.addEventListener('keydown', function(e){
 }
 .bwei-opt-sep { width: 1px !important; height: 18px !important; background: #555 !important; margin: 0 10px !important; display: inline-block !important; }
 
-.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; display: block !important; font-size: 0 !important; }
+.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; contain: layout !important; }
 
 /* ── Category header ── */
 .bwei-cat {
   background: #333333 !important; 
   display: grid !important;
-  grid-template-columns: 36px 1.5fr 30px 56px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  grid-template-columns: 32px 1.5fr 26px 52px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
   padding: 0 !important; align-items: stretch !important;
-  border-top: 2px solid #444 !important;
-  border-bottom: 1px solid #111 !important;
-  height: 22px !important;
-  min-height: unset !important;
+  border-top: 1px solid rgba(255,255,255,0.15) !important;
+  border-bottom: 2px solid #000 !important;
+  min-height: 22px !important;
 }
 .bwei-cat > div {
   border-right: none !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
-  color: #ffffff !important; font-size: 13px !important; font-weight: bold !important; padding: 0 4px !important;
+  color: #ffffff !important; font-size: 11px !important; font-weight: bold !important; padding: 0 2px !important;
 }
 .bwei-cat > div:nth-child(4) { border-right: none !important; }
 .bwei-cat > div:nth-child(7) { border-right: none !important; }
@@ -42880,38 +42862,38 @@ document.addEventListener('keydown', function(e){
 .bwei-cat > div:last-child {
   border-right: none !important;
 }
-/* Category number cell */
+/* Category number cell — large white, Bloomberg style */
 .bwei-cat .c-num {
-  font-size: 13px !important; font-weight: bold !important;
+  font-size: 12px !important; font-weight: bold !important;
   color: #ffffff !important;
   justify-content: center !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
-  letter-spacing: 0 !important;
+  letter-spacing: -0.5px !important;
 }
 .bwei-cat .c-name { font-size: 13px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 6px !important; justify-content: flex-start !important; color: #ffffff !important; }
-.bwei-cat .c-rmi { justify-content: center !important; font-size: 10px !important; }
+.bwei-cat .c-rmi { justify-content: center !important; font-size: 16px !important; }
 .bwei-cat .c-spark { justify-content: center !important; }
 
 /* ── Data row ── */
 .bwei-row {
   display: grid !important;
-  grid-template-columns: 36px 1.5fr 30px 56px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  grid-template-columns: 32px 1.5fr 26px 52px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
   padding: 0 !important; font-size: 13px !important;
   font-variant-numeric: tabular-nums !important;
   letter-spacing: -0.2px !important;
   cursor: pointer !important; border: 0 !important;
-  line-height: 1 !important;
+  line-height: 1.1 !important;
+  min-height: 18px !important;
   font-weight: bold !important;
-  height: 18px !important;
 }
 .bwei-row:hover { background: #0d0d0d !important; } 
 .bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
 
 .bwei-row > div { 
-  padding: 0 4px !important; white-space: nowrap !important; overflow: hidden !important; 
+  padding: 0 3px !important; white-space: nowrap !important; overflow: hidden !important; 
   text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
-  border-right: 1px solid #1a1a1a !important;
+  border-right: 1px solid #333 !important;
 }
 /* No dividers on right-side data columns */
 .bwei-row .r-chg { border-right: none !important; }
@@ -42919,21 +42901,21 @@ document.addEventListener('keydown', function(e){
 .bwei-row .r-avat { border-right: none !important; }
 .bwei-row .r-time { border-right: none !important; }
 .bwei-row .r-ytd { border-right: none !important; }
-.bwei-row .r-spark { border-right: 1px solid #222 !important; border-left: 1px solid #1a1a1a !important; } /* Split 1 */
-.bwei-row .r-value { border-right: 1px solid #222 !important; } /* Split 2 */
+.bwei-row .r-spark { border-right: 2px solid #303030 !important; border-left: 1px solid #333 !important; } /* Split 1 */
+.bwei-row .r-value { border-right: 2px solid #303030 !important; } /* Split 2 */
 .bwei-row > div:last-child { border-right: none !important; }
 
-/* Row number cell */
+/* Row number cell — matches Bloomberg sub-number style: amber, right-aligned */
 .bwei-row .r-num {
   color: #848484 !important;
   justify-content: flex-end !important;
   font-weight: bold !important;
-  font-size: 10px !important;
-  padding-right: 4px !important;
+  font-size: 11px !important;
+  padding-right: 3px !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
 }
-.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 13px !important; justify-content: flex-start !important; padding-left: 4px !important; text-transform: uppercase !important; border-right: none !important; }
+.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 12px !important; justify-content: flex-start !important; padding-left: 4px !important; text-transform: uppercase !important; border-right: none !important; }
 .bwei-row .r-rmi { justify-content: center !important; padding: 0 !important; gap: 0 !important; border-right: none !important; }
 .bwei-row .r-spark { padding: 0 !important; justify-content: center !important; overflow: visible !important; background: transparent !important; }
 .bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 16px !important; overflow: visible !important; }
@@ -42947,7 +42929,7 @@ document.addEventListener('keydown', function(e){
 .bwei-row .r-avat { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-avat.avat-pos { color: #DDC09E !important; }
 .bwei-row .r-avat.avat-neg { color: #A3A5A4 !important; }
-.bwei-row .r-time { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; font-size: 13px !important; }
+.bwei-row .r-time { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; font-size: 12px !important; }
 .bwei-row .r-ytd { font-weight: bold !important; justify-content: flex-end !important; }
 
 /* Bottom action bar */
@@ -42978,9 +42960,9 @@ document.addEventListener('keydown', function(e){
   transition: background 0.1s;
 }
 .bwei-news-line:hover { background: rgba(255,255,255,0.1) !important; }
-.bwei-news-line .n-id { color: #FFAA00 !important; font-weight: bold !important; font-size: 13px !important; opacity: 0.8; }
-.bwei-news-line .n-src { color: #00ffff !important; font-weight: bold !important; font-size: 13px !important; }
-.bwei-news-line .n-time { color: #ffffff !important; opacity: 0.9; font-size: 13px !important; }
+.bwei-news-line .n-id { color: #FFAA00 !important; font-weight: bold !important; font-size: 11px !important; opacity: 0.8; }
+.bwei-news-line .n-src { color: #00ffff !important; font-weight: bold !important; font-size: 11px !important; }
+.bwei-news-line .n-time { color: #ffffff !important; opacity: 0.9; font-size: 11px !important; }
 .n-txt { color: #ffffff !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; padding-right: 8px !important; font-weight: 500 !important; }
 /* Bloomberg style: newest row flashes amber on arrival, then fades */
 @keyframes bwterm-arrive { 0%{background:rgba(212,168,75,0.22);color:#fff !important;} 80%{background:rgba(212,168,75,0.06);} 100%{background:transparent;} }
@@ -43051,7 +43033,7 @@ document.addEventListener('keydown', function(e){
 /* ── Suffix letters — Small and Dimmed ── */
 .bwei-sfx-d, .bwei-sfx-c, .bwei-sfx-y, .bwei-sfx-s { 
   color: #777777 !important; 
-  font-size: 13px !important; 
+  font-size: 11px !important; 
   font-weight: normal !important; 
   margin-left: 2px !important;
   vertical-align: baseline !important;
@@ -43542,6 +43524,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-tophdr .bwei-title {
   margin-left: auto !important; color: #ffffff !important; font-size: 13px !important; font-weight: normal !important;
   padding: 0 8px !important; height: 100% !important; display: inline-flex !important; align-items: center !important;
+  margin-right: 0 !important;
 }
 
 /* ── OPTIONS BAR ── */
@@ -43559,11 +43542,10 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 }
 .bwei-optbar-checks {
   display: flex !important; align-items: center !important;
-  flex: 0 1 auto !important; min-width: 0 !important;
+  flex: 0 0 auto !important;
   justify-content: flex-start !important;
-  gap: 24px !important;
-  padding: 0 16px !important;
-  overflow: hidden !important;
+  gap: 16px !important;
+  padding: 0 10px !important;
 }
 .bwei-optbar-right {
   display: inline-flex !important; align-items: center !important;
@@ -43571,7 +43553,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   flex-shrink: 0 !important;
 }
 .bwei-opt-sel {
-  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 14px !important;
+  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 11px !important;
   padding: 0 10px !important; border: 1px solid #000 !important; cursor: pointer !important;
   display: inline-flex !important; align-items: center !important; height: 21px !important;
   border-radius: 0 !important; transition: background 0.1s !important;
@@ -43586,7 +43568,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   vertical-align: middle !important;
 }
 .bwei-opt-arr:hover { background: #555 !important; }
-.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 5px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 13px !important; letter-spacing: 0.3px !important; cursor: pointer !important; font-size: 12px !important; font-weight: normal !important; white-space: nowrap !important; }
+.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 4px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 11px !important; letter-spacing: 0.2px !important; cursor: pointer !important; font-weight: normal !important; white-space: nowrap !important; }
 .bwei-opt-chk input[type=checkbox] { 
   appearance: none !important; -webkit-appearance: none !important;
   width: 14px !important; height: 14px !important; cursor: pointer !important; 
@@ -43606,23 +43588,22 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 }
 .bwei-opt-sep { width: 1px !important; height: 14px !important; background: #555 !important; margin: 0 6px !important; display: inline-block !important; }
 
-.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; display: block !important; font-size: 0 !important; }
+.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; contain: layout !important; }
 
 /* ── Category header ── */
 .bwei-cat {
   background: #333333 !important; 
   display: grid !important;
-  grid-template-columns: 36px 1.5fr 30px 56px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  grid-template-columns: 32px 1.5fr 26px 52px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
   padding: 0 !important; align-items: stretch !important;
-  border-top: 2px solid #444 !important;
-  border-bottom: 1px solid #111 !important;
-  height: 22px !important;
-  min-height: unset !important;
+  border-top: 1px solid rgba(255,255,255,0.15) !important;
+  border-bottom: 2px solid #000 !important;
+  min-height: 22px !important;
 }
 .bwei-cat > div {
   border-right: none !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
-  color: #ffffff !important; font-size: 13px !important; font-weight: bold !important; padding: 0 4px !important;
+  color: #ffffff !important; font-size: 18px !important; font-weight: bold !important; padding: 0 8px !important;
 }
 .bwei-cat > div:nth-child(n+5) { justify-content: flex-end !important; }
 .bwei-cat > div:nth-child(4) { border-right: none !important; }
@@ -43631,38 +43612,38 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-cat > div:last-child {
   border-right: none !important;
 }
-/* Category number cell */
+/* Category number cell — large white, Bloomberg style */
 .bwei-cat .c-num {
-  font-size: 13px !important; font-weight: bold !important;
+  font-size: 12px !important; font-weight: bold !important;
   color: #ffffff !important;
   justify-content: center !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
-  letter-spacing: 0 !important;
+  letter-spacing: -0.5px !important;
 }
 .bwei-cat .c-name { font-size: 13px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 6px !important; justify-content: flex-start !important; color: #ffffff !important; }
-.bwei-cat .c-rmi { justify-content: center !important; font-size: 10px !important; }
+.bwei-cat .c-rmi { justify-content: center !important; font-size: 16px !important; }
 .bwei-cat .c-spark { justify-content: center !important; }
 
 /* ── Data row ── */
 .bwei-row {
   display: grid !important;
-  grid-template-columns: 36px 1.5fr 30px 56px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  grid-template-columns: 32px 1.5fr 26px 52px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
   padding: 0 !important; font-size: 13px !important;
   font-variant-numeric: tabular-nums !important;
   letter-spacing: -0.2px !important;
   cursor: pointer !important; border: 0 !important;
-  line-height: 1 !important;
+  line-height: 1.1 !important;
+  min-height: 18px !important;
   font-weight: bold !important;
-  height: 18px !important;
 }
 .bwei-row:hover { background: #0d0d0d !important; } 
 .bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
 
 .bwei-row > div { 
-  padding: 0 4px !important; white-space: nowrap !important; overflow: hidden !important; 
+  padding: 0 3px !important; white-space: nowrap !important; overflow: hidden !important; 
   text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
-  border-right: 1px solid #1a1a1a !important;
+  border-right: 1px solid #333 !important;
 }
 /* No dividers on right-side data columns */
 .bwei-row .r-chg { border-right: none !important; }
@@ -43670,21 +43651,21 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-row .r-avat { border-right: none !important; }
 .bwei-row .r-time { border-right: none !important; }
 .bwei-row .r-ytd { border-right: none !important; }
-.bwei-row .r-spark { border-right: 1px solid #222 !important; border-left: 1px solid #1a1a1a !important; }
-.bwei-row .r-value { border-right: 1px solid #222 !important; }
+.bwei-row .r-spark { border-right: 2px solid #303030 !important; border-left: 1px solid #333 !important; } /* Split 1 */
+.bwei-row .r-value { border-right: 2px solid #303030 !important; } /* Split 2 */
 .bwei-row > div:last-child { border-right: none !important; }
 
-/* Row number cell */
+/* Row number cell — matches Bloomberg sub-number style: amber, right-aligned */
 .bwei-row .r-num {
   color: #848484 !important;
   justify-content: flex-end !important;
   font-weight: bold !important;
-  font-size: 10px !important;
-  padding-right: 4px !important;
+  font-size: 11px !important;
+  padding-right: 3px !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
 }
-.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 13px !important; justify-content: flex-start !important; padding-left: 4px !important; text-transform: uppercase !important; border-right: none !important; }
+.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 12px !important; justify-content: flex-start !important; padding-left: 4px !important; text-transform: uppercase !important; border-right: none !important; }
 .bwei-row .r-rmi { justify-content: center !important; padding: 0 !important; gap: 0 !important; border-right: none !important; }
 .bwei-row .r-spark { padding: 0 !important; justify-content: center !important; overflow: visible !important; background: transparent !important; }
 .bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 16px !important; overflow: visible !important; }
@@ -43698,7 +43679,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-row .r-avat { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-avat.avat-pos { color: #DDC09E !important; }
 .bwei-row .r-avat.avat-neg { color: #C86F2C !important; }
-.bwei-row .r-time { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; font-size: 13px !important; }
+.bwei-row .r-time { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; font-size: 12px !important; }
 .bwei-row .r-ytd { font-weight: bold !important; justify-content: flex-end !important; }
 
 /* Bottom action bar */
@@ -43706,7 +43687,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-actionbar .ab-item { color: #ffffff !important; cursor: pointer !important; font-weight: bold !important; letter-spacing: 0.5px !important; }
 
 .bwei-newsticker { background: #000045 !important; padding: 0 !important; max-height: 125px !important; overflow: hidden !important; flex-shrink: 0 !important; border-top: none !important; border-bottom: 1px solid #000 !important; }
-.bwei-news-line { display: grid !important; grid-template-columns: 40px 48px 55px 1fr !important; padding: 2px 10px !important; font-size: 12px !important; color: #FFAA00 !important; border-bottom: none !important; cursor: pointer !important; align-items: center !important; letter-spacing: -0.3px !important; }
+.bwei-news-line { display: grid !important; grid-template-columns: 40px 48px 55px 1fr !important; padding: 2px 10px !important; font-size: 16px !important; color: #FFAA00 !important; border-bottom: none !important; cursor: pointer !important; align-items: center !important; letter-spacing: -0.3px !important; }
 .bwei-news-line .n-id { color: #FFAA00 !important; font-weight: normal !important; text-align: left !important; padding-right: 4px !important; }
 .bwei-news-line .n-src { color: #FFAA00 !important; font-weight: normal !important; }
 .bwei-news-line .n-time { color: #FFAA00 !important; font-weight: normal !important; text-align: left !important;}
@@ -43782,7 +43763,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 /* ── Suffix letters — Small and Dimmed ── */
 .bwei-sfx-d, .bwei-sfx-c, .bwei-sfx-y, .bwei-sfx-s { 
   color: #777777 !important; 
-  font-size: 13px !important; 
+  font-size: 11px !important; 
   font-weight: normal !important; 
   margin-left: 2px !important;
   vertical-align: baseline !important;
@@ -44710,3 +44691,5 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 })();
 </script>
 
+</body>
+</html>
