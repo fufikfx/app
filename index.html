@@ -542,7 +542,7 @@ body.sat-active .m-wrap{opacity:1!important;}
 
 /* ── Top Header Bar (Red Bloomberg style) ── */
 .cdash-header {
-  height: 24px;
+  height: 20px;
   background: #8B0000;
   display: flex;
   justify-content: center; /* Center the inner content */
@@ -587,7 +587,7 @@ body.sat-active .m-wrap{opacity:1!important;}
 
 /* ── Filter Bar (Amber/Orange chips) ── */
 .cdash-filters {
-  height: 24px;
+  height: 20px;
   background: #000;
   display: flex;
   justify-content: center; /* Center the inner content */
@@ -676,7 +676,7 @@ body.sat-active .m-wrap{opacity:1!important;}
   font-size: 9px;
   font-weight: 700;
   text-align: right;
-  padding: 2px 6px;
+  padding: 1px 4px;
   letter-spacing: 0.3px;
   border-bottom: 1px solid #1a1a00;
   white-space: nowrap;
@@ -688,7 +688,7 @@ body.sat-active .m-wrap{opacity:1!important;}
 }
 
 .cdash-table td {
-  padding: 1px 6px;
+  padding: 0px 4px;
   border-bottom: 1px solid #0d0d0d;
   text-align: right;
   white-space: nowrap;
@@ -697,7 +697,7 @@ body.sat-active .m-wrap{opacity:1!important;}
   font-family: 'Roboto Mono', 'Courier New', monospace;
   font-variant-numeric: tabular-nums;
   color: #d4a84b; /* Amber/Gold for values */
-  line-height: 1.15;
+  line-height: 1;
 }
 
 .cdash-table td:first-child {
@@ -8338,7 +8338,7 @@ function buildCRYPTOMktCap(data){
 
   // ── Mini sparkline SVG (simulated 2-day price path) ─────────────────────────
   const makeSpark = (c) => {
-    const W=72, H=18;
+    const W=62, H=13;
     const pts=16;
     const pct=c.chg||0;
     // Generate a plausible-looking path seeded by coin symbol
@@ -8380,25 +8380,14 @@ function buildCRYPTOMktCap(data){
   // ── Table layout — exact Bloomberg column order ──────────────────────────────
   // Jun24 | SYM | sparkline | price | net chg | pct chg | high | low
   const thStyle = (align='right') =>
-    `style="padding:2px 5px;font-size:7.5px;color:var(--am);text-align:${align};letter-spacing:.7px;font-weight:800;white-space:nowrap;border-bottom:1px solid #1e1000"`;
+    `style="padding:1px 4px;font-size:7px;color:var(--am);text-align:${align};letter-spacing:.5px;font-weight:800;white-space:nowrap;border-bottom:1px solid #1e1000"`;
 
-  let h = `<table style="width:100%;border-collapse:collapse;font-family:'Roboto Mono','Courier Prime',monospace;font-size:10px;table-layout:fixed">
-  <colgroup>
-    <col style="width:42px">
-    <col style="width:85px">
-    <col style="width:18px">
-    <col style="width:74px">
-    <col style="width:72px">
-    <col style="width:56px">
-    <col style="width:58px">
-    <col style="width:72px">
-    <col style="width:72px">
-  </colgroup>
+  let h = `<table style="width:auto;min-width:520px;border-collapse:collapse;font-family:'Roboto Mono','Courier Prime',monospace;font-size:9.5px;table-layout:auto;line-height:1.1">
   <thead><tr>
     <th ${thStyle('left')}>EXP</th>
     <th ${thStyle('left')}>SYM</th>
     <th ${thStyle('center')}></th>
-    <th ${thStyle('center')} style="padding:2px 5px;font-size:7.5px;color:var(--am);text-align:center;letter-spacing:.7px;font-weight:800;white-space:nowrap;border-bottom:1px solid #1e1000">2Day</th>
+    <th ${thStyle('center')} style="padding:1px 4px;font-size:7px;color:var(--am);text-align:center;letter-spacing:.5px;font-weight:800;white-space:nowrap;border-bottom:1px solid #1e1000">2Day</th>
     <th ${thStyle()}>Last</th>
     <th ${thStyle()}>Net Chg</th>
     <th ${thStyle()}>Pct Chg</th>
@@ -8411,7 +8400,7 @@ function buildCRYPTOMktCap(data){
   SECTIONS.forEach(sec => {
     // Section header row
     h += `<tr style="background:#1c1c1c !important">
-      <td colspan="9" style="padding:2px 8px;font-size:9px;font-weight:800;color:var(--am);letter-spacing:.5px;border-top:1px solid #1e1000;border-bottom:1px solid #1e1000">${sec.label}</td>
+      <td colspan="9" style="padding:1px 8px;font-size:8px;font-weight:800;color:var(--am);letter-spacing:.5px;border-top:1px solid #1e1000;border-bottom:1px solid #1e1000">${sec.label}</td>
     </tr>`;
 
     sec.ids.forEach(id => {
@@ -8431,23 +8420,23 @@ function buildCRYPTOMktCap(data){
         onclick="if(window._openChartForSymbol) window._openChartForSymbol('${c.s}')"
         onmouseover="this.style.background='rgba(255,200,100,.04)'"
         onmouseout="this.style.background='${rowBg}'">
-        <td style="padding:1px 4px 1px 8px;text-align:left;color:var(--gr);font-size:8.5px;font-variant-numeric:tabular-nums;white-space:nowrap">${globalRank})</td>
-        <td style="padding:1px 4px;text-align:left;overflow:hidden;white-space:nowrap">
-          <span style="color:var(--am);font-weight:700;font-size:9px;font-family:'Roboto Mono',monospace">${c.n.toUpperCase()}</span>
+        <td style="padding:0 4px 0 8px;text-align:left;color:var(--gr);font-size:8px;font-variant-numeric:tabular-nums;white-space:nowrap">${globalRank})</td>
+        <td style="padding:0 4px;text-align:left;overflow:hidden;white-space:nowrap">
+          <span style="color:var(--am);font-weight:700;font-size:8.5px;font-family:'Roboto Mono',monospace">${c.n.toUpperCase()}</span>
         </td>
-        <td style="padding:1px 2px;text-align:right;font-size:8px;color:var(--gr)">d</td>
-        <td style="padding:1px 3px">${makeSpark(c)}</td>
-        <td id="cp-px-${c.id}" style="padding:1px 5px;text-align:right;color:var(--am);font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${fmtCryptoPx(c.px)}</td>
-        <td id="cp-nc-${c.id}" style="padding:1px 5px;text-align:right;color:${chgCol(netChg)};font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${netStr(netChg)}</td>
-        <td id="cp-chg-${c.id}" style="padding:1px 5px;text-align:right;color:${chgCol(pctChg)};font-size:10px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap">${chgStr(pctChg)}</td>
-        <td id="cp-hi-${c.id}" style="padding:1px 5px;text-align:right;color:#887060;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap">${hi ? fmtCryptoPx(hi) : '\u2014'}</td>
-        <td id="cp-lo-${c.id}" style="padding:1px 5px;text-align:right;color:#887060;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap">${lo ? fmtCryptoPx(lo) : '\u2014'}</td>
+        <td style="padding:0 2px;text-align:right;font-size:7px;color:var(--gr)">d</td>
+        <td style="padding:0 2px">${makeSpark(c)}</td>
+        <td id="cp-px-${c.id}" style="padding:0 4px;text-align:right;color:var(--am);font-size:9.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${fmtCryptoPx(c.px)}</td>
+        <td id="cp-nc-${c.id}" style="padding:0 4px;text-align:right;color:${chgCol(netChg)};font-size:9.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${netStr(netChg)}</td>
+        <td id="cp-chg-${c.id}" style="padding:0 4px;text-align:right;color:${chgCol(pctChg)};font-size:9.5px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap">${chgStr(pctChg)}</td>
+        <td id="cp-hi-${c.id}" style="padding:0 4px;text-align:right;color:#887060;font-size:8.5px;font-variant-numeric:tabular-nums;white-space:nowrap">${hi ? fmtCryptoPx(hi) : '\u2014'}</td>
+        <td id="cp-lo-${c.id}" style="padding:0 4px;text-align:right;color:#887060;font-size:8.5px;font-variant-numeric:tabular-nums;white-space:nowrap">${lo ? fmtCryptoPx(lo) : '\u2014'}</td>
       </tr>`;
     });
   });
 
-  h += `</tbody></table>`;
-  return h;
+  h += `</tbody></table></div>`;
+  return `<div style="width:100%;overflow-x:auto;overflow-y:visible">` + h;
 }
 
 // ── Live DOM patch — plynulý update bez rerenderingu ─────────────────────────
