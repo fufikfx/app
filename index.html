@@ -42761,18 +42761,18 @@ document.addEventListener('keydown', function(e){
 }
 
 .bwei-tophdr {
-  background: #A61217 !important; height: 20px !important; display: flex !important; align-items: center !important;
+  background: #A61217 !important; height: 28px !important; display: flex !important; align-items: center !important;
   padding: 0 !important; border-bottom: 2px solid #5A0A0C !important; flex-shrink: 0 !important; position: relative !important;
 }
 .bwei-tophdr .bwei-menu {
-  color: #ffffff !important; font-size: 13px !important; font-weight: normal !important; padding: 0 8px !important;
+  color: #ffffff !important; font-size: 17px !important; font-weight: normal !important; padding: 0 12px !important;
   height: 100% !important; display: inline-flex !important; align-items: center !important; cursor: pointer !important;
   border-right: 1px solid #77090b !important; letter-spacing: 0px !important;
 }
 .bwei-tophdr .bwei-menu:hover { background: #d02020 !important; }
 .bwei-tophdr .bwei-title {
-  margin-left: auto !important; color: #ffffff !important; font-size: 13px !important; font-weight: normal !important;
-  padding: 0 8px !important; height: 100% !important; display: inline-flex !important; align-items: center !important;
+  margin-left: auto !important; color: #ffffff !important; font-size: 17px !important; font-weight: normal !important;
+  padding: 0 12px !important; height: 100% !important; display: inline-flex !important; align-items: center !important;
 }
 
 /* ── OPTIONS BAR ── */
@@ -42802,9 +42802,9 @@ document.addEventListener('keydown', function(e){
   flex-shrink: 0 !important;
 }
 .bwei-opt-sel {
-  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 14px !important;
-  padding: 0 10px !important; border: 1px solid #000 !important; cursor: pointer !important;
-  display: inline-flex !important; align-items: center !important; height: 21px !important;
+  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 17px !important;
+  padding: 0 12px !important; border: 1px solid #000 !important; cursor: pointer !important;
+  display: inline-flex !important; align-items: center !important; height: 26px !important;
   border-radius: 0 !important; transition: background 0.1s !important;
   flex-shrink: 0 !important; white-space: nowrap !important;
 }
@@ -42817,7 +42817,7 @@ document.addEventListener('keydown', function(e){
   vertical-align: middle !important;
 }
 .bwei-opt-arr:hover { background: #555 !important; }
-.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 5px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 13px !important; letter-spacing: 0.3px !important; cursor: pointer !important; font-size: 12px !important; font-weight: normal !important; white-space: nowrap !important; }
+.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 5px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 16px !important; letter-spacing: 0.3px !important; cursor: pointer !important; font-size: 16px !important; font-weight: normal !important; white-space: nowrap !important; }
 .bwei-opt-chk input[type=checkbox] { 
   appearance: none !important; -webkit-appearance: none !important;
   width: 14px !important; height: 14px !important; cursor: pointer !important; 
@@ -42837,7 +42837,7 @@ document.addEventListener('keydown', function(e){
 }
 .bwei-opt-sep { width: 1px !important; height: 18px !important; background: #555 !important; margin: 0 10px !important; display: inline-block !important; }
 
-.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; }
+.bwei-body { flex: 1 1 0% !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; min-height: 0 !important; }
 
 /* ── Category header ── */
 .bwei-cat {
@@ -42847,7 +42847,9 @@ document.addEventListener('keydown', function(e){
   padding: 0 !important; align-items: stretch !important;
   border-top: 1px solid rgba(255,255,255,0.15) !important;
   border-bottom: 3px solid #000 !important;
-  min-height: 32px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  height: 36px !important;
 }
 .bwei-cat > div {
   border-right: none !important;
@@ -42862,14 +42864,14 @@ document.addEventListener('keydown', function(e){
 }
 /* Category number cell — large white, Bloomberg style */
 .bwei-cat .c-num {
-  font-size: 20px !important; font-weight: bold !important;
+  font-size: 26px !important; font-weight: bold !important;
   color: #ffffff !important;
   justify-content: center !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
   letter-spacing: -1px !important;
 }
-.bwei-cat .c-name { font-size: 20px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 10px !important; justify-content: flex-start !important; color: #ffffff !important; }
+.bwei-cat .c-name { font-size: 26px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 10px !important; justify-content: flex-start !important; color: #ffffff !important; }
 .bwei-cat .c-rmi { justify-content: center !important; font-size: 16px !important; }
 .bwei-cat .c-spark { justify-content: center !important; }
 
@@ -42877,20 +42879,24 @@ document.addEventListener('keydown', function(e){
 .bwei-row {
   display: grid !important;
   grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
-  padding: 0 !important; font-size: 21px !important;
+  padding: 0 !important; font-size: 32px !important;
   font-variant-numeric: tabular-nums !important;
-  letter-spacing: -0.4px !important;
+  letter-spacing: -0.5px !important;
   cursor: pointer !important; border: 0 !important;
-  line-height: 1.35 !important;
+  line-height: 1 !important;
   font-weight: bold !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
 }
 .bwei-row:hover { background: #0d0d0d !important; } 
 .bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
 
 .bwei-row > div { 
-  padding: 0 8px !important; white-space: nowrap !important; overflow: hidden !important; 
+  padding: 0 5px !important; white-space: nowrap !important; overflow: hidden !important; 
   text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
   border-right: 1px solid #333 !important;
+  height: 36px !important; min-height: 36px !important; max-height: 36px !important;
 }
 /* No dividers on right-side data columns */
 .bwei-row .r-chg { border-right: none !important; }
@@ -42912,7 +42918,7 @@ document.addEventListener('keydown', function(e){
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
 }
-.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 17px !important; justify-content: flex-start !important; padding-left: 6px !important; text-transform: uppercase !important; border-right: none !important; }
+.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 28px !important; justify-content: flex-start !important; padding-left: 6px !important; text-transform: uppercase !important; border-right: none !important; }
 .bwei-row .r-rmi { justify-content: center !important; padding: 0 !important; gap: 0 !important; border-right: none !important; }
 .bwei-row .r-spark { padding: 0 !important; justify-content: center !important; overflow: visible !important; background: transparent !important; }
 .bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 28px !important; overflow: visible !important; }
@@ -43511,18 +43517,18 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 }
 
 .bwei-tophdr {
-  background: #A61217 !important; height: 20px !important; display: flex !important; align-items: center !important;
+  background: #A61217 !important; height: 28px !important; display: flex !important; align-items: center !important;
   padding: 0 !important; border-bottom: 2px solid #5A0A0C !important; flex-shrink: 0 !important; position: relative !important;
 }
 .bwei-tophdr .bwei-menu {
-  color: #ffffff !important; font-size: 13px !important; font-weight: normal !important; padding: 0 8px !important;
+  color: #ffffff !important; font-size: 17px !important; font-weight: normal !important; padding: 0 12px !important;
   height: 100% !important; display: inline-flex !important; align-items: center !important; cursor: pointer !important;
   border-right: 1px solid #77090b !important; letter-spacing: 0px !important;
 }
 .bwei-tophdr .bwei-menu:hover { background: #d02020 !important; }
 .bwei-tophdr .bwei-title {
-  margin-left: auto !important; color: #ffffff !important; font-size: 13px !important; font-weight: normal !important;
-  padding: 0 8px !important; height: 100% !important; display: inline-flex !important; align-items: center !important;
+  margin-left: auto !important; color: #ffffff !important; font-size: 17px !important; font-weight: normal !important;
+  padding: 0 12px !important; height: 100% !important; display: inline-flex !important; align-items: center !important;
 }
 
 /* ── OPTIONS BAR ── */
@@ -43552,9 +43558,9 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   flex-shrink: 0 !important;
 }
 .bwei-opt-sel {
-  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 14px !important;
-  padding: 0 10px !important; border: 1px solid #000 !important; cursor: pointer !important;
-  display: inline-flex !important; align-items: center !important; height: 21px !important;
+  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 17px !important;
+  padding: 0 12px !important; border: 1px solid #000 !important; cursor: pointer !important;
+  display: inline-flex !important; align-items: center !important; height: 26px !important;
   border-radius: 0 !important; transition: background 0.1s !important;
   flex-shrink: 0 !important; white-space: nowrap !important;
 }
@@ -43567,7 +43573,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   vertical-align: middle !important;
 }
 .bwei-opt-arr:hover { background: #555 !important; }
-.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 5px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 13px !important; letter-spacing: 0.3px !important; cursor: pointer !important; font-size: 12px !important; font-weight: normal !important; white-space: nowrap !important; }
+.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 5px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 16px !important; letter-spacing: 0.3px !important; cursor: pointer !important; font-size: 16px !important; font-weight: normal !important; white-space: nowrap !important; }
 .bwei-opt-chk input[type=checkbox] { 
   appearance: none !important; -webkit-appearance: none !important;
   width: 14px !important; height: 14px !important; cursor: pointer !important; 
@@ -43577,8 +43583,8 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-opt-chk input[type=checkbox]:checked { background: #1E90FF !important; border-color: #1E90FF !important; }
 .bwei-opt-chk input[type=checkbox]:checked::after { content: '✔'; color: #000; font-size: 11px; font-weight: bold; }
 .bwei-opt-dd {
-  background: #D19542 !important; color: #000000 !important; font-weight: bold !important; font-size: 13px !important;
-  padding: 0 4px !important; border: 1px solid #000 !important; cursor: pointer !important; height: 18px !important; outline: none !important;
+  background: #D19542 !important; color: #000000 !important; font-weight: bold !important; font-size: 16px !important;
+  padding: 0 4px !important; border: 1px solid #000 !important; cursor: pointer !important; height: 24px !important; outline: none !important;
   appearance: none !important; -webkit-appearance: none !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='10' viewBox='0 0 8 10'%3E%3Cpath d='M4 0L8 4H0L4 0zM4 10L0 6H8L4 10z' fill='%23000'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
@@ -43587,7 +43593,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 }
 .bwei-opt-sep { width: 1px !important; height: 14px !important; background: #555 !important; margin: 0 6px !important; display: inline-block !important; }
 
-.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; }
+.bwei-body { flex: 1 1 0% !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; min-height: 0 !important; }
 
 /* ── Category header ── */
 .bwei-cat {
@@ -43597,12 +43603,15 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   padding: 0 !important; align-items: stretch !important;
   border-top: 1px solid rgba(255,255,255,0.15) !important;
   border-bottom: 3px solid #000 !important;
-  min-height: 32px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  height: 36px !important;
 }
 .bwei-cat > div {
   border-right: none !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
-  color: #ffffff !important; font-size: 18px !important; font-weight: bold !important; padding: 0 8px !important;
+  color: #ffffff !important; font-size: 22px !important; font-weight: bold !important; padding: 0 5px !important;
+  height: 36px !important; min-height: 36px !important; max-height: 36px !important;
 }
 .bwei-cat > div:nth-child(n+5) { justify-content: flex-end !important; }
 .bwei-cat > div:nth-child(4) { border-right: none !important; }
@@ -43613,14 +43622,14 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 }
 /* Category number cell — large white, Bloomberg style */
 .bwei-cat .c-num {
-  font-size: 20px !important; font-weight: bold !important;
+  font-size: 26px !important; font-weight: bold !important;
   color: #ffffff !important;
   justify-content: center !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
   letter-spacing: -1px !important;
 }
-.bwei-cat .c-name { font-size: 20px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 10px !important; justify-content: flex-start !important; color: #ffffff !important; }
+.bwei-cat .c-name { font-size: 26px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 10px !important; justify-content: flex-start !important; color: #ffffff !important; }
 .bwei-cat .c-rmi { justify-content: center !important; font-size: 16px !important; }
 .bwei-cat .c-spark { justify-content: center !important; }
 
@@ -43628,20 +43637,24 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-row {
   display: grid !important;
   grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
-  padding: 0 !important; font-size: 21px !important;
+  padding: 0 !important; font-size: 32px !important;
   font-variant-numeric: tabular-nums !important;
-  letter-spacing: -0.4px !important;
+  letter-spacing: -0.5px !important;
   cursor: pointer !important; border: 0 !important;
-  line-height: 1.35 !important;
+  line-height: 1 !important;
   font-weight: bold !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
 }
 .bwei-row:hover { background: #0d0d0d !important; } 
 .bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
 
 .bwei-row > div { 
-  padding: 0 8px !important; white-space: nowrap !important; overflow: hidden !important; 
+  padding: 0 5px !important; white-space: nowrap !important; overflow: hidden !important; 
   text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
   border-right: 1px solid #333 !important;
+  height: 36px !important; min-height: 36px !important; max-height: 36px !important;
 }
 /* No dividers on right-side data columns */
 .bwei-row .r-chg { border-right: none !important; }
@@ -43663,7 +43676,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
 }
-.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 17px !important; justify-content: flex-start !important; padding-left: 6px !important; text-transform: uppercase !important; border-right: none !important; }
+.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 28px !important; justify-content: flex-start !important; padding-left: 6px !important; text-transform: uppercase !important; border-right: none !important; }
 .bwei-row .r-rmi { justify-content: center !important; padding: 0 !important; gap: 0 !important; border-right: none !important; }
 .bwei-row .r-spark { padding: 0 !important; justify-content: center !important; overflow: visible !important; background: transparent !important; }
 .bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 28px !important; overflow: visible !important; }
@@ -43685,7 +43698,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-actionbar .ab-item { color: #ffffff !important; cursor: pointer !important; font-weight: bold !important; letter-spacing: 0.5px !important; }
 
 .bwei-newsticker { background: #000045 !important; padding: 0 !important; max-height: 125px !important; overflow: hidden !important; flex-shrink: 0 !important; border-top: none !important; border-bottom: 1px solid #000 !important; }
-.bwei-news-line { display: grid !important; grid-template-columns: 40px 48px 55px 1fr !important; padding: 2px 10px !important; font-size: 16px !important; color: #FFAA00 !important; border-bottom: none !important; cursor: pointer !important; align-items: center !important; letter-spacing: -0.3px !important; }
+.bwei-news-line { display: grid !important; grid-template-columns: 48px 58px 65px 1fr !important; padding: 1px 10px !important; font-size: 18px !important; color: #FFAA00 !important; border-bottom: none !important; cursor: pointer !important; align-items: center !important; letter-spacing: -0.3px !important; }
 .bwei-news-line .n-id { color: #FFAA00 !important; font-weight: normal !important; text-align: left !important; padding-right: 4px !important; }
 .bwei-news-line .n-src { color: #FFAA00 !important; font-weight: normal !important; }
 .bwei-news-line .n-time { color: #FFAA00 !important; font-weight: normal !important; text-align: left !important;}
@@ -43700,10 +43713,11 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   padding: 0 !important;
   display: flex !important;
   align-items: stretch !important;
-  font-size: 18px !important;
+  font-size: 20px !important;
   flex-shrink: 0 !important;
   border-top: 2px solid #222 !important;
-  min-height: 48px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
   font-family: Arial, Helvetica, sans-serif !important;
 }
 .bwei-footbar .fb-sf {
