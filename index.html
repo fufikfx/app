@@ -42843,16 +42843,17 @@ document.addEventListener('keydown', function(e){
 .bwei-cat {
   background: #333333 !important; 
   display: grid !important;
-  grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  grid-template-columns: 36px 1.5fr 30px 56px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
   padding: 0 !important; align-items: stretch !important;
   border-top: 1px solid rgba(255,255,255,0.15) !important;
-  border-bottom: 3px solid #000 !important;
-  min-height: 32px !important;
+  border-bottom: 1px solid #111 !important;
+  height: 22px !important;
+  min-height: unset !important;
 }
 .bwei-cat > div {
   border-right: none !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
-  color: #ffffff !important; font-size: 18px !important; font-weight: bold !important; padding: 0 4px !important;
+  color: #ffffff !important; font-size: 11px !important; font-weight: bold !important; padding: 0 4px !important;
 }
 .bwei-cat > div:nth-child(4) { border-right: none !important; }
 .bwei-cat > div:nth-child(7) { border-right: none !important; }
@@ -42860,37 +42861,38 @@ document.addEventListener('keydown', function(e){
 .bwei-cat > div:last-child {
   border-right: none !important;
 }
-/* Category number cell — large white, Bloomberg style */
+/* Category number cell */
 .bwei-cat .c-num {
-  font-size: 20px !important; font-weight: bold !important;
+  font-size: 11px !important; font-weight: bold !important;
   color: #ffffff !important;
   justify-content: center !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
-  letter-spacing: -1px !important;
+  letter-spacing: 0 !important;
 }
-.bwei-cat .c-name { font-size: 20px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 10px !important; justify-content: flex-start !important; color: #ffffff !important; }
-.bwei-cat .c-rmi { justify-content: center !important; font-size: 16px !important; }
+.bwei-cat .c-name { font-size: 11px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 6px !important; justify-content: flex-start !important; color: #ffffff !important; }
+.bwei-cat .c-rmi { justify-content: center !important; font-size: 10px !important; }
 .bwei-cat .c-spark { justify-content: center !important; }
 
 /* ── Data row ── */
 .bwei-row {
   display: grid !important;
-  grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
-  padding: 0 !important; font-size: 21px !important;
+  grid-template-columns: 36px 1.5fr 30px 56px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  padding: 0 !important; font-size: 11px !important;
   font-variant-numeric: tabular-nums !important;
-  letter-spacing: -0.4px !important;
+  letter-spacing: -0.2px !important;
   cursor: pointer !important; border: 0 !important;
-  line-height: 1.35 !important;
+  line-height: 1 !important;
   font-weight: bold !important;
+  height: 18px !important;
 }
 .bwei-row:hover { background: #0d0d0d !important; } 
 .bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
 
 .bwei-row > div { 
-  padding: 0 8px !important; white-space: nowrap !important; overflow: hidden !important; 
+  padding: 0 4px !important; white-space: nowrap !important; overflow: hidden !important; 
   text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
-  border-right: 1px solid #333 !important;
+  border-right: 1px solid #1a1a1a !important;
 }
 /* No dividers on right-side data columns */
 .bwei-row .r-chg { border-right: none !important; }
@@ -42898,24 +42900,24 @@ document.addEventListener('keydown', function(e){
 .bwei-row .r-avat { border-right: none !important; }
 .bwei-row .r-time { border-right: none !important; }
 .bwei-row .r-ytd { border-right: none !important; }
-.bwei-row .r-spark { border-right: 2px solid #303030 !important; border-left: 1px solid #333 !important; } /* Split 1 */
-.bwei-row .r-value { border-right: 2px solid #303030 !important; } /* Split 2 */
+.bwei-row .r-spark { border-right: 1px solid #222 !important; border-left: 1px solid #1a1a1a !important; } /* Split 1 */
+.bwei-row .r-value { border-right: 1px solid #222 !important; } /* Split 2 */
 .bwei-row > div:last-child { border-right: none !important; }
 
-/* Row number cell — matches Bloomberg sub-number style: amber, right-aligned */
+/* Row number cell */
 .bwei-row .r-num {
   color: #848484 !important;
   justify-content: flex-end !important;
   font-weight: bold !important;
-  font-size: 16px !important;
-  padding-right: 6px !important;
+  font-size: 10px !important;
+  padding-right: 4px !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
 }
-.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 17px !important; justify-content: flex-start !important; padding-left: 6px !important; text-transform: uppercase !important; border-right: none !important; }
+.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 11px !important; justify-content: flex-start !important; padding-left: 4px !important; text-transform: uppercase !important; border-right: none !important; }
 .bwei-row .r-rmi { justify-content: center !important; padding: 0 !important; gap: 0 !important; border-right: none !important; }
 .bwei-row .r-spark { padding: 0 !important; justify-content: center !important; overflow: visible !important; background: transparent !important; }
-.bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 28px !important; overflow: visible !important; }
+.bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 16px !important; overflow: visible !important; }
 
 /* Data colors */
 .bwei-row .r-future { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
@@ -42926,7 +42928,7 @@ document.addEventListener('keydown', function(e){
 .bwei-row .r-avat { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-avat.avat-pos { color: #DDC09E !important; }
 .bwei-row .r-avat.avat-neg { color: #A3A5A4 !important; }
-.bwei-row .r-time { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; font-size: 20px !important; }
+.bwei-row .r-time { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; font-size: 11px !important; }
 .bwei-row .r-ytd { font-weight: bold !important; justify-content: flex-end !important; }
 
 /* Bottom action bar */
@@ -43591,16 +43593,17 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-cat {
   background: #333333 !important; 
   display: grid !important;
-  grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  grid-template-columns: 36px 1.5fr 30px 56px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
   padding: 0 !important; align-items: stretch !important;
   border-top: 1px solid rgba(255,255,255,0.15) !important;
-  border-bottom: 3px solid #000 !important;
-  min-height: 32px !important;
+  border-bottom: 1px solid #111 !important;
+  height: 22px !important;
+  min-height: unset !important;
 }
 .bwei-cat > div {
   border-right: none !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
-  color: #ffffff !important; font-size: 18px !important; font-weight: bold !important; padding: 0 8px !important;
+  color: #ffffff !important; font-size: 11px !important; font-weight: bold !important; padding: 0 4px !important;
 }
 .bwei-cat > div:nth-child(n+5) { justify-content: flex-end !important; }
 .bwei-cat > div:nth-child(4) { border-right: none !important; }
@@ -43609,37 +43612,38 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-cat > div:last-child {
   border-right: none !important;
 }
-/* Category number cell — large white, Bloomberg style */
+/* Category number cell */
 .bwei-cat .c-num {
-  font-size: 20px !important; font-weight: bold !important;
+  font-size: 11px !important; font-weight: bold !important;
   color: #ffffff !important;
   justify-content: center !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
-  letter-spacing: -1px !important;
+  letter-spacing: 0 !important;
 }
-.bwei-cat .c-name { font-size: 20px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 10px !important; justify-content: flex-start !important; color: #ffffff !important; }
-.bwei-cat .c-rmi { justify-content: center !important; font-size: 16px !important; }
+.bwei-cat .c-name { font-size: 11px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 6px !important; justify-content: flex-start !important; color: #ffffff !important; }
+.bwei-cat .c-rmi { justify-content: center !important; font-size: 10px !important; }
 .bwei-cat .c-spark { justify-content: center !important; }
 
 /* ── Data row ── */
 .bwei-row {
   display: grid !important;
-  grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
-  padding: 0 !important; font-size: 21px !important;
+  grid-template-columns: 36px 1.5fr 30px 56px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  padding: 0 !important; font-size: 11px !important;
   font-variant-numeric: tabular-nums !important;
-  letter-spacing: -0.4px !important;
+  letter-spacing: -0.2px !important;
   cursor: pointer !important; border: 0 !important;
-  line-height: 1.35 !important;
+  line-height: 1 !important;
   font-weight: bold !important;
+  height: 18px !important;
 }
 .bwei-row:hover { background: #0d0d0d !important; } 
 .bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
 
 .bwei-row > div { 
-  padding: 0 8px !important; white-space: nowrap !important; overflow: hidden !important; 
+  padding: 0 4px !important; white-space: nowrap !important; overflow: hidden !important; 
   text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
-  border-right: 1px solid #333 !important;
+  border-right: 1px solid #1a1a1a !important;
 }
 /* No dividers on right-side data columns */
 .bwei-row .r-chg { border-right: none !important; }
@@ -43647,24 +43651,24 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-row .r-avat { border-right: none !important; }
 .bwei-row .r-time { border-right: none !important; }
 .bwei-row .r-ytd { border-right: none !important; }
-.bwei-row .r-spark { border-right: 2px solid #303030 !important; border-left: 1px solid #333 !important; } /* Split 1 */
-.bwei-row .r-value { border-right: 2px solid #303030 !important; } /* Split 2 */
+.bwei-row .r-spark { border-right: 1px solid #222 !important; border-left: 1px solid #1a1a1a !important; }
+.bwei-row .r-value { border-right: 1px solid #222 !important; }
 .bwei-row > div:last-child { border-right: none !important; }
 
-/* Row number cell — matches Bloomberg sub-number style: amber, right-aligned */
+/* Row number cell */
 .bwei-row .r-num {
   color: #848484 !important;
   justify-content: flex-end !important;
   font-weight: bold !important;
-  font-size: 16px !important;
-  padding-right: 6px !important;
+  font-size: 10px !important;
+  padding-right: 4px !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
 }
-.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 17px !important; justify-content: flex-start !important; padding-left: 6px !important; text-transform: uppercase !important; border-right: none !important; }
+.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 11px !important; justify-content: flex-start !important; padding-left: 4px !important; text-transform: uppercase !important; border-right: none !important; }
 .bwei-row .r-rmi { justify-content: center !important; padding: 0 !important; gap: 0 !important; border-right: none !important; }
 .bwei-row .r-spark { padding: 0 !important; justify-content: center !important; overflow: visible !important; background: transparent !important; }
-.bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 28px !important; overflow: visible !important; }
+.bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 16px !important; overflow: visible !important; }
 
 /* Data colors */
 .bwei-row .r-future { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
@@ -43675,7 +43679,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-row .r-avat { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-avat.avat-pos { color: #DDC09E !important; }
 .bwei-row .r-avat.avat-neg { color: #C86F2C !important; }
-.bwei-row .r-time { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; font-size: 20px !important; }
+.bwei-row .r-time { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; font-size: 11px !important; }
 .bwei-row .r-ytd { font-weight: bold !important; justify-content: flex-end !important; }
 
 /* Bottom action bar */
@@ -43683,7 +43687,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-actionbar .ab-item { color: #ffffff !important; cursor: pointer !important; font-weight: bold !important; letter-spacing: 0.5px !important; }
 
 .bwei-newsticker { background: #000045 !important; padding: 0 !important; max-height: 125px !important; overflow: hidden !important; flex-shrink: 0 !important; border-top: none !important; border-bottom: 1px solid #000 !important; }
-.bwei-news-line { display: grid !important; grid-template-columns: 40px 48px 55px 1fr !important; padding: 2px 10px !important; font-size: 16px !important; color: #FFAA00 !important; border-bottom: none !important; cursor: pointer !important; align-items: center !important; letter-spacing: -0.3px !important; }
+.bwei-news-line { display: grid !important; grid-template-columns: 40px 48px 55px 1fr !important; padding: 2px 10px !important; font-size: 12px !important; color: #FFAA00 !important; border-bottom: none !important; cursor: pointer !important; align-items: center !important; letter-spacing: -0.3px !important; }
 .bwei-news-line .n-id { color: #FFAA00 !important; font-weight: normal !important; text-align: left !important; padding-right: 4px !important; }
 .bwei-news-line .n-src { color: #FFAA00 !important; font-weight: normal !important; }
 .bwei-news-line .n-time { color: #FFAA00 !important; font-weight: normal !important; text-align: left !important;}
