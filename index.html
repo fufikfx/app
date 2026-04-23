@@ -44719,3 +44719,28 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-row > div { padding: 0 4px !important; }
 .bwei-row .r-spark svg { min-height: 17px !important; }
 </style>
+
+<style>
+/* ═══ MAX WIDTH FIX — tabulka nepřesáhne Bloomberg šířku ═══ */
+.bwei-wrap {
+  max-width: 1400px !important;
+}
+.bwei-cat,
+.bwei-row {
+  grid-template-columns: 32px 130px 28px 60px 100px 80px 100px 90px 80px 80px 75px 80px !important;
+  width: 100% !important;
+}
+</style>
+
+<style>
+/* ═══ FINAL COMPACT FIX ═══ */
+.bwei-body {
+  overflow-x: auto !important;
+}
+.bwei-cat,
+.bwei-row {
+  grid-template-columns: 32px 130px 28px 60px 100px 76px 100px 88px 76px 76px 72px 78px !important;
+  min-width: 916px !important;
+  width: 916px !important;
+}
+</style>
