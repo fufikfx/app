@@ -42837,7 +42837,7 @@ document.addEventListener('keydown', function(e){
 }
 .bwei-opt-sep { width: 1px !important; height: 18px !important; background: #555 !important; margin: 0 10px !important; display: inline-block !important; }
 
-.bwei-body { flex: 1 1 0% !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; min-height: 0 !important; }
+.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; }
 
 /* ── Category header ── */
 .bwei-cat {
@@ -42847,9 +42847,7 @@ document.addEventListener('keydown', function(e){
   padding: 0 !important; align-items: stretch !important;
   border-top: 1px solid rgba(255,255,255,0.15) !important;
   border-bottom: 3px solid #000 !important;
-  height: 32px !important;
   min-height: 32px !important;
-  max-height: 32px !important;
 }
 .bwei-cat > div {
   border-right: none !important;
@@ -42883,20 +42881,16 @@ document.addEventListener('keydown', function(e){
   font-variant-numeric: tabular-nums !important;
   letter-spacing: -0.4px !important;
   cursor: pointer !important; border: 0 !important;
-  line-height: 1 !important;
+  line-height: 1.35 !important;
   font-weight: bold !important;
-  height: 30px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
 }
 .bwei-row:hover { background: #0d0d0d !important; } 
 .bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
 
 .bwei-row > div { 
-  padding: 0 6px !important; white-space: nowrap !important; overflow: hidden !important; 
+  padding: 0 8px !important; white-space: nowrap !important; overflow: hidden !important; 
   text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
   border-right: 1px solid #333 !important;
-  height: 30px !important; min-height: 30px !important; max-height: 30px !important;
 }
 /* No dividers on right-side data columns */
 .bwei-row .r-chg { border-right: none !important; }
@@ -43593,7 +43587,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 }
 .bwei-opt-sep { width: 1px !important; height: 14px !important; background: #555 !important; margin: 0 6px !important; display: inline-block !important; }
 
-.bwei-body { flex: 1 1 0% !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; min-height: 0 !important; }
+.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; }
 
 /* ── Category header ── */
 .bwei-cat {
@@ -43603,9 +43597,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   padding: 0 !important; align-items: stretch !important;
   border-top: 1px solid rgba(255,255,255,0.15) !important;
   border-bottom: 3px solid #000 !important;
-  height: 32px !important;
   min-height: 32px !important;
-  max-height: 32px !important;
 }
 .bwei-cat > div {
   border-right: none !important;
@@ -43640,20 +43632,16 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   font-variant-numeric: tabular-nums !important;
   letter-spacing: -0.4px !important;
   cursor: pointer !important; border: 0 !important;
-  line-height: 1 !important;
+  line-height: 1.35 !important;
   font-weight: bold !important;
-  height: 30px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
 }
 .bwei-row:hover { background: #0d0d0d !important; } 
 .bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
 
 .bwei-row > div { 
-  padding: 0 6px !important; white-space: nowrap !important; overflow: hidden !important; 
+  padding: 0 8px !important; white-space: nowrap !important; overflow: hidden !important; 
   text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
   border-right: 1px solid #333 !important;
-  height: 30px !important; min-height: 30px !important; max-height: 30px !important;
 }
 /* No dividers on right-side data columns */
 .bwei-row .r-chg { border-right: none !important; }
@@ -44704,8 +44692,3 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 
 </body>
 </html>
-
-<!-- ══ DOPLNĚK — optbar right pozice ══ -->
-<style>
-.bwei-optbar-right { margin-left: 20px !important; margin-right: auto !important; }
-</style>
