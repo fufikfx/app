@@ -11393,6 +11393,18 @@ function _requestRender() {
     if (document.getElementById('crypto-dash-panel')?.classList.contains('open')) {
       if (typeof _renderCryptoDash === 'function') _renderCryptoDash();
     }
+    // BWEI rows — same source as ticker (CRYPTO[].px), same RAF frame
+    try {
+      const _sfx = '<span class="bwei-sfx-d">d</span>';
+      CRYPTO.forEach(function(c) {
+        if (!(c.px > 0)) return;
+        const _row = document.querySelector('.bwei-row[data-sym="' + c.s + '"]');
+        if (!_row) return;
+        const _t = c.px>=100?c.px.toFixed(2):c.px>=1?c.px.toFixed(3):c.px>=0.01?c.px.toFixed(4):c.px>=0.0001?c.px.toFixed(6):c.px.toFixed(8);
+        const _ve = _row.querySelector('.r-value');  if (_ve) _ve.innerHTML = _t + _sfx;
+        const _fe = _row.querySelector('.r-future'); if (_fe) _fe.innerHTML = _t + _sfx;
+      });
+    } catch(_e) {}
     _needsRender = false;
   });
 }
@@ -11658,14 +11670,15 @@ function startBinanceWS(){
         data.forEach(d => {
           const id = _BN_AGG_MAP[d.s];
           if(id) {
+            const _px = parseFloat(d.c);
             updateCoin(id, {
-              px: parseFloat(d.c),
+              px: _px,
               chg: parseFloat(d.P),
               vol: parseFloat(d.q),
               hi: parseFloat(d.h),
               lo: parseFloat(d.l)
             }, 'ws', 1);
-            // AVAT todayVol se aktualizuje z klines každou hodinu — WS nic nemění
+            // BWEI write moved to _requestRender RAF
             updated++;
           }
         });
@@ -30091,6 +30104,8 @@ masterUpdate();
     // 6. Ticker tape + updateCoin (priority 0 = overrides Yahoo)
     if (typeof _tkUp === 'function')     _tkUp('m-' + sym, lp, chp || 0);
     if (typeof updateCoin === 'function') updateCoin(sym, { px: lp, chg: chp, hi, lo }, 'tv', 0);
+
+    // BWEI write removed — driven by BN WS only
   }
 
   // ── WebSocket connection ───────────────────────────────────────────
@@ -43337,10 +43352,15 @@ function fmtPx(v){
   return v.toFixed(8);
 }
 function fmtFuture(v){
-  if(!v && v!==0) return '';
-  if(v >= 100)  return v.toFixed(2);
-  if(v >= 1)    return v.toFixed(3);
-  return v.toFixed(4);
+  if(v===null||v===undefined||isNaN(v)||(!v&&v!==0)) return '';
+  if(v>=100000) return Math.round(v).toLocaleString('en');
+  if(v>=10000)  return v.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0});
+  if(v>=1000)   return v.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(v>=100)    return v.toFixed(2);
+  if(v>=10)     return v.toFixed(3);
+  if(v>=1)      return v.toFixed(4);
+  if(v>=.0001)  return v.toFixed(5);
+  return v.toFixed(8);
 }
 function fmtChg(v){
   if(!v && v!==0) return '';
@@ -43388,12 +43408,11 @@ function buildRow(item, rowNum, futTag){
   const chg = c.chg || 0;
   const chgUsd = c.px ? (c.px * chg/100) : 0;
 
-  // Future price = Spot cena (stejný zdroj jako sidebar BTC ticker — CRYPTO[].px)
-  // Všechny komponenty (sidebar, dashboard, tabulka) tak zobrazují identickou hodnotu.
-  const futurePx = c.px || 0;
+  // Future price = Binance Futures mark price (fapi premiumIndex)
+  const futurePx = (window._bnFutMark && _bnFutMark[c.s] > 0) ? _bnFutMark[c.s] : c.px || 0;
 
-  // %MisPx — basis mezi future a spot (vždy 0%, protože Future = Spot)
-  const misPx = 0;
+  // %MisPx — basis mezi Binance Futures mark a Binance Spot
+  const misPx = (futurePx > 0 && c.px > 0) ? (futurePx - c.px) / c.px * 100 : 0;
 
   // Δ AVAT — reálná data z Binance klines (hodinový průměr za 7 dní)
   const avat = _calcAvat(c.s, c.vol);
@@ -43416,7 +43435,7 @@ function buildRow(item, rowNum, futTag){
     <div class="r-name">${shortName}</div>
     <div class="r-rmi"></div>
     <div class="r-spark">${renderSparkline(c.s, chg)}</div>
-    <div class="r-future">${fmtFuture(futurePx)}<span class="bwei-sfx-d">d</span></div>
+    <div class="r-future">${fmtPx(futurePx)}<span class="bwei-sfx-d">d</span></div>
     <div class="r-mispx ${misPxClass}">${fmtMisPx(misPx)}</div>
     <div class="r-value">${fmtPx(c.px)}<span class="bwei-sfx-d">d</span></div>
     <div class="r-chg ${chgClass}">${fmtChg(chgUsd)}</div>
@@ -43589,9 +43608,11 @@ function getTimeStr(){
         const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
         const chgUsd = item.px ? item.px * chg/100 : 0;
 
-        // Future price = Spot cena (shoda s sidebar BTC ticker)
-        const futurePx = item.px || 0;
-        const misPx = 0;
+        // Future price = Binance Futures mark price (fapi premiumIndex)
+        // Pokud _bnFutMark není naplněný, NENASTAVUJEME futurePx = spot — přeskočíme update
+        const _hasFut = window._bnFutMark && _bnFutMark[sym] > 0;
+        const futurePx = (_bnFutMark && _bnFutMark[sym] > 0) ? _bnFutMark[sym] : (item.px || 0);
+        const misPx = (futurePx > 0 && item.px > 0) ? (futurePx - item.px) / item.px * 100 : 0;
         // Δ AVAT — reálná data
         const avat = _calcAvat(sym, item.vol);
         const ytd = item.ytd || (chg * (2.5 + Math.sin(sym.charCodeAt(0))*1.5));
@@ -43609,9 +43630,9 @@ function getTimeStr(){
         const ytdEl = row.querySelector('.r-ytd');
         const sparkEl = row.querySelector('.r-spark');
 
-        if(futureEl) futureEl.innerHTML = fmtFuture(futurePx)+'<span class="bwei-sfx-d">d</span>';
-        if(mispxEl){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
-        if(valueEl) valueEl.innerHTML = fmtPx(item.px)+'<span class="bwei-sfx-d">d</span>';
+        // r-future driven by BN WS — skip
+        if(mispxEl && futurePx > 0){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
+        // r-value driven by BN WS — skip
         if(chgEl){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
         if(pctEl){ pctEl.className = 'r-pct '+chgClass; pctEl.textContent = fmtPct(chg); }
         if(avatEl){ 
@@ -44072,10 +44093,15 @@ function fmtPx(v){
   return v.toFixed(8);
 }
 function fmtFuture(v){
-  if(!v && v!==0) return '';
-  if(v >= 100)  return v.toFixed(2);
-  if(v >= 1)    return v.toFixed(3);
-  return v.toFixed(4);
+  if(v===null||v===undefined||isNaN(v)||(!v&&v!==0)) return '';
+  if(v>=100000) return Math.round(v).toLocaleString('en');
+  if(v>=10000)  return v.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0});
+  if(v>=1000)   return v.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(v>=100)    return v.toFixed(2);
+  if(v>=10)     return v.toFixed(3);
+  if(v>=1)      return v.toFixed(4);
+  if(v>=.0001)  return v.toFixed(5);
+  return v.toFixed(8);
 }
 function fmtChg(v){
   if(!v && v!==0) return '';
@@ -44123,12 +44149,11 @@ function buildRow(item, rowNum, futTag){
   const chg = c.chg || 0;
   const chgUsd = c.px ? (c.px * chg/100) : 0;
 
-  // Future price = Spot cena (stejný zdroj jako sidebar BTC ticker — CRYPTO[].px)
-  // Všechny komponenty (sidebar, dashboard, tabulka) tak zobrazují identickou hodnotu.
-  const futurePx = c.px || 0;
+  // Future price = Binance Futures mark price (fapi premiumIndex)
+  const futurePx = (window._bnFutMark && _bnFutMark[c.s] > 0) ? _bnFutMark[c.s] : c.px || 0;
 
-  // %MisPx — basis mezi future a spot (vždy 0%, protože Future = Spot)
-  const misPx = 0;
+  // %MisPx — basis mezi Binance Futures mark a Binance Spot
+  const misPx = (futurePx > 0 && c.px > 0) ? (futurePx - c.px) / c.px * 100 : 0;
 
   // Δ AVAT — reálná data z Binance klines (hodinový průměr za 7 dní)
   const avat = _calcAvat(c.s, c.vol);
@@ -44151,7 +44176,7 @@ function buildRow(item, rowNum, futTag){
     <div class="r-name">${shortName}</div>
     <div class="r-rmi"></div>
     <div class="r-spark">${renderSparkline(c.s, chg)}</div>
-    <div class="r-future">${fmtFuture(futurePx)}<span class="bwei-sfx-d">d</span></div>
+    <div class="r-future">${fmtPx(futurePx)}<span class="bwei-sfx-d">d</span></div>
     <div class="r-mispx ${misPxClass}">${fmtMisPx(misPx)}</div>
     <div class="r-value">${fmtPx(c.px)}<span class="bwei-sfx-d">d</span></div>
     <div class="r-chg ${chgClass}">${fmtChg(chgUsd)}</div>
@@ -44324,9 +44349,11 @@ function getTimeStr(){
         const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
         const chgUsd = item.px ? item.px * chg/100 : 0;
 
-        // Future price = Spot cena (shoda s sidebar BTC ticker)
-        const futurePx = item.px || 0;
-        const misPx = 0;
+        // Future price = Binance Futures mark price (fapi premiumIndex)
+        // Pokud _bnFutMark není naplněný, NENASTAVUJEME futurePx = spot — přeskočíme update
+        const _hasFut = window._bnFutMark && _bnFutMark[sym] > 0;
+        const futurePx = (_bnFutMark && _bnFutMark[sym] > 0) ? _bnFutMark[sym] : (item.px || 0);
+        const misPx = (futurePx > 0 && item.px > 0) ? (futurePx - item.px) / item.px * 100 : 0;
         // Δ AVAT — reálná data
         const avat = _calcAvat(sym, item.vol);
         const ytd = item.ytd || (chg * (2.5 + Math.sin(sym.charCodeAt(0))*1.5));
@@ -44344,9 +44371,9 @@ function getTimeStr(){
         const ytdEl = row.querySelector('.r-ytd');
         const sparkEl = row.querySelector('.r-spark');
 
-        if(futureEl) futureEl.innerHTML = fmtFuture(futurePx)+'<span class="bwei-sfx-d">d</span>';
-        if(mispxEl){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
-        if(valueEl) valueEl.innerHTML = fmtPx(item.px)+'<span class="bwei-sfx-d">d</span>';
+        // r-future driven by BN WS — skip
+        if(mispxEl && futurePx > 0){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
+        // r-value driven by BN WS — skip
         if(chgEl){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
         if(pctEl){ pctEl.className = 'r-pct '+chgClass; pctEl.textContent = fmtPct(chg); }
         if(avatEl){ 
@@ -44886,74 +44913,268 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════
-     %MisPX PATCH v2 — přímá DOM aktualizace každé 2s
-     Čte globální `_HL.perps[sym].mark` (const, ne window._HL)
-     a aktualizuje .r-mispx + .r-future v každém .bwei-row
+     %MisPX PATCH v3 — Binance Futures mark price vs Binance Spot
+     Zdroj: fapi.binance.com/fapi/v1/premiumIndex (reálný futures basis)
+     → _bnFutMark[sym] = Binance Futures mark price
+     → misPx = (futuresMark - spotPx) / spotPx * 100
+     Tím dostaneme skutečný futures basis (ne HL mark ≈ spot).
 ═══════════════════════════════════════════════════════════════ -->
 <script>
 (function() {
   'use strict';
 
-  // Přímá aktualizace DOM — bez monkey-patchingu
-  function _applyMisPx() {
-    var perps;
-    try { perps = _HL.perps; } catch(e) { return; }  // _HL je global const
-    if (!perps || !Object.keys(perps).length) return;
+  // Cache: sym (bez USDT) → Binance Futures mark price
+  var _bnFutMark = window._bnFutMark = {};
+  var _bnFutTs   = 0;
 
+  // Pre-seed _bnFutMark z _bridgeData.futures (plní se dřív než async fetch)
+  // Zabrání race condition kde buildRow() vidí prázdný _bnFutMark a padne na spot
+  function _preSeedFromBridge() {
+    try {
+      if (window._bridgeData && _bridgeData.futures) {
+        var n = 0;
+        Object.keys(_bridgeData.futures).forEach(function(bnSym) {
+          var sym = bnSym.replace('USDT', '');
+          var mk  = _bridgeData.futures[bnSym] && _bridgeData.futures[bnSym].mark;
+          if (mk > 0 && !_bnFutMark[sym]) { _bnFutMark[sym] = mk; n++; }
+        });
+        if (n > 0) console.log('[MISPX v3] pre-seeded ' + n + ' symbols from _bridgeData.futures');
+      }
+    } catch(e) {}
+  }
+  // Spustit hned (synchronně pokud data dostupná) + znovu po 500ms jako záloha
+  _preSeedFromBridge();
+  setTimeout(_preSeedFromBridge, 500);
+  setTimeout(_preSeedFromBridge, 1500);
+
+  // Fetch Binance Futures premium index (mark prices)
+  async function _fetchBnFutMark() {
+    try {
+      var r = await fetch('https://fapi.binance.com/fapi/v1/premiumIndex', {
+        signal: AbortSignal.timeout(6000)
+      });
+      if (!r.ok) return;
+      var data = await r.json();
+      var n = 0;
+      data.forEach(function(m) {
+        if (!m.symbol || !m.symbol.endsWith('USDT')) return;
+        var sym = m.symbol.replace('USDT', '');
+        var mark = parseFloat(m.markPrice);
+        if (mark > 0) { _bnFutMark[sym] = mark; n++; }
+      });
+      _bnFutTs = Date.now();
+      // Také naplnit _bridge.futures pokud existuje
+      if (window._bridgeData && _bridgeData.futures) {
+        data.forEach(function(m) {
+          if (!_bridgeData.futures[m.symbol]) _bridgeData.futures[m.symbol] = {};
+          _bridgeData.futures[m.symbol].mark  = parseFloat(m.markPrice);
+          _bridgeData.futures[m.symbol].index = parseFloat(m.indexPrice);
+        });
+      }
+      if (n > 0) console.log('[MISPX v3] Binance Futures mark prices: ' + n + ' symbols');
+    } catch(e) {
+      // Fallback: zkus _bridge.futures pokud dostupný
+      if (window._bridgeData && _bridgeData.futures) {
+        Object.keys(_bridgeData.futures).forEach(function(bnSym) {
+          var sym = bnSym.replace('USDT','');
+          var mk  = _bridgeData.futures[bnSym] && _bridgeData.futures[bnSym].mark;
+          if (mk > 0) _bnFutMark[sym] = mk;
+        });
+      }
+    }
+  }
+
+  // Přímá aktualizace DOM — používá Binance Futures mark vs Binance Spot
+  function _applyMisPx() {
     var cryptoMap = {};
     try {
-      (CRYPTO || []).forEach(function(c) { cryptoMap[c.s] = c; });  // CRYPTO je global const
+      (CRYPTO || []).forEach(function(c) { cryptoMap[c.s] = c; });
     } catch(e) { return; }
 
     document.querySelectorAll('.bwei-row').forEach(function(row) {
-      var sym = row.dataset.sym;
-      var hlPerp = perps[sym];
+      var sym    = row.dataset.sym;
       var coin   = cryptoMap[sym];
-      if (!hlPerp || !hlPerp.mark || !coin || !coin.px) return;
+      if (!coin || !coin.px) return;
 
-      var hlMark = parseFloat(hlPerp.mark);
+      // Priorita zdrojů futures mark price:
+      // 1. Čerstvý _bnFutMark (Binance fapi premiumIndex)
+      // 2. _bridge.futures (pokud byl naplněn)
+      // 3. _HL.perps (fallback — HL mark ≈ spot → ~0%)
+      var futureMark = 0;
+      var src = '';
+
+      if (_bnFutMark[sym] > 0) {
+        futureMark = _bnFutMark[sym];
+        src = 'BNF';
+      } else if (window._bridgeData && _bridgeData.futures && _bridgeData.futures[sym + 'USDT']) {
+        var bf = _bridgeData.futures[sym + 'USDT'];
+        if (bf.mark > 0) { futureMark = bf.mark; src = 'BRG'; }
+      } else {
+        try {
+          if (window._HL && _HL.perps && _HL.perps[sym] && _HL.perps[sym].mark > 0) {
+            futureMark = _HL.perps[sym].mark;
+            src = 'HL';
+          }
+        } catch(e) {}
+      }
+
+      if (!(futureMark > 0)) return;
+
       var spotPx = coin.px;
-      if (!(hlMark > 0) || !(spotPx > 0)) return;
+      var misPx  = (futureMark - spotPx) / spotPx * 100;
 
-      var misPx  = (hlMark - spotPx) / spotPx * 100;
-
-      // futurePx cell
+      // futurePx cell — same format as r-value (fmtPx logic, no toLocaleString)
       var futureEl = row.querySelector('.r-future');
       if (futureEl) {
-        var fmtFut;
-        try { fmtFut = fmtFuture(hlMark); } catch(e) {
-          fmtFut = hlMark >= 100 ? hlMark.toFixed(2) : hlMark >= 1 ? hlMark.toFixed(3) : hlMark.toFixed(4);
-        }
-        futureEl.innerHTML = fmtFut + '<span class="bwei-sfx-d">d</span>';
+        var fmtFut = futureMark >= 100    ? futureMark.toFixed(2)
+                   : futureMark >= 1      ? futureMark.toFixed(3)
+                   : futureMark >= 0.01   ? futureMark.toFixed(4)
+                   : futureMark >= 0.0001 ? futureMark.toFixed(6)
+                   : futureMark.toFixed(8);
+        // r-future driven by BN WS — skip
       }
 
       // misPx cell
       var mispxEl = row.querySelector('.r-mispx');
       if (mispxEl) {
-        var sign   = misPx >= 0 ? '+' : '';
         var fmtMis;
-        try { fmtMis = fmtMisPx(misPx); } catch(e) { fmtMis = sign + misPx.toFixed(3) + '%'; }
+        try { fmtMis = fmtMisPx(misPx); } catch(e) {
+          fmtMis = (misPx >= 0 ? '+' : '') + misPx.toFixed(3) + '%';
+        }
         mispxEl.className   = 'r-mispx ' + (misPx >= 0 ? 'bwei-gn' : 'bwei-rd');
         mispxEl.textContent = fmtMis;
+        // Tooltip se zdrojem
+        mispxEl.title = src + ': ' + futureMark.toPrecision(8) + ' vs spot ' + spotPx.toPrecision(8);
       }
     });
   }
 
-  // Spustit každé 2s
-  setInterval(_applyMisPx, 2000);
+  // Fetch hned + každých 15s (premiumIndex se mění pomalu)
+  _fetchBnFutMark();
+  setInterval(_fetchBnFutMark, 15000);
 
-  // HL perp data: extra fetch za 1s a každých 5s (původní interval byl 10s)
+  // DOM update každé 2s
+  // _applyMisPx interval disabled — r-future uses BN WS
+  // První render po 3s (data mají čas přijít)
+  // _applyMisPx timeout disabled
+
+  // HL perp data: zachovat pro funding/OI/jiné panely
   setTimeout(function() {
     try { _fetchHLPerps(); } catch(e) {}
-
     setInterval(function() {
-      try {
-        if (!window._tabHidden) _fetchHLPerps();
-      } catch(e) {}
-    }, 5000);
-  }, 1000);
+      try { if (!window._tabHidden) _fetchHLPerps(); } catch(e) {}
+    }, 10000);
+  }, 2000);
 
-  console.log('[MISPX v2] patch loaded — direct DOM update every 2s ✓');
+  console.log('[MISPX v3] patch loaded — Binance Futures mark vs Spot ✓');
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     LIVE WS PATCH — r-value & r-future tick-by-tick
+     r-value  → Binance Spot WS  (!ticker@arr, hook into updateCoin)
+     r-future → Binance Futures WS (fstream !markPrice@arr@1s)
+     Oba streamy píší přímo do DOM bez polling delay.
+══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+'use strict';
+
+// ── fmt funkce — identická s fmtPx (bez toLocaleString) ──────────────────
+function _fmt(v){
+  if(!v||isNaN(v)) return '';
+  if(v>=100)    return v.toFixed(2);
+  if(v>=1)      return v.toFixed(3);
+  if(v>=0.01)   return v.toFixed(4);
+  if(v>=0.0001) return v.toFixed(6);
+  return v.toFixed(8);
+}
+
+// ── DOM cache: sym → {futEl, valEl} ────────────────────────────────────────
+var _domCache = {};
+function _getEls(sym){
+  if(_domCache[sym]) return _domCache[sym];
+  var row = document.querySelector('.bwei-row[data-sym="'+sym+'"]');
+  if(!row) return null;
+  _domCache[sym] = {
+    fut: row.querySelector('.r-future'),
+    val: row.querySelector('.r-value')
+  };
+  return _domCache[sym];
+}
+// Invalidate cache when panels re-render
+var _cacheTs = 0;
+function _getElsFresh(sym){
+  if(Date.now()-_cacheTs > 5000){ _domCache={}; _cacheTs=Date.now(); }
+  return _getEls(sym);
+}
+
+// ── Futures WS — fstream.binance.com !markPrice@arr@1s ─────────────────────
+var _futWS = null;
+var _futWsRetry = 0;
+
+function _startFutWS(){
+  try{ if(_futWS) _futWS.close(); }catch(_){}
+  try{
+    _futWS = new WebSocket('wss://fstream.binance.com/ws/!markPrice@arr@1s');
+    _futWS.onopen = function(){
+      _futWsRetry = 0;
+      console.log('[LIVE-FUT] Binance Futures markPrice WS connected');
+    };
+    _futWS.onmessage = function(e){
+      try{
+        var data = JSON.parse(e.data);
+        if(!Array.isArray(data)) return;
+        data.forEach(function(d){
+          if(!d.s || !d.s.endsWith('USDT')) return;
+          var sym = d.s.replace('USDT','');
+          var mark = parseFloat(d.p); // markPrice field
+          if(!(mark>0)) return;
+
+          // 1. Update _bnFutMark cache
+          if(window._bnFutMark) window._bnFutMark[sym] = mark;
+
+          // r-future DOM write removed — driven by BN WS only
+
+          // 3. Update misPx if spot available
+          if(window.CRYPTO){
+            var coin = null;
+            for(var i=0;i<CRYPTO.length;i++){ if(CRYPTO[i].s===sym){ coin=CRYPTO[i]; break; } }
+            if(coin && coin.px > 0 && els && els.fut){
+              var mis = (mark - coin.px) / coin.px * 100;
+              var row2 = document.querySelector('.bwei-row[data-sym="'+sym+'"]');
+              if(row2){
+                var mp = row2.querySelector('.r-mispx');
+                if(mp){
+                  mp.className = 'r-mispx '+(mis>=0?'bwei-gn':'bwei-rd');
+                  mp.textContent = (mis>=0?'+':'')+mis.toFixed(3)+'%';
+                }
+              }
+            }
+          }
+        });
+      }catch(_){}
+    };
+    _futWS.onerror = function(){ console.warn('[LIVE-FUT] WS error'); };
+    _futWS.onclose = function(){
+      _futWsRetry++;
+      var delay = Math.min(3000 * _futWsRetry, 30000);
+      console.warn('[LIVE-FUT] WS closed, retry in '+delay+'ms');
+      setTimeout(_startFutWS, delay);
+    };
+  }catch(e){
+    setTimeout(_startFutWS, 5000);
+  }
+}
+
+// ── Start ────────────────────────────────────────────────────────────────────
+// Delay slightly so DOM is ready
+setTimeout(_startFutWS, 1500);
+
+// Invalidate DOM cache every 10s to pick up re-renders
+setInterval(function(){ _domCache={}; _cacheTs=Date.now(); }, 10000);
+
+console.log('[LIVE-FUT-WS] r-future Binance Futures WS patch loaded ✓');
 })();
 </script>
 
