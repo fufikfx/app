@@ -43388,12 +43388,12 @@ function buildRow(item, rowNum, futTag){
   const chg = c.chg || 0;
   const chgUsd = c.px ? (c.px * chg/100) : 0;
 
-  // Future price — simulate a small basis spread from spot
-  const basisBps = (Math.sin(c.s.charCodeAt(0)*0.37)*15 + 5); // -10 to +20 bps
-  const futurePx = c.px ? c.px * (1 + basisBps/10000) : 0;
+  // Future price = Spot cena (stejný zdroj jako sidebar BTC ticker — CRYPTO[].px)
+  // Všechny komponenty (sidebar, dashboard, tabulka) tak zobrazují identickou hodnotu.
+  const futurePx = c.px || 0;
 
-  // %MisPx — basis between future and spot
-  const misPx = c.px ? ((futurePx/c.px - 1) * 100) : 0;
+  // %MisPx — basis mezi future a spot (vždy 0%, protože Future = Spot)
+  const misPx = 0;
 
   // Δ AVAT — reálná data z Binance klines (hodinový průměr za 7 dní)
   const avat = _calcAvat(c.s, c.vol);
@@ -43589,9 +43589,9 @@ function getTimeStr(){
         const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
         const chgUsd = item.px ? item.px * chg/100 : 0;
 
-        const basisBps = (Math.sin(sym.charCodeAt(0)*0.37)*15 + 5);
-        const futurePx = item.px ? item.px * (1 + basisBps/10000) : 0;
-        const misPx = item.px ? ((futurePx/item.px - 1) * 100) : 0;
+        // Future price = Spot cena (shoda s sidebar BTC ticker)
+        const futurePx = item.px || 0;
+        const misPx = 0;
         // Δ AVAT — reálná data
         const avat = _calcAvat(sym, item.vol);
         const ytd = item.ytd || (chg * (2.5 + Math.sin(sym.charCodeAt(0))*1.5));
@@ -44123,12 +44123,12 @@ function buildRow(item, rowNum, futTag){
   const chg = c.chg || 0;
   const chgUsd = c.px ? (c.px * chg/100) : 0;
 
-  // Future price — simulate a small basis spread from spot
-  const basisBps = (Math.sin(c.s.charCodeAt(0)*0.37)*15 + 5); // -10 to +20 bps
-  const futurePx = c.px ? c.px * (1 + basisBps/10000) : 0;
+  // Future price = Spot cena (stejný zdroj jako sidebar BTC ticker — CRYPTO[].px)
+  // Všechny komponenty (sidebar, dashboard, tabulka) tak zobrazují identickou hodnotu.
+  const futurePx = c.px || 0;
 
-  // %MisPx — basis between future and spot
-  const misPx = c.px ? ((futurePx/c.px - 1) * 100) : 0;
+  // %MisPx — basis mezi future a spot (vždy 0%, protože Future = Spot)
+  const misPx = 0;
 
   // Δ AVAT — reálná data z Binance klines (hodinový průměr za 7 dní)
   const avat = _calcAvat(c.s, c.vol);
@@ -44324,9 +44324,9 @@ function getTimeStr(){
         const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
         const chgUsd = item.px ? item.px * chg/100 : 0;
 
-        const basisBps = (Math.sin(sym.charCodeAt(0)*0.37)*15 + 5);
-        const futurePx = item.px ? item.px * (1 + basisBps/10000) : 0;
-        const misPx = item.px ? ((futurePx/item.px - 1) * 100) : 0;
+        // Future price = Spot cena (shoda s sidebar BTC ticker)
+        const futurePx = item.px || 0;
+        const misPx = 0;
         // Δ AVAT — reálná data
         const avat = _calcAvat(sym, item.vol);
         const ytd = item.ytd || (chg * (2.5 + Math.sin(sym.charCodeAt(0))*1.5));
