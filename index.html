@@ -11406,7 +11406,9 @@ function _requestRender() {
     try {
       const _sfx = '<span class="bwei-sfx-d">d</span>';
       const _tvGuard = (window._tvSyncSym || '').toUpperCase().replace('USDT','');
-      const _tvGuardId = _tvGuard && (typeof HL_MAP !== 'undefined') ? HL_MAP[_tvGuard] : null;
+      // Guard musí být čerstvý (<10s od posledního TV ticku) — jinak ignoruj
+      const _tvFreshU = _tvGuard && (Date.now() - (window._tvSyncTs||0) < 10000);
+      const _tvGuardId = _tvFreshU && (typeof HL_MAP !== 'undefined') ? HL_MAP[_tvGuard] : null;
       // Per-symbol DOM cache — prevents unnecessary innerHTML writes
       if (!window._bweiDomCache) window._bweiDomCache = {};
       const _dc = window._bweiDomCache;
@@ -11414,7 +11416,7 @@ function _requestRender() {
         if (!(c.px > 0)) return;
         // Skip active TV symbol completely — _applyTick owns this symbol's DOM and cache
         const _cs = (c.s||'').toUpperCase().replace('USDT','');
-        if (_tvGuard && (_cs === _tvGuard || (_tvGuardId && c.id === _tvGuardId))) return;
+        if (_tvFreshU && (_cs === _tvGuard || (_tvGuardId && c.id === _tvGuardId))) return;
         // Only update DOM if price string actually changed
         const _t = c.px>=100?c.px.toFixed(2):c.px>=1?c.px.toFixed(3):c.px>=0.01?c.px.toFixed(4):c.px>=0.0001?c.px.toFixed(6):c.px.toFixed(8);
         if (_dc[c.s] === _t) return; // same value — skip DOM write entirely
@@ -28337,27 +28339,34 @@ window._setChartInterval = async function(interval) {
                 if(typeof renderSidebar === 'function') renderSidebar(); 
             }
 
-            // ═══ TV→BWEI SYNC: Write TV price directly to r-value & r-future ═══
-            // This makes TradingView the single source of truth for the active symbol
-            window._tvSyncSym = currentSym; // guard flag — prevents other sources from overwriting
-            window._tvSyncTs  = Date.now(); // timestamp of last TV tick
+            // ═══ TV→BWEI SYNC: TradingView = JEDINÝ zdroj pravdy pro aktivní symbol ═══
+            // Future panel (r-future) i Value (r-value) zrcadlí přesně cenu grafu, tick-by-tick.
+            // Žádný jiný zdroj (BN Futures WS, _refreshBWEI, _applyMisPx) sem nesmí psát.
+            const _tvSymNorm = currentSym.replace(/USDT$|USDC$|USD$/i, '');
+            window._tvSyncSym  = _tvSymNorm;          // normalized guard (BTC, ETH, ...)
+            window._tvSyncSymRaw = currentSym;        // raw form pro DOM lookup
+            window._tvSyncTs   = Date.now();          // timestamp posledního TV ticku
+            window._tvSyncPx   = price;               // poslední TV cena (pro fallback)
             try {
                 const _tvFmt = price >= 100 ? price.toFixed(2)
                              : price >= 1   ? price.toFixed(3)
                              : price >= 0.01 ? price.toFixed(4)
                              : price >= 0.0001 ? price.toFixed(6)
                              : price.toFixed(8);
-                // Write TV price INTO cache so _requestRender sees "no change" and skips DOM write
+                // Lock cache na TV cenu — _requestRender pak skipne DOM write
                 if (!window._bweiDomCache) window._bweiDomCache = {};
-                window._bweiDomCache[currentSym] = _tvFmt; // lock cache to TV price
+                window._bweiDomCache[currentSym] = _tvFmt;
+                window._bweiDomCache[_tvSymNorm] = _tvFmt;
                 const _sfxD = '<span class="bwei-sfx-d">d</span>';
-                const _bweiRow = document.querySelector('.bwei-row[data-sym="' + currentSym + '"]');
+                // Najít řádek — zkus oba tvary symbolu (BTC i BTCUSDT)
+                let _bweiRow = document.querySelector('.bwei-row[data-sym="' + _tvSymNorm + '"]');
+                if (!_bweiRow) _bweiRow = document.querySelector('.bwei-row[data-sym="' + currentSym + '"]');
                 if (_bweiRow) {
                     const _newHtml = _tvFmt + _sfxD;
                     const _veEl = _bweiRow.querySelector('.r-value');
-                    if (_veEl) _veEl.innerHTML = _newHtml;
+                    if (_veEl && _veEl.innerHTML !== _newHtml) _veEl.innerHTML = _newHtml;
                     const _feEl = _bweiRow.querySelector('.r-future');
-                    if (_feEl) _feEl.innerHTML = _newHtml;
+                    if (_feEl && _feEl.innerHTML !== _newHtml) _feEl.innerHTML = _newHtml;
                 }
             } catch(_bweiErr) { /* silent */ }
 
@@ -43713,7 +43722,11 @@ function getTimeStr(){
         const sparkEl = row.querySelector('.r-spark');
 
         // r-future driven by BN WS — skip
-        if(mispxEl && futurePx > 0){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
+        // TV-active symbol: skip r-mispx too (TradingView vlastní future cenu)
+        const _tvActSym = (window._tvSyncSym || '').toUpperCase();
+        const _tvFreshHere = _tvActSym && (Date.now() - (window._tvSyncTs||0) < 10000);
+        const _isTVActive = _tvFreshHere && sym.toUpperCase() === _tvActSym;
+        if(!_isTVActive && mispxEl && futurePx > 0){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
         // r-value driven by BN WS — skip
         if(chgEl){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
         if(pctEl){ pctEl.className = 'r-pct '+chgClass; pctEl.textContent = fmtPct(chg); }
@@ -44454,7 +44467,11 @@ function getTimeStr(){
         const sparkEl = row.querySelector('.r-spark');
 
         // r-future driven by BN WS — skip
-        if(mispxEl && futurePx > 0){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
+        // TV-active symbol: skip r-mispx too (TradingView vlastní future cenu)
+        const _tvActSym = (window._tvSyncSym || '').toUpperCase();
+        const _tvFreshHere = _tvActSym && (Date.now() - (window._tvSyncTs||0) < 10000);
+        const _isTVActive = _tvFreshHere && sym.toUpperCase() === _tvActSym;
+        if(!_isTVActive && mispxEl && futurePx > 0){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
         // r-value driven by BN WS — skip
         if(chgEl){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
         if(pctEl){ pctEl.className = 'r-pct '+chgClass; pctEl.textContent = fmtPct(chg); }
@@ -45078,6 +45095,11 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
       var coin   = cryptoMap[sym];
       if (!coin || !coin.px) return;
 
+      // ═══ TV GUARD: pokud je tento symbol aktivní na TradingView, neaktualizuj ═══
+      var _tvActMis = (window._tvSyncSym || '').toUpperCase();
+      var _tvFreshMis = _tvActMis && (Date.now() - (window._tvSyncTs||0) < 10000);
+      if (_tvFreshMis && sym.toUpperCase() === _tvActMis) return;
+
       // Priorita zdrojů futures mark price:
       // 1. Čerstvý _bnFutMark (Binance fapi premiumIndex)
       // 2. _bridge.futures (pokud byl naplněn)
@@ -45207,7 +45229,9 @@ function _startFutWS(){
       try{
         var data = JSON.parse(e.data);
         if(!Array.isArray(data)) return;
+        // TV guard: aktivní symbol je řízen TradingView. Stream musí být čerstvý (<10s).
         var _tvGuard2 = (window._tvSyncSym || '').toUpperCase();
+        var _tvFresh  = _tvGuard2 && (Date.now() - (window._tvSyncTs||0) < 10000);
         data.forEach(function(d){
           if(!d.s || !d.s.endsWith('USDT')) return;
           var sym = d.s.replace('USDT','');
@@ -45217,8 +45241,9 @@ function _startFutWS(){
           // 1. Update _bnFutMark cache (always, even for TV symbol)
           if(window._bnFutMark) window._bnFutMark[sym] = mark;
 
-          // SKIP active TV symbol — TradingView drives r-future for it
-          if(sym === _tvGuard2) return;
+          // ═══ HARD GUARD: aktivní TV symbol — TradingView je JEDINÝ zdroj ═══
+          // Neaktualizuj ANI r-future, ANI r-mispx — vše vlastní TV.
+          if(_tvFresh && sym === _tvGuard2) return;
 
           // r-future DOM write removed — driven by BN WS only
 
