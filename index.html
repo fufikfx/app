@@ -11401,34 +11401,34 @@ function _requestRender() {
     if (document.getElementById('crypto-dash-panel')?.classList.contains('open')) {
       if (typeof _renderCryptoDash === 'function') _renderCryptoDash();
     }
-    // BWEI rows — same source as ticker (CRYPTO[].px), same RAF frame
-    // SKIP active TV symbol — TradingView is the single source of truth for it
+    // BWEI rows — throttled, max 1x per 2s per symbol. TV symbol skipped entirely.
     try {
       const _sfx = '<span class="bwei-sfx-d">d</span>';
       const _tvGuard = (window._tvSyncSym || '').toUpperCase().replace('USDT','');
-      // HARD GUARD: pokud je nastavený _tvSyncSym, NIKDY nepiš do tohoto symbolu z BN Spot.
-      // (Předtím byl 10s freshness check, ale to vytvářelo díry kdy TV stream zaostal.)
       const _tvGuardActive = !!_tvGuard;
       const _tvGuardId = _tvGuardActive && (typeof HL_MAP !== 'undefined') ? HL_MAP[_tvGuard] : null;
-      // Per-symbol DOM cache — prevents unnecessary innerHTML writes
       if (!window._bweiDomCache) window._bweiDomCache = {};
+      if (!window._bweiWriteTs) window._bweiWriteTs = {};
       const _dc = window._bweiDomCache;
+      const _wts = window._bweiWriteTs;
+      const _now2 = Date.now();
+      const _BWEI_THROTTLE = 2000;
       CRYPTO.forEach(function(c) {
         if (!(c.px > 0)) return;
-        // Skip active TV symbol completely — _applyTick owns this symbol's DOM and cache
         const _cs = (c.s||'').toUpperCase().replace('USDT','');
         if (_tvGuardActive && (_cs === _tvGuard || (_tvGuardId && c.id === _tvGuardId))) return;
-        // Only update DOM if price string actually changed
+        if (_wts[c.s] && (_now2 - _wts[c.s]) < _BWEI_THROTTLE) return;
         const _t = c.px>=100?c.px.toFixed(2):c.px>=1?c.px.toFixed(3):c.px>=0.01?c.px.toFixed(4):c.px>=0.0001?c.px.toFixed(6):c.px.toFixed(8);
-        if (_dc[c.s] === _t) return; // same value — skip DOM write entirely
-        _dc[c.s] = _t;
+        const _fmk = (window._bnFutMark && window._bnFutMark[_cs] > 0) ? window._bnFutMark[_cs] : c.px;
+        const _ft = _fmk>=100?_fmk.toFixed(2):_fmk>=1?_fmk.toFixed(3):_fmk>=0.01?_fmk.toFixed(4):_fmk>=0.0001?_fmk.toFixed(6):_fmk.toFixed(8);
+        if (_dc[c.s] === _t && _dc[c.s+'_fut'] === _ft) return;
+        _dc[c.s] = _t; _dc[c.s+'_fut'] = _ft; _wts[c.s] = _now2;
         const _row = document.querySelector('.bwei-row[data-sym="' + c.s + '"]');
         if (!_row) return;
-        const _newHtml = _t + _sfx;
         const _ve = _row.querySelector('.r-value');
-        if (_ve) _ve.innerHTML = _newHtml;
+        if (_ve && _ve.innerHTML !== _t+_sfx) _ve.innerHTML = _t + _sfx;
         const _fe = _row.querySelector('.r-future');
-        if (_fe) _fe.innerHTML = _newHtml;
+        if (_fe && _fe.innerHTML !== _ft+_sfx) _fe.innerHTML = _ft + _sfx;
       });
     } catch(_e) {}
     _needsRender = false;
@@ -45193,16 +45193,8 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
     }
   }, 4000);
 
-  // ── 5. Přidat _refreshBWEI do 600ms cyklu ──────────────────────────────
-  setTimeout(function() {
-    if (typeof _refreshBWEI === 'function') {
-      setInterval(function() {
-        if (window._tabHidden) return;
-        try { _refreshBWEI(); } catch(e) {}
-      }, 800);
-      console.log('[SPEED] _refreshBWEI interval: 800ms added');
-    }
-  }, 4000);
+  // ── 5. _refreshBWEI již běží na 3000ms — duplicitní 800ms interval odstraněn (způsoboval blikání)
+  // _refreshBWEI is already registered at 3000ms interval in the BWEI panel script.
 
   // ── 6. Inicializace: okamžitý first fetch ──────────────────────────────
   // Zavolat fetchBinance24hr okamžitě po patchi (bez čekání na původní setTimeout)
@@ -45436,36 +45428,40 @@ function _startFutWS(){
       try{
         var data = JSON.parse(e.data);
         if(!Array.isArray(data)) return;
-        // HARD GUARD: pokud je _tvSyncSym nastaven, NIKDY nepiš do tohoto symbolu z BN Futures.
         var _tvGuard2 = (window._tvSyncSym || '').toUpperCase();
-        var _tvFresh  = !!_tvGuard2; // bez freshness check — guard je permanent dokud je symbol aktivní
+        var _tvFresh  = !!_tvGuard2;
+        if(!window._futMisPxTs) window._futMisPxTs = {};
+        var _mNow = Date.now();
         data.forEach(function(d){
           if(!d.s || !d.s.endsWith('USDT')) return;
           var sym = d.s.replace('USDT','');
-          var mark = parseFloat(d.p); // markPrice field
+          var mark = parseFloat(d.p);
           if(!(mark>0)) return;
 
           // 1. Update _bnFutMark cache (always, even for TV symbol)
           if(window._bnFutMark) window._bnFutMark[sym] = mark;
 
           // ═══ HARD GUARD: aktivní TV symbol — TradingView je JEDINÝ zdroj ═══
-          // Neaktualizuj ANI r-future, ANI r-mispx — vše vlastní TV.
           if(_tvFresh && sym === _tvGuard2) return;
 
-          // r-future DOM write removed — driven by BN WS only
-
-          // 3. Update misPx if spot available
+          // 3. Update misPx — throttled to max 1x per 3s per symbol (was every 1s → flicker)
+          if(_futMisPxTs[sym] && (_mNow - _futMisPxTs[sym]) < 3000) return;
           if(window.CRYPTO){
             var coin = null;
             for(var i=0;i<CRYPTO.length;i++){ if(CRYPTO[i].s===sym){ coin=CRYPTO[i]; break; } }
             if(coin && coin.px > 0){
               var mis = (mark - coin.px) / coin.px * 100;
+              // Skip tiny changes < 0.005% (floating point noise between sources)
+              var _prevMis = _futMisPxTs[sym+'_val'];
+              if(_prevMis !== undefined && Math.abs(mis - _prevMis) < 0.005) return;
               var row2 = document.querySelector('.bwei-row[data-sym="'+sym+'"]');
               if(row2){
                 var mp = row2.querySelector('.r-mispx');
                 if(mp){
                   mp.className = 'r-mispx '+(mis>=0?'bwei-gn':'bwei-rd');
                   mp.textContent = (mis>=0?'+':'')+mis.toFixed(3)+'%';
+                  _futMisPxTs[sym] = _mNow;
+                  _futMisPxTs[sym+'_val'] = mis;
                 }
               }
             }
@@ -45589,8 +45585,8 @@ function _initObserver(){
   console.log('[TV-LOCK] MutationObserver attached to .bwei-wrap (narrowed scope)');
 }
 
-// Periodický enforce — backup. 250ms = max 250ms "ztraceného" stavu, pokud observer skipne
-setInterval(_enforceLock, 250);
+// Periodický enforce — backup. 500ms = dostatečně rychlý, méně agresivní (snižuje MutationObserver kaskádu)
+setInterval(_enforceLock, 500);
 
 // Init observer po načtení DOM
 if(document.readyState === 'loading'){
