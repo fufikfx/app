@@ -545,7 +545,7 @@ body.sat-active .m-wrap{opacity:1!important;}
   height: 20px;
   background: #8B0000;
   display: flex;
-  justify-content: center; /* Center the inner content */
+  justify-content: flex-start;
   padding: 0;
   flex-shrink: 0;
   border-bottom: 1px solid #000;
@@ -553,8 +553,6 @@ body.sat-active .m-wrap{opacity:1!important;}
 
 .cdash-inner {
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
   display: flex;
   align-items: center;
   padding: 0 12px;
@@ -590,8 +588,8 @@ body.sat-active .m-wrap{opacity:1!important;}
   height: 20px;
   background: #000;
   display: flex;
-  justify-content: center; /* Center the inner content */
-  padding: 0;
+  justify-content: flex-start;
+  padding: 0 12px;
   flex-shrink: 0;
   border-bottom: 1px solid #1a1a1a;
 }
@@ -663,8 +661,8 @@ body.sat-active .m-wrap{opacity:1!important;}
 
 /* ── Data Table ── */
 .cdash-table {
-  width: auto;
-  margin: 0 auto 0 auto;
+  width: 100%;
+  margin: 0;
   border-collapse: collapse;
   table-layout: auto;
   font-size: 10px;
@@ -42780,8 +42778,8 @@ document.addEventListener('keydown', function(e){
 .bwei-optbar {
   background: #000000 !important; flex-shrink: 0 !important;
   display: flex !important; align-items: center !important;
-  padding: 2px 4px !important;
-  font-size: 12px !important; justify-content: flex-start !important;
+  padding: 1px 3px !important;
+  font-size: 10px !important; justify-content: space-between !important;
   width: 100% !important; box-sizing: border-box !important;
   overflow: hidden !important;
 }
@@ -42791,42 +42789,42 @@ document.addEventListener('keydown', function(e){
 }
 .bwei-optbar-checks {
   display: flex !important; align-items: center !important;
-  flex: 0 1 auto !important; min-width: 0 !important;
+  flex: 1 1 auto !important; min-width: 0 !important;
   justify-content: flex-start !important;
-  gap: 24px !important;
-  padding: 0 16px !important;
+  gap: 14px !important;
+  padding: 0 10px !important;
   overflow: hidden !important;
 }
 .bwei-optbar-right {
   display: inline-flex !important; align-items: center !important;
-  flex: 0 0 auto !important; margin-left: 0 !important; margin-right: 4px !important; gap: 2px !important;
+  flex: 0 0 auto !important; margin-left: auto !important; margin-right: 3px !important; gap: 2px !important;
   flex-shrink: 0 !important;
 }
 .bwei-opt-sel {
-  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 14px !important;
-  padding: 0 10px !important; border: 1px solid #000 !important; cursor: pointer !important;
-  display: inline-flex !important; align-items: center !important; height: 21px !important;
+  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 11px !important;
+  padding: 0 6px !important; border: 1px solid #000 !important; cursor: pointer !important;
+  display: inline-flex !important; align-items: center !important; height: 16px !important;
   border-radius: 0 !important; transition: background 0.1s !important;
   flex-shrink: 0 !important; white-space: nowrap !important;
 }
 .bwei-opt-sel:hover { background: #FFB31A !important; }
 .bwei-opt-arr {
-  background: #444444 !important; color: #aaaaaa !important; font-size: 10px !important;
-  padding: 0 5px !important; border: 1px solid #000 !important; cursor: pointer !important;
-  display: inline-flex !important; align-items: center !important; height: 21px !important;
+  background: #444444 !important; color: #aaaaaa !important; font-size: 8px !important;
+  padding: 0 3px !important; border: 1px solid #000 !important; cursor: pointer !important;
+  display: inline-flex !important; align-items: center !important; height: 16px !important;
   border-radius: 0 !important; margin-left: 0px !important; transition: background 0.1s !important;
   vertical-align: middle !important;
 }
 .bwei-opt-arr:hover { background: #555 !important; }
-.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 5px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 13px !important; letter-spacing: 0.3px !important; cursor: pointer !important; font-size: 12px !important; font-weight: normal !important; white-space: nowrap !important; }
+.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 4px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 10px !important; letter-spacing: 0.2px !important; cursor: pointer !important; font-weight: normal !important; }
 .bwei-opt-chk input[type=checkbox] { 
   appearance: none !important; -webkit-appearance: none !important;
-  width: 14px !important; height: 14px !important; cursor: pointer !important; 
+  width: 11px !important; height: 11px !important; cursor: pointer !important; 
   background: #444444 !important; border: 1px solid #666666 !important; margin: 0 !important;
   display: inline-flex !important; align-items: center !important; justify-content: center !important;
 }
 .bwei-opt-chk input[type=checkbox]:checked { background: #1E90FF !important; border-color: #1E90FF !important; }
-.bwei-opt-chk input[type=checkbox]:checked::after { content: '✔'; color: #000; font-size: 11px; font-weight: bold; }
+.bwei-opt-chk input[type=checkbox]:checked::after { content: '✔'; color: #000; font-size: 9px; font-weight: bold; }
 .bwei-opt-dd {
   background: #FFAA00 !important; color: #000000 !important; font-weight: 500 !important; font-size: 14px !important;
   padding: 0 4px !important; border: 1px solid #000 !important; cursor: pointer !important; height: 21px !important; outline: none !important;
@@ -42844,16 +42842,16 @@ document.addEventListener('keydown', function(e){
 .bwei-cat {
   background: #333333 !important; 
   display: grid !important;
-  grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  grid-template-columns: 32px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
   padding: 0 !important; align-items: stretch !important;
   border-top: 1px solid rgba(255,255,255,0.15) !important;
-  border-bottom: 1px solid #000 !important;
-  min-height: 24px !important;
+  border-bottom: 2px solid #000 !important;
+  min-height: 18px !important;
 }
 .bwei-cat > div {
   border-right: none !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
-  color: #ffffff !important; font-size: 14px !important; font-weight: bold !important; padding: 0 4px !important;
+  color: #ffffff !important; font-size: 11px !important; font-weight: bold !important; padding: 0 4px !important;
 }
 .bwei-cat > div:nth-child(4) { border-right: none !important; }
 .bwei-cat > div:nth-child(7) { border-right: none !important; }
@@ -42861,35 +42859,36 @@ document.addEventListener('keydown', function(e){
 .bwei-cat > div:last-child {
   border-right: none !important;
 }
-/* Category number cell — large white, Bloomberg style */
+/* Category number cell — compact Bloomberg style */
 .bwei-cat .c-num {
-  font-size: 16px !important; font-weight: bold !important;
+  font-size: 11px !important; font-weight: bold !important;
   color: #ffffff !important;
   justify-content: center !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
-  letter-spacing: -1px !important;
+  letter-spacing: 0 !important;
 }
-.bwei-cat .c-name { font-size: 16px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 10px !important; justify-content: flex-start !important; color: #ffffff !important; }
-.bwei-cat .c-rmi { justify-content: center !important; font-size: 13px !important; }
+.bwei-cat .c-name { font-size: 11px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 6px !important; justify-content: flex-start !important; color: #ffffff !important; }
+.bwei-cat .c-rmi { justify-content: center !important; font-size: 11px !important; }
 .bwei-cat .c-spark { justify-content: center !important; }
 
 /* ── Data row ── */
 .bwei-row {
   display: grid !important;
-  grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
-  padding: 0 !important; font-size: 18px !important;
+  grid-template-columns: 32px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  padding: 0 !important; font-size: 12px !important;
   font-variant-numeric: tabular-nums !important;
-  letter-spacing: -0.4px !important;
+  letter-spacing: 0 !important;
   cursor: pointer !important; border: 0 !important;
-  line-height: 1.15 !important;
+  line-height: 1.2 !important;
   font-weight: bold !important;
+  min-height: 16px !important;
 }
 .bwei-row:hover { background: #0d0d0d !important; } 
 .bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
 
 .bwei-row > div { 
-  padding: 0 8px !important; white-space: nowrap !important; overflow: hidden !important; 
+  padding: 0 6px !important; white-space: nowrap !important; overflow: hidden !important; 
   text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
   border-right: 1px solid #333 !important;
 }
@@ -42908,15 +42907,15 @@ document.addEventListener('keydown', function(e){
   color: #848484 !important;
   justify-content: flex-end !important;
   font-weight: bold !important;
-  font-size: 16px !important;
-  padding-right: 6px !important;
+  font-size: 11px !important;
+  padding-right: 4px !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
 }
-.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 17px !important; justify-content: flex-start !important; padding-left: 6px !important; text-transform: uppercase !important; border-right: none !important; }
+.bwei-row .r-name { color: #E8922A !important; font-weight: bold !important; font-size: 12px !important; justify-content: flex-start !important; padding-left: 4px !important; text-transform: uppercase !important; border-right: none !important; }
 .bwei-row .r-rmi { justify-content: center !important; padding: 0 !important; gap: 0 !important; border-right: none !important; }
 .bwei-row .r-spark { padding: 0 !important; justify-content: center !important; overflow: visible !important; background: transparent !important; }
-.bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 28px !important; overflow: visible !important; }
+.bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 14px !important; overflow: visible !important; }
 
 /* Data colors */
 .bwei-row .r-future { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
@@ -42927,7 +42926,7 @@ document.addEventListener('keydown', function(e){
 .bwei-row .r-avat { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-avat.avat-pos { color: #DDC09E !important; }
 .bwei-row .r-avat.avat-neg { color: #A3A5A4 !important; }
-.bwei-row .r-time { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; font-size: 17px !important; }
+.bwei-row .r-time { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; font-size: 12px !important; }
 .bwei-row .r-ytd { font-weight: bold !important; justify-content: flex-end !important; }
 
 /* Bottom action bar */
@@ -43528,8 +43527,8 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-optbar {
   background: #000000 !important; flex-shrink: 0 !important;
   display: flex !important; align-items: center !important;
-  padding: 2px 4px !important;
-  font-size: 12px !important; justify-content: flex-start !important;
+  padding: 1px 3px !important;
+  font-size: 10px !important; justify-content: space-between !important;
   width: 100% !important; box-sizing: border-box !important;
   position: sticky !important; top: 20px !important; z-index: 19 !important;
 }
@@ -43539,42 +43538,42 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 }
 .bwei-optbar-checks {
   display: flex !important; align-items: center !important;
-  flex: 0 1 auto !important; min-width: 0 !important;
+  flex: 1 1 auto !important; min-width: 0 !important;
   justify-content: flex-start !important;
-  gap: 24px !important;
-  padding: 0 16px !important;
+  gap: 14px !important;
+  padding: 0 10px !important;
   overflow: hidden !important;
 }
 .bwei-optbar-right {
   display: inline-flex !important; align-items: center !important;
-  flex: 0 0 auto !important; margin-left: 0 !important; margin-right: 4px !important; gap: 2px !important;
+  flex: 0 0 auto !important; margin-left: auto !important; margin-right: 3px !important; gap: 2px !important;
   flex-shrink: 0 !important;
 }
 .bwei-opt-sel {
-  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 14px !important;
-  padding: 0 10px !important; border: 1px solid #000 !important; cursor: pointer !important;
-  display: inline-flex !important; align-items: center !important; height: 21px !important;
+  background: #FFAA00 !important; color: #000 !important; font-weight: 500 !important; font-size: 11px !important;
+  padding: 0 6px !important; border: 1px solid #000 !important; cursor: pointer !important;
+  display: inline-flex !important; align-items: center !important; height: 16px !important;
   border-radius: 0 !important; transition: background 0.1s !important;
   flex-shrink: 0 !important; white-space: nowrap !important;
 }
 .bwei-opt-sel:hover { background: #FFB31A !important; }
 .bwei-opt-arr {
-  background: #444444 !important; color: #aaaaaa !important; font-size: 10px !important;
-  padding: 0 5px !important; border: 1px solid #000 !important; cursor: pointer !important;
-  display: inline-flex !important; align-items: center !important; height: 21px !important;
+  background: #444444 !important; color: #aaaaaa !important; font-size: 8px !important;
+  padding: 0 3px !important; border: 1px solid #000 !important; cursor: pointer !important;
+  display: inline-flex !important; align-items: center !important; height: 16px !important;
   border-radius: 0 !important; margin-left: 0px !important; transition: background 0.1s !important;
   vertical-align: middle !important;
 }
 .bwei-opt-arr:hover { background: #555 !important; }
-.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 5px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 13px !important; letter-spacing: 0.3px !important; cursor: pointer !important; font-size: 12px !important; font-weight: normal !important; white-space: nowrap !important; }
+.bwei-opt-chk { display: inline-flex !important; align-items: center !important; gap: 4px !important; color: #FFAA00 !important; flex-shrink: 0 !important; white-space: nowrap !important; font-size: 10px !important; letter-spacing: 0.2px !important; cursor: pointer !important; font-weight: normal !important; }
 .bwei-opt-chk input[type=checkbox] { 
   appearance: none !important; -webkit-appearance: none !important;
-  width: 14px !important; height: 14px !important; cursor: pointer !important; 
+  width: 11px !important; height: 11px !important; cursor: pointer !important; 
   background: #444444 !important; border: 1px solid #666666 !important; margin: 0 !important;
   display: inline-flex !important; align-items: center !important; justify-content: center !important;
 }
 .bwei-opt-chk input[type=checkbox]:checked { background: #1E90FF !important; border-color: #1E90FF !important; }
-.bwei-opt-chk input[type=checkbox]:checked::after { content: '✔'; color: #000; font-size: 11px; font-weight: bold; }
+.bwei-opt-chk input[type=checkbox]:checked::after { content: '✔'; color: #000; font-size: 9px; font-weight: bold; }
 .bwei-opt-dd {
   background: #D19542 !important; color: #000000 !important; font-weight: bold !important; font-size: 13px !important;
   padding: 0 4px !important; border: 1px solid #000 !important; cursor: pointer !important; height: 18px !important; outline: none !important;
@@ -43592,16 +43591,16 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-cat {
   background: #333333 !important; 
   display: grid !important;
-  grid-template-columns: 46px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
+  grid-template-columns: 32px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
   padding: 0 !important; align-items: stretch !important;
   border-top: 1px solid rgba(255,255,255,0.15) !important;
-  border-bottom: 3px solid #000 !important;
-  min-height: 32px !important;
+  border-bottom: 2px solid #000 !important;
+  min-height: 18px !important;
 }
 .bwei-cat > div {
   border-right: none !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
-  color: #ffffff !important; font-size: 18px !important; font-weight: bold !important; padding: 0 8px !important;
+  color: #ffffff !important; font-size: 11px !important; font-weight: bold !important; padding: 0 6px !important;
 }
 .bwei-cat > div:nth-child(n+5) { justify-content: flex-end !important; }
 .bwei-cat > div:nth-child(4) { border-right: none !important; }
@@ -43610,17 +43609,17 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-cat > div:last-child {
   border-right: none !important;
 }
-/* Category number cell — large white, Bloomberg style */
+/* Category number cell — compact Bloomberg style */
 .bwei-cat .c-num {
-  font-size: 20px !important; font-weight: bold !important;
+  font-size: 11px !important; font-weight: bold !important;
   color: #ffffff !important;
   justify-content: center !important;
   background: transparent !important;
   border-right: 1px solid #2a2a2a !important;
-  letter-spacing: -1px !important;
+  letter-spacing: 0 !important;
 }
-.bwei-cat .c-name { font-size: 20px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 10px !important; justify-content: flex-start !important; color: #ffffff !important; }
-.bwei-cat .c-rmi { justify-content: center !important; font-size: 16px !important; }
+.bwei-cat .c-name { font-size: 11px !important; font-weight: bold !important; text-transform: uppercase !important; padding-left: 6px !important; justify-content: flex-start !important; color: #ffffff !important; }
+.bwei-cat .c-rmi { justify-content: center !important; font-size: 11px !important; }
 .bwei-cat .c-spark { justify-content: center !important; }
 
 /* ── Data row ── */
