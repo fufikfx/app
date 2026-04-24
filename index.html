@@ -11408,16 +11408,25 @@ function _requestRender() {
       const _sfx = '<span class="bwei-sfx-d">d</span>';
       const _tvGuard = (window._tvSyncSym || '').toUpperCase().replace('USDT','');
       const _tvGuardId = _tvGuard && (typeof HL_MAP !== 'undefined') ? HL_MAP[_tvGuard] : null;
+      // Per-symbol DOM cache — prevents unnecessary innerHTML writes
+      if (!window._bweiDomCache) window._bweiDomCache = {};
+      const _dc = window._bweiDomCache;
       CRYPTO.forEach(function(c) {
         if (!(c.px > 0)) return;
-        // Skip active TV symbol — TV is the sole source of truth
+        // Skip active TV symbol completely — _applyTick owns this symbol's DOM and cache
         const _cs = (c.s||'').toUpperCase().replace('USDT','');
         if (_tvGuard && (_cs === _tvGuard || (_tvGuardId && c.id === _tvGuardId))) return;
+        // Only update DOM if price string actually changed
+        const _t = c.px>=100?c.px.toFixed(2):c.px>=1?c.px.toFixed(3):c.px>=0.01?c.px.toFixed(4):c.px>=0.0001?c.px.toFixed(6):c.px.toFixed(8);
+        if (_dc[c.s] === _t) return; // same value — skip DOM write entirely
+        _dc[c.s] = _t;
         const _row = document.querySelector('.bwei-row[data-sym="' + c.s + '"]');
         if (!_row) return;
-        const _t = c.px>=100?c.px.toFixed(2):c.px>=1?c.px.toFixed(3):c.px>=0.01?c.px.toFixed(4):c.px>=0.0001?c.px.toFixed(6):c.px.toFixed(8);
-        const _ve = _row.querySelector('.r-value');  if (_ve) _ve.innerHTML = _t + _sfx;
-        const _fe = _row.querySelector('.r-future'); if (_fe) _fe.innerHTML = _t + _sfx;
+        const _newHtml = _t + _sfx;
+        const _ve = _row.querySelector('.r-value');
+        if (_ve) _ve.innerHTML = _newHtml;
+        const _fe = _row.querySelector('.r-future');
+        if (_fe) _fe.innerHTML = _newHtml;
       });
     } catch(_e) {}
     _needsRender = false;
@@ -28323,25 +28332,33 @@ window._setChartInterval = async function(interval) {
             const coinId = (typeof HL_MAP !== 'undefined') ? HL_MAP[currentSym] : null;
             if (coinId && typeof updateCoin === 'function') {
                 updateCoin(coinId, {px: price, chg: chgPct, hi: hi, lo: lo, vol: vol}, 'tv_sync', 0);
+                // Also force c.px directly so _requestRender cache always matches TV price
+                const _tvCoin = (typeof CRYPTO !== 'undefined') ? CRYPTO.find(x => x.id === coinId || x.s === currentSym) : null;
+                if (_tvCoin) { _tvCoin.px = price; _tvCoin._pxSrc = 'tv_sync'; }
                 if(typeof renderSidebar === 'function') renderSidebar(); 
             }
 
             // ═══ TV→BWEI SYNC: Write TV price directly to r-value & r-future ═══
             // This makes TradingView the single source of truth for the active symbol
             window._tvSyncSym = currentSym; // guard flag — prevents other sources from overwriting
+            window._tvSyncTs  = Date.now(); // timestamp of last TV tick
             try {
+                const _tvFmt = price >= 100 ? price.toFixed(2)
+                             : price >= 1   ? price.toFixed(3)
+                             : price >= 0.01 ? price.toFixed(4)
+                             : price >= 0.0001 ? price.toFixed(6)
+                             : price.toFixed(8);
+                // Write TV price INTO cache so _requestRender sees "no change" and skips DOM write
+                if (!window._bweiDomCache) window._bweiDomCache = {};
+                window._bweiDomCache[currentSym] = _tvFmt; // lock cache to TV price
+                const _sfxD = '<span class="bwei-sfx-d">d</span>';
                 const _bweiRow = document.querySelector('.bwei-row[data-sym="' + currentSym + '"]');
                 if (_bweiRow) {
-                    const _tvFmt = price >= 100 ? price.toFixed(2)
-                                 : price >= 1   ? price.toFixed(3)
-                                 : price >= 0.01 ? price.toFixed(4)
-                                 : price >= 0.0001 ? price.toFixed(6)
-                                 : price.toFixed(8);
-                    const _sfxD = '<span class="bwei-sfx-d">d</span>';
+                    const _newHtml = _tvFmt + _sfxD;
                     const _veEl = _bweiRow.querySelector('.r-value');
-                    if (_veEl) _veEl.innerHTML = _tvFmt + _sfxD;
+                    if (_veEl) _veEl.innerHTML = _newHtml;
                     const _feEl = _bweiRow.querySelector('.r-future');
-                    if (_feEl) _feEl.innerHTML = _tvFmt + _sfxD;
+                    if (_feEl) _feEl.innerHTML = _newHtml;
                 }
             } catch(_bweiErr) { /* silent */ }
 
