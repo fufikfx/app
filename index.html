@@ -44885,5 +44885,151 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 })();
 </script>
 
+<!-- ══════════════════════════════════════════════════════════════
+     %MisPX PATCH v1 — reálné % rozdíl futures (HL perp mark) vs spot
+     ────────────────────────────────────────────────────────────
+     Opravuje:
+     1. misPx byl vždy 0 → nyní = (HLmark - spot) / spot * 100
+     2. futurePx = HL perp mark price (ne spot)
+     3. _fetchHLPerps: spouští se po 500ms + interval 5s (byl 10s)
+     4. Po každém HL fetchi okamžitě refreshuje BWEI panel
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function _misPxPatch() {
+  'use strict';
+
+  // ── Helper: čte HL perp data pro daný symbol ───────────────────────────────
+  function _getHLData(sym, spotPx) {
+    try {
+      const hlPerp = (typeof _HL !== 'undefined' && _HL && _HL.perps)
+        ? (_HL.perps[sym] || null) : null;
+      const hlMark = hlPerp ? parseFloat(hlPerp.mark || 0) : 0;
+      if (hlMark > 0 && spotPx > 0) {
+        return {
+          futurePx: hlMark,
+          misPx: (hlMark - spotPx) / spotPx * 100
+        };
+      }
+    } catch(e) {}
+    return { futurePx: spotPx || 0, misPx: 0 };
+  }
+
+  // ── Patch buildRow — přidá reálný futurePx a misPx do HTML ────────────────
+  // Čekáme až buildRow existuje (definováno v pozdějším <script>)
+  function _patchBuildRow() {
+    if (typeof buildRow !== 'function') return;
+    const _orig = buildRow;
+    window.buildRow = function(item, rowNum, futTag) {
+      const html = _orig.call(this, item, rowNum, futTag);
+      const spotPx = item.px || 0;
+      if (!spotPx) return html;
+      const { futurePx, misPx } = _getHLData(item.s, spotPx);
+      // Pokud HL data ještě nejsou — vrátime originál (0%)
+      if (misPx === 0 && futurePx === spotPx) return html;
+      // Patch HTML přímo jako string — rychlejší než DOM parse
+      const fmtFut = typeof fmtFuture === 'function' ? fmtFuture(futurePx) : futurePx.toFixed(4);
+      const fmtMis = typeof fmtMisPx === 'function' ? fmtMisPx(misPx)
+        : (misPx >= 0 ? '+' : '') + misPx.toFixed(3) + '%';
+      const misClass = misPx >= 0 ? 'bwei-gn' : 'bwei-rd';
+      // Nahradíme r-future content
+      let result = html.replace(
+        /(<div class="r-future">)[^<]*(<span)/,
+        '$1' + fmtFut + '$2'
+      );
+      // Nahradíme r-mispx class a content
+      result = result.replace(
+        /<div class="r-mispx [^"]*">([^<]*)<\/div>/,
+        '<div class="r-mispx ' + misClass + '">' + fmtMis + '</div>'
+      );
+      return result;
+    };
+    console.log('[MISPX] buildRow patched ✓');
+  }
+
+  // ── Patch _refreshBWEI — aktualizuje misPx buňky při každém refreshi ──────
+  function _patchRefreshBWEI() {
+    if (typeof _refreshBWEI !== 'function') return;
+    const _orig = _refreshBWEI;
+    window._refreshBWEI = function() {
+      _orig.apply(this, arguments);
+      // Po update standardních polí opravíme misPx + futurePx
+      try {
+        const dataMap = {};
+        (window.CRYPTO || []).forEach(c => { dataMap[c.s] = c; });
+        document.querySelectorAll('.bwei-row').forEach(function(row) {
+          const sym = row.dataset.sym;
+          const item = dataMap[sym];
+          if (!item || !item.px) return;
+          const { futurePx, misPx } = _getHLData(sym, item.px);
+          const futureEl = row.querySelector('.r-future');
+          const mispxEl  = row.querySelector('.r-mispx');
+          if (futureEl && futurePx !== item.px) {
+            const fmtFut = typeof fmtFuture === 'function'
+              ? fmtFuture(futurePx) : futurePx.toFixed(4);
+            futureEl.innerHTML = fmtFut + '<span class="bwei-sfx-d">d</span>';
+          }
+          if (mispxEl) {
+            const fmtMis = typeof fmtMisPx === 'function'
+              ? fmtMisPx(misPx) : (misPx >= 0 ? '+' : '') + misPx.toFixed(3) + '%';
+            mispxEl.className = 'r-mispx ' + (misPx >= 0 ? 'bwei-gn' : 'bwei-rd');
+            mispxEl.textContent = fmtMis;
+          }
+        });
+      } catch(e) {}
+    };
+    console.log('[MISPX] _refreshBWEI patched ✓');
+  }
+
+  // ── Patch _fetchHLPerps — rychlejší interval + refresh BWEI po fetch ───────
+  function _patchFetchHLPerps() {
+    if (typeof _fetchHLPerps !== 'function') return;
+    const _origFetch = _fetchHLPerps;
+
+    // Wrapper: po fetch zavolá _refreshBWEI
+    window._fetchHLPerps = async function() {
+      try { await _origFetch.apply(this, arguments); } catch(e) {}
+      try {
+        if (typeof _refreshBWEI === 'function') _refreshBWEI();
+      } catch(e) {}
+    };
+
+    // Okamžitý první fetch
+    window._fetchHLPerps().catch(function(){});
+
+    // Rychlejší interval: 5s místo 10s
+    setInterval(function() {
+      if (window._tabHidden) return;
+      try { window._fetchHLPerps(); } catch(e) {}
+    }, 5000);
+
+    console.log('[MISPX] _fetchHLPerps patched — 5s interval + immediate fetch ✓');
+  }
+
+  // ── Inicializace: čekáme až jsou všechny funkce definované ────────────────
+  let _attempts = 0;
+  function _init() {
+    _patchBuildRow();
+    _patchRefreshBWEI();
+    _patchFetchHLPerps();
+
+    // Zkontrolujeme co se ještě nepodařilo napatchovat
+    const missing = [];
+    if (typeof buildRow !== 'function' || buildRow.toString().indexOf('_getHLData') === -1 &&
+        typeof window.buildRow === 'function' && window.buildRow.toString().indexOf('_getHLData') === -1)
+      missing.push('buildRow');
+
+    _attempts++;
+    if (missing.length > 0 && _attempts < 20) {
+      setTimeout(_init, 300);
+    }
+  }
+
+  // Start po 200ms (funkce jsou definované v předchozích <script> tagách)
+  setTimeout(_init, 200);
+
+  console.log('[MISPX] %MisPX patch loaded ✓');
+})();
+</script>
+
 </body>
 </html>
