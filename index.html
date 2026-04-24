@@ -28269,6 +28269,12 @@ window._setChartInterval = async function(interval) {
     };
     const setEl = (id,val) => { 
         try {
+            // Guard: bbg-current-price smí přepsat jen _applyTick (TV zdroj)
+            // Ostatní zdroje (REST, MMT poll, ovRefresh) jsou blokovány 3s po TV ticku
+            if (id === 'bbg-current-price' || id === 'bbg-close') {
+                const _age = Date.now() - (window._tvSyncTs || 0);
+                if (_age < 3000 && !window._setElTvCaller) return;
+            }
             const e = document.getElementById(id); 
             if(e) e.innerText = val; 
         } catch(e){}
@@ -28297,6 +28303,7 @@ window._setChartInterval = async function(interval) {
     const _applyTick = (price, chgPct, hi, lo, vol, openPx) => {
         try {
             if(!price || isNaN(price)) return;
+            window._setElTvCaller = true; // flag: toto volání pochází z TV zdroje
             const up  = chgPct >= 0;
             const col = up ? '#00cc44' : '#ff3d3d';
             const now = new Date();
@@ -28362,6 +28369,7 @@ window._setChartInterval = async function(interval) {
             } catch(_bweiErr) { /* silent */ }
 
         } catch(e){ console.error("ApplyTick Failure:", e); }
+        window._setElTvCaller = false; // reset TV caller flag
     };
 
     const _HYPE_ONLY = ['HYPE','PURR','FRIEND','POINTS'];
