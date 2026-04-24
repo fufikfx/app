@@ -11580,27 +11580,28 @@ function _calcAvat(sym, volNow) {
 
 // Spustit fetch pro top coins po načtení stránky
 function _initAvatFetch() {
-  // Vezmi všechny symy z CRYPTO pole (reálný seznam coinů v panelu)
   const cryptoSyms = (window.CRYPTO || []).map(c => c.s).filter(Boolean);
-  const TOP_SYMS = cryptoSyms.length > 0 ? cryptoSyms : 
+  const TOP_SYMS = cryptoSyms.length > 0 ? cryptoSyms :
     ['BTC','ETH','XRP','BNB','SOL','ADA','TRX','LINK','AVAX','SUI',
-     'DOT','DOGE','SHIB','TON','MATIC','UNI','ATOM','LTC','BCH','APT',
-     'NEAR','FIL','ARB','OP','INJ','IMX','RUNE','AAVE','MKR','SNX',
-     'ALGO','VET','ICP','ETC','XLM','HBAR','SAND','MANA','AXS','FTM',
-     'EGLD','THETA','XTZ','FLOW','CHZ','ENJ','BAT','ZEC','DASH','NEO',
-     'PEPE','WIF','BONK','FLOKI','BRETT','MEW','POPCAT','WLD','JUP','PYTH'];
-  TOP_SYMS.forEach((sym, i) => {
-    setTimeout(() => _fetchAvatKlines(sym), i * 400); // stagger 400ms aby nepřetížil API
+     'DOT','DOGE','SHIB','TON','MATIC','UNI','ATOM','LTC','BCH','APT'];
+
+  // První batch (top 8) — paralelně hned
+  const first = TOP_SYMS.slice(0, 8);
+  first.forEach(sym => _fetchAvatKlines(sym));
+
+  // Zbytek — stagger 150ms
+  const rest = TOP_SYMS.slice(8);
+  rest.forEach((sym, i) => {
+    setTimeout(() => _fetchAvatKlines(sym), 1000 + i * 150);
   });
+
   // Refresh každou hodinu
   setInterval(() => {
-    TOP_SYMS.forEach((sym, i) => {
-      setTimeout(() => _fetchAvatKlines(sym), i * 400);
-    });
+    TOP_SYMS.forEach((sym, i) => setTimeout(() => _fetchAvatKlines(sym), i * 150));
   }, 3600000);
 }
 
-setTimeout(_initAvatFetch, 5000); // počkat než se načte zbytek
+setTimeout(_initAvatFetch, 2000); // start po 2s
 // ══════════════════════════════════════════════════════════════════════
 
 
