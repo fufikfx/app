@@ -11464,7 +11464,7 @@ function _computeTotalVol(id) {
 }
 
 function updateCoin(id, data, source, priority){
-  const c=CRYPTO.find(x=>x.id===id);if(!c)return;
+  const c=CRYPTO.find(x=>x.id===id||x.s===id);if(!c)return;
   const curSrc=_src[id]||'none';
   const prio={tv:0,ws:1,hl:1,jupiter:1,uniswap:2,binance:3,pancake:3,coinbase:3,mexc:4,kraken:3,okx:3,bybit:3,bitget:4,htx:4,kucoin:4,gate:4,coingecko:5,none:99};
 
@@ -29263,29 +29263,21 @@ window._initBbg = function() {
           // so the ticker ribbon & sidebar always show the SAME price as the chart
           var activeSym = window._bbgActiveSym || window._bbgCurrentSym || '';
           if (activeSym && typeof MKT !== 'undefined') {
+            // Update MKT entry for this symbol
             var mktKey = activeSym;
             if (MKT[mktKey]) { MKT[mktKey].px = lp; if (chg) MKT[mktKey].chg = chg; }
+            // Also update the "Index" variant (e.g. "SPX Index")
             if (MKT[mktKey + ' Index']) { MKT[mktKey + ' Index'].px = lp; }
+            // Sync _l1Data fields for SPX / NDX / DJI
             if (window._l1Data) {
               if (mktKey === 'SPX')  window._l1Data.sp  = lp.toFixed(2);
               if (mktKey === 'NDX')  window._l1Data.ndx = lp.toFixed(2);
               if (mktKey === 'INDU') window._l1Data.dji = lp.toFixed(2);
               if (mktKey === 'BTC')  window._l1Data.btc = lp;
             }
+            // Push to ticker tape
             if (typeof _tkUp === 'function')     _tkUp('m-' + mktKey, lp, chg || 0);
             if (typeof updateCoin === 'function') updateCoin(mktKey, { px: lp, chg }, 'tv', 0);
-          }
-          // ── BWEI r-value + r-future: stejná cena jako widget grafu ───────
-          // activeSym = aktuálně zobrazený symbol v grafu (např. 'BTC')
-          var _bSym = activeSym || (window._bbgActiveSym || '');
-          if (_bSym) {
-            var _bRow = document.querySelector('.bwei-row[data-sym="' + _bSym + '"]');
-            if (_bRow) {
-              var _bt = lp>=100?lp.toFixed(2):lp>=1?lp.toFixed(3):lp>=0.01?lp.toFixed(4):lp>=0.0001?lp.toFixed(6):lp.toFixed(8);
-              var _bs = '<span class="bwei-sfx-d">d</span>';
-              var _bv = _bRow.querySelector('.r-value');  if (_bv) _bv.innerHTML = _bt + _bs;
-              var _bf = _bRow.querySelector('.r-future'); if (_bf) _bf.innerHTML = _bt + _bs;
-            }
           }
           // ─────────────────────────────────────────────────────────────────
         }
@@ -30113,16 +30105,13 @@ masterUpdate();
     if (typeof _tkUp === 'function')     _tkUp('m-' + sym, lp, chp || 0);
     if (typeof updateCoin === 'function') updateCoin(sym, { px: lp, chg: chp, hi, lo }, 'tv', 0);
 
-    // 7. BWEI rows — direct write from TV tick (same source as chart price)
-    try {
-      const _row = document.querySelector('.bwei-row[data-sym="' + sym + '"]');
-      if (_row) {
-        const _t = lp>=100?lp.toFixed(2):lp>=1?lp.toFixed(3):lp>=0.01?lp.toFixed(4):lp>=0.0001?lp.toFixed(6):lp.toFixed(8);
-        const _sfx = '<span class="bwei-sfx-d">d</span>';
-        const _ve = _row.querySelector('.r-value');  if (_ve) _ve.innerHTML = _t + _sfx;
-        const _fe = _row.querySelector('.r-future'); if (_fe) _fe.innerHTML = _t + _sfx;
-      }
-    } catch(_e) {}
+    // 7. Also update CRYPTO[].px directly so _requestRender picks it up
+    // (updateCoin uses id='bitcoin' but TV sends sym='BTC' — fix the lookup)
+    if (window.CRYPTO) {
+      const _cc = CRYPTO.find(x => x.s === sym);
+      if (_cc && lp > 0) { _cc.px = lp; if (chp != null) _cc.chg = chp; }
+    }
+    if (typeof _requestRender === 'function') _requestRender();
   }
 
   // ── WebSocket connection ───────────────────────────────────────────
