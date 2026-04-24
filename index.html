@@ -1144,10 +1144,9 @@ body{text-rendering:optimizeSpeed;}
   position: sticky !important; top: 20px !important; z-index: 19 !important;
 }
 
-/* ── CRYPTO MARKETS: zoom celý obsah panelu na 175 % ── */
+/* ── CRYPTO MARKETS: zoom panelu na 175% + zvětšení fontů pro hladké vektorové renderování ── */
 .panel[data-fn="CRYPTO"] .bwei-wrap {
   zoom: 1.75 !important;
-  /* Anti-aliasing pro hladký text při zoomu */
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
   text-rendering: geometricPrecision !important;
@@ -1163,7 +1162,24 @@ body{text-rendering:optimizeSpeed;}
   -moz-osx-font-smoothing: grayscale !important;
   text-rendering: geometricPrecision !important;
   font-family: 'Roboto Mono', 'SF Mono', 'Menlo', 'Consolas', 'Courier New', Courier, monospace !important;
-  font-feature-settings: "kern" 1, "liga" 0 !important;
+  font-feature-settings: "kern" 1, "liga" 0, "tnum" 1 !important;
+  image-rendering: -webkit-optimize-contrast !important;
+}
+
+/* Tabulkové čísla v CRYPTO panelu — extra hladké vektorové renderování */
+.panel[data-fn="CRYPTO"] .bwei-wrap td,
+.panel[data-fn="CRYPTO"] .bwei-wrap th,
+.panel[data-fn="CRYPTO"] .bwei-wrap .num,
+.panel[data-fn="CRYPTO"] .bwei-wrap .mk-p,
+.panel[data-fn="CRYPTO"] .bwei-wrap .mk-c,
+.panel[data-fn="CRYPTO"] .bwei-wrap .pt td,
+.panel[data-fn="CRYPTO"] .bwei-wrap .pt th {
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" 1, "kern" 1 !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: geometricPrecision !important;
+  font-family: 'Roboto Mono', 'SF Mono', 'Menlo', 'Consolas', monospace !important;
 }
 .panel-btn { color: #2a2000 !important; }
 .panel-btn:hover { color: #F39F41 !important; background: #0d0800 !important; }
