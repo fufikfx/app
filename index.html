@@ -116,9 +116,14 @@ body.panel-open #QUICKBAR { display: none !important; }
 }
 .cmd-icon{display:flex;align-items:center;gap:3px;cursor:pointer;color:#8890aa;transition:color .1s;white-space:nowrap;height:100%;}
 .cmd-icon:hover{color:#c8d0f0;}
-.cmd-icon svg{width:13px;height:14px;fill:currentColor;flex-shrink:0;}
+.cmd-icon svg{width:13px;height:13px;fill:currentColor;flex-shrink:0;}
 .cmd-icon span:not(.cmd-arr){font-size:11px;color:#8890aa;}
-.cmd-icon .cmd-arr{font-size:8px;color:#8890aa;}
+.cmd-icon .cmd-arr{font-size:7px;color:#666;}
+.cmd-icon-lbl{font-size:11px;color:inherit;font-family:Arial,sans-serif;}
+.cmd-icon-help{background:#FFCC00!important;color:#000!important;padding:0 10px!important;gap:1px;}
+.cmd-icon-help .cmd-icon-lbl{color:#000!important;}
+.cmd-icon-help .cmd-arr{color:#000!important;}
+.cmd-icon-help:hover{background:#ffd81a!important;}
 
 .live-dot{width:4px;height:4px;border-radius:50%;background:#ff2222;animation:blink 2s ease-in-out infinite;}
 
@@ -3775,8 +3780,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   <div class="cmd-icons">
     <div class="cmd-icon">
-      <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-      <span style="font-size:11px;">Message</span>
+      <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+      <span class="cmd-icon-lbl">Message</span>
       <span class="cmd-arr">▾</span>
     </div>
     <div class="cmd-icon">
@@ -3785,18 +3790,18 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="cmd-icon">
       <svg viewBox="0 0 24 24">
-        <path d="M19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
-        <path fill="#00cc44" d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59z"/>
+        <path d="M3 3h9v2H5v9H3z" fill="currentColor"/>
+        <path fill="#00cc44" d="M15 15v3l6-6-6-6v3h-5v6z"/>
       </svg>
       <span class="cmd-arr">▾</span>
     </div>
     <div class="cmd-icon">
-      <span style="font-size:15px;line-height:1;">⚙</span>
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
       <span class="cmd-arr">▾</span>
     </div>
-    <div class="cmd-icon" style="background:#FFCC00;color:#000;padding:0 12px;font-weight:900;font-family:Arial,sans-serif;font-size:14px;">
-      <span>?</span>
-      <span class="cmd-arr" style="color:#000;font-size:10px;margin-left:2px;">▾</span>
+    <div class="cmd-icon cmd-icon-help">
+      <span class="cmd-icon-lbl" style="font-weight:900;font-family:Arial,sans-serif;font-size:13px;">?</span>
+      <span class="cmd-arr" style="color:#000;font-size:7px;margin-left:1px;">▾</span>
     </div>
   </div>
 </div>
