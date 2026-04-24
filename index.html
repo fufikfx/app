@@ -11406,9 +11406,10 @@ function _requestRender() {
     try {
       const _sfx = '<span class="bwei-sfx-d">d</span>';
       const _tvGuard = (window._tvSyncSym || '').toUpperCase().replace('USDT','');
-      // Guard musí být čerstvý (<10s od posledního TV ticku) — jinak ignoruj
-      const _tvFreshU = _tvGuard && (Date.now() - (window._tvSyncTs||0) < 10000);
-      const _tvGuardId = _tvFreshU && (typeof HL_MAP !== 'undefined') ? HL_MAP[_tvGuard] : null;
+      // HARD GUARD: pokud je nastavený _tvSyncSym, NIKDY nepiš do tohoto symbolu z BN Spot.
+      // (Předtím byl 10s freshness check, ale to vytvářelo díry kdy TV stream zaostal.)
+      const _tvGuardActive = !!_tvGuard;
+      const _tvGuardId = _tvGuardActive && (typeof HL_MAP !== 'undefined') ? HL_MAP[_tvGuard] : null;
       // Per-symbol DOM cache — prevents unnecessary innerHTML writes
       if (!window._bweiDomCache) window._bweiDomCache = {};
       const _dc = window._bweiDomCache;
@@ -11416,7 +11417,7 @@ function _requestRender() {
         if (!(c.px > 0)) return;
         // Skip active TV symbol completely — _applyTick owns this symbol's DOM and cache
         const _cs = (c.s||'').toUpperCase().replace('USDT','');
-        if (_tvFreshU && (_cs === _tvGuard || (_tvGuardId && c.id === _tvGuardId))) return;
+        if (_tvGuardActive && (_cs === _tvGuard || (_tvGuardId && c.id === _tvGuardId))) return;
         // Only update DOM if price string actually changed
         const _t = c.px>=100?c.px.toFixed(2):c.px>=1?c.px.toFixed(3):c.px>=0.01?c.px.toFixed(4):c.px>=0.0001?c.px.toFixed(6):c.px.toFixed(8);
         if (_dc[c.s] === _t) return; // same value — skip DOM write entirely
@@ -43521,7 +43522,7 @@ function buildRow(item, rowNum, futTag){
   // Future price — TV symbol = TV cena. Jinak BN futures mark, nebo "" pokud není live.
   let futurePx;
   const _tvAS = (window._tvSyncSym || '').toUpperCase();
-  const _tvFR = _tvAS && (Date.now() - (window._tvSyncTs||0) < 10000);
+  const _tvFR = !!_tvAS; // HARD guard, bez freshness — TV je permanent zdroj dokud je symbol aktivní
   const _csU = (c.s || '').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
   if (_tvFR && _csU === _tvAS && window._tvSyncPx > 0) {
     futurePx = window._tvSyncPx;
@@ -43737,10 +43738,10 @@ function getTimeStr(){
         const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
         const chgUsd = item.px ? item.px * chg/100 : 0;
 
-        // Future price — TV symbol = TV cena (single source of truth), jinak BN futures mark.
+        // Future price — TV symbol = TV cena (HARD guard, bez freshness), jinak BN futures mark.
         const _hasFut = window._bnFutMark && _bnFutMark[sym] > 0;
         const _tvASr = (window._tvSyncSym || '').toUpperCase();
-        const _tvFRr = _tvASr && (Date.now() - (window._tvSyncTs||0) < 10000);
+        const _tvFRr = !!_tvASr; // permanent guard
         const _symUr = (sym || '').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
         const futurePx = (_tvFRr && _symUr === _tvASr && window._tvSyncPx > 0)
           ? window._tvSyncPx
@@ -43764,9 +43765,9 @@ function getTimeStr(){
         const sparkEl = row.querySelector('.r-spark');
 
         // r-future driven by BN WS — skip
-        // TV-active symbol: skip r-mispx too (TradingView vlastní future cenu)
+        // TV-active symbol: HARD guard (bez freshness) - TV vlastní future i mispx
         const _tvActSym = (window._tvSyncSym || '').toUpperCase();
-        const _tvFreshHere = _tvActSym && (Date.now() - (window._tvSyncTs||0) < 10000);
+        const _tvFreshHere = !!_tvActSym; // permanent guard
         const _isTVActive = _tvFreshHere && (sym||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'') === _tvActSym;
         // Live-data flagy: nepřepisuj syntetiku ze seedu, dokud nepřijdou reálná data
         const _isLiveR = !!item._pxLive && (item.px > 0);
@@ -44361,7 +44362,7 @@ function buildRow(item, rowNum, futTag){
   // Future price — TV symbol = TV cena. Jinak BN futures mark, nebo "" pokud není live.
   let futurePx;
   const _tvAS = (window._tvSyncSym || '').toUpperCase();
-  const _tvFR = _tvAS && (Date.now() - (window._tvSyncTs||0) < 10000);
+  const _tvFR = !!_tvAS; // HARD guard, bez freshness — TV je permanent zdroj dokud je symbol aktivní
   const _csU = (c.s || '').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
   if (_tvFR && _csU === _tvAS && window._tvSyncPx > 0) {
     futurePx = window._tvSyncPx;
@@ -44577,10 +44578,10 @@ function getTimeStr(){
         const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
         const chgUsd = item.px ? item.px * chg/100 : 0;
 
-        // Future price — TV symbol = TV cena (single source of truth), jinak BN futures mark.
+        // Future price — TV symbol = TV cena (HARD guard, bez freshness), jinak BN futures mark.
         const _hasFut = window._bnFutMark && _bnFutMark[sym] > 0;
         const _tvASr = (window._tvSyncSym || '').toUpperCase();
-        const _tvFRr = _tvASr && (Date.now() - (window._tvSyncTs||0) < 10000);
+        const _tvFRr = !!_tvASr; // permanent guard
         const _symUr = (sym || '').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
         const futurePx = (_tvFRr && _symUr === _tvASr && window._tvSyncPx > 0)
           ? window._tvSyncPx
@@ -44604,9 +44605,9 @@ function getTimeStr(){
         const sparkEl = row.querySelector('.r-spark');
 
         // r-future driven by BN WS — skip
-        // TV-active symbol: skip r-mispx too (TradingView vlastní future cenu)
+        // TV-active symbol: HARD guard (bez freshness) - TV vlastní future i mispx
         const _tvActSym = (window._tvSyncSym || '').toUpperCase();
-        const _tvFreshHere = _tvActSym && (Date.now() - (window._tvSyncTs||0) < 10000);
+        const _tvFreshHere = !!_tvActSym; // permanent guard
         const _isTVActive = _tvFreshHere && (sym||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'') === _tvActSym;
         // Live-data flagy: nepřepisuj syntetiku ze seedu, dokud nepřijdou reálná data
         const _isLiveR = !!item._pxLive && (item.px > 0);
@@ -45300,9 +45301,9 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
       var coin   = cryptoMap[sym];
       if (!coin || !coin.px) return;
 
-      // ═══ TV GUARD: pokud je tento symbol aktivní na TradingView, neaktualizuj ═══
+      // ═══ TV HARD GUARD: pokud je _tvSyncSym nastaven, NIKDY nepiš do tohoto řádku ═══
       var _tvActMis = (window._tvSyncSym || '').toUpperCase();
-      var _tvFreshMis = _tvActMis && (Date.now() - (window._tvSyncTs||0) < 10000);
+      var _tvFreshMis = !!_tvActMis; // bez freshness — guard je permanent
       var _symUMis = (sym||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
       if (_tvFreshMis && _symUMis === _tvActMis) return;
 
@@ -45435,9 +45436,9 @@ function _startFutWS(){
       try{
         var data = JSON.parse(e.data);
         if(!Array.isArray(data)) return;
-        // TV guard: aktivní symbol je řízen TradingView. Stream musí být čerstvý (<10s).
+        // HARD GUARD: pokud je _tvSyncSym nastaven, NIKDY nepiš do tohoto symbolu z BN Futures.
         var _tvGuard2 = (window._tvSyncSym || '').toUpperCase();
-        var _tvFresh  = _tvGuard2 && (Date.now() - (window._tvSyncTs||0) < 10000);
+        var _tvFresh  = !!_tvGuard2; // bez freshness check — guard je permanent dokud je symbol aktivní
         data.forEach(function(d){
           if(!d.s || !d.s.endsWith('USDT')) return;
           var sym = d.s.replace('USDT','');
@@ -45539,9 +45540,8 @@ function _enforceLock(){
   var sym = (window._tvSyncSym || '').toUpperCase();
   var symRaw = window._tvSyncSymRaw || '';
   var px  = window._tvSyncPx;
-  var ts  = window._tvSyncTs || 0;
   if(!sym || !(px > 0)) return;
-  if(Date.now() - ts > 10000) return; // TV stream stale → unlock
+  // Žádný staleness check — guard je permanent dokud je symbol aktivní (do přepnutí grafu)
   var row = _findRow(sym, symRaw);
   if(!row) return;
   var fmt = _fmtTV(px);
@@ -45568,7 +45568,7 @@ function _initObserver(){
     if(_enforcing) return;
     var sym = (window._tvSyncSym || '').toUpperCase();
     if(!sym || !(window._tvSyncPx > 0)) return;
-    if(Date.now() - (window._tvSyncTs||0) > 10000) return;
+    // Žádný staleness check — guard je permanent dokud je symbol aktivní
     // Najdi cílový řádek (jen 1×, ne každou mutaci)
     var row = _findRow(sym, window._tvSyncSymRaw || '');
     if(!row) return;
@@ -45589,8 +45589,8 @@ function _initObserver(){
   console.log('[TV-LOCK] MutationObserver attached to .bwei-wrap (narrowed scope)');
 }
 
-// Periodický enforce — backup pro případy, kdy observer nezachytí (atribut innerHTML re-write)
-setInterval(_enforceLock, 1000); // 1x za sekundu (observer chytí ostatní změny okamžitě)
+// Periodický enforce — backup. 250ms = max 250ms "ztraceného" stavu, pokud observer skipne
+setInterval(_enforceLock, 250);
 
 // Init observer po načtení DOM
 if(document.readyState === 'loading'){
