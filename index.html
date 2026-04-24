@@ -30105,7 +30105,16 @@ masterUpdate();
     if (typeof _tkUp === 'function')     _tkUp('m-' + sym, lp, chp || 0);
     if (typeof updateCoin === 'function') updateCoin(sym, { px: lp, chg: chp, hi, lo }, 'tv', 0);
 
-    // BWEI write removed — driven by BN WS only
+    // 7. BWEI rows — direct write from TV tick (same source as chart price)
+    try {
+      const _row = document.querySelector('.bwei-row[data-sym="' + sym + '"]');
+      if (_row) {
+        const _t = lp>=100?lp.toFixed(2):lp>=1?lp.toFixed(3):lp>=0.01?lp.toFixed(4):lp>=0.0001?lp.toFixed(6):lp.toFixed(8);
+        const _sfx = '<span class="bwei-sfx-d">d</span>';
+        const _ve = _row.querySelector('.r-value');  if (_ve) _ve.innerHTML = _t + _sfx;
+        const _fe = _row.querySelector('.r-future'); if (_fe) _fe.innerHTML = _t + _sfx;
+      }
+    } catch(_e) {}
   }
 
   // ── WebSocket connection ───────────────────────────────────────────
