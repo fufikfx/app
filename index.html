@@ -1111,6 +1111,18 @@ body{text-rendering:optimizeSpeed;}
   background: #000000 !important;
   overflow: hidden !important;
 }
+<!-- Allow sticky inside CRYPTO/WEI panels — bwei-body handles its own scroll -->
+.panel[data-fn="CRYPTO"].maximized .panel-body,
+.panel[data-fn="WEI"].maximized .panel-body {
+  overflow: visible !important;
+}
+/* Sticky fix when headers are moved inside bwei-body */
+.bwei-body > .bwei-tophdr {
+  position: sticky !important; top: 0 !important; z-index: 20 !important;
+}
+.bwei-body > .bwei-optbar {
+  position: sticky !important; top: 20px !important; z-index: 19 !important;
+}
 .panel-btn { color: #2a2000 !important; }
 .panel-btn:hover { color: #F39F41 !important; background: #0d0800 !important; }
 .panel-btn.close-btn:hover { background: #3a0808 !important; color: #ff3d3d !important; }
@@ -43314,8 +43326,8 @@ function buildBWEI(data){
         <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
         <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
         <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
-        <label class="bwei-opt-chk"><input type="checkbox" checked> Futures</label>
-        <label class="bwei-opt-chk"><input type="checkbox" checked> &Delta; AVAT</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Futures</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> &Delta; AVAT</label>
       </div>
       <div class="bwei-optbar-right">
         <span class="bwei-opt-sel">10D</span><span class="bwei-opt-arr">▼</span>
@@ -44046,8 +44058,8 @@ function buildBWEI(data){
         <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
         <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
         <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
-        <label class="bwei-opt-chk"><input type="checkbox" checked> Futures</label>
-        <label class="bwei-opt-chk"><input type="checkbox" checked> &Delta; AVAT</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Futures</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> &Delta; AVAT</label>
       </div>
       <div class="bwei-optbar-right">
         <span class="bwei-opt-sel">10D</span><span class="bwei-opt-arr">▼</span>
@@ -44530,6 +44542,56 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 
   })();
   </script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     STICKY HEADER PATCH — červený panel zůstane nahoře při scrollu
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function _stickyHeaderPatch() {
+  'use strict';
+
+  function fixBweiSticky(wrap) {
+    if (!wrap || wrap._stickyFixed) return;
+    const body = wrap.querySelector('.bwei-body');
+    const tophdr = wrap.querySelector('.bwei-tophdr');
+    const optbar = wrap.querySelector('.bwei-optbar');
+    if (!body || !tophdr || !optbar) return;
+    // Move headers inside body as first children so sticky works within scroll context
+    body.insertBefore(optbar, body.firstChild);
+    body.insertBefore(tophdr, body.firstChild);
+    wrap._stickyFixed = true;
+  }
+
+  function patchAllWraps() {
+    document.querySelectorAll('.bwei-wrap').forEach(fixBweiSticky);
+  }
+
+  // Run when DOM is ready
+  if (document.readyState !== 'loading') {
+    setTimeout(patchAllWraps, 500);
+  } else {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(patchAllWraps, 500));
+  }
+
+  // Also watch for dynamically added bwei-wraps (panel rebuild)
+  const _mo = new MutationObserver(function(mutations) {
+    let needFix = false;
+    mutations.forEach(m => {
+      m.addedNodes.forEach(node => {
+        if (node.nodeType !== 1) return;
+        if (node.classList && node.classList.contains('bwei-wrap')) needFix = true;
+        else if (node.querySelector && node.querySelector('.bwei-wrap')) needFix = true;
+      });
+    });
+    if (needFix) setTimeout(patchAllWraps, 100);
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    _mo.observe(document.body, { childList: true, subtree: true });
+  });
+
+  console.log('[STICKY] Sticky header patch loaded ✓');
+})();
+</script>
 
 <!-- ══════════════════════════════════════════════════════════════
      CRYPTO DATA SPEED PATCH v1 — načítání dat rychleji
