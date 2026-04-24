@@ -11523,10 +11523,11 @@ function updateCoin(id, data, source, priority){
       c.px=data.px;
       c._pxTs=Date.now(); // timestamp živé ceny
       c._pxSrc=source;    // zdroj (ws/binance/bybit/coingecko...)
+      c._pxLive=true;     // FLAG: tento coin už má alespoň 1 reálnou cenu (ne syntetickou)
       const sup=_SUPPLY[id]||0;
       if(sup>0) c.mc=c.px*sup;
     }
-    if(data.chg!=null)c.chg=data.chg;
+    if(data.chg!=null){c.chg=data.chg; c._chgLive=true;}
     if(data.mc&&!_SUPPLY[id])c.mc=data.mc;
     if(data.hi)c.hi=data.hi;
     if(data.lo)c.lo=data.lo;
@@ -28249,6 +28250,20 @@ window._setChartInterval = async function(interval) {
     
     window._tvActiveSym      = tvSym;
     window._tvActiveInterval = tvInterval;
+    // ── RESET old TV sync state on symbol switch ──
+    // Zabraňuje zobrazení staré ceny z předchozího symbolu během prvního renderu.
+    window._tvSyncPx = 0;
+    window._tvSyncTs = 0;
+    window._tvSyncSym = '';
+    window._tvSyncSymRaw = '';
+    // Zneplatnit BN futures mark pro nový symbol — starý mark price z minulého streamu
+    // by se jinak zobrazil v r-future před prvním TV/BN futures tickem.
+    try {
+      const _newSymNorm = (rawSym || '').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
+      if (window._bnFutMark && _newSymNorm) {
+        delete window._bnFutMark[_newSymNorm];
+      }
+    } catch(_resetErr) {}
     window._updateTVChart(tvSym, tvInterval);
     console.log("[BBG-SMART-DATA] Routing:", { symbol: rawSym, resolved, tv: tvSym, interval: tvInterval });
 
@@ -43496,19 +43511,26 @@ function getTimeHM(){
 // ─── BUILD ROW ──────────────────────────────────────────────────────────────
 function buildRow(item, rowNum, futTag){
   const c = item;
-  const chg = c.chg || 0;
-  const chgUsd = c.px ? (c.px * chg/100) : 0;
+  // Live flagy: ukázat reálná data jen po prvním WS/REST update.
+  // Před tím (boot) zobrazit "—" místo syntetických hodnot ze CRYPTO seedu.
+  const _isLive = !!c._pxLive && (c.px > 0);
+  const _chgLive = !!c._chgLive;
+  const chg = _chgLive ? (c.chg || 0) : 0;
+  const chgUsd = _isLive && _chgLive ? (c.px * chg/100) : 0;
 
-  // Future price — pokud je symbol aktivní na TradingView, použij TV cenu (single source of truth).
-  // Jinak Binance Futures mark price (fapi premiumIndex), nebo spot jako fallback.
+  // Future price — TV symbol = TV cena. Jinak BN futures mark, nebo "" pokud není live.
   let futurePx;
   const _tvAS = (window._tvSyncSym || '').toUpperCase();
   const _tvFR = _tvAS && (Date.now() - (window._tvSyncTs||0) < 10000);
   const _csU = (c.s || '').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
   if (_tvFR && _csU === _tvAS && window._tvSyncPx > 0) {
     futurePx = window._tvSyncPx;
+  } else if (window._bnFutMark && _bnFutMark[c.s] > 0) {
+    futurePx = _bnFutMark[c.s];
+  } else if (_isLive) {
+    futurePx = c.px;
   } else {
-    futurePx = (window._bnFutMark && _bnFutMark[c.s] > 0) ? _bnFutMark[c.s] : c.px || 0;
+    futurePx = 0; // syntetická data: ukáže "—" místo nesmyslné hodnoty
   }
 
   // %MisPx — basis mezi Binance Futures mark a Binance Spot
@@ -43530,16 +43552,23 @@ function buildRow(item, rowNum, futTag){
 
   const shortName = c.n ? (c.n.length > 16 ? c.n.slice(0,15)+'…' : c.n) : c.s;
 
+  // Pokud nejsou live data, ukázat "—" místo syntetických hodnot
+  const _futStr  = (futurePx > 0) ? (fmtPx(futurePx) + '<span class="bwei-sfx-d">d</span>') : '<span style="color:#444;">—</span>';
+  const _valStr  = _isLive ? (fmtPx(c.px) + '<span class="bwei-sfx-d">d</span>') : '<span style="color:#444;">—</span>';
+  const _misStr  = (futurePx > 0 && _isLive) ? fmtMisPx(misPx) : '<span style="color:#444;">—</span>';
+  const _chgStr  = (_isLive && _chgLive) ? fmtChg(chgUsd) : '<span style="color:#444;">—</span>';
+  const _pctStr  = _chgLive ? fmtPct(chg) : '<span style="color:#444;">—</span>';
+
   return `<div class="bwei-row" data-sym="${c.s}" onclick="if(window._openChartForSymbol) window._openChartForSymbol('${c.s}')">
     <div class="r-num">${rowNum})</div>
     <div class="r-name">${shortName}</div>
     <div class="r-rmi"></div>
     <div class="r-spark">${renderSparkline(c.s, chg)}</div>
-    <div class="r-future">${fmtPx(futurePx)}<span class="bwei-sfx-d">d</span></div>
-    <div class="r-mispx ${misPxClass}">${fmtMisPx(misPx)}</div>
-    <div class="r-value">${fmtPx(c.px)}<span class="bwei-sfx-d">d</span></div>
-    <div class="r-chg ${chgClass}">${fmtChg(chgUsd)}</div>
-    <div class="r-pct ${chgClass}">${fmtPct(chg)}</div>
+    <div class="r-future">${_futStr}</div>
+    <div class="r-mispx ${misPxClass}">${_misStr}</div>
+    <div class="r-value">${_valStr}</div>
+    <div class="r-chg ${chgClass}">${_chgStr}</div>
+    <div class="r-pct ${chgClass}">${_pctStr}</div>
     <div class="r-avat ${avatClass}">${fmtAvat(avat)}</div>
     <div class="r-time">${timeStr}<span class="bwei-sfx-c">c</span></div>
     <div class="r-ytd ${ytdClass}">${fmtYtd(ytd)}</div>
@@ -43739,17 +43768,41 @@ function getTimeStr(){
         const _tvActSym = (window._tvSyncSym || '').toUpperCase();
         const _tvFreshHere = _tvActSym && (Date.now() - (window._tvSyncTs||0) < 10000);
         const _isTVActive = _tvFreshHere && (sym||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'') === _tvActSym;
-        if(!_isTVActive && mispxEl && futurePx > 0){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
+        // Live-data flagy: nepřepisuj syntetiku ze seedu, dokud nepřijdou reálná data
+        const _isLiveR = !!item._pxLive && (item.px > 0);
+        const _chgLiveR = !!item._chgLive;
+        const _DASH = '<span style="color:#444;">—</span>';
+        if(!_isTVActive && mispxEl){
+          if(futurePx > 0 && _isLiveR){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
+          else { mispxEl.className = 'r-mispx'; mispxEl.innerHTML = _DASH; }
+        }
         // r-value driven by BN WS — skip
-        if(chgEl){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
-        if(pctEl){ pctEl.className = 'r-pct '+chgClass; pctEl.textContent = fmtPct(chg); }
+        if(chgEl){
+          if(_isLiveR && _chgLiveR){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
+          else { chgEl.className = 'r-chg'; chgEl.innerHTML = _DASH; }
+        }
+        if(pctEl){
+          if(_chgLiveR){ pctEl.className = 'r-pct '+chgClass; pctEl.textContent = fmtPct(chg); }
+          else { pctEl.className = 'r-pct'; pctEl.innerHTML = _DASH; }
+        }
         if(avatEl){ 
           avatEl.className = 'r-avat ' + (avat >= 0 ? 'avat-pos' : 'avat-neg'); 
           avatEl.textContent = fmtAvat(avat); 
         }
         if(timeEl) timeEl.innerHTML = getTimeNow()+'<span class="bwei-sfx-c">c</span>';
-        if(ytdEl){ ytdEl.className = 'r-ytd '+ytdClass; ytdEl.textContent = fmtYtd(ytd); }
+        if(ytdEl){
+          if(_chgLiveR){ ytdEl.className = 'r-ytd '+ytdClass; ytdEl.textContent = fmtYtd(ytd); }
+          else { ytdEl.className = 'r-ytd'; ytdEl.innerHTML = _DASH; }
+        }
         if(sparkEl) sparkEl.innerHTML = renderSparkline(sym, chg);
+        // r-future placeholder pokud žádný zdroj nedoručil cenu
+        if(!_isTVActive && futureEl && futurePx <= 0){
+          futureEl.innerHTML = _DASH;
+        }
+        // r-value placeholder pokud spot není live
+        if(valueEl && !_isLiveR){
+          valueEl.innerHTML = _DASH;
+        }
       });
     } catch(e){ /* silent */ }
   }
@@ -44254,19 +44307,26 @@ function getTimeHM(){
 // ─── BUILD ROW ──────────────────────────────────────────────────────────────
 function buildRow(item, rowNum, futTag){
   const c = item;
-  const chg = c.chg || 0;
-  const chgUsd = c.px ? (c.px * chg/100) : 0;
+  // Live flagy: ukázat reálná data jen po prvním WS/REST update.
+  // Před tím (boot) zobrazit "—" místo syntetických hodnot ze CRYPTO seedu.
+  const _isLive = !!c._pxLive && (c.px > 0);
+  const _chgLive = !!c._chgLive;
+  const chg = _chgLive ? (c.chg || 0) : 0;
+  const chgUsd = _isLive && _chgLive ? (c.px * chg/100) : 0;
 
-  // Future price — pokud je symbol aktivní na TradingView, použij TV cenu (single source of truth).
-  // Jinak Binance Futures mark price (fapi premiumIndex), nebo spot jako fallback.
+  // Future price — TV symbol = TV cena. Jinak BN futures mark, nebo "" pokud není live.
   let futurePx;
   const _tvAS = (window._tvSyncSym || '').toUpperCase();
   const _tvFR = _tvAS && (Date.now() - (window._tvSyncTs||0) < 10000);
   const _csU = (c.s || '').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
   if (_tvFR && _csU === _tvAS && window._tvSyncPx > 0) {
     futurePx = window._tvSyncPx;
+  } else if (window._bnFutMark && _bnFutMark[c.s] > 0) {
+    futurePx = _bnFutMark[c.s];
+  } else if (_isLive) {
+    futurePx = c.px;
   } else {
-    futurePx = (window._bnFutMark && _bnFutMark[c.s] > 0) ? _bnFutMark[c.s] : c.px || 0;
+    futurePx = 0; // syntetická data: ukáže "—" místo nesmyslné hodnoty
   }
 
   // %MisPx — basis mezi Binance Futures mark a Binance Spot
@@ -44288,16 +44348,23 @@ function buildRow(item, rowNum, futTag){
 
   const shortName = c.n ? (c.n.length > 16 ? c.n.slice(0,15)+'…' : c.n) : c.s;
 
+  // Pokud nejsou live data, ukázat "—" místo syntetických hodnot
+  const _futStr  = (futurePx > 0) ? (fmtPx(futurePx) + '<span class="bwei-sfx-d">d</span>') : '<span style="color:#444;">—</span>';
+  const _valStr  = _isLive ? (fmtPx(c.px) + '<span class="bwei-sfx-d">d</span>') : '<span style="color:#444;">—</span>';
+  const _misStr  = (futurePx > 0 && _isLive) ? fmtMisPx(misPx) : '<span style="color:#444;">—</span>';
+  const _chgStr  = (_isLive && _chgLive) ? fmtChg(chgUsd) : '<span style="color:#444;">—</span>';
+  const _pctStr  = _chgLive ? fmtPct(chg) : '<span style="color:#444;">—</span>';
+
   return `<div class="bwei-row" data-sym="${c.s}" onclick="if(window._openChartForSymbol) window._openChartForSymbol('${c.s}')">
     <div class="r-num">${rowNum})</div>
     <div class="r-name">${shortName}</div>
     <div class="r-rmi"></div>
     <div class="r-spark">${renderSparkline(c.s, chg)}</div>
-    <div class="r-future">${fmtPx(futurePx)}<span class="bwei-sfx-d">d</span></div>
-    <div class="r-mispx ${misPxClass}">${fmtMisPx(misPx)}</div>
-    <div class="r-value">${fmtPx(c.px)}<span class="bwei-sfx-d">d</span></div>
-    <div class="r-chg ${chgClass}">${fmtChg(chgUsd)}</div>
-    <div class="r-pct ${chgClass}">${fmtPct(chg)}</div>
+    <div class="r-future">${_futStr}</div>
+    <div class="r-mispx ${misPxClass}">${_misStr}</div>
+    <div class="r-value">${_valStr}</div>
+    <div class="r-chg ${chgClass}">${_chgStr}</div>
+    <div class="r-pct ${chgClass}">${_pctStr}</div>
     <div class="r-avat ${avatClass}">${fmtAvat(avat)}</div>
     <div class="r-time">${timeStr}<span class="bwei-sfx-c">c</span></div>
     <div class="r-ytd ${ytdClass}">${fmtYtd(ytd)}</div>
@@ -44497,17 +44564,41 @@ function getTimeStr(){
         const _tvActSym = (window._tvSyncSym || '').toUpperCase();
         const _tvFreshHere = _tvActSym && (Date.now() - (window._tvSyncTs||0) < 10000);
         const _isTVActive = _tvFreshHere && (sym||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'') === _tvActSym;
-        if(!_isTVActive && mispxEl && futurePx > 0){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
+        // Live-data flagy: nepřepisuj syntetiku ze seedu, dokud nepřijdou reálná data
+        const _isLiveR = !!item._pxLive && (item.px > 0);
+        const _chgLiveR = !!item._chgLive;
+        const _DASH = '<span style="color:#444;">—</span>';
+        if(!_isTVActive && mispxEl){
+          if(futurePx > 0 && _isLiveR){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
+          else { mispxEl.className = 'r-mispx'; mispxEl.innerHTML = _DASH; }
+        }
         // r-value driven by BN WS — skip
-        if(chgEl){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
-        if(pctEl){ pctEl.className = 'r-pct '+chgClass; pctEl.textContent = fmtPct(chg); }
+        if(chgEl){
+          if(_isLiveR && _chgLiveR){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
+          else { chgEl.className = 'r-chg'; chgEl.innerHTML = _DASH; }
+        }
+        if(pctEl){
+          if(_chgLiveR){ pctEl.className = 'r-pct '+chgClass; pctEl.textContent = fmtPct(chg); }
+          else { pctEl.className = 'r-pct'; pctEl.innerHTML = _DASH; }
+        }
         if(avatEl){ 
           avatEl.className = 'r-avat ' + (avat >= 0 ? 'avat-pos' : 'avat-neg'); 
           avatEl.textContent = fmtAvat(avat); 
         }
         if(timeEl) timeEl.innerHTML = getTimeNow()+'<span class="bwei-sfx-c">c</span>';
-        if(ytdEl){ ytdEl.className = 'r-ytd '+ytdClass; ytdEl.textContent = fmtYtd(ytd); }
+        if(ytdEl){
+          if(_chgLiveR){ ytdEl.className = 'r-ytd '+ytdClass; ytdEl.textContent = fmtYtd(ytd); }
+          else { ytdEl.className = 'r-ytd'; ytdEl.innerHTML = _DASH; }
+        }
         if(sparkEl) sparkEl.innerHTML = renderSparkline(sym, chg);
+        // r-future placeholder pokud žádný zdroj nedoručil cenu
+        if(!_isTVActive && futureEl && futurePx <= 0){
+          futureEl.innerHTML = _DASH;
+        }
+        // r-value placeholder pokud spot není live
+        if(valueEl && !_isLiveR){
+          valueEl.innerHTML = _DASH;
+        }
       });
     } catch(e){ /* silent */ }
   }
