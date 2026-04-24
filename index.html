@@ -42778,10 +42778,11 @@ document.addEventListener('keydown', function(e){
 .bwei-optbar {
   background: #000000 !important; flex-shrink: 0 !important;
   display: flex !important; align-items: center !important;
-  padding: 1px 3px !important;
+  padding: 0 3px !important;
   font-size: 10px !important; justify-content: space-between !important;
   width: 100% !important; box-sizing: border-box !important;
   overflow: hidden !important;
+  margin: 0 !important;
 }
 .bwei-optbar-standard {
   display: inline-flex !important; align-items: center !important;
@@ -42836,7 +42837,7 @@ document.addEventListener('keydown', function(e){
 }
 .bwei-opt-sep { width: 1px !important; height: 18px !important; background: #555 !important; margin: 0 10px !important; display: inline-block !important; }
 
-.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; }
+.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; margin: 0 !important; padding: 0 !important; }
 
 /* ── Category header ── */
 .bwei-cat {
@@ -42844,9 +42845,10 @@ document.addEventListener('keydown', function(e){
   display: grid !important;
   grid-template-columns: 32px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
   padding: 0 !important; align-items: stretch !important;
-  border-top: 1px solid rgba(255,255,255,0.15) !important;
+  border-top: none !important;
   border-bottom: 2px solid #000 !important;
   min-height: 18px !important;
+  margin: 0 !important;
 }
 .bwei-cat > div {
   border-right: none !important;
@@ -43327,7 +43329,7 @@ function buildBWEI(data){
     // Top headers only appear in the first category ("1) MAJORS")
     if (catIdx === 1) {
       html += `
-      <div class="bwei-cat" style="border-top: 1px solid #666666 !important;">
+      <div class="bwei-cat" style="border-top: none !important;">
         <div class="c-num">${catIdx})</div>
         <div class="c-name">${cat.name}</div>
         <div class="c-rmi">RMI</div>
@@ -43527,10 +43529,11 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-optbar {
   background: #000000 !important; flex-shrink: 0 !important;
   display: flex !important; align-items: center !important;
-  padding: 1px 3px !important;
+  padding: 0 3px !important;
   font-size: 10px !important; justify-content: space-between !important;
   width: 100% !important; box-sizing: border-box !important;
   position: sticky !important; top: 20px !important; z-index: 19 !important;
+  margin: 0 !important;
 }
 .bwei-optbar-standard {
   display: inline-flex !important; align-items: center !important;
@@ -43585,7 +43588,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 }
 .bwei-opt-sep { width: 1px !important; height: 14px !important; background: #555 !important; margin: 0 6px !important; display: inline-block !important; }
 
-.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; }
+.bwei-body { flex: 1 !important; overflow-y: auto !important; overflow-x: hidden !important; background: #000000 !important; scrollbar-width: thin !important; scrollbar-color: #555555 #000000 !important; margin: 0 !important; padding: 0 !important; }
 
 /* ── Category header ── */
 .bwei-cat {
@@ -43593,9 +43596,10 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   display: grid !important;
   grid-template-columns: 32px 1.5fr 38px 64px 1.1fr 0.9fr 1.1fr 1fr 0.9fr 0.9fr 0.8fr 0.9fr !important;
   padding: 0 !important; align-items: stretch !important;
-  border-top: 1px solid rgba(255,255,255,0.15) !important;
+  border-top: none !important;
   border-bottom: 2px solid #000 !important;
   min-height: 18px !important;
+  margin: 0 !important;
 }
 .bwei-cat > div {
   border-right: none !important;
@@ -44056,7 +44060,7 @@ function buildBWEI(data){
     // Top headers only appear in the first category ("1) MAJORS")
     if (catIdx === 1) {
       html += `
-      <div class="bwei-cat" style="border-top: 1px solid #666666 !important;">
+      <div class="bwei-cat" style="border-top: none !important;">
         <div class="c-num">${catIdx})</div>
         <div class="c-name">${cat.name}</div>
         <div class="c-rmi">RMI</div>
