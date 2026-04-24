@@ -11394,10 +11394,13 @@ function _requestRender() {
       if (typeof _renderCryptoDash === 'function') _renderCryptoDash();
     }
     // BWEI rows — same source as ticker (CRYPTO[].px), same RAF frame
+    // SKIP active TV symbol — TradingView is the single source of truth for it
     try {
       const _sfx = '<span class="bwei-sfx-d">d</span>';
+      const _tvGuard = (window._tvSyncSym || '').toUpperCase();
       CRYPTO.forEach(function(c) {
         if (!(c.px > 0)) return;
+        if (c.s === _tvGuard) return; // TV drives this symbol — don't overwrite
         const _row = document.querySelector('.bwei-row[data-sym="' + c.s + '"]');
         if (!_row) return;
         const _t = c.px>=100?c.px.toFixed(2):c.px>=1?c.px.toFixed(3):c.px>=0.01?c.px.toFixed(4):c.px>=0.0001?c.px.toFixed(6):c.px.toFixed(8);
@@ -28285,6 +28288,26 @@ window._setChartInterval = async function(interval) {
                 updateCoin(coinId, {px: price, chg: chgPct, hi: hi, lo: lo, vol: vol}, 'tv_sync', 0);
                 if(typeof renderSidebar === 'function') renderSidebar(); 
             }
+
+            // ═══ TV→BWEI SYNC: Write TV price directly to r-value & r-future ═══
+            // This makes TradingView the single source of truth for the active symbol
+            window._tvSyncSym = currentSym; // guard flag — prevents other sources from overwriting
+            try {
+                const _bweiRow = document.querySelector('.bwei-row[data-sym="' + currentSym + '"]');
+                if (_bweiRow) {
+                    const _tvFmt = price >= 100 ? price.toFixed(2)
+                                 : price >= 1   ? price.toFixed(3)
+                                 : price >= 0.01 ? price.toFixed(4)
+                                 : price >= 0.0001 ? price.toFixed(6)
+                                 : price.toFixed(8);
+                    const _sfxD = '<span class="bwei-sfx-d">d</span>';
+                    const _veEl = _bweiRow.querySelector('.r-value');
+                    if (_veEl) _veEl.innerHTML = _tvFmt + _sfxD;
+                    const _feEl = _bweiRow.querySelector('.r-future');
+                    if (_feEl) _feEl.innerHTML = _tvFmt + _sfxD;
+                }
+            } catch(_bweiErr) { /* silent */ }
+
         } catch(e){ console.error("ApplyTick Failure:", e); }
     };
 
@@ -45131,14 +45154,18 @@ function _startFutWS(){
       try{
         var data = JSON.parse(e.data);
         if(!Array.isArray(data)) return;
+        var _tvGuard2 = (window._tvSyncSym || '').toUpperCase();
         data.forEach(function(d){
           if(!d.s || !d.s.endsWith('USDT')) return;
           var sym = d.s.replace('USDT','');
           var mark = parseFloat(d.p); // markPrice field
           if(!(mark>0)) return;
 
-          // 1. Update _bnFutMark cache
+          // 1. Update _bnFutMark cache (always, even for TV symbol)
           if(window._bnFutMark) window._bnFutMark[sym] = mark;
+
+          // SKIP active TV symbol — TradingView drives r-future for it
+          if(sym === _tvGuard2) return;
 
           // r-future DOM write removed — driven by BN WS only
 
@@ -45146,7 +45173,7 @@ function _startFutWS(){
           if(window.CRYPTO){
             var coin = null;
             for(var i=0;i<CRYPTO.length;i++){ if(CRYPTO[i].s===sym){ coin=CRYPTO[i]; break; } }
-            if(coin && coin.px > 0 && els && els.fut){
+            if(coin && coin.px > 0){
               var mis = (mark - coin.px) / coin.px * 100;
               var row2 = document.querySelector('.bwei-row[data-sym="'+sym+'"]');
               if(row2){
