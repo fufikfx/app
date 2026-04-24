@@ -11393,23 +11393,16 @@ function _requestRender() {
     if (document.getElementById('crypto-dash-panel')?.classList.contains('open')) {
       if (typeof _renderCryptoDash === 'function') _renderCryptoDash();
     }
-    // BWEI rows — r-value = spot (CRYPTO[].px), r-future = Binance Futures markPrice
+    // BWEI rows — same source as ticker (CRYPTO[].px), same RAF frame
     try {
       const _sfx = '<span class="bwei-sfx-d">d</span>';
-      function _fmtBwei(v){ if(!(v>0))return''; return v>=100?v.toFixed(2):v>=1?v.toFixed(3):v>=0.01?v.toFixed(4):v>=0.0001?v.toFixed(6):v.toFixed(8); }
       CRYPTO.forEach(function(c) {
         if (!(c.px > 0)) return;
         const _row = document.querySelector('.bwei-row[data-sym="' + c.s + '"]');
         if (!_row) return;
-        // r-value = spot price (always from CRYPTO[])
-        const _ve = _row.querySelector('.r-value');
-        if (_ve) _ve.innerHTML = _fmtBwei(c.px) + _sfx;
-        // r-future = Binance Futures markPrice — přepíše se jen pokud přišla data, jinak nechá live WS hodnotu
-        const _futMark = (window._bnFutMark && window._bnFutMark[c.s] > 0) ? window._bnFutMark[c.s] : null;
-        if (_futMark !== null) {
-          const _fe = _row.querySelector('.r-future');
-          if (_fe) _fe.innerHTML = _fmtBwei(_futMark) + _sfx;
-        }
+        const _t = c.px>=100?c.px.toFixed(2):c.px>=1?c.px.toFixed(3):c.px>=0.01?c.px.toFixed(4):c.px>=0.0001?c.px.toFixed(6):c.px.toFixed(8);
+        const _ve = _row.querySelector('.r-value');  if (_ve) _ve.innerHTML = _t + _sfx;
+        const _fe = _row.querySelector('.r-future'); if (_fe) _fe.innerHTML = _t + _sfx;
       });
     } catch(_e) {}
     _needsRender = false;
@@ -28289,8 +28282,8 @@ window._setChartInterval = async function(interval) {
             // CRITICAL SYNC: Update the global CRYPTO state (sidebar) so it matches 1:1
             const coinId = (typeof HL_MAP !== 'undefined') ? HL_MAP[currentSym] : null;
             if (coinId && typeof updateCoin === 'function') {
-                // priority 1 (stejná jako BN WS) — nepřebíjí live Binance data; renderSidebar NEVOLAT — přepisuje r-future
-                updateCoin(coinId, {px: price, chg: chgPct, hi: hi, lo: lo, vol: vol}, 'tv_sync', 1);
+                updateCoin(coinId, {px: price, chg: chgPct, hi: hi, lo: lo, vol: vol}, 'tv_sync', 0);
+                if(typeof renderSidebar === 'function') renderSidebar(); 
             }
         } catch(e){ console.error("ApplyTick Failure:", e); }
     };
@@ -45147,23 +45140,15 @@ function _startFutWS(){
           // 1. Update _bnFutMark cache
           if(window._bnFutMark) window._bnFutMark[sym] = mark;
 
-          // 2. Write r-future directly — Futures WS je autoritativní zdroj pro markPrice
-          var _rowFut = document.querySelector('.bwei-row[data-sym="'+sym+'"]');
-          if(_rowFut){
-            var _futEl = _rowFut.querySelector('.r-future');
-            if(_futEl){
-              var _fmtMark = mark>=100?mark.toFixed(2):mark>=1?mark.toFixed(3):mark>=0.01?mark.toFixed(4):mark>=0.0001?mark.toFixed(6):mark.toFixed(8);
-              _futEl.innerHTML = _fmtMark + '<span class="bwei-sfx-d">d</span>';
-            }
-          }
+          // r-future DOM write removed — driven by BN WS only
 
           // 3. Update misPx if spot available
           if(window.CRYPTO){
             var coin = null;
             for(var i=0;i<CRYPTO.length;i++){ if(CRYPTO[i].s===sym){ coin=CRYPTO[i]; break; } }
-            if(coin && coin.px > 0){
+            if(coin && coin.px > 0 && els && els.fut){
               var mis = (mark - coin.px) / coin.px * 100;
-              var row2 = _rowFut || document.querySelector('.bwei-row[data-sym="'+sym+'"]');
+              var row2 = document.querySelector('.bwei-row[data-sym="'+sym+'"]');
               if(row2){
                 var mp = row2.querySelector('.r-mispx');
                 if(mp){
