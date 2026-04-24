@@ -11406,10 +11406,13 @@ function _requestRender() {
     // SKIP active TV symbol — TradingView is the single source of truth for it
     try {
       const _sfx = '<span class="bwei-sfx-d">d</span>';
-      const _tvGuard = (window._tvSyncSym || '').toUpperCase();
+      const _tvGuard = (window._tvSyncSym || '').toUpperCase().replace('USDT','');
+      const _tvGuardId = _tvGuard && (typeof HL_MAP !== 'undefined') ? HL_MAP[_tvGuard] : null;
       CRYPTO.forEach(function(c) {
         if (!(c.px > 0)) return;
-        if (c.s === _tvGuard) return; // TV drives this symbol — don't overwrite
+        // Skip active TV symbol — TV is the sole source of truth
+        const _cs = (c.s||'').toUpperCase().replace('USDT','');
+        if (_tvGuard && (_cs === _tvGuard || (_tvGuardId && c.id === _tvGuardId))) return;
         const _row = document.querySelector('.bwei-row[data-sym="' + c.s + '"]');
         if (!_row) return;
         const _t = c.px>=100?c.px.toFixed(2):c.px>=1?c.px.toFixed(3):c.px>=0.01?c.px.toFixed(4):c.px>=0.0001?c.px.toFixed(6):c.px.toFixed(8);
@@ -11477,8 +11480,33 @@ function _computeTotalVol(id) {
 
 function updateCoin(id, data, source, priority){
   const c=CRYPTO.find(x=>x.id===id||x.s===id);if(!c)return;
+
+  // ── TV GUARD: pokud je tento symbol aktivní na TradingView,
+  //    ignoruj VŠECHNY zdroje kromě tv / tv_sync — zabraňuje problikávání ──
+  if(source !== 'tv' && source !== 'tv_sync'){
+    const _tvActive = (window._tvSyncSym || '').toUpperCase().replace('USDT','');
+    if(_tvActive){
+      const _coinSym = (c.s || '').toUpperCase().replace('USDT','');
+      // Reverzní lookup: najdi id pro daný sym přes HL_MAP (BTC→bitcoin)
+      const _idFromMap = (typeof HL_MAP !== 'undefined') ? HL_MAP[_tvActive] : null;
+      const _isActiveTvCoin = (_coinSym === _tvActive) || (_idFromMap && (c.id === _idFromMap || c.s === _idFromMap));
+      if(_isActiveTvCoin){
+        // Ulož cross-exchange ceny pro XSRC panel ale NEpiš do c.px
+        if(data.vol && data.vol > 0){
+          if(!_xVol[id]) _xVol[id]={};
+          _xVol[id][source]={vol:data.vol,ts:Date.now()};
+        }
+        if(data.px && data.px > 0){
+          if(!_xPrices[id])_xPrices[id]={};
+          _xPrices[id][source]={px:data.px,chg:data.chg??null,vol:data.vol||null,ts:Date.now()};
+        }
+        return; // cenu px nepřepiš — TV je jediný zdroj pravdy
+      }
+    }
+  }
+
   const curSrc=_src[id]||'none';
-  const prio={tv:0,ws:1,hl:1,jupiter:1,uniswap:2,binance:3,pancake:3,coinbase:3,mexc:4,kraken:3,okx:3,bybit:3,bitget:4,htx:4,kucoin:4,gate:4,coingecko:5,none:99};
+  const prio={tv:0,tv_sync:0,ws:1,hl:1,jupiter:1,uniswap:2,binance:3,pancake:3,coinbase:3,mexc:4,kraken:3,okx:3,bybit:3,bitget:4,htx:4,kucoin:4,gate:4,coingecko:5,none:99};
 
   if((prio[source]||9)<=(prio[curSrc]||9)){
     if(data.px&&data.px>0){
