@@ -43182,7 +43182,7 @@ document.addEventListener('keydown', function(e){
 .bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 14px !important; overflow: visible !important; }
 
 /* Data colors */
-.bwei-row .r-future { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-future { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; contain: layout style !important; }
 .bwei-row .r-mispx { font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-value { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-chg { font-weight: bold !important; justify-content: flex-end !important; }
@@ -43772,43 +43772,87 @@ function getTimeStr(){
         const _isLiveR = !!item._pxLive && (item.px > 0);
         const _chgLiveR = !!item._chgLive;
         const _DASH = '<span style="color:#444;">—</span>';
+        // ── PER-CELL CACHE: zápis jen když se hodnota skutečně změnila (anti-flicker) ──
+        if (!window._bweiCellCache) window._bweiCellCache = {};
+        const _cc = window._bweiCellCache[sym] || (window._bweiCellCache[sym] = {});
+        // Helper: setText pokud se liší
+        const _setT = (el, val, key) => { if(el && _cc[key] !== val){ el.textContent = val; _cc[key] = val; } };
+        const _setH = (el, val, key) => { if(el && _cc[key] !== val){ el.innerHTML = val; _cc[key] = val; } };
+        const _setC = (el, cls, key) => { if(el && _cc[key] !== cls){ el.className = cls; _cc[key] = cls; } };
         if(!_isTVActive && mispxEl){
-          if(futurePx > 0 && _isLiveR){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
-          else { mispxEl.className = 'r-mispx'; mispxEl.innerHTML = _DASH; }
+          if(futurePx > 0 && _isLiveR){
+            const v = fmtMisPx(misPx);
+            _setC(mispxEl, 'r-mispx '+misPxClass, 'misC');
+            _setT(mispxEl, v, 'misV');
+          } else {
+            _setC(mispxEl, 'r-mispx', 'misC');
+            _setH(mispxEl, _DASH, 'misV');
+          }
         }
         // r-value driven by BN WS — skip
         if(chgEl){
-          if(_isLiveR && _chgLiveR){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
-          else { chgEl.className = 'r-chg'; chgEl.innerHTML = _DASH; }
+          if(_isLiveR && _chgLiveR){
+            const v = fmtChg(chgUsd);
+            _setC(chgEl, 'r-chg '+chgClass, 'chgC');
+            _setT(chgEl, v, 'chgV');
+          } else {
+            _setC(chgEl, 'r-chg', 'chgC');
+            _setH(chgEl, _DASH, 'chgV');
+          }
         }
         if(pctEl){
-          if(_chgLiveR){ pctEl.className = 'r-pct '+chgClass; pctEl.textContent = fmtPct(chg); }
-          else { pctEl.className = 'r-pct'; pctEl.innerHTML = _DASH; }
+          if(_chgLiveR){
+            const v = fmtPct(chg);
+            _setC(pctEl, 'r-pct '+chgClass, 'pctC');
+            _setT(pctEl, v, 'pctV');
+          } else {
+            _setC(pctEl, 'r-pct', 'pctC');
+            _setH(pctEl, _DASH, 'pctV');
+          }
         }
-        if(avatEl){ 
-          avatEl.className = 'r-avat ' + (avat >= 0 ? 'avat-pos' : 'avat-neg'); 
-          avatEl.textContent = fmtAvat(avat); 
+        if(avatEl){
+          const av = fmtAvat(avat);
+          _setC(avatEl, 'r-avat ' + (avat >= 0 ? 'avat-pos' : 'avat-neg'), 'avatC');
+          _setT(avatEl, av, 'avatV');
         }
-        if(timeEl) timeEl.innerHTML = getTimeNow()+'<span class="bwei-sfx-c">c</span>';
+        if(timeEl){
+          const tv = getTimeNow();
+          if(_cc.timeV !== tv){ timeEl.innerHTML = tv+'<span class="bwei-sfx-c">c</span>'; _cc.timeV = tv; }
+        }
         if(ytdEl){
-          if(_chgLiveR){ ytdEl.className = 'r-ytd '+ytdClass; ytdEl.textContent = fmtYtd(ytd); }
-          else { ytdEl.className = 'r-ytd'; ytdEl.innerHTML = _DASH; }
+          if(_chgLiveR){
+            const v = fmtYtd(ytd);
+            _setC(ytdEl, 'r-ytd '+ytdClass, 'ytdC');
+            _setT(ytdEl, v, 'ytdV');
+          } else {
+            _setC(ytdEl, 'r-ytd', 'ytdC');
+            _setH(ytdEl, _DASH, 'ytdV');
+          }
         }
-        if(sparkEl) sparkEl.innerHTML = renderSparkline(sym, chg);
+        if(sparkEl){
+          // sparkline jen když se chg změnilo (jinak je obrázek stejný)
+          if(_cc.sparkChg !== chg){
+            sparkEl.innerHTML = renderSparkline(sym, chg);
+            _cc.sparkChg = chg;
+          }
+        }
         // r-future placeholder pokud žádný zdroj nedoručil cenu
         if(!_isTVActive && futureEl && futurePx <= 0){
-          futureEl.innerHTML = _DASH;
+          if(_cc.futV !== '__DASH__'){ futureEl.innerHTML = _DASH; _cc.futV = '__DASH__'; }
         }
         // r-value placeholder pokud spot není live
         if(valueEl && !_isLiveR){
-          valueEl.innerHTML = _DASH;
+          if(_cc.valV !== '__DASH__'){ valueEl.innerHTML = _DASH; _cc.valV = '__DASH__'; }
         }
       });
     } catch(e){ /* silent */ }
   }
 
-  // Refresh every 3s if panel is open
-  setInterval(_refreshBWEI, 3000);
+  // Refresh every 3s if panel is open — ale jen jednou (guard proti duplicitní registraci)
+  if (!window._bweiRefreshRegistered) {
+    window._bweiRefreshRegistered = true;
+    window._bweiRefreshIv = setInterval(_refreshBWEI, 3000);
+  }
 
   console.log('[BWEI] Bloomberg-style CRYPTO panel loaded');
 })();
@@ -43998,7 +44042,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-row .r-spark svg { display: block !important; width: 100% !important; height: 100% !important; min-height: 28px !important; overflow: visible !important; }
 
 /* Data colors */
-.bwei-row .r-future { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-future { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; contain: layout style !important; }
 .bwei-row .r-mispx { font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-value { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-chg { font-weight: bold !important; justify-content: flex-end !important; }
@@ -44568,43 +44612,87 @@ function getTimeStr(){
         const _isLiveR = !!item._pxLive && (item.px > 0);
         const _chgLiveR = !!item._chgLive;
         const _DASH = '<span style="color:#444;">—</span>';
+        // ── PER-CELL CACHE: zápis jen když se hodnota skutečně změnila (anti-flicker) ──
+        if (!window._bweiCellCache) window._bweiCellCache = {};
+        const _cc = window._bweiCellCache[sym] || (window._bweiCellCache[sym] = {});
+        // Helper: setText pokud se liší
+        const _setT = (el, val, key) => { if(el && _cc[key] !== val){ el.textContent = val; _cc[key] = val; } };
+        const _setH = (el, val, key) => { if(el && _cc[key] !== val){ el.innerHTML = val; _cc[key] = val; } };
+        const _setC = (el, cls, key) => { if(el && _cc[key] !== cls){ el.className = cls; _cc[key] = cls; } };
         if(!_isTVActive && mispxEl){
-          if(futurePx > 0 && _isLiveR){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
-          else { mispxEl.className = 'r-mispx'; mispxEl.innerHTML = _DASH; }
+          if(futurePx > 0 && _isLiveR){
+            const v = fmtMisPx(misPx);
+            _setC(mispxEl, 'r-mispx '+misPxClass, 'misC');
+            _setT(mispxEl, v, 'misV');
+          } else {
+            _setC(mispxEl, 'r-mispx', 'misC');
+            _setH(mispxEl, _DASH, 'misV');
+          }
         }
         // r-value driven by BN WS — skip
         if(chgEl){
-          if(_isLiveR && _chgLiveR){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
-          else { chgEl.className = 'r-chg'; chgEl.innerHTML = _DASH; }
+          if(_isLiveR && _chgLiveR){
+            const v = fmtChg(chgUsd);
+            _setC(chgEl, 'r-chg '+chgClass, 'chgC');
+            _setT(chgEl, v, 'chgV');
+          } else {
+            _setC(chgEl, 'r-chg', 'chgC');
+            _setH(chgEl, _DASH, 'chgV');
+          }
         }
         if(pctEl){
-          if(_chgLiveR){ pctEl.className = 'r-pct '+chgClass; pctEl.textContent = fmtPct(chg); }
-          else { pctEl.className = 'r-pct'; pctEl.innerHTML = _DASH; }
+          if(_chgLiveR){
+            const v = fmtPct(chg);
+            _setC(pctEl, 'r-pct '+chgClass, 'pctC');
+            _setT(pctEl, v, 'pctV');
+          } else {
+            _setC(pctEl, 'r-pct', 'pctC');
+            _setH(pctEl, _DASH, 'pctV');
+          }
         }
-        if(avatEl){ 
-          avatEl.className = 'r-avat ' + (avat >= 0 ? 'avat-pos' : 'avat-neg'); 
-          avatEl.textContent = fmtAvat(avat); 
+        if(avatEl){
+          const av = fmtAvat(avat);
+          _setC(avatEl, 'r-avat ' + (avat >= 0 ? 'avat-pos' : 'avat-neg'), 'avatC');
+          _setT(avatEl, av, 'avatV');
         }
-        if(timeEl) timeEl.innerHTML = getTimeNow()+'<span class="bwei-sfx-c">c</span>';
+        if(timeEl){
+          const tv = getTimeNow();
+          if(_cc.timeV !== tv){ timeEl.innerHTML = tv+'<span class="bwei-sfx-c">c</span>'; _cc.timeV = tv; }
+        }
         if(ytdEl){
-          if(_chgLiveR){ ytdEl.className = 'r-ytd '+ytdClass; ytdEl.textContent = fmtYtd(ytd); }
-          else { ytdEl.className = 'r-ytd'; ytdEl.innerHTML = _DASH; }
+          if(_chgLiveR){
+            const v = fmtYtd(ytd);
+            _setC(ytdEl, 'r-ytd '+ytdClass, 'ytdC');
+            _setT(ytdEl, v, 'ytdV');
+          } else {
+            _setC(ytdEl, 'r-ytd', 'ytdC');
+            _setH(ytdEl, _DASH, 'ytdV');
+          }
         }
-        if(sparkEl) sparkEl.innerHTML = renderSparkline(sym, chg);
+        if(sparkEl){
+          // sparkline jen když se chg změnilo (jinak je obrázek stejný)
+          if(_cc.sparkChg !== chg){
+            sparkEl.innerHTML = renderSparkline(sym, chg);
+            _cc.sparkChg = chg;
+          }
+        }
         // r-future placeholder pokud žádný zdroj nedoručil cenu
         if(!_isTVActive && futureEl && futurePx <= 0){
-          futureEl.innerHTML = _DASH;
+          if(_cc.futV !== '__DASH__'){ futureEl.innerHTML = _DASH; _cc.futV = '__DASH__'; }
         }
         // r-value placeholder pokud spot není live
         if(valueEl && !_isLiveR){
-          valueEl.innerHTML = _DASH;
+          if(_cc.valV !== '__DASH__'){ valueEl.innerHTML = _DASH; _cc.valV = '__DASH__'; }
         }
       });
     } catch(e){ /* silent */ }
   }
 
-  // Refresh every 3s if panel is open
-  setInterval(_refreshBWEI, 3000);
+  // Refresh every 3s if panel is open — ale jen jednou (guard proti duplicitní registraci)
+  if (!window._bweiRefreshRegistered) {
+    window._bweiRefreshRegistered = true;
+    window._bweiRefreshIv = setInterval(_refreshBWEI, 3000);
+  }
 
   console.log('[BWEI] Bloomberg-style CRYPTO panel loaded');
 })();
@@ -45470,28 +45558,26 @@ function _enforceLock(){
   _lockedSym = sym;
 }
 
-// Observer — sleduje VŠECHNY změny v panelu (bwei-wrap)
+// Observer — sleduje pouze cílové buňky (r-future, r-value) aktivního TV řádku.
+// Subtree na celém panelu byl příliš agresivní → tisíce notifikací = blikání.
 function _initObserver(){
   if(_observer) return;
-  var target = document.querySelector('.bwei-wrap') || document.body;
+  var target = document.querySelector('.bwei-wrap');
   if(!target) { setTimeout(_initObserver, 500); return; }
   _observer = new MutationObserver(function(mutations){
     if(_enforcing) return;
     var sym = (window._tvSyncSym || '').toUpperCase();
     if(!sym || !(window._tvSyncPx > 0)) return;
     if(Date.now() - (window._tvSyncTs||0) > 10000) return;
-    // Jakákoliv změna v panelu → vynuť lock
+    // Najdi cílový řádek (jen 1×, ne každou mutaci)
+    var row = _findRow(sym, window._tvSyncSymRaw || '');
+    if(!row) return;
+    // Zkontroluj jen, jestli mutace zasáhla NÁŠ řádek
     for(var i=0;i<mutations.length;i++){
-      var m = mutations[i];
-      var node = m.target;
-      // Najdi nejbližší bwei-row
-      var row = node.closest ? node.closest('.bwei-row') : null;
-      if(!row && node.parentElement) row = node.parentElement.closest('.bwei-row');
-      if(!row) continue;
-      var ds = (row.dataset.sym||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
-      if(ds === sym){
+      var node = mutations[i].target;
+      if(row.contains(node) || node === row){
         _enforceLock();
-        break;
+        return;
       }
     }
   });
@@ -45500,11 +45586,11 @@ function _initObserver(){
     subtree: true,
     characterData: true
   });
-  console.log('[TV-LOCK] MutationObserver attached to .bwei-wrap');
+  console.log('[TV-LOCK] MutationObserver attached to .bwei-wrap (narrowed scope)');
 }
 
 // Periodický enforce — backup pro případy, kdy observer nezachytí (atribut innerHTML re-write)
-setInterval(_enforceLock, 200); // 5x za sekundu
+setInterval(_enforceLock, 1000); // 1x za sekundu (observer chytí ostatní změny okamžitě)
 
 // Init observer po načtení DOM
 if(document.readyState === 'loading'){
@@ -45533,6 +45619,184 @@ window._tvLock = {
 };
 
 console.log('[TV-LOCK] Enforcer loaded — TradingView is the only source of truth for active symbol');
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     RIBBON ANTI-FLICKER — globální cache pro bbg-* elementy
+     Přepisuje innerText/innerHTML setter tak, aby zápis proběhl
+     jen když se hodnota skutečně změnila. Eliminuje blikání u
+     bbg-volume, bbg-high, bbg-low, bbg-close atd. způsobené
+     vícero zdroji (Binance WS, REST, TV, Bybit, Yahoo).
+══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+'use strict';
+
+var _ribbonCache = {};
+var _RIBBON_IDS = [
+  'bbg-volume', 'bbg-high', 'bbg-low', 'bbg-close', 'bbg-start',
+  'bbg-open', 'bbg-current-price', 'bbg-time', 'bbg-price-change',
+  'bbg-price-arrow', 'ov-start', 'ov-open', 'ov-high', 'ov-low',
+  'ov-close', 'ov-volume', 'ov-date-high', 'ov-date-low'
+];
+
+// Throttle map: per-element minimum interval mezi DOM zápisy (ms)
+var _RIBBON_THROTTLE = {
+  'bbg-volume': 1500,        // volume mění pomalu, dost je 1.5s
+  'bbg-high':   2000,        // hi/lo se mění zřídka
+  'bbg-low':    2000,
+  'bbg-close':  2000,
+  'bbg-open':   5000,
+  'bbg-start':  5000,
+  'bbg-price-change': 800,   // procenta — eliminace blikání mezi zdroji
+  'bbg-price-arrow':  800,   // šipka ↑↓ — sync s procenty
+  'ov-volume':  1500,
+  'ov-high':    2000,
+  'ov-low':     2000
+};
+var _lastWrite = {};
+
+function _shouldWrite(id, newVal){
+  // Zápis přeskočen pokud se hodnota nezměnila
+  if(_ribbonCache[id] === newVal) return false;
+  // Throttle — pokud je nastavený a uplynulo méně než throttle ms
+  var thr = _RIBBON_THROTTLE[id];
+  if(thr){
+    var last = _lastWrite[id] || 0;
+    if(Date.now() - last < thr) return false;
+  }
+  _ribbonCache[id] = newVal;
+  _lastWrite[id] = Date.now();
+  return true;
+}
+
+// Patch — přepíše innerText setter pro každý ribbon element
+function _installPatch(){
+  _RIBBON_IDS.forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el || el._patched) return;
+    el._patched = true;
+
+    // Wrap innerText
+    var origInnerText = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerText') ||
+                        Object.getOwnPropertyDescriptor(Node.prototype, 'innerText');
+    var origInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+    var origTextContent = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+
+    if(origInnerText && origInnerText.set){
+      Object.defineProperty(el, 'innerText', {
+        configurable: true,
+        get: function(){ return origInnerText.get.call(this); },
+        set: function(v){
+          if(_shouldWrite(id, String(v))){
+            origInnerText.set.call(this, v);
+          }
+        }
+      });
+    }
+    if(origInnerHTML && origInnerHTML.set){
+      Object.defineProperty(el, 'innerHTML', {
+        configurable: true,
+        get: function(){ return origInnerHTML.get.call(this); },
+        set: function(v){
+          if(_shouldWrite(id, String(v))){
+            origInnerHTML.set.call(this, v);
+          }
+        }
+      });
+    }
+    if(origTextContent && origTextContent.set){
+      Object.defineProperty(el, 'textContent', {
+        configurable: true,
+        get: function(){ return origTextContent.get.call(this); },
+        set: function(v){
+          if(_shouldWrite(id, String(v))){
+            origTextContent.set.call(this, v);
+          }
+        }
+      });
+    }
+
+    // ── Vypnout veškeré CSS transitions/animations pro ribbon prvky ──
+    // Eliminuje smooth-color animaci při změně barvy (zelená↔červená flicker)
+    try {
+      el.style.transition = 'none';
+      el.style.animation = 'none';
+    } catch(_){}
+  });
+}
+
+// Reset cache při změně TV symbolu (jinak by nový symbol viděl staré ceny)
+var _origUpdateTV = window._updateTVChart;
+window._updateTVChart = function(sym, interval){
+  _ribbonCache = {};
+  _lastWrite = {};
+  if(typeof _origUpdateTV === 'function') return _origUpdateTV.apply(this, arguments);
+};
+
+// Spustit patch — postupně, protože elementy se mohou objevit později
+_installPatch();
+setTimeout(_installPatch, 500);
+setTimeout(_installPatch, 1500);
+setTimeout(_installPatch, 3000);
+setTimeout(_installPatch, 6000);
+
+// Při přepnutí grafu reattach (DOM se může recreate)
+setInterval(_installPatch, 5000);
+
+// ── Globální CSS animation killer pro ribbon elementy ──
+// Vypne všechny transitions/animations na ribbon elementech, aby browser
+// nedělal smooth-color přechod při změně barvy = eliminace flickeru
+try {
+  var _killCss = document.createElement('style');
+  _killCss.id = '_ribbon_lock_css';
+  _killCss.textContent = _RIBBON_IDS.map(function(id){ return '#' + id; }).join(', ') +
+    ' { transition: none !important; animation: none !important; }';
+  document.head.appendChild(_killCss);
+} catch(_){}
+
+// ── Direct style.color cache na úrovni instance ──
+// Nahradíme el.style přímo vlastním proxy objektem, který cachuje color zápisy.
+// Když existující kód udělá `chgEl.style.color = '#4caf50'`, projde přes proxy a pokud je
+// barva stejná jako poslední, neudělá nic. Browser tak nedostane signál na repaint.
+function _wrapStyleColor(){
+  _RIBBON_IDS.forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el || el._styleColorWrapped) return;
+    el._styleColorWrapped = true;
+    try {
+      var _origStyle = el.style;
+      var _colorState = { color: '', background: '', backgroundColor: '' };
+      // Vytvoříme proxy nad el.style, který cache color/background
+      var _proxy = new Proxy(_origStyle, {
+        get: function(target, prop){
+          var v = target[prop];
+          return typeof v === 'function' ? v.bind(target) : v;
+        },
+        set: function(target, prop, value){
+          if(prop === 'color' || prop === 'background' || prop === 'backgroundColor'){
+            if(_colorState[prop] === value) return true;
+            _colorState[prop] = value;
+          }
+          target[prop] = value;
+          return true;
+        }
+      });
+      Object.defineProperty(el, 'style', {
+        configurable: true,
+        get: function(){ return _proxy; }
+      });
+    } catch(_){}
+  });
+}
+_wrapStyleColor();
+setTimeout(_wrapStyleColor, 500);
+setTimeout(_wrapStyleColor, 1500);
+setTimeout(_wrapStyleColor, 3000);
+setInterval(_wrapStyleColor, 5000);
+
+console.log('[RIBBON-LOCK] Anti-flicker patch loaded for bbg-* elements');
 })();
 </script>
 
