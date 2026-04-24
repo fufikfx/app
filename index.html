@@ -28341,12 +28341,12 @@ window._setChartInterval = async function(interval) {
 
             // ═══ TV→BWEI SYNC: TradingView = JEDINÝ zdroj pravdy pro aktivní symbol ═══
             // Future panel (r-future) i Value (r-value) zrcadlí přesně cenu grafu, tick-by-tick.
-            // Žádný jiný zdroj (BN Futures WS, _refreshBWEI, _applyMisPx) sem nesmí psát.
+            // Žádný jiný zdroj (BN Futures WS, _refreshBWEI, _applyMisPx, buildRow) sem nesmí psát.
             const _tvSymNorm = currentSym.replace(/USDT$|USDC$|USD$/i, '');
             window._tvSyncSym  = _tvSymNorm;          // normalized guard (BTC, ETH, ...)
             window._tvSyncSymRaw = currentSym;        // raw form pro DOM lookup
             window._tvSyncTs   = Date.now();          // timestamp posledního TV ticku
-            window._tvSyncPx   = price;               // poslední TV cena (pro fallback)
+            window._tvSyncPx   = price;               // poslední TV cena (pro fallback i buildRow)
             try {
                 const _tvFmt = price >= 100 ? price.toFixed(2)
                              : price >= 1   ? price.toFixed(3)
@@ -43499,8 +43499,17 @@ function buildRow(item, rowNum, futTag){
   const chg = c.chg || 0;
   const chgUsd = c.px ? (c.px * chg/100) : 0;
 
-  // Future price = Binance Futures mark price (fapi premiumIndex)
-  const futurePx = (window._bnFutMark && _bnFutMark[c.s] > 0) ? _bnFutMark[c.s] : c.px || 0;
+  // Future price — pokud je symbol aktivní na TradingView, použij TV cenu (single source of truth).
+  // Jinak Binance Futures mark price (fapi premiumIndex), nebo spot jako fallback.
+  let futurePx;
+  const _tvAS = (window._tvSyncSym || '').toUpperCase();
+  const _tvFR = _tvAS && (Date.now() - (window._tvSyncTs||0) < 10000);
+  const _csU = (c.s || '').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
+  if (_tvFR && _csU === _tvAS && window._tvSyncPx > 0) {
+    futurePx = window._tvSyncPx;
+  } else {
+    futurePx = (window._bnFutMark && _bnFutMark[c.s] > 0) ? _bnFutMark[c.s] : c.px || 0;
+  }
 
   // %MisPx — basis mezi Binance Futures mark a Binance Spot
   const misPx = (futurePx > 0 && c.px > 0) ? (futurePx - c.px) / c.px * 100 : 0;
@@ -43699,10 +43708,14 @@ function getTimeStr(){
         const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
         const chgUsd = item.px ? item.px * chg/100 : 0;
 
-        // Future price = Binance Futures mark price (fapi premiumIndex)
-        // Pokud _bnFutMark není naplněný, NENASTAVUJEME futurePx = spot — přeskočíme update
+        // Future price — TV symbol = TV cena (single source of truth), jinak BN futures mark.
         const _hasFut = window._bnFutMark && _bnFutMark[sym] > 0;
-        const futurePx = (_bnFutMark && _bnFutMark[sym] > 0) ? _bnFutMark[sym] : (item.px || 0);
+        const _tvASr = (window._tvSyncSym || '').toUpperCase();
+        const _tvFRr = _tvASr && (Date.now() - (window._tvSyncTs||0) < 10000);
+        const _symUr = (sym || '').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
+        const futurePx = (_tvFRr && _symUr === _tvASr && window._tvSyncPx > 0)
+          ? window._tvSyncPx
+          : ((_bnFutMark && _bnFutMark[sym] > 0) ? _bnFutMark[sym] : (item.px || 0));
         const misPx = (futurePx > 0 && item.px > 0) ? (futurePx - item.px) / item.px * 100 : 0;
         // Δ AVAT — reálná data
         const avat = _calcAvat(sym, item.vol);
@@ -43725,7 +43738,7 @@ function getTimeStr(){
         // TV-active symbol: skip r-mispx too (TradingView vlastní future cenu)
         const _tvActSym = (window._tvSyncSym || '').toUpperCase();
         const _tvFreshHere = _tvActSym && (Date.now() - (window._tvSyncTs||0) < 10000);
-        const _isTVActive = _tvFreshHere && sym.toUpperCase() === _tvActSym;
+        const _isTVActive = _tvFreshHere && (sym||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'') === _tvActSym;
         if(!_isTVActive && mispxEl && futurePx > 0){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
         // r-value driven by BN WS — skip
         if(chgEl){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
@@ -44244,8 +44257,17 @@ function buildRow(item, rowNum, futTag){
   const chg = c.chg || 0;
   const chgUsd = c.px ? (c.px * chg/100) : 0;
 
-  // Future price = Binance Futures mark price (fapi premiumIndex)
-  const futurePx = (window._bnFutMark && _bnFutMark[c.s] > 0) ? _bnFutMark[c.s] : c.px || 0;
+  // Future price — pokud je symbol aktivní na TradingView, použij TV cenu (single source of truth).
+  // Jinak Binance Futures mark price (fapi premiumIndex), nebo spot jako fallback.
+  let futurePx;
+  const _tvAS = (window._tvSyncSym || '').toUpperCase();
+  const _tvFR = _tvAS && (Date.now() - (window._tvSyncTs||0) < 10000);
+  const _csU = (c.s || '').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
+  if (_tvFR && _csU === _tvAS && window._tvSyncPx > 0) {
+    futurePx = window._tvSyncPx;
+  } else {
+    futurePx = (window._bnFutMark && _bnFutMark[c.s] > 0) ? _bnFutMark[c.s] : c.px || 0;
+  }
 
   // %MisPx — basis mezi Binance Futures mark a Binance Spot
   const misPx = (futurePx > 0 && c.px > 0) ? (futurePx - c.px) / c.px * 100 : 0;
@@ -44444,10 +44466,14 @@ function getTimeStr(){
         const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
         const chgUsd = item.px ? item.px * chg/100 : 0;
 
-        // Future price = Binance Futures mark price (fapi premiumIndex)
-        // Pokud _bnFutMark není naplněný, NENASTAVUJEME futurePx = spot — přeskočíme update
+        // Future price — TV symbol = TV cena (single source of truth), jinak BN futures mark.
         const _hasFut = window._bnFutMark && _bnFutMark[sym] > 0;
-        const futurePx = (_bnFutMark && _bnFutMark[sym] > 0) ? _bnFutMark[sym] : (item.px || 0);
+        const _tvASr = (window._tvSyncSym || '').toUpperCase();
+        const _tvFRr = _tvASr && (Date.now() - (window._tvSyncTs||0) < 10000);
+        const _symUr = (sym || '').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
+        const futurePx = (_tvFRr && _symUr === _tvASr && window._tvSyncPx > 0)
+          ? window._tvSyncPx
+          : ((_bnFutMark && _bnFutMark[sym] > 0) ? _bnFutMark[sym] : (item.px || 0));
         const misPx = (futurePx > 0 && item.px > 0) ? (futurePx - item.px) / item.px * 100 : 0;
         // Δ AVAT — reálná data
         const avat = _calcAvat(sym, item.vol);
@@ -44470,7 +44496,7 @@ function getTimeStr(){
         // TV-active symbol: skip r-mispx too (TradingView vlastní future cenu)
         const _tvActSym = (window._tvSyncSym || '').toUpperCase();
         const _tvFreshHere = _tvActSym && (Date.now() - (window._tvSyncTs||0) < 10000);
-        const _isTVActive = _tvFreshHere && sym.toUpperCase() === _tvActSym;
+        const _isTVActive = _tvFreshHere && (sym||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'') === _tvActSym;
         if(!_isTVActive && mispxEl && futurePx > 0){ mispxEl.className = 'r-mispx '+misPxClass; mispxEl.textContent = fmtMisPx(misPx); }
         // r-value driven by BN WS — skip
         if(chgEl){ chgEl.className = 'r-chg '+chgClass; chgEl.textContent = fmtChg(chgUsd); }
@@ -45098,7 +45124,8 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
       // ═══ TV GUARD: pokud je tento symbol aktivní na TradingView, neaktualizuj ═══
       var _tvActMis = (window._tvSyncSym || '').toUpperCase();
       var _tvFreshMis = _tvActMis && (Date.now() - (window._tvSyncTs||0) < 10000);
-      if (_tvFreshMis && sym.toUpperCase() === _tvActMis) return;
+      var _symUMis = (sym||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
+      if (_tvFreshMis && _symUMis === _tvActMis) return;
 
       // Priorita zdrojů futures mark price:
       // 1. Čerstvý _bnFutMark (Binance fapi premiumIndex)
@@ -45289,5 +45316,135 @@ console.log('[LIVE-FUT-WS] r-future Binance Futures WS patch loaded ✓');
 })();
 </script>
 
+<!-- ══════════════════════════════════════════════════════════════
+     TV-LOCK ENFORCER — finální obrana proti probliku
+     MutationObserver hlídá r-future a r-value u aktivního TV symbolu.
+     Pokud kdokoliv přepíše hodnotu na něco jiného než TV cena,
+     observer to OKAMŽITĚ vrátí zpět. Žádný jiný zdroj se neprosadí.
+══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+'use strict';
+
+function _fmtTV(v){
+  if(!v||isNaN(v)) return '';
+  if(v>=100)    return v.toFixed(2);
+  if(v>=1)      return v.toFixed(3);
+  if(v>=0.01)   return v.toFixed(4);
+  if(v>=0.0001) return v.toFixed(6);
+  return v.toFixed(8);
+}
+
+var _SFX = '<span class="bwei-sfx-d">d</span>';
+var _enforcing = false;            // re-entrancy guard
+var _lockedRow = null;              // currently locked .bwei-row element
+var _lockedSym = null;              // normalized symbol (BTC, ETH, ...)
+var _observer = null;
+
+function _findRow(symNorm, symRaw){
+  var r = document.querySelector('.bwei-row[data-sym="'+symNorm+'"]');
+  if(!r && symRaw) r = document.querySelector('.bwei-row[data-sym="'+symRaw+'"]');
+  if(!r){
+    // fuzzy: data-sym začíná na symNorm
+    var rows = document.querySelectorAll('.bwei-row');
+    for(var i=0;i<rows.length;i++){
+      var ds = (rows[i].dataset.sym||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
+      if(ds === symNorm){ r = rows[i]; break; }
+    }
+  }
+  return r;
+}
+
+function _enforceLock(){
+  if(_enforcing) return;
+  var sym = (window._tvSyncSym || '').toUpperCase();
+  var symRaw = window._tvSyncSymRaw || '';
+  var px  = window._tvSyncPx;
+  var ts  = window._tvSyncTs || 0;
+  if(!sym || !(px > 0)) return;
+  if(Date.now() - ts > 10000) return; // TV stream stale → unlock
+  var row = _findRow(sym, symRaw);
+  if(!row) return;
+  var fmt = _fmtTV(px);
+  var html = fmt + _SFX;
+  _enforcing = true;
+  try{
+    var fe = row.querySelector('.r-future');
+    if(fe && fe.innerHTML !== html) fe.innerHTML = html;
+    var ve = row.querySelector('.r-value');
+    if(ve && ve.innerHTML !== html) ve.innerHTML = html;
+  }catch(_){}
+  _enforcing = false;
+  _lockedRow = row;
+  _lockedSym = sym;
+}
+
+// Observer — sleduje VŠECHNY změny v panelu (bwei-wrap)
+function _initObserver(){
+  if(_observer) return;
+  var target = document.querySelector('.bwei-wrap') || document.body;
+  if(!target) { setTimeout(_initObserver, 500); return; }
+  _observer = new MutationObserver(function(mutations){
+    if(_enforcing) return;
+    var sym = (window._tvSyncSym || '').toUpperCase();
+    if(!sym || !(window._tvSyncPx > 0)) return;
+    if(Date.now() - (window._tvSyncTs||0) > 10000) return;
+    // Jakákoliv změna v panelu → vynuť lock
+    for(var i=0;i<mutations.length;i++){
+      var m = mutations[i];
+      var node = m.target;
+      // Najdi nejbližší bwei-row
+      var row = node.closest ? node.closest('.bwei-row') : null;
+      if(!row && node.parentElement) row = node.parentElement.closest('.bwei-row');
+      if(!row) continue;
+      var ds = (row.dataset.sym||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
+      if(ds === sym){
+        _enforceLock();
+        break;
+      }
+    }
+  });
+  _observer.observe(target, {
+    childList: true,
+    subtree: true,
+    characterData: true
+  });
+  console.log('[TV-LOCK] MutationObserver attached to .bwei-wrap');
+}
+
+// Periodický enforce — backup pro případy, kdy observer nezachytí (atribut innerHTML re-write)
+setInterval(_enforceLock, 200); // 5x za sekundu
+
+// Init observer po načtení DOM
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', _initObserver);
+} else {
+  _initObserver();
+}
+// Reattach pokud panel vznikne později
+setTimeout(_initObserver, 1000);
+setTimeout(_initObserver, 3000);
+setTimeout(_initObserver, 6000);
+
+// Expose pro debug
+window._tvLock = {
+  enforce: _enforceLock,
+  status: function(){
+    return {
+      sym: window._tvSyncSym,
+      px: window._tvSyncPx,
+      ts: window._tvSyncTs,
+      ageMs: Date.now() - (window._tvSyncTs||0),
+      lockedRow: _lockedRow,
+      observerActive: !!_observer
+    };
+  }
+};
+
+console.log('[TV-LOCK] Enforcer loaded — TradingView is the only source of truth for active symbol');
+})();
+</script>
+
 </body>
 </html>
+
