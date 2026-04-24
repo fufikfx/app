@@ -11271,8 +11271,17 @@ setInterval(()=>_CITIES.forEach(c=>_fetchWeather(c)),600000);
 function jitter(){
   if(typeof MKT === 'undefined' || !MKT) return 0;
   if(typeof CRYPTO === 'undefined' || !CRYPTO) return 0;
-  Object.values(MKT).forEach(m=>{m.chg+=(Math.random()-.5)*.012;m.px=Math.max(m.px*(1+(Math.random()-.499)*.0005),.001);});
-  CRYPTO.forEach(c=>{c.chg+=(Math.random()-.5)*.04;c.px=Math.max(c.px*(1+(Math.random()-.499)*.0005),.000001);});
+  // ── TV GUARD: skip active TradingView symbol — TV is sole source of truth ──
+  var _tvSym = (window._tvSyncSym || '').toUpperCase();
+  Object.values(MKT).forEach(m=>{
+    var mSym = (m.s || m.id || '').toUpperCase();
+    if(_tvSym && (mSym === _tvSym || mSym === _tvSym.replace('USDT','') || (_tvSym && _tvSym.replace('USDT','') === mSym))) return;
+    m.chg+=(Math.random()-.5)*.012;m.px=Math.max(m.px*(1+(Math.random()-.499)*.0005),.001);
+  });
+  CRYPTO.forEach(c=>{
+    if(_tvSym && (c.s||'').toUpperCase() === _tvSym.replace('USDT','')) return; // skip TV symbol
+    c.chg+=(Math.random()-.5)*.04;c.px=Math.max(c.px*(1+(Math.random()-.499)*.0005),.000001);
+  });
   if(typeof buildTicker === 'function') buildTicker();
   if(typeof renderSidebar === 'function') renderSidebar();
   if(typeof renderMarkers === 'function') renderMarkers();
