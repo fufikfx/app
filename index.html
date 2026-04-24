@@ -43003,17 +43003,20 @@ document.addEventListener('keydown', function(e){
   font-variant-numeric: tabular-nums !important;
   letter-spacing: 0 !important;
   cursor: pointer !important; border: 0 !important;
-  line-height: 1.2 !important;
+  line-height: 1 !important;
   font-weight: bold !important;
-  min-height: 16px !important;
+  min-height: 22px !important;
+  align-items: center !important;
 }
 .bwei-row:hover { background: #0d0d0d !important; } 
 .bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
 
 .bwei-row > div { 
   padding: 0 6px !important; white-space: nowrap !important; overflow: hidden !important; 
-  text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
+  text-overflow: ellipsis !important; display: flex !important; align-items: center !important;
+  justify-content: center !important;
   border-right: 1px solid #333 !important;
+  height: 100% !important;
 }
 /* No dividers on right-side data columns */
 .bwei-row .r-chg { border-right: none !important; }
@@ -43755,16 +43758,20 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   font-variant-numeric: tabular-nums !important;
   letter-spacing: -0.4px !important;
   cursor: pointer !important; border: 0 !important;
-  line-height: 1.35 !important;
+  line-height: 1 !important;
   font-weight: bold !important;
+  min-height: 30px !important;
+  align-items: center !important;
 }
 .bwei-row:hover { background: #0d0d0d !important; } 
 .bwei-row:hover > div { border-top: none !important; border-bottom: none !important; }
 
 .bwei-row > div { 
   padding: 0 8px !important; white-space: nowrap !important; overflow: hidden !important; 
-  text-overflow: ellipsis !important; display: flex !important; align-items: center !important; 
+  text-overflow: ellipsis !important; display: flex !important; align-items: center !important;
+  justify-content: center !important;
   border-right: 1px solid #333 !important;
+  height: 100% !important;
 }
 /* No dividers on right-side data columns */
 .bwei-row .r-chg { border-right: none !important; }
