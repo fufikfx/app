@@ -13106,6 +13106,7 @@ async function fetchCoinGecko(){
           if(rank)c.rank=rank;
           // Update ATH from CoinGecko (live, replaces static value)
           if(ath&&ath>0) c.ath=ath;
+          if(vol>0) c.avgVol=vol;
           // ── Použij CoinGecko 7D% pro zpětný výpočet přesné ceny před 7 dny ──
           // price_change_percentage_7d = (px_now / px_7d_ago - 1) * 100
           if(chg7!=null){
@@ -42826,7 +42827,7 @@ document.addEventListener('keydown', function(e){
 }
 .bwei-optbar-right {
   display: inline-flex !important; align-items: center !important;
-  flex: 0 0 auto !important; margin-left: 0 !important; margin-right: 120px !important; gap: 2px !important;
+  flex: 0 0 auto !important; margin-left: 0 !important; margin-right: 8px !important; gap: 2px !important;
   flex-shrink: 0 !important;
 }
 .bwei-opt-sel {
@@ -43282,9 +43283,20 @@ function buildRow(item, rowNum, futTag){
   // %MisPx — basis between future and spot
   const misPx = c.px ? ((futurePx/c.px - 1) * 100) : 0;
 
-  // Δ AVAT
-  const avatSeed = (c.s.charCodeAt(0)*17 + (c.s.charCodeAt(1)||0)*31) % 100;
-  const avat = ((avatSeed - 50) * 0.8);
+  // Δ AVAT — Average Volume At Time (reálná data)
+  let avat = 0;
+  (function(){
+    const vol24h = c.vol || 0;
+    if(!vol24h || vol24h <= 0) return;
+    const now = new Date();
+    const hourFrac = (now.getHours() * 60 + now.getMinutes()) / (24 * 60);
+    if(hourFrac < 0.01) return;
+    const avgVol = c.avgVol || c.vol;
+    if(!avgVol || avgVol <= 0) return;
+    const projectedDaily = vol24h / hourFrac;
+    avat = ((projectedDaily / avgVol) - 1) * 100;
+    avat = Math.max(-99, Math.min(999, avat));
+  })();
 
   // %YtdCur
   const ytd = c.ytd || (chg * (2.5 + Math.sin(c.s.charCodeAt(0))*1.5));
@@ -43480,8 +43492,19 @@ function getTimeStr(){
         const basisBps = (Math.sin(sym.charCodeAt(0)*0.37)*15 + 5);
         const futurePx = item.px ? item.px * (1 + basisBps/10000) : 0;
         const misPx = item.px ? ((futurePx/item.px - 1) * 100) : 0;
-        const avatSeed = (sym.charCodeAt(0)*17 + (sym.charCodeAt(1)||0)*31) % 100;
-        const avat = ((avatSeed - 50) * 0.8);
+        let avat = 0;
+        (function(){
+          const vol24h = item.vol || 0;
+          if(!vol24h || vol24h <= 0) return;
+          const now = new Date();
+          const hourFrac = (now.getHours() * 60 + now.getMinutes()) / (24 * 60);
+          if(hourFrac < 0.01) return;
+          const avgVol = item.avgVol || item.vol;
+          if(!avgVol || avgVol <= 0) return;
+          const projectedDaily = vol24h / hourFrac;
+          avat = ((projectedDaily / avgVol) - 1) * 100;
+          avat = Math.max(-99, Math.min(999, avat));
+        })();
         const ytd = item.ytd || (chg * (2.5 + Math.sin(sym.charCodeAt(0))*1.5));
         const ytdClass = ytd >= 0 ? 'bwei-gn' : 'bwei-rd';
         const avatClass = avat >= 0 ? 'bwei-gn' : 'bwei-rd';
@@ -43578,7 +43601,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 }
 .bwei-optbar-right {
   display: inline-flex !important; align-items: center !important;
-  flex: 0 0 auto !important; margin-left: 0 !important; margin-right: 120px !important; gap: 2px !important;
+  flex: 0 0 auto !important; margin-left: 0 !important; margin-right: 8px !important; gap: 2px !important;
   flex-shrink: 0 !important;
 }
 .bwei-opt-sel {
@@ -44014,9 +44037,20 @@ function buildRow(item, rowNum, futTag){
   // %MisPx — basis between future and spot
   const misPx = c.px ? ((futurePx/c.px - 1) * 100) : 0;
 
-  // Δ AVAT
-  const avatSeed = (c.s.charCodeAt(0)*17 + (c.s.charCodeAt(1)||0)*31) % 100;
-  const avat = ((avatSeed - 50) * 0.8);
+  // Δ AVAT — Average Volume At Time (reálná data)
+  let avat = 0;
+  (function(){
+    const vol24h = c.vol || 0;
+    if(!vol24h || vol24h <= 0) return;
+    const now = new Date();
+    const hourFrac = (now.getHours() * 60 + now.getMinutes()) / (24 * 60);
+    if(hourFrac < 0.01) return;
+    const avgVol = c.avgVol || c.vol;
+    if(!avgVol || avgVol <= 0) return;
+    const projectedDaily = vol24h / hourFrac;
+    avat = ((projectedDaily / avgVol) - 1) * 100;
+    avat = Math.max(-99, Math.min(999, avat));
+  })();
 
   // %YtdCur
   const ytd = c.ytd || (chg * (2.5 + Math.sin(c.s.charCodeAt(0))*1.5));
@@ -44212,8 +44246,19 @@ function getTimeStr(){
         const basisBps = (Math.sin(sym.charCodeAt(0)*0.37)*15 + 5);
         const futurePx = item.px ? item.px * (1 + basisBps/10000) : 0;
         const misPx = item.px ? ((futurePx/item.px - 1) * 100) : 0;
-        const avatSeed = (sym.charCodeAt(0)*17 + (sym.charCodeAt(1)||0)*31) % 100;
-        const avat = ((avatSeed - 50) * 0.8);
+        let avat = 0;
+        (function(){
+          const vol24h = item.vol || 0;
+          if(!vol24h || vol24h <= 0) return;
+          const now = new Date();
+          const hourFrac = (now.getHours() * 60 + now.getMinutes()) / (24 * 60);
+          if(hourFrac < 0.01) return;
+          const avgVol = item.avgVol || item.vol;
+          if(!avgVol || avgVol <= 0) return;
+          const projectedDaily = vol24h / hourFrac;
+          avat = ((projectedDaily / avgVol) - 1) * 100;
+          avat = Math.max(-99, Math.min(999, avat));
+        })();
         const ytd = item.ytd || (chg * (2.5 + Math.sin(sym.charCodeAt(0))*1.5));
         const ytdClass = ytd >= 0 ? 'bwei-gn' : 'bwei-rd';
         const avatClass = avat >= 0 ? 'bwei-gn' : 'bwei-rd';
