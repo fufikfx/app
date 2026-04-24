@@ -11563,25 +11563,39 @@ function _calcAvat(sym, volNow) {
   const hourAvg = window._avatHourAvg[sym];
   if (!hourAvg) return 0;
   const hour = new Date().getUTCHours();
-  const avg = hourAvg[hour];
-  if (!avg || avg <= 0) return 0;
-  // Dnešní vol od půlnoci + aktuální rolling = aproximace dnešního tempa
+  // todayVol = součet hodinových svíček od půlnoci (z klines) — reálné číslo
   const todayVol = window._avatTodayVol[sym] || 0;
-  const avat = ((todayVol / avg) - 1) * 100;
+  if (!todayVol || todayVol <= 0) return 0;
+  // Kolik hodin uplynulo dnes (min 1 aby nedělilo nulou)
+  const elapsedHours = Math.max(1, hour + (new Date().getUTCMinutes() / 60));
+  // Průměrný hodinový objem dnes
+  const avgHourToday = todayVol / elapsedHours;
+  // Průměrný hodinový objem za posledních 7 dní pro tuto hodinu
+  const avg7d = hourAvg[hour];
+  if (!avg7d || avg7d <= 0) return 0;
+  // AVAT = tempo dneška vs historický průměr
+  const avat = ((avgHourToday / avg7d) - 1) * 100;
   return Math.max(-99, Math.min(999, avat));
 }
 
 // Spustit fetch pro top coins po načtení stránky
 function _initAvatFetch() {
-  const TOP_SYMS = ['BTC','ETH','XRP','BNB','SOL','ADA','TRX','LINK','AVAX','SUI',
-                    'DOT','DOGE','SHIB','TON','MATIC','UNI','ATOM','LTC','BCH','APT'];
+  // Vezmi všechny symy z CRYPTO pole (reálný seznam coinů v panelu)
+  const cryptoSyms = (window.CRYPTO || []).map(c => c.s).filter(Boolean);
+  const TOP_SYMS = cryptoSyms.length > 0 ? cryptoSyms : 
+    ['BTC','ETH','XRP','BNB','SOL','ADA','TRX','LINK','AVAX','SUI',
+     'DOT','DOGE','SHIB','TON','MATIC','UNI','ATOM','LTC','BCH','APT',
+     'NEAR','FIL','ARB','OP','INJ','IMX','RUNE','AAVE','MKR','SNX',
+     'ALGO','VET','ICP','ETC','XLM','HBAR','SAND','MANA','AXS','FTM',
+     'EGLD','THETA','XTZ','FLOW','CHZ','ENJ','BAT','ZEC','DASH','NEO',
+     'PEPE','WIF','BONK','FLOKI','BRETT','MEW','POPCAT','WLD','JUP','PYTH'];
   TOP_SYMS.forEach((sym, i) => {
-    setTimeout(() => _fetchAvatKlines(sym), i * 300); // stagger aby nepřetížil API
+    setTimeout(() => _fetchAvatKlines(sym), i * 400); // stagger 400ms aby nepřetížil API
   });
   // Refresh každou hodinu
   setInterval(() => {
     TOP_SYMS.forEach((sym, i) => {
-      setTimeout(() => _fetchAvatKlines(sym), i * 300);
+      setTimeout(() => _fetchAvatKlines(sym), i * 400);
     });
   }, 3600000);
 }
@@ -11633,12 +11647,7 @@ function startBinanceWS(){
               hi: parseFloat(d.h),
               lo: parseFloat(d.l)
             }, 'ws', 1);
-            // Aktualizuj dnešní volume pro AVAT (rolling 24h → odhadni dnešní)
-            if(window._avatHourAvg) {
-              const _sym2 = (d.s||'').replace('USDT','');
-              const _hf = (new Date().getUTCHours() * 60 + new Date().getUTCMinutes()) / (24*60);
-              if(_hf > 0.01) window._avatTodayVol[_sym2] = parseFloat(d.q) * _hf;
-            }
+            // AVAT todayVol se aktualizuje z klines každou hodinu — WS nic nemění
             updated++;
           }
         });
