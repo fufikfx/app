@@ -29263,21 +29263,29 @@ window._initBbg = function() {
           // so the ticker ribbon & sidebar always show the SAME price as the chart
           var activeSym = window._bbgActiveSym || window._bbgCurrentSym || '';
           if (activeSym && typeof MKT !== 'undefined') {
-            // Update MKT entry for this symbol
             var mktKey = activeSym;
             if (MKT[mktKey]) { MKT[mktKey].px = lp; if (chg) MKT[mktKey].chg = chg; }
-            // Also update the "Index" variant (e.g. "SPX Index")
             if (MKT[mktKey + ' Index']) { MKT[mktKey + ' Index'].px = lp; }
-            // Sync _l1Data fields for SPX / NDX / DJI
             if (window._l1Data) {
               if (mktKey === 'SPX')  window._l1Data.sp  = lp.toFixed(2);
               if (mktKey === 'NDX')  window._l1Data.ndx = lp.toFixed(2);
               if (mktKey === 'INDU') window._l1Data.dji = lp.toFixed(2);
               if (mktKey === 'BTC')  window._l1Data.btc = lp;
             }
-            // Push to ticker tape
             if (typeof _tkUp === 'function')     _tkUp('m-' + mktKey, lp, chg || 0);
             if (typeof updateCoin === 'function') updateCoin(mktKey, { px: lp, chg }, 'tv', 0);
+          }
+          // ── BWEI r-value + r-future: stejná cena jako widget grafu ───────
+          // activeSym = aktuálně zobrazený symbol v grafu (např. 'BTC')
+          var _bSym = activeSym || (window._bbgActiveSym || '');
+          if (_bSym) {
+            var _bRow = document.querySelector('.bwei-row[data-sym="' + _bSym + '"]');
+            if (_bRow) {
+              var _bt = lp>=100?lp.toFixed(2):lp>=1?lp.toFixed(3):lp>=0.01?lp.toFixed(4):lp>=0.0001?lp.toFixed(6):lp.toFixed(8);
+              var _bs = '<span class="bwei-sfx-d">d</span>';
+              var _bv = _bRow.querySelector('.r-value');  if (_bv) _bv.innerHTML = _bt + _bs;
+              var _bf = _bRow.querySelector('.r-future'); if (_bf) _bf.innerHTML = _bt + _bs;
+            }
           }
           // ─────────────────────────────────────────────────────────────────
         }
