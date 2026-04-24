@@ -536,27 +536,12 @@ body.sat-active .m-wrap{opacity:1!important;}
   width: auto;
   background: #000;
   border-left: 1px solid #1a1a00;
-  font-family: 'Roboto Mono', 'SF Mono', 'Menlo', 'Consolas', 'Courier New', Courier, monospace;
+  font-family: 'Courier New', Courier, monospace;
   font-size: 11px;
   display: none;
   flex-direction: column;
   z-index: 99999;
   overflow: hidden;
-  /* Anti-aliasing pro hladký text (odstraňuje pixelování) */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  -webkit-text-stroke: 0.01em transparent;
-}
-
-/* Aplikovat anti-aliasing na všechny prvky uvnitř crypto dash */
-#crypto-dash-panel *,
-#crypto-dash-panel *::before,
-#crypto-dash-panel *::after {
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-  text-rendering: optimizeLegibility !important;
-  font-family: 'Roboto Mono', 'SF Mono', 'Menlo', 'Consolas', 'Courier New', Courier, monospace !important;
 }
 
 #crypto-dash-panel.open {
@@ -1144,42 +1129,9 @@ body{text-rendering:optimizeSpeed;}
   position: sticky !important; top: 20px !important; z-index: 19 !important;
 }
 
-/* ── CRYPTO MARKETS: zoom panelu na 175% + zvětšení fontů pro hladké vektorové renderování ── */
+/* ── CRYPTO MARKETS: zoom celý obsah panelu na 175 % ── */
 .panel[data-fn="CRYPTO"] .bwei-wrap {
   zoom: 1.75 !important;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-  text-rendering: geometricPrecision !important;
-  font-family: 'Roboto Mono', 'SF Mono', 'Menlo', 'Consolas', 'Courier New', Courier, monospace !important;
-}
-
-/* Anti-aliasing všech textových prvků uvnitř CRYPTO panelu */
-.panel[data-fn="CRYPTO"] .bwei-wrap,
-.panel[data-fn="CRYPTO"] .bwei-wrap *,
-.panel[data-fn="CRYPTO"] .bwei-wrap *::before,
-.panel[data-fn="CRYPTO"] .bwei-wrap *::after {
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-  text-rendering: geometricPrecision !important;
-  font-family: 'Roboto Mono', 'SF Mono', 'Menlo', 'Consolas', 'Courier New', Courier, monospace !important;
-  font-feature-settings: "kern" 1, "liga" 0, "tnum" 1 !important;
-  image-rendering: -webkit-optimize-contrast !important;
-}
-
-/* Tabulkové čísla v CRYPTO panelu — extra hladké vektorové renderování */
-.panel[data-fn="CRYPTO"] .bwei-wrap td,
-.panel[data-fn="CRYPTO"] .bwei-wrap th,
-.panel[data-fn="CRYPTO"] .bwei-wrap .num,
-.panel[data-fn="CRYPTO"] .bwei-wrap .mk-p,
-.panel[data-fn="CRYPTO"] .bwei-wrap .mk-c,
-.panel[data-fn="CRYPTO"] .bwei-wrap .pt td,
-.panel[data-fn="CRYPTO"] .bwei-wrap .pt th {
-  font-variant-numeric: tabular-nums !important;
-  font-feature-settings: "tnum" 1, "kern" 1 !important;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-  text-rendering: geometricPrecision !important;
-  font-family: 'Roboto Mono', 'SF Mono', 'Menlo', 'Consolas', monospace !important;
 }
 .panel-btn { color: #2a2000 !important; }
 .panel-btn:hover { color: #F39F41 !important; background: #0d0800 !important; }
@@ -5955,7 +5907,7 @@ function _getSatLayer(){
       items.forEach(item => {
         const time = new Date(item.ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         const isFlash = item.tag === 'FLASH' || item.tier === 1;
-        const srcCol = '#d4a84b';
+        const srcCol = item.src === 'BINANCE' ? '#f3ba2f' : item.src === 'X' ? '#1da1f2' : '#d4a84b';
         
         html += `
           <tr onclick="if(window._wnOpenDetail) _wnOpenDetail(${window._newsCache.indexOf(item)})" style="cursor:pointer">
@@ -9563,13 +9515,13 @@ function buildWNTable(data){
     if(src.includes('seeking'))                                      return {code:'SA',    col:'#787848'};
     if(src.includes('techcrunch'))                                   return {code:'TC',    col:'#787848'};
 if(t==='EARNINGS')                                               return {code:'ERN',   col:'#dd8800'};
-    if(src==='BI'||src.includes('bloomberg'))                            return {code:'BI',    col:'#d4a84b'};
-    if(src.includes('npw')||src==='npw')                                 return {code:'NPW',   col:'#d4a84b'};
-    if(src.includes('cbc')||src==='cbc')                                 return {code:'CBC',   col:'#d4a84b'};
-    if(src.includes('nbtc')||src==='nbtc')                               return {code:'NBTC',  col:'#d4a84b'};
-    if(src.includes('utd')||src==='utd')                                 return {code:'UTD',   col:'#d4a84b'};
-    if(src.includes('ctel')||src==='ctel')                               return {code:'CTEL',  col:'#d4a84b'};
-    if(src.includes('amb')||src==='amb')                                 return {code:'AMB',   col:'#d4a84b'};
+    if(src==='BI'||src.includes('bloomberg'))                            return {code:'BI',    col:'#FF6600'};
+    if(src.includes('npw')||src==='npw')                                 return {code:'NPW',   col:'#FFAA00'};
+    if(src.includes('cbc')||src==='cbc')                                 return {code:'CBC',   col:'#FFAA00'};
+    if(src.includes('nbtc')||src==='nbtc')                               return {code:'NBTC',  col:'#FFAA00'};
+    if(src.includes('utd')||src==='utd')                                 return {code:'UTD',   col:'#FFAA00'};
+    if(src.includes('ctel')||src==='ctel')                               return {code:'CTEL',  col:'#FFAA00'};
+    if(src.includes('amb')||src==='amb')                                 return {code:'AMB',   col:'#FFAA00'};
     if(t==='MACRO'||item.mac)                                        return {code:'MACRO', col:'#cc7700'};
     return                                                                  {code:'WIR',   col:'#706850'};
   };
