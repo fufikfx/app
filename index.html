@@ -11514,6 +11514,82 @@ const BN_MAP={
 };
 const BN_SYMS=Object.keys(BN_MAP).map(s=>s.toUpperCase());
 
+// ══ AVAT — Average Volume At Time ══════════════════════════════════════
+// Stáhneme hodinové klines z Binance (7 dní = 168 svíček)
+// Pro každou hodinu dne (0–23) spočítáme průměrný objem → avgHourVol[sym][hour]
+// AVAT% = (aktuální objem té hodiny / průměr té hodiny) - 1
+
+window._avatHourAvg = {}; // {sym: [avg_vol_h0, avg_vol_h1, ..., avg_vol_h23]}
+window._avatTodayVol = {}; // {sym: vol_od_pulnoci_do_ted}
+window._avatLastFetch = 0;
+
+async function _fetchAvatKlines(sym) {
+  try {
+    const url = `https://api.binance.com/api/v3/klines?symbol=${sym}USDT&interval=1h&limit=168`;
+    const r = await fetch(url, {signal: (() => { const c = new AbortController(); setTimeout(() => c.abort(), 8000); return c.signal; })()});
+    if (!r.ok) return;
+    const klines = await r.json();
+    if (!Array.isArray(klines) || klines.length < 24) return;
+
+    // Každá svíčka: [openTime, open, high, low, close, volume, closeTime, quoteVolume, ...]
+    // Použijeme quoteVolume (index 7) = objem v USD
+    const hourBuckets = Array.from({length: 24}, () => []);
+    klines.forEach(k => {
+      const hour = new Date(k[0]).getUTCHours();
+      const qvol = parseFloat(k[7]);
+      if (qvol > 0) hourBuckets[hour].push(qvol);
+    });
+
+    // Průměr pro každou hodinu
+    const hourAvg = hourBuckets.map(bucket =>
+      bucket.length > 0 ? bucket.reduce((a, b) => a + b, 0) / bucket.length : 0
+    );
+    window._avatHourAvg[sym] = hourAvg;
+
+    // Dnešní objem od půlnoci UTC do teď = součet dnešních svíček
+    const now = Date.now();
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    let todayVol = 0;
+    klines.forEach(k => {
+      if (k[0] >= todayStart.getTime()) todayVol += parseFloat(k[7]);
+    });
+    window._avatTodayVol[sym] = todayVol;
+  } catch(e) {}
+}
+
+// Hlavní AVAT výpočet — volá se z buildRow a _refreshBWEI
+function _calcAvat(sym, volNow) {
+  const hourAvg = window._avatHourAvg[sym];
+  if (!hourAvg) return 0;
+  const hour = new Date().getUTCHours();
+  const avg = hourAvg[hour];
+  if (!avg || avg <= 0) return 0;
+  // Dnešní vol od půlnoci + aktuální rolling = aproximace dnešního tempa
+  const todayVol = window._avatTodayVol[sym] || 0;
+  const avat = ((todayVol / avg) - 1) * 100;
+  return Math.max(-99, Math.min(999, avat));
+}
+
+// Spustit fetch pro top coins po načtení stránky
+function _initAvatFetch() {
+  const TOP_SYMS = ['BTC','ETH','XRP','BNB','SOL','ADA','TRX','LINK','AVAX','SUI',
+                    'DOT','DOGE','SHIB','TON','MATIC','UNI','ATOM','LTC','BCH','APT'];
+  TOP_SYMS.forEach((sym, i) => {
+    setTimeout(() => _fetchAvatKlines(sym), i * 300); // stagger aby nepřetížil API
+  });
+  // Refresh každou hodinu
+  setInterval(() => {
+    TOP_SYMS.forEach((sym, i) => {
+      setTimeout(() => _fetchAvatKlines(sym), i * 300);
+    });
+  }, 3600000);
+}
+
+setTimeout(_initAvatFetch, 5000); // počkat než se načte zbytek
+// ══════════════════════════════════════════════════════════════════════
+
+
 // ── OPTIMIZATION: Dynamic mapping for aggregate stream ─────────────────────
 const _BN_AGG_MAP = {};
 function _updateBnAggMap() {
@@ -11557,6 +11633,12 @@ function startBinanceWS(){
               hi: parseFloat(d.h),
               lo: parseFloat(d.l)
             }, 'ws', 1);
+            // Aktualizuj dnešní volume pro AVAT (rolling 24h → odhadni dnešní)
+            if(window._avatHourAvg) {
+              const _sym2 = (d.s||'').replace('USDT','');
+              const _hf = (new Date().getUTCHours() * 60 + new Date().getUTCMinutes()) / (24*60);
+              if(_hf > 0.01) window._avatTodayVol[_sym2] = parseFloat(d.q) * _hf;
+            }
             updated++;
           }
         });
@@ -43283,20 +43365,8 @@ function buildRow(item, rowNum, futTag){
   // %MisPx — basis between future and spot
   const misPx = c.px ? ((futurePx/c.px - 1) * 100) : 0;
 
-  // Δ AVAT — Average Volume At Time (reálná data)
-  let avat = 0;
-  (function(){
-    const vol24h = c.vol || 0;
-    if(!vol24h || vol24h <= 0) return;
-    const now = new Date();
-    const hourFrac = (now.getHours() * 60 + now.getMinutes()) / (24 * 60);
-    if(hourFrac < 0.01) return;
-    const avgVol = c.avgVol || c.vol;
-    if(!avgVol || avgVol <= 0) return;
-    const projectedDaily = vol24h / hourFrac;
-    avat = ((projectedDaily / avgVol) - 1) * 100;
-    avat = Math.max(-99, Math.min(999, avat));
-  })();
+  // Δ AVAT — reálná data z Binance klines (hodinový průměr za 7 dní)
+  const avat = _calcAvat(c.s, c.vol);
 
   // %YtdCur
   const ytd = c.ytd || (chg * (2.5 + Math.sin(c.s.charCodeAt(0))*1.5));
@@ -43492,19 +43562,8 @@ function getTimeStr(){
         const basisBps = (Math.sin(sym.charCodeAt(0)*0.37)*15 + 5);
         const futurePx = item.px ? item.px * (1 + basisBps/10000) : 0;
         const misPx = item.px ? ((futurePx/item.px - 1) * 100) : 0;
-        let avat = 0;
-        (function(){
-          const vol24h = item.vol || 0;
-          if(!vol24h || vol24h <= 0) return;
-          const now = new Date();
-          const hourFrac = (now.getHours() * 60 + now.getMinutes()) / (24 * 60);
-          if(hourFrac < 0.01) return;
-          const avgVol = item.avgVol || item.vol;
-          if(!avgVol || avgVol <= 0) return;
-          const projectedDaily = vol24h / hourFrac;
-          avat = ((projectedDaily / avgVol) - 1) * 100;
-          avat = Math.max(-99, Math.min(999, avat));
-        })();
+        // Δ AVAT — reálná data
+        const avat = _calcAvat(sym, item.vol);
         const ytd = item.ytd || (chg * (2.5 + Math.sin(sym.charCodeAt(0))*1.5));
         const ytdClass = ytd >= 0 ? 'bwei-gn' : 'bwei-rd';
         const avatClass = avat >= 0 ? 'bwei-gn' : 'bwei-rd';
@@ -44037,20 +44096,8 @@ function buildRow(item, rowNum, futTag){
   // %MisPx — basis between future and spot
   const misPx = c.px ? ((futurePx/c.px - 1) * 100) : 0;
 
-  // Δ AVAT — Average Volume At Time (reálná data)
-  let avat = 0;
-  (function(){
-    const vol24h = c.vol || 0;
-    if(!vol24h || vol24h <= 0) return;
-    const now = new Date();
-    const hourFrac = (now.getHours() * 60 + now.getMinutes()) / (24 * 60);
-    if(hourFrac < 0.01) return;
-    const avgVol = c.avgVol || c.vol;
-    if(!avgVol || avgVol <= 0) return;
-    const projectedDaily = vol24h / hourFrac;
-    avat = ((projectedDaily / avgVol) - 1) * 100;
-    avat = Math.max(-99, Math.min(999, avat));
-  })();
+  // Δ AVAT — reálná data z Binance klines (hodinový průměr za 7 dní)
+  const avat = _calcAvat(c.s, c.vol);
 
   // %YtdCur
   const ytd = c.ytd || (chg * (2.5 + Math.sin(c.s.charCodeAt(0))*1.5));
@@ -44246,19 +44293,8 @@ function getTimeStr(){
         const basisBps = (Math.sin(sym.charCodeAt(0)*0.37)*15 + 5);
         const futurePx = item.px ? item.px * (1 + basisBps/10000) : 0;
         const misPx = item.px ? ((futurePx/item.px - 1) * 100) : 0;
-        let avat = 0;
-        (function(){
-          const vol24h = item.vol || 0;
-          if(!vol24h || vol24h <= 0) return;
-          const now = new Date();
-          const hourFrac = (now.getHours() * 60 + now.getMinutes()) / (24 * 60);
-          if(hourFrac < 0.01) return;
-          const avgVol = item.avgVol || item.vol;
-          if(!avgVol || avgVol <= 0) return;
-          const projectedDaily = vol24h / hourFrac;
-          avat = ((projectedDaily / avgVol) - 1) * 100;
-          avat = Math.max(-99, Math.min(999, avat));
-        })();
+        // Δ AVAT — reálná data
+        const avat = _calcAvat(sym, item.vol);
         const ytd = item.ytd || (chg * (2.5 + Math.sin(sym.charCodeAt(0))*1.5));
         const ytdClass = ytd >= 0 ? 'bwei-gn' : 'bwei-rd';
         const avatClass = avat >= 0 ? 'bwei-gn' : 'bwei-rd';
