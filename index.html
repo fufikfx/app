@@ -29260,7 +29260,7 @@ window._initBbg = function() {
           // přepsat bbg-current-price, bbg-close ani ov-start.
           // Smí pouze aktualizovat Hi/Lo/Vol (OHLCV metadata jsou vždy ze Spot).
           var _tvGuardAge = Date.now() - (window._tvSyncTs || 0);
-          var _tvGuardActive = (window._tvSyncPx > 0) && (_tvGuardAge < 5000);
+          var _tvGuardActive = (window._tvSyncPx > 0) && (!!window._tvSyncSym); // PERMANENT guard — freeze dokud je symbol aktivní
           // ────────────────────────────────────────────────────────────────────
 
           if (!_tvGuardActive) {
@@ -29399,14 +29399,17 @@ window._initBbg = function() {
           if (lo > 0) _s('bbg-low',  _fmtP(lo));
           if (op > 0) _s('bbg-start',_fmtP(op));
           if (vol> 0) _s('bbg-volume',_fmtV(vol));
-          // Update large current-price display
-          var px = document.getElementById('bbg-current-price');
-          if (px) px.innerText = _fmtP(lp);
-          // Update % change
-          var chgEl = document.getElementById('bbg-price-change');
-          if (chgEl && chg !== 0) {
-            chgEl.innerText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
-            chgEl.style.color = chg >= 0 ? '#4caf50' : '#f44336';
+          // Update large current-price display — pouze pokud TV HARD GUARD není aktivní
+          var _tvGrd = (window._tvSyncPx > 0) && (!!window._tvSyncSym);
+          if (!_tvGrd) {
+            var px = document.getElementById('bbg-current-price');
+            if (px) px.innerText = _fmtP(lp);
+            // Update % change — pouze bez TV guardu
+            var chgEl = document.getElementById('bbg-price-change');
+            if (chgEl && chg !== 0) {
+              chgEl.innerText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+              chgEl.style.color = chg >= 0 ? '#4caf50' : '#f44336';
+            }
           }
           // ── Sync TV price back into MKT / ticker tape / _l1Data ──────────
           // so the ticker ribbon & sidebar always show the SAME price as the chart
@@ -29466,13 +29469,16 @@ window._bbgInstantFill = function(sym) {
     s('bbg-high',   fmtP(crypto.hi || crypto.px));
     s('bbg-low',    fmtP(crypto.lo || crypto.px));
     if (crypto.vol > 0) s('bbg-volume', fmtV(crypto.vol));
-    var px = document.getElementById('bbg-current-price');
-    if (px) px.innerText = fmtP(crypto.px);
-    var chgEl = document.getElementById('bbg-price-change');
-    if (chgEl && crypto.chg != null) {
-      var chg = parseFloat(crypto.chg);
-      chgEl.innerText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
-      chgEl.style.color = chg >= 0 ? '#4caf50' : '#f44336';
+    // TV HARD GUARD — nepřepisuj cenu ani % pokud TV aktivní
+    if (!(window._tvSyncPx > 0 && window._tvSyncSym)) {
+      var px = document.getElementById('bbg-current-price');
+      if (px) px.innerText = fmtP(crypto.px);
+      var chgEl = document.getElementById('bbg-price-change');
+      if (chgEl && crypto.chg != null) {
+        var chg = parseFloat(crypto.chg);
+        chgEl.innerText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+        chgEl.style.color = chg >= 0 ? '#4caf50' : '#f44336';
+      }
     }
     return; // Fast path done
   }
@@ -29494,13 +29500,16 @@ window._bbgInstantFill = function(sym) {
       if (mktEntry.hi > 0) s('bbg-high', fmtP(mktEntry.hi));
       if (mktEntry.lo > 0) s('bbg-low',  fmtP(mktEntry.lo));
       if (mktEntry.open > 0) s('bbg-start', fmtP(mktEntry.open));
-      var px2 = document.getElementById('bbg-current-price');
-      if (px2) px2.innerText = fmtP(mktEntry.px);
-      var chgEl2 = document.getElementById('bbg-price-change');
-      if (chgEl2 && mktEntry.chg != null) {
-        var chg2 = parseFloat(mktEntry.chg);
-        chgEl2.innerText = (chg2 >= 0 ? '+' : '') + chg2.toFixed(2) + '%';
-        chgEl2.style.color = chg2 >= 0 ? '#4caf50' : '#f44336';
+      // TV HARD GUARD — nepřepisuj cenu ani % pokud TV aktivní
+      if (!(window._tvSyncPx > 0 && window._tvSyncSym)) {
+        var px2 = document.getElementById('bbg-current-price');
+        if (px2) px2.innerText = fmtP(mktEntry.px);
+        var chgEl2 = document.getElementById('bbg-price-change');
+        if (chgEl2 && mktEntry.chg != null) {
+          var chg2 = parseFloat(mktEntry.chg);
+          chgEl2.innerText = (chg2 >= 0 ? '+' : '') + chg2.toFixed(2) + '%';
+          chgEl2.style.color = chg2 >= 0 ? '#4caf50' : '#f44336';
+        }
       }
       return;
     }
@@ -29541,7 +29550,7 @@ window._bbgResolveLiveQuote = function(sym){
   var _tvAge  = Date.now() - (window._tvSyncTs  || 0);             // ms od posledního ticku
   var _tvPx   = window._tvSyncPx   || 0;
   var _rawNorm = raw.replace(/USDT$|USDC$|USD$/i, '');             // "BTCUSDT" → "BTC"
-  if (_tvPx > 0 && _tvAge < 5000 && _tvSym && (_rawNorm === _tvSym || raw === _tvSym)) {
+  if (_tvPx > 0 && _tvSym && (_rawNorm === _tvSym || raw === _tvSym)) { // PERMANENT — TV cena vždy prioritní dokud je symbol aktivní
     return {
       px:     _tvPx,
       open:   (window._firstBbgPrice > 0) ? window._firstBbgPrice : NaN,
