@@ -11424,7 +11424,11 @@ function _requestRender() {
         _dc[c.s] = _t;
         const _row = document.querySelector('.bwei-row[data-sym="' + c.s + '"]');
         if (!_row) return;
-        // r-value and r-future are now driven exclusively by TV panel (_tvSyncPx) — no BN spot writes
+        const _newHtml = _t + _sfx;
+        const _ve = _row.querySelector(".r-value");
+        if (_ve && _ve.innerHTML !== _newHtml) _ve.innerHTML = _newHtml;
+        const _fe = _row.querySelector(".r-future");
+        if (_fe && _fe.innerHTML !== _newHtml) _fe.innerHTML = _newHtml;
       });
     } catch(_e) {}
     _needsRender = false;
@@ -45637,11 +45641,8 @@ function _sync(){
   if(ve && ve.innerHTML !== html) ve.innerHTML = html;
 }
 
-// Run on every _applyTick (TV panel tick) — hook into _tvSyncPx setter
-// Fallback: 250ms interval catches any missed ticks
-setInterval(_sync, 250);
-
-// Also hook directly: patch window._tvSyncPx as a setter so _sync fires immediately on each TV tick
+// Pouze setter hook — žádný timer, žádný interval
+// _sync se spustí přesně tehdy a jen tehdy, když TV panel pošle nový tick
 try {
   var _pxVal = 0;
   Object.defineProperty(window, '_tvSyncPx', {
@@ -45650,6 +45651,31 @@ try {
     set: function(v){ _pxVal = v; _sync(); }
   });
 } catch(_){}
+
+// Startup bootstrap — při zapnutí přečti cenu přímo z DOM panelu
+// než dorazí první TV tick (který může trvat sekundy)
+function _bootstrap(){
+  var sym = (window._tvSyncSym || '').toUpperCase();
+  if(!sym) return; // symbol ještě není znám — zkus znovu
+  var el = document.getElementById('bbg-current-price');
+  if(!el) return;
+  var raw = (el.textContent || el.innerText || '').replace(/[^0-9.]/g,'');
+  var px = parseFloat(raw);
+  if(px > 0 && px !== _pxVal){
+    _pxVal = px; // nastavit přímo — setter by způsobil rekurzi
+    _sync();
+  }
+}
+
+// Spusť bootstrap jakmile je DOM ready a opakuj dokud nepřijde první TV tick
+var _bootDone = false;
+var _bootOrig = Object.getOwnPropertyDescriptor(window, '_tvSyncPx');
+(function _tryBoot(){
+  if(_bootDone) return;
+  _bootstrap();
+  if(_pxVal > 0){ _bootDone = true; return; } // TV tick už přišel
+  setTimeout(_tryBoot, 300); // zkus znovu za 300ms
+})();
 
 console.log('[TV-PANEL-SYNC] r-value & r-future napojena na TV panel cenu ✓');
 })();
