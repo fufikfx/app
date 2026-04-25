@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BLOOMBERG TERMINAL — PROFESSIONAL SYSTEM</title>
-<!-- v20260321-v14-AIS-enhanced -->
+<!-- v20260425-v15-PRICE-SYNC-FIX: single source of truth, TV priority guard, BN-WS guarded -->
 <!-- Preconnect to key external resources for faster startup -->
 <link rel="preconnect" href="https://api.binance.com" crossorigin>
 <link rel="preconnect" href="https://stream.binance.com" crossorigin>
@@ -11401,34 +11401,34 @@ function _requestRender() {
     if (document.getElementById('crypto-dash-panel')?.classList.contains('open')) {
       if (typeof _renderCryptoDash === 'function') _renderCryptoDash();
     }
-    // BWEI rows — throttled, max 1x per 2s per symbol. TV symbol skipped entirely.
+    // BWEI rows — same source as ticker (CRYPTO[].px), same RAF frame
+    // SKIP active TV symbol — TradingView is the single source of truth for it
     try {
       const _sfx = '<span class="bwei-sfx-d">d</span>';
       const _tvGuard = (window._tvSyncSym || '').toUpperCase().replace('USDT','');
+      // HARD GUARD: pokud je nastavený _tvSyncSym, NIKDY nepiš do tohoto symbolu z BN Spot.
+      // (Předtím byl 10s freshness check, ale to vytvářelo díry kdy TV stream zaostal.)
       const _tvGuardActive = !!_tvGuard;
       const _tvGuardId = _tvGuardActive && (typeof HL_MAP !== 'undefined') ? HL_MAP[_tvGuard] : null;
+      // Per-symbol DOM cache — prevents unnecessary innerHTML writes
       if (!window._bweiDomCache) window._bweiDomCache = {};
-      if (!window._bweiWriteTs) window._bweiWriteTs = {};
       const _dc = window._bweiDomCache;
-      const _wts = window._bweiWriteTs;
-      const _now2 = Date.now();
-      const _BWEI_THROTTLE = 2000;
       CRYPTO.forEach(function(c) {
         if (!(c.px > 0)) return;
+        // Skip active TV symbol completely — _applyTick owns this symbol's DOM and cache
         const _cs = (c.s||'').toUpperCase().replace('USDT','');
         if (_tvGuardActive && (_cs === _tvGuard || (_tvGuardId && c.id === _tvGuardId))) return;
-        if (_wts[c.s] && (_now2 - _wts[c.s]) < _BWEI_THROTTLE) return;
+        // Only update DOM if price string actually changed
         const _t = c.px>=100?c.px.toFixed(2):c.px>=1?c.px.toFixed(3):c.px>=0.01?c.px.toFixed(4):c.px>=0.0001?c.px.toFixed(6):c.px.toFixed(8);
-        const _fmk = (window._bnFutMark && window._bnFutMark[_cs] > 0) ? window._bnFutMark[_cs] : c.px;
-        const _ft = _fmk>=100?_fmk.toFixed(2):_fmk>=1?_fmk.toFixed(3):_fmk>=0.01?_fmk.toFixed(4):_fmk>=0.0001?_fmk.toFixed(6):_fmk.toFixed(8);
-        if (_dc[c.s] === _t && _dc[c.s+'_fut'] === _ft) return;
-        _dc[c.s] = _t; _dc[c.s+'_fut'] = _ft; _wts[c.s] = _now2;
+        if (_dc[c.s] === _t) return; // same value — skip DOM write entirely
+        _dc[c.s] = _t;
         const _row = document.querySelector('.bwei-row[data-sym="' + c.s + '"]');
         if (!_row) return;
+        const _newHtml = _t + _sfx;
         const _ve = _row.querySelector('.r-value');
-        if (_ve && _ve.innerHTML !== _t+_sfx) _ve.innerHTML = _t + _sfx;
+        if (_ve) _ve.innerHTML = _newHtml;
         const _fe = _row.querySelector('.r-future');
-        if (_fe && _fe.innerHTML !== _ft+_sfx) _fe.innerHTML = _ft + _sfx;
+        if (_fe) _fe.innerHTML = _newHtml;
       });
     } catch(_e) {}
     _needsRender = false;
@@ -28345,24 +28345,60 @@ window._setChartInterval = async function(interval) {
             if(hi>0) setEl('ov-high', fmtP(hi));
             if(lo>0) setEl('ov-low',  fmtP(lo));
 
-            // CRITICAL SYNC: Update the global CRYPTO state (sidebar) so it matches 1:1
+            // ══════════════════════════════════════════════════════════════════════
+            // CRITICAL SYNC: TV price → CRYPTO[] / MKT / _l1Data (single source of truth)
+            // Zaručuje, že _bbgResolveLiveQuote i sidebar vždy ukazují PŘESNĚ stejnou
+            // cenu jako aktivní TV graf — bez ohledu na Binance Spot WS lag.
+            // ══════════════════════════════════════════════════════════════════════
+            const _tvSymNorm = currentSym.replace(/USDT$|USDC$|USD$/i, '');
+
+            // 1. Okamžitý zápis do _tvSyncPx (prioritní cache pro _bbgResolveLiveQuote)
+            window._tvSyncSym    = _tvSymNorm;
+            window._tvSyncSymRaw = currentSym;
+            window._tvSyncTs     = Date.now();
+            window._tvSyncPx     = price;
+
+            // 2. Zápis do CRYPTO[] přímo — bez závislosti na HL_MAP
+            if (typeof CRYPTO !== 'undefined' && Array.isArray(CRYPTO)) {
+                const _tvCoinDirect = CRYPTO.find(x =>
+                    String(x.s  || '').toUpperCase().replace(/USDT$|USDC$|USD$/i,'') === _tvSymNorm ||
+                    String(x.id || '').toUpperCase() === _tvSymNorm ||
+                    String(x.s  || '').toUpperCase() === currentSym
+                );
+                if (_tvCoinDirect) {
+                    _tvCoinDirect.px     = price;
+                    _tvCoinDirect.chg    = chgPct;
+                    _tvCoinDirect._pxSrc = 'tv_sync';
+                    if (hi  > 0) _tvCoinDirect.hi  = hi;
+                    if (lo  > 0) _tvCoinDirect.lo  = lo;
+                    if (vol > 0) _tvCoinDirect.vol = vol;
+                }
+            }
+
+            // 3. updateCoin přes HL_MAP (sidebar render)
             const coinId = (typeof HL_MAP !== 'undefined') ? HL_MAP[currentSym] : null;
             if (coinId && typeof updateCoin === 'function') {
                 updateCoin(coinId, {px: price, chg: chgPct, hi: hi, lo: lo, vol: vol}, 'tv_sync', 0);
-                // Also force c.px directly so _requestRender cache always matches TV price
-                const _tvCoin = (typeof CRYPTO !== 'undefined') ? CRYPTO.find(x => x.id === coinId || x.s === currentSym) : null;
-                if (_tvCoin) { _tvCoin.px = price; _tvCoin._pxSrc = 'tv_sync'; }
-                if(typeof renderSidebar === 'function') renderSidebar(); 
+                if(typeof renderSidebar === 'function') renderSidebar();
+            }
+
+            // 4. Sync do MKT a _l1Data (equities, indices, BTC/ETH)
+            if (typeof MKT !== 'undefined') {
+                if (MKT[_tvSymNorm])              { MKT[_tvSymNorm].px = price; if(!isNaN(chgPct)) MKT[_tvSymNorm].chg = chgPct; }
+                if (MKT[_tvSymNorm + ' Index'])   { MKT[_tvSymNorm + ' Index'].px = price; }
+                if (MKT[_tvSymNorm + ' Equity'])  { MKT[_tvSymNorm + ' Equity'].px = price; }
+            }
+            if (window._l1Data) {
+                if (_tvSymNorm === 'BTC')  window._l1Data.btc = price;
+                if (_tvSymNorm === 'ETH')  window._l1Data.eth = price;
+                if (_tvSymNorm === 'SPX')  window._l1Data.sp  = price.toFixed(2);
+                if (_tvSymNorm === 'NDX')  window._l1Data.ndx = price.toFixed(2);
+                if (_tvSymNorm === 'INDU') window._l1Data.dji = price.toFixed(2);
             }
 
             // ═══ TV→BWEI SYNC: TradingView = JEDINÝ zdroj pravdy pro aktivní symbol ═══
             // Future panel (r-future) i Value (r-value) zrcadlí přesně cenu grafu, tick-by-tick.
             // Žádný jiný zdroj (BN Futures WS, _refreshBWEI, _applyMisPx, buildRow) sem nesmí psát.
-            const _tvSymNorm = currentSym.replace(/USDT$|USDC$|USD$/i, '');
-            window._tvSyncSym  = _tvSymNorm;          // normalized guard (BTC, ETH, ...)
-            window._tvSyncSymRaw = currentSym;        // raw form pro DOM lookup
-            window._tvSyncTs   = Date.now();          // timestamp posledního TV ticku
-            window._tvSyncPx   = price;               // poslední TV cena (pro fallback i buildRow)
             try {
                 const _tvFmt = price >= 100 ? price.toFixed(2)
                              : price >= 1   ? price.toFixed(3)
@@ -29215,29 +29251,38 @@ window._initBbg = function() {
           var hh = String(now.getHours()).padStart(2,'0');
           var mm = String(now.getMinutes()).padStart(2,'0');
           setEl('bbg-time',  hh + ':' + mm);
-          setEl('bbg-close', fmtP(price));
-          // Update current-price in header
-          var px = document.getElementById('bbg-current-price');
-          if (px) px.innerText = fmtP(price);
-          // Arrow direction ↑↓
-          var arrow = document.getElementById('bbg-price-arrow');
-          if (arrow) { arrow.innerText = price >= (window._bbgLastRibbonPrice || price) ? '↑' : '↓';
-                       arrow.style.color = price >= (window._bbgLastRibbonPrice || price) ? '#4caf50' : '#f44336'; }
-          window._bbgLastRibbonPrice = price;
-          // % change
-          var chgEl = document.getElementById('bbg-price-change');
-          if (chgEl) { chgEl.innerText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
-                       chgEl.style.color = chg >= 0 ? '#4caf50' : '#f44336'; }
-          // Update hi/lo intraday if ticker has it
+
+          // ── TV SYNC GUARD ────────────────────────────────────────────────────
+          // Pokud TradingView posílá aktivní tick (< 5 s), Binance Spot WS nesmí
+          // přepsat bbg-current-price, bbg-close ani ov-start.
+          // Smí pouze aktualizovat Hi/Lo/Vol (OHLCV metadata jsou vždy ze Spot).
+          var _tvGuardAge = Date.now() - (window._tvSyncTs || 0);
+          var _tvGuardActive = (window._tvSyncPx > 0) && (_tvGuardAge < 5000);
+          // ────────────────────────────────────────────────────────────────────
+
+          if (!_tvGuardActive) {
+            // TV není aktivní → Binance Spot je zdrojem pravdy pro cenu
+            setEl('bbg-close', fmtP(price));
+            var px = document.getElementById('bbg-current-price');
+            if (px) px.innerText = fmtP(price);
+            var arrow = document.getElementById('bbg-price-arrow');
+            if (arrow) { arrow.innerText = price >= (window._bbgLastRibbonPrice || price) ? '↑' : '↓';
+                         arrow.style.color = price >= (window._bbgLastRibbonPrice || price) ? '#4caf50' : '#f44336'; }
+            window._bbgLastRibbonPrice = price;
+            var chgEl = document.getElementById('bbg-price-change');
+            if (chgEl) { chgEl.innerText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+                         chgEl.style.color = chg >= 0 ? '#4caf50' : '#f44336'; }
+            var _sOv = function(id,v){var e=document.getElementById(id);if(e)e.innerText=v;};
+            _sOv('ov-start', fmtP(price));
+          }
+
+          // Hi / Lo / Vol vždy ze Spot (TV graf je v jiném timeframe, nemá 24h OHLCV)
           if (parseFloat(d.h) > 0) { setEl('bbg-high', fmtP(parseFloat(d.h))); }
           if (parseFloat(d.l) > 0) { setEl('bbg-low',  fmtP(parseFloat(d.l))); }
           if (parseFloat(d.q) > 0) { setEl('bbg-volume', fmtV(parseFloat(d.q))); }
-          // ── ov-left-panel live update ──
-          var _sOv = function(id,v){var e=document.getElementById(id);if(e)e.innerText=v;};
-          _sOv('ov-start', fmtP(price));
-          // ov-close intentionally NOT updated here — previous close is set by refreshDailyOHLC
-          if (parseFloat(d.h) > 0) _sOv('ov-high', fmtP(parseFloat(d.h)));
-          if (parseFloat(d.l) > 0) _sOv('ov-low',  fmtP(parseFloat(d.l)));
+          var _sOv2 = function(id,v){var e=document.getElementById(id);if(e)e.innerText=v;};
+          if (parseFloat(d.h) > 0) _sOv2('ov-high', fmtP(parseFloat(d.h)));
+          if (parseFloat(d.l) > 0) _sOv2('ov-low',  fmtP(parseFloat(d.l)));
         } catch(e){}
       };
       ws.onerror = function() {};
@@ -29483,6 +29528,31 @@ window._bbgFmtV = function(v){ if(!v||isNaN(v)||v<=0)return'—'; return v>=1e9?
 window._bbgResolveLiveQuote = function(sym){
   if(!sym) return null;
   var raw = String(sym).toUpperCase().replace('/', '').replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i, '').trim();
+
+  // ══════════════════════════════════════════════════════════════════
+  // PRIORITY 1 — TradingView tick-by-tick (single source of truth)
+  // Platí max 5 s od posledního TV ticku; pak fallback na CRYPTO/MKT.
+  // Ribbon i BWEI tak vždy ukazují PŘESNĚ stejnou cenu jako TV graf.
+  // ══════════════════════════════════════════════════════════════════
+  var _tvSym  = (window._tvSyncSym  || '').toUpperCase();          // např. "BTC"
+  var _tvAge  = Date.now() - (window._tvSyncTs  || 0);             // ms od posledního ticku
+  var _tvPx   = window._tvSyncPx   || 0;
+  var _rawNorm = raw.replace(/USDT$|USDC$|USD$/i, '');             // "BTCUSDT" → "BTC"
+  if (_tvPx > 0 && _tvAge < 5000 && _tvSym && (_rawNorm === _tvSym || raw === _tvSym)) {
+    return {
+      px:     _tvPx,
+      open:   (window._firstBbgPrice > 0) ? window._firstBbgPrice : NaN,
+      hi:     (window._chigh > 0 && isFinite(window._chigh)) ? window._chigh : NaN,
+      lo:     (window._clow  > 0 && isFinite(window._clow))  ? window._clow  : NaN,
+      vol:    (window._cvol  > 0) ? window._cvol : NaN,
+      chg:    (window._firstBbgPrice > 0)
+                ? ((_tvPx - window._firstBbgPrice) / window._firstBbgPrice * 100)
+                : NaN,
+      source: 'TV'
+    };
+  }
+  // ══════════════════════════════════════════════════════════════════
+
   var aliasMap = {
     'DJI':'INDU','US30':'INDU','SPX500':'SPX','NIKKEI':'NKY','NI225':'NKY','FTSE':'UKX',
     'GOLD':'XAU','XAUUSD':'XAU','SILVER':'XAG','XAGUSD':'XAG','OIL':'WTI','WTI':'WTI',
@@ -29589,6 +29659,16 @@ window._bbgSyncActivePanelQuote = function(force){
     }
     return;
   }
+
+  // ── Debug: ukáže zdroj ceny v konzoli (pouze při změně ceny) ──────────
+  if (window._bbgLastSyncedPx !== quote.px) {
+    var _srcLabel = quote.source || '?';
+    var _tvAge = Math.round((Date.now() - (window._tvSyncTs||0))/100)/10;
+    console.debug('[PRICE-SYNC] ' + sym + ' = ' + quote.px.toFixed(2) +
+      ' | src=' + _srcLabel +
+      (quote.source === 'TV' ? ' (tvAge=' + _tvAge + 's)' : ' (tvInactive)'));
+  }
+  // ─────────────────────────────────────────────────────────────────────
 
   window._bbgLastSyncedPx = quote.px;
   var up = (isNaN(quote.chg) ? 0 : quote.chg) >= 0;
@@ -45193,8 +45273,16 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
     }
   }, 4000);
 
-  // ── 5. _refreshBWEI již běží na 3000ms — duplicitní 800ms interval odstraněn (způsoboval blikání)
-  // _refreshBWEI is already registered at 3000ms interval in the BWEI panel script.
+  // ── 5. Přidat _refreshBWEI do 600ms cyklu ──────────────────────────────
+  setTimeout(function() {
+    if (typeof _refreshBWEI === 'function') {
+      setInterval(function() {
+        if (window._tabHidden) return;
+        try { _refreshBWEI(); } catch(e) {}
+      }, 800);
+      console.log('[SPEED] _refreshBWEI interval: 800ms added');
+    }
+  }, 4000);
 
   // ── 6. Inicializace: okamžitý first fetch ──────────────────────────────
   // Zavolat fetchBinance24hr okamžitě po patchi (bez čekání na původní setTimeout)
@@ -45428,40 +45516,36 @@ function _startFutWS(){
       try{
         var data = JSON.parse(e.data);
         if(!Array.isArray(data)) return;
+        // HARD GUARD: pokud je _tvSyncSym nastaven, NIKDY nepiš do tohoto symbolu z BN Futures.
         var _tvGuard2 = (window._tvSyncSym || '').toUpperCase();
-        var _tvFresh  = !!_tvGuard2;
-        if(!window._futMisPxTs) window._futMisPxTs = {};
-        var _mNow = Date.now();
+        var _tvFresh  = !!_tvGuard2; // bez freshness check — guard je permanent dokud je symbol aktivní
         data.forEach(function(d){
           if(!d.s || !d.s.endsWith('USDT')) return;
           var sym = d.s.replace('USDT','');
-          var mark = parseFloat(d.p);
+          var mark = parseFloat(d.p); // markPrice field
           if(!(mark>0)) return;
 
           // 1. Update _bnFutMark cache (always, even for TV symbol)
           if(window._bnFutMark) window._bnFutMark[sym] = mark;
 
           // ═══ HARD GUARD: aktivní TV symbol — TradingView je JEDINÝ zdroj ═══
+          // Neaktualizuj ANI r-future, ANI r-mispx — vše vlastní TV.
           if(_tvFresh && sym === _tvGuard2) return;
 
-          // 3. Update misPx — throttled to max 1x per 3s per symbol (was every 1s → flicker)
-          if(_futMisPxTs[sym] && (_mNow - _futMisPxTs[sym]) < 3000) return;
+          // r-future DOM write removed — driven by BN WS only
+
+          // 3. Update misPx if spot available
           if(window.CRYPTO){
             var coin = null;
             for(var i=0;i<CRYPTO.length;i++){ if(CRYPTO[i].s===sym){ coin=CRYPTO[i]; break; } }
             if(coin && coin.px > 0){
               var mis = (mark - coin.px) / coin.px * 100;
-              // Skip tiny changes < 0.005% (floating point noise between sources)
-              var _prevMis = _futMisPxTs[sym+'_val'];
-              if(_prevMis !== undefined && Math.abs(mis - _prevMis) < 0.005) return;
               var row2 = document.querySelector('.bwei-row[data-sym="'+sym+'"]');
               if(row2){
                 var mp = row2.querySelector('.r-mispx');
                 if(mp){
                   mp.className = 'r-mispx '+(mis>=0?'bwei-gn':'bwei-rd');
                   mp.textContent = (mis>=0?'+':'')+mis.toFixed(3)+'%';
-                  _futMisPxTs[sym] = _mNow;
-                  _futMisPxTs[sym+'_val'] = mis;
                 }
               }
             }
@@ -45585,8 +45669,8 @@ function _initObserver(){
   console.log('[TV-LOCK] MutationObserver attached to .bwei-wrap (narrowed scope)');
 }
 
-// Periodický enforce — backup. 500ms = dostatečně rychlý, méně agresivní (snižuje MutationObserver kaskádu)
-setInterval(_enforceLock, 500);
+// Periodický enforce — backup. 250ms = max 250ms "ztraceného" stavu, pokud observer skipne
+setInterval(_enforceLock, 250);
 
 // Init observer po načtení DOM
 if(document.readyState === 'loading'){
@@ -45639,19 +45723,49 @@ var _RIBBON_IDS = [
 
 // Throttle map: per-element minimum interval mezi DOM zápisy (ms)
 var _RIBBON_THROTTLE = {
-  'bbg-volume': 1500,        // volume mění pomalu, dost je 1.5s
-  'bbg-high':   2000,        // hi/lo se mění zřídka
-  'bbg-low':    2000,
-  'bbg-close':  2000,
-  'bbg-open':   5000,
-  'bbg-start':  5000,
-  'bbg-price-change': 800,   // procenta — eliminace blikání mezi zdroji
-  'bbg-price-arrow':  800,   // šipka ↑↓ — sync s procenty
-  'ov-volume':  1500,
-  'ov-high':    2000,
-  'ov-low':     2000
+  'bbg-volume': 8000,        // volume: min 8s mezi zápisy (různé zdroje dávají jiná čísla)
+  'bbg-high':   5000,        // hi/lo se mění zřídka
+  'bbg-low':    5000,
+  'bbg-close':  3000,
+  'bbg-open':   8000,
+  'bbg-start':  8000,
+  'bbg-price-change': 1200,  // procenta — eliminace blikání mezi zdroji
+  'bbg-price-arrow':  1200,  // šipka ↑↓ — sync s procenty
+  'ov-volume':  8000,        // stejné jako bbg-volume
+  'ov-high':    5000,
+  'ov-low':     5000,
+  'ov-close':   3000,
+  'ov-open':    8000,
+  'ov-start':   8000
 };
 var _lastWrite = {};
+
+// Percentage hysteresis map: zápis projde jen pokud se hodnota změnila o víc než X %
+// Eliminuje blikání způsobené různými zdroji dávajícími mírně odlišná čísla
+var _RIBBON_HYSTERESIS = {
+  'bbg-volume': 3,    // ignoruj změny < 3% (Binance vs CoinGecko rozdíl)
+  'ov-volume':  3,
+  'bbg-high':   0.5,
+  'bbg-low':    0.5,
+  'ov-high':    0.5,
+  'ov-low':     0.5
+};
+
+function _pctChange(oldVal, newVal){
+  // Extrahuj číslo z formátovaného stringu (např. "987.23M" nebo "8.62B")
+  function _parseNum(s){
+    if(!s || s === '—') return 0;
+    var m = parseFloat(s);
+    if(isNaN(m)) return 0;
+    if(s.indexOf('B')>=0) return m * 1e9;
+    if(s.indexOf('M')>=0) return m * 1e6;
+    if(s.indexOf('K')>=0) return m * 1e3;
+    return m;
+  }
+  var o = _parseNum(oldVal), n = _parseNum(newVal);
+  if(!o || !n) return 100; // pokud nelze parsovat, povol zápis
+  return Math.abs((n - o) / o) * 100;
+}
 
 function _shouldWrite(id, newVal){
   // Zápis přeskočen pokud se hodnota nezměnila
@@ -45661,6 +45775,11 @@ function _shouldWrite(id, newVal){
   if(thr){
     var last = _lastWrite[id] || 0;
     if(Date.now() - last < thr) return false;
+  }
+  // Hysteresis — ignoruj malé změny způsobené různými zdroji
+  var hyst = _RIBBON_HYSTERESIS[id];
+  if(hyst && _ribbonCache[id]){
+    if(_pctChange(_ribbonCache[id], newVal) < hyst) return false;
   }
   _ribbonCache[id] = newVal;
   _lastWrite[id] = Date.now();
