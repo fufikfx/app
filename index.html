@@ -11424,10 +11424,7 @@ function _requestRender() {
         _dc[c.s] = _t;
         const _row = document.querySelector('.bwei-row[data-sym="' + c.s + '"]');
         if (!_row) return;
-        const _newHtml = _t + _sfx;
-        const _ve = _row.querySelector('.r-value');
-        if (_ve) _ve.innerHTML = _newHtml;
-        // r-future is owned exclusively by Futures WS (_startFutWS) — spot price must NOT write here
+        // r-value and r-future are now driven exclusively by TV panel (_tvSyncPx) — no BN spot writes
       });
     } catch(_e) {}
     _needsRender = false;
@@ -45531,17 +45528,9 @@ function _startFutWS(){
           if(window._bnFutMark) window._bnFutMark[sym] = mark;
 
           // ═══ HARD GUARD: aktivní TV symbol — TradingView je JEDINÝ zdroj ═══
-          // Neaktualizuj ANI r-future, ANI r-mispx — vše vlastní TV.
           if(_tvFresh && sym === _tvGuard2) return;
 
-          // r-future DOM write — Futures WS je jediný zdroj mark price pro non-TV symboly
-          var els = _getElsFresh(sym);
-          if(els && els.fut){
-            var _sfxF = '<span class="bwei-sfx-d">d</span>';
-            var _fmtF = mark>=100?mark.toFixed(2):mark>=1?mark.toFixed(3):mark>=0.01?mark.toFixed(4):mark>=0.0001?mark.toFixed(6):mark.toFixed(8);
-            var _htmlF = _fmtF + _sfxF;
-            if(els.fut.innerHTML !== _htmlF) els.fut.innerHTML = _htmlF;
-          }
+          // r-future is now driven by TV panel (_tvSyncPx) — Futures WS only updates misPx + cache
 
           // 3. Update misPx if spot available
           if(window.CRYPTO){
@@ -45586,16 +45575,21 @@ console.log('[LIVE-FUT-WS] r-future Binance Futures WS patch loaded ✓');
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════
-     TV-LOCK ENFORCER — finální obrana proti probliku
-     MutationObserver hlídá r-future a r-value u aktivního TV symbolu.
-     Pokud kdokoliv přepíše hodnotu na něco jiného než TV cena,
-     observer to OKAMŽITĚ vrátí zpět. Žádný jiný zdroj se neprosadí.
+     TV PANEL SYNC — r-value & r-future přímo z TV panelu
+     Jediný zdroj pravdy: window._tvSyncPx (nastavuje _applyTick)
+     Žádný Binance WS, žádný MutationObserver — čistý přímý zápis.
 ══════════════════════════════════════════════════════════════ -->
 <script>
 (function(){
 'use strict';
 
-function _fmtTV(v){
+var _SFX = '<span class="bwei-sfx-d">d</span>';
+var _lastSym = '';
+var _lastPx  = 0;
+var _lastHtml = '';
+var _rowCache = null;
+
+function _fmt(v){
   if(!v||isNaN(v)) return '';
   if(v>=100)    return v.toFixed(2);
   if(v>=1)      return v.toFixed(3);
@@ -45604,110 +45598,60 @@ function _fmtTV(v){
   return v.toFixed(8);
 }
 
-var _SFX = '<span class="bwei-sfx-d">d</span>';
-var _enforcing = false;            // re-entrancy guard
-var _lockedRow = null;              // currently locked .bwei-row element
-var _lockedSym = null;              // normalized symbol (BTC, ETH, ...)
-var _observer = null;
-
-function _findRow(symNorm, symRaw){
-  var r = document.querySelector('.bwei-row[data-sym="'+symNorm+'"]');
+function _findRow(sym, symRaw){
+  var r = document.querySelector('.bwei-row[data-sym="'+sym+'"]');
   if(!r && symRaw) r = document.querySelector('.bwei-row[data-sym="'+symRaw+'"]');
   if(!r){
-    // fuzzy: data-sym začíná na symNorm
     var rows = document.querySelectorAll('.bwei-row');
     for(var i=0;i<rows.length;i++){
       var ds = (rows[i].dataset.sym||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
-      if(ds === symNorm){ r = rows[i]; break; }
+      if(ds === sym){ r = rows[i]; break; }
     }
   }
   return r;
 }
 
-function _enforceLock(){
-  if(_enforcing) return;
+function _sync(){
   var sym = (window._tvSyncSym || '').toUpperCase();
-  var symRaw = window._tvSyncSymRaw || '';
   var px  = window._tvSyncPx;
   if(!sym || !(px > 0)) return;
-  // Žádný staleness check — guard je permanent dokud je symbol aktivní (do přepnutí grafu)
-  var row = _findRow(sym, symRaw);
-  if(!row) return;
-  var fmt = _fmtTV(px);
+
+  var fmt  = _fmt(px);
   var html = fmt + _SFX;
-  _enforcing = true;
-  try{
-    var fe = row.querySelector('.r-future');
-    if(fe && fe.innerHTML !== html) fe.innerHTML = html;
-    var ve = row.querySelector('.r-value');
-    if(ve && ve.innerHTML !== html) ve.innerHTML = html;
-  }catch(_){}
-  _enforcing = false;
-  _lockedRow = row;
-  _lockedSym = sym;
+
+  // Invalidate row cache on symbol change
+  if(sym !== _lastSym){ _rowCache = null; _lastSym = sym; }
+
+  // Find row (cached)
+  if(!_rowCache) _rowCache = _findRow(sym, window._tvSyncSymRaw || '');
+  if(!_rowCache) return;
+
+  // Only write DOM if value actually changed
+  if(html === _lastHtml) return;
+  _lastHtml = html;
+  _lastPx   = px;
+
+  var fe = _rowCache.querySelector('.r-future');
+  if(fe && fe.innerHTML !== html) fe.innerHTML = html;
+  var ve = _rowCache.querySelector('.r-value');
+  if(ve && ve.innerHTML !== html) ve.innerHTML = html;
 }
 
-// Observer — sleduje pouze cílové buňky (r-future, r-value) aktivního TV řádku.
-// Subtree na celém panelu byl příliš agresivní → tisíce notifikací = blikání.
-function _initObserver(){
-  if(_observer) return;
-  var target = document.querySelector('.bwei-wrap');
-  if(!target) { setTimeout(_initObserver, 500); return; }
-  _observer = new MutationObserver(function(mutations){
-    if(_enforcing) return;
-    var sym = (window._tvSyncSym || '').toUpperCase();
-    if(!sym || !(window._tvSyncPx > 0)) return;
-    // Žádný staleness check — guard je permanent dokud je symbol aktivní
-    // Najdi cílový řádek (jen 1×, ne každou mutaci)
-    var row = _findRow(sym, window._tvSyncSymRaw || '');
-    if(!row) return;
-    // Zkontroluj jen, jestli mutace zasáhla NÁŠ řádek
-    for(var i=0;i<mutations.length;i++){
-      var node = mutations[i].target;
-      if(row.contains(node) || node === row){
-        _enforceLock();
-        return;
-      }
-    }
+// Run on every _applyTick (TV panel tick) — hook into _tvSyncPx setter
+// Fallback: 250ms interval catches any missed ticks
+setInterval(_sync, 250);
+
+// Also hook directly: patch window._tvSyncPx as a setter so _sync fires immediately on each TV tick
+try {
+  var _pxVal = 0;
+  Object.defineProperty(window, '_tvSyncPx', {
+    configurable: true,
+    get: function(){ return _pxVal; },
+    set: function(v){ _pxVal = v; _sync(); }
   });
-  _observer.observe(target, {
-    childList: true,
-    subtree: true,
-    characterData: true
-  });
-  console.log('[TV-LOCK] MutationObserver attached to .bwei-wrap (narrowed scope)');
-}
+} catch(_){}
 
-// Periodický enforce — backup. 250ms = max 250ms "ztraceného" stavu, pokud observer skipne
-setInterval(_enforceLock, 250);
-
-// Init observer po načtení DOM
-if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', _initObserver);
-} else {
-  _initObserver();
-}
-// Reattach pokud panel vznikne později
-setTimeout(_initObserver, 1000);
-setTimeout(_initObserver, 3000);
-setTimeout(_initObserver, 6000);
-
-// Expose pro debug
-window._tvLock = {
-  enforce: _enforceLock,
-  status: function(){
-    return {
-      sym: window._tvSyncSym,
-      px: window._tvSyncPx,
-      ts: window._tvSyncTs,
-      ageMs: Date.now() - (window._tvSyncTs||0),
-      lockedRow: _lockedRow,
-      observerActive: !!_observer
-    };
-  }
-};
-
-console.log('[TV-LOCK] Enforcer loaded — TradingView is the only source of truth for active symbol');
+console.log('[TV-PANEL-SYNC] r-value & r-future napojena na TV panel cenu ✓');
 })();
 </script>
 
