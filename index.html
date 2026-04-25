@@ -27841,7 +27841,10 @@ window._updateBbgHeader = function(currentPriceRaw, intervalLabel) {
     const arrowEl = document.getElementById('bbg-price-arrow');
     const chgEl = document.getElementById('bbg-price-change');
     
-    if(pxEl) pxEl.innerText = currentPrice.toFixed(2);
+    if(pxEl) {
+        const _fmtP = window._bbgFmtP || function(v){ return v >= 1000 ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : v >= 1 ? parseFloat(v.toFixed(4)).toString() : parseFloat(v.toPrecision(5)).toString(); };
+        pxEl.innerText = _fmtP(currentPrice);
+    }
     
     // Update local "At" time
     const timeEl = document.getElementById('bbg-time');
@@ -45716,27 +45719,28 @@ console.log('[TV-LOCK] Enforcer loaded — TradingView is the only source of tru
 var _ribbonCache = {};
 var _RIBBON_IDS = [
   'bbg-volume', 'bbg-high', 'bbg-low', 'bbg-close', 'bbg-start',
-  'bbg-open', 'bbg-current-price', 'bbg-time', 'bbg-price-change',
-  'bbg-price-arrow', 'ov-start', 'ov-open', 'ov-high', 'ov-low',
+  'bbg-open',
+  // NOTE: bbg-current-price, bbg-price-arrow, bbg-price-change, bbg-time
+  // are intentionally EXCLUDED — live-tick elements must never be cached/throttled
+  'ov-start', 'ov-open', 'ov-high', 'ov-low',
   'ov-close', 'ov-volume', 'ov-date-high', 'ov-date-low'
 ];
 
 // Throttle map: per-element minimum interval mezi DOM zápisy (ms)
 var _RIBBON_THROTTLE = {
-  'bbg-volume': 8000,        // volume: min 8s mezi zápisy (různé zdroje dávají jiná čísla)
-  'bbg-high':   5000,        // hi/lo se mění zřídka
-  'bbg-low':    5000,
-  'bbg-close':  3000,
-  'bbg-open':   8000,
-  'bbg-start':  8000,
-  'bbg-price-change': 1200,  // procenta — eliminace blikání mezi zdroji
-  'bbg-price-arrow':  1200,  // šipka ↑↓ — sync s procenty
-  'ov-volume':  8000,        // stejné jako bbg-volume
-  'ov-high':    5000,
-  'ov-low':     5000,
-  'ov-close':   3000,
-  'ov-open':    8000,
-  'ov-start':   8000
+  'bbg-volume': 6000,        // volume: min 6s mezi zápisy
+  'bbg-high':   3000,        // hi/lo
+  'bbg-low':    3000,
+  'bbg-close':  500,         // close — živá cena; krátký throttle
+  'bbg-open':   6000,
+  'bbg-start':  6000,
+  // bbg-current-price / bbg-price-change / bbg-price-arrow: vyřazeny z _RIBBON_IDS
+  'ov-volume':  6000,
+  'ov-high':    3000,
+  'ov-low':     3000,
+  'ov-close':   500,
+  'ov-open':    6000,
+  'ov-start':   6000
 };
 var _lastWrite = {};
 
