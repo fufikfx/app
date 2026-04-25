@@ -4983,6 +4983,11 @@ const CRYPTO=[
 CRYPTO.forEach(function(c){ c.chg7=null; c._chg7live=false; });
 // Expose CRYPTO on window so BWEI panel and other scripts can access it
 window.CRYPTO = CRYPTO;
+window._coinMap = {};
+CRYPTO.forEach(c => {
+  window._coinMap[c.id] = c;
+  if(c.s) window._coinMap[c.s.toUpperCase()] = c;
+});
 
 // COMDTY_DATA — static fallback; overwritten by fetchStooq() live data on load
 const COMDTY_DATA=[
@@ -11383,7 +11388,9 @@ const _SUPPLY={
   dydx:450e6, gmx:9.4e6, 'curve-dao-token':2.14e9, '1inch':1.5e9,
   sushiswap:250e6, compound:10e6, ondo:1.4e9, okb:300e6, 'crypto-com-chain':25.3e9,
   'gate-token':300e6, mantle:3.2e9, starknet:1.8e9, metis:18.6e6,
-  'immutable-x':2e9, 'ssv-network':11.3e6, drift:1.0e9
+  'immutable-x':2e9, 'ssv-network':11.3e6, drift:1.0e9,
+  'virtual-protocol':1e9, 'mantra':900e6, 'akash-network':250e6, 'safe':1e9, 'flux':350e6,
+  'memecoin':10e9, 'blur':1.8e9
 };
 
 // ── OPTIMIZATION: Render Throttling ────────────────────────────────────────
@@ -11490,7 +11497,9 @@ function _computeTotalVol(id) {
 }
 
 function updateCoin(id, data, source, priority){
-  const c=CRYPTO.find(x=>x.id===id||x.s===id);if(!c)return;
+  const c = window._coinMap[id] || CRYPTO.find(x=>x.id===id||x.s===id);
+  if(!c)return;
+  if(!window._coinMap[id]) window._coinMap[id] = c;
 
   // ── TV GUARD: pokud je tento symbol aktivní na TradingView,
   //    ignoruj VŠECHNY zdroje kromě tv / tv_sync — zabraňuje problikávání ──
@@ -11574,7 +11583,7 @@ function updateCoin(id, data, source, priority){
 /* ════════════════════════════════════════════
    1. BINANCE WebSocket — all coins real-time
 ════════════════════════════════════════════ */
-const BN_MAP={
+var BN_MAP={
   'btcusdt':'bitcoin',      'ethusdt':'ethereum',     'xrpusdt':'ripple',
   'bnbusdt':'bnb',          'solusdt':'solana',
   'adausdt':'cardano',      'trxusdt':'tron',         'linkusdt':'chainlink',
@@ -11591,6 +11600,13 @@ const BN_MAP={
   'strkusdt':'starknet',    'beraausdt':'berachain',  'moveusdt':'movement',
   'etcusdt':'ethereum-classic','zecusdt':'zcash',     'jtousdt':'jito',
   'pythusdt':'pyth-network','wldusdt':'worldcoin-wld','tiausdt':'celestia',
+  'dogeusdt':'dogecoin',    'pepeusdt':'pepe',        'wifusdt':'dogwifcoin',
+  'bonkusdt':'bonk',        'shibusdt':'shiba-inu',   'flokiusdt':'floki',
+  'taousdt':'bittensor',    'aktusdt':'akash-network','virtualusdt':'virtual-protocol',
+  'kasusdt':'kaspa',        'safeusdt':'safe',        'fluxusdt':'flux',
+  'omusdt':'mantra',        'dydxusdt':'dydx',        'rayusdt':'raydium',
+  'blurusdt':'blur',        'memeusdt':'memecoin',    'bchusdt':'bitcoin-cash',
+  'filusdt':'filecoin',
   // HYPE not on Binance spot — via Hyperliquid direct
 };
 const BN_SYMS=Object.keys(BN_MAP).map(s=>s.toUpperCase());
@@ -30163,7 +30179,10 @@ masterUpdate();
     STRK:'BINANCE:STRKUSDT', FIL:'BINANCE:FILUSDT',   KAS:'BINANCE:KASUSDT',
     BCH:'BINANCE:BCHUSDT',   ZEC:'BINANCE:ZECUSDT',   ETC:'BINANCE:ETCUSDT',
     TON:'BINANCE:TONUSDT',   DOGE:'BINANCE:DOGEUSDT', HYPE:'BINANCE:HYPEUSDT',
-    OM:'BINANCE:OMUSDT',
+    OM:'BINANCE:OMUSDT',     SHIB:'BINANCE:SHIBUSDT', FLOKI:'BINANCE:FLOKIUSDT',
+    TAO:'BINANCE:TAOUSDT',   AKT:'BINANCE:AKTUSDT',   RAY:'BINANCE:RAYUSDT',
+    BLUR:'BINANCE:BLURUSDT', DYDX:'BINANCE:DYDXUSDT', MEME:'BINANCE:MEMEUSDT',
+    FLUX:'BINANCE:FLUXUSDT', SAFE:'BINANCE:SAFEUSDT', VIRTUAL:'BINANCE:VIRTUALUSDT',
     // US Indices
     SPX:'SPREADEX:SPX',      NDX:'NASDAQ:NDX',        DJI:'DJ:DJI',
     VIX:'TVC:VIX',           RUT:'TVC:RUT',           INDU:'DJ:DJI',
@@ -36603,7 +36622,8 @@ G._nvIntelRun = async function(){
       const cryptoSet = ['BTC','ETH','SOL','BNB','XRP','ADA','DOGE','AVAX','LINK','DOT',
         'ARB','OP','UNI','AAVE','LDO','CRV','GMX','PENDLE','ENA','TIA','JTO','HYPE',
         'ONDO','WLD','PYTH','ATOM','ICP','FIL','MATIC','POL','FET','TAO','RENDER',
-        'LTC','BCH','ETC','DYDX','PEPE','WIF','BONK'];
+        'LTC','BCH','ETC','DYDX','PEPE','WIF','BONK','SHIB','FLOKI','MEME','AKT',
+        'VIRTUAL','KAS','SAFE','FLUX','OM','RAY','BLUR'];
       if(cryptoSet.includes(s)){
         mmt.value = usd;
         // Highlight active chart button
@@ -44245,7 +44265,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 </style>
 
 <script>
-// ══════════════════════════════════════════════════════════════════════════════
+// DUPLICATE_MARKER_START_44264
 // BWEI — Bloomberg World Equity Index Futures style panel for CRYPTO
 // ══════════════════════════════════════════════════════════════════════════════
 (function(){
