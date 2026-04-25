@@ -28415,30 +28415,19 @@ window._setChartInterval = async function(interval) {
                 if (_tvSymNorm === 'INDU') window._l1Data.dji = price.toFixed(2);
             }
 
-            // ═══ TV→BWEI SYNC: TradingView = JEDINÝ zdroj pravdy pro aktivní symbol ═══
-            // Future panel (r-future) i Value (r-value) zrcadlí přesně cenu grafu, tick-by-tick.
-            // Žádný jiný zdroj (BN Futures WS, _refreshBWEI, _applyMisPx, buildRow) sem nesmí psát.
+            // ═══ TV→BWEI SYNC: _tvSyncPx setter triggeruje TV-PANEL-SYNC (throttled 1500ms) ═══
+            // DOM write pro r-future, r-value, r-mispx řeší TV-PANEL-SYNC níže — ne zde.
+            // Zde pouze zamkneme cache, aby _requestRender nesmazal throttlovanou hodnotu.
             try {
                 const _tvFmt = price >= 100 ? price.toFixed(2)
                              : price >= 1   ? price.toFixed(3)
                              : price >= 0.01 ? price.toFixed(4)
                              : price >= 0.0001 ? price.toFixed(6)
                              : price.toFixed(8);
-                // Lock cache na TV cenu — _requestRender pak skipne DOM write
                 if (!window._bweiDomCache) window._bweiDomCache = {};
                 window._bweiDomCache[currentSym] = _tvFmt;
                 window._bweiDomCache[_tvSymNorm] = _tvFmt;
-                const _sfxD = '<span class="bwei-sfx-d">d</span>';
-                // Najít řádek — zkus oba tvary symbolu (BTC i BTCUSDT)
-                let _bweiRow = document.querySelector('.bwei-row[data-sym="' + _tvSymNorm + '"]');
-                if (!_bweiRow) _bweiRow = document.querySelector('.bwei-row[data-sym="' + currentSym + '"]');
-                if (_bweiRow) {
-                    const _newHtml = _tvFmt + _sfxD;
-                    const _veEl = _bweiRow.querySelector('.r-value');
-                    if (_veEl && _veEl.innerHTML !== _newHtml) _veEl.innerHTML = _newHtml;
-                    const _feEl = _bweiRow.querySelector('.r-future');
-                    if (_feEl && _feEl.innerHTML !== _newHtml) _feEl.innerHTML = _newHtml;
-                }
+                // DOM zápis záměrně vynechán — delegováno na TV-PANEL-SYNC throttle níže
             } catch(_bweiErr) { /* silent */ }
 
         } catch(e){ console.error("ApplyTick Failure:", e); }
@@ -45599,19 +45588,28 @@ console.log('[LIVE-FUT-WS] r-future Binance Futures WS patch loaded ✓');
 </script>
 
 <!-- ══════════════════════════════════════════════════════════════
-     TV PANEL SYNC — r-value & r-future přímo z TV panelu
-     Jediný zdroj pravdy: window._tvSyncPx (nastavuje _applyTick)
-     Žádný Binance WS, žádný MutationObserver — čistý přímý zápis.
+     TV PANEL SYNC — r-value & r-future & r-mispx přímo z TV panelu
+     Zásada: DOM se NEMĚNÍ pokud se TV cena nezměnila.
+     Stabilita: Future/Value/MisPx se hýbou PŘESNĚ s TV grafem — ne jinak.
+     v20260425-v18-PRICE-DRIVEN-SYNC
 ══════════════════════════════════════════════════════════════ -->
 <script>
 (function(){
 'use strict';
 
 var _SFX = '<span class="bwei-sfx-d">d</span>';
-var _lastSym = '';
-var _lastPx  = 0;
-var _lastHtml = '';
-var _rowCache = null;
+
+// Stav naposledy zapsaný do DOM
+var _lastSym    = '';
+var _lastPxWritten = 0;   // TV cena naposledy zapsaná do DOM
+var _lastHtml   = '';
+var _rowCache   = null;
+
+// Debounce timer — čeká 150ms po posledním ticku, pak zapíše
+var _DEBOUNCE_MS = 150;
+var _debounceId  = null;
+var _pendingPx   = 0;
+var _pendingSym  = '';
 
 function _fmt(v){
   if(!v||isNaN(v)) return '';
@@ -45635,69 +45633,118 @@ function _findRow(sym, symRaw){
   return r;
 }
 
-function _sync(){
-  var sym = (window._tvSyncSym || '').toUpperCase();
-  var px  = window._tvSyncPx;
+// Snapshot spot price — čte CRYPTO[] v moment TV ticku (ne později)
+function _getSpotPx(sym){
+  try{
+    if(!window.CRYPTO) return 0;
+    for(var i=0;i<CRYPTO.length;i++){
+      var c = CRYPTO[i];
+      var cs = (c.s||'').toUpperCase().replace(/USDT$|USDC$|USD$/i,'');
+      if(cs === sym && c.px > 0) return c.px;
+    }
+  }catch(_){}
+  return 0;
+}
+
+function _writeDom(){
+  _debounceId = null;
+  var px  = _pendingPx;
+  var sym = _pendingSym || (window._tvSyncSym||'').toUpperCase();
   if(!sym || !(px > 0)) return;
+
+  // ══ KLÍČOVÉ: piš DOM POUZE pokud se TV cena skutečně změnila ══
+  // Pokud cena stojí → nic nepíš → panel stojí taky.
+  var symChanged = sym !== _lastSym;
+  var pxChanged  = Math.abs(px - _lastPxWritten) >= 0.01 * (_lastPxWritten || px) * 0.0001;
+  // Minimum change: 1 digit change (penny for BTC = 0.01, tiny for others)
+  var minChange = px >= 1000 ? 0.005 : px >= 1 ? 0.00005 : 0.0000005;
+  pxChanged = Math.abs(px - _lastPxWritten) > minChange;
+
+  if(!symChanged && !pxChanged) return; // cena se nezměnila → nedělej nic
+
+  // Symbol change → invalidate cache
+  if(symChanged){ _rowCache = null; _lastSym = sym; _lastHtml = ''; }
+
+  if(!_rowCache) _rowCache = _findRow(sym, window._tvSyncSymRaw || '');
+  if(!_rowCache) return;
 
   var fmt  = _fmt(px);
   var html = fmt + _SFX;
 
-  // Invalidate row cache on symbol change
-  if(sym !== _lastSym){ _rowCache = null; _lastSym = sym; }
+  // r-future & r-value
+  if(html !== _lastHtml){
+    _lastHtml = html;
+    var fe = _rowCache.querySelector('.r-future');
+    if(fe && fe.innerHTML !== html) fe.innerHTML = html;
+    var ve = _rowCache.querySelector('.r-value');
+    if(ve && ve.innerHTML !== html) ve.innerHTML = html;
+  }
 
-  // Find row (cached)
-  if(!_rowCache) _rowCache = _findRow(sym, window._tvSyncSymRaw || '');
-  if(!_rowCache) return;
+  // r-mispx — snapshot spot ceny z TOHOTO momentu (ne z pozdějšího BN WS ticku!)
+  // Tím pádem %MisPx se hýbe JEN s TV cenou, ne s Binance spotem.
+  try{
+    var spotPx = _getSpotPx(sym);
+    if(spotPx > 0){
+      var mis = (px - spotPx) / spotPx * 100;
+      var misStr = (mis >= 0 ? '+' : '') + mis.toFixed(3) + '%';
+      var misCls = 'r-mispx ' + (mis >= 0 ? 'bwei-gn' : 'bwei-rd');
+      var mp = _rowCache.querySelector('.r-mispx');
+      if(mp){
+        if(mp.className !== misCls) mp.className = misCls;
+        if(mp.textContent !== misStr) mp.textContent = misStr;
+      }
+    }
+  }catch(_){}
 
-  // Only write DOM if value actually changed
-  if(html === _lastHtml) return;
-  _lastHtml = html;
-  _lastPx   = px;
-
-  var fe = _rowCache.querySelector('.r-future');
-  if(fe && fe.innerHTML !== html) fe.innerHTML = html;
-  var ve = _rowCache.querySelector('.r-value');
-  if(ve && ve.innerHTML !== html) ve.innerHTML = html;
+  _lastPxWritten = px;
 }
 
-// Pouze setter hook — žádný timer, žádný interval
-// _sync se spustí přesně tehdy a jen tehdy, když TV panel pošle nový tick
+// Debounce: čeká 150ms po posledním ticku, pak zapíše
+function _onTick(v){
+  _pendingPx  = v;
+  _pendingSym = (window._tvSyncSym||'').toUpperCase();
+  if(_debounceId !== null) clearTimeout(_debounceId);
+  _debounceId = setTimeout(function(){
+    requestAnimationFrame(_writeDom);
+  }, _DEBOUNCE_MS);
+}
+
+// Setter hook na _tvSyncPx
 try {
   var _pxVal = 0;
   Object.defineProperty(window, '_tvSyncPx', {
     configurable: true,
     get: function(){ return _pxVal; },
-    set: function(v){ _pxVal = v; _sync(); }
+    set: function(v){
+      _pxVal = v;
+      if(v > 0) _onTick(v);
+    }
   });
 } catch(_){}
 
-// Startup bootstrap — při zapnutí přečti cenu přímo z DOM panelu
-// než dorazí první TV tick (který může trvat sekundy)
+// Startup bootstrap — čte cenu z ribbonu před prvním TV tickem
 function _bootstrap(){
   var sym = (window._tvSyncSym || '').toUpperCase();
-  if(!sym) return; // symbol ještě není znám — zkus znovu
+  if(!sym) return;
   var el = document.getElementById('bbg-current-price');
   if(!el) return;
   var raw = (el.textContent || el.innerText || '').replace(/[^0-9.]/g,'');
   var px = parseFloat(raw);
-  if(px > 0 && px !== _pxVal){
-    _pxVal = px; // nastavit přímo — setter by způsobil rekurzi
-    _sync();
-  }
+  if(px > 0 && px !== _pxVal){ _pxVal = px; _onTick(px); }
 }
 
-// Spusť bootstrap jakmile je DOM ready a opakuj dokud nepřijde první TV tick
 var _bootDone = false;
-var _bootOrig = Object.getOwnPropertyDescriptor(window, '_tvSyncPx');
 (function _tryBoot(){
   if(_bootDone) return;
   _bootstrap();
-  if(_pxVal > 0){ _bootDone = true; return; } // TV tick už přišel
-  setTimeout(_tryBoot, 300); // zkus znovu za 300ms
+  if(_pxVal > 0){ _bootDone = true; return; }
+  setTimeout(_tryBoot, 300);
 })();
 
-console.log('[TV-PANEL-SYNC] r-value & r-future napojena na TV panel cenu ✓');
+// ZÁMĚRNĚ žádný setInterval backup — panel se NEMÁ hýbat bez TV ticku!
+// Pokud TV netiká, panel stojí. Přesně co uživatel chce.
+
+console.log('[TV-PANEL-SYNC v18] Price-driven sync: DOM updates ONLY when TV price changes ✓');
 })();
 </script>
 
