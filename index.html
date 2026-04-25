@@ -28604,7 +28604,7 @@ window._setChartInterval = async function(interval) {
                     const pts = data.data;
                     if(pts && pts.length) {
                         const mark = parseFloat(pts[pts.length-1].mark_price || pts[pts.length-1].mp || 0);
-                        if(mark > 0) {
+                        if(mark > 0 && !(window._tvSyncPx > 0 && window._tvSyncSym)) {
                             setEl('bbg-current-price', fmtP(mark));
                             setEl('bbg-close', fmtP(mark));
                         }
@@ -28917,7 +28917,7 @@ window._setChartInterval = async function(interval) {
                 window._chigh = high; window._clow = low; window._cvol = vol;
 
                 // Fast Ribbon Update
-                setEl('bbg-current-price', fmtP(price));
+                if(!(window._tvSyncPx > 0 && window._tvSyncSym)) setEl('bbg-current-price', fmtP(price));
                 setEl('bbg-start',  fmtP(open));
                 setEl('bbg-high',   fmtP(high));
                 setEl('bbg-low',    fmtP(low));
@@ -29687,13 +29687,15 @@ window._bbgSyncActivePanelQuote = function(force){
   var col = up ? '#00cc44' : '#ff3d3d';
   var now = new Date();
   setEl('bbg-time', String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0'));
-  setEl('bbg-current-price', fmtP(quote.px));
-  setEl('bbg-close', fmtP(quote.px));
+  if(!(window._tvSyncPx > 0 && window._tvSyncSym)) {
+    setEl('bbg-current-price', fmtP(quote.px));
+    setEl('bbg-close', fmtP(quote.px));
+  }
   if(quote.open > 0) setEl('bbg-start', fmtP(quote.open));
   if(quote.hi > 0) setEl('bbg-high', fmtP(quote.hi));
   if(quote.lo > 0) setEl('bbg-low', fmtP(quote.lo));
   if(quote.vol > 0) setEl('bbg-volume', fmtV(quote.vol));
-  if(!isNaN(quote.chg)){
+  if(!isNaN(quote.chg) && !(window._tvSyncPx > 0 && window._tvSyncSym)){
     var chgEl = document.getElementById('bbg-price-change');
     if(chgEl){ chgEl.innerText = (quote.chg >= 0 ? '+' : '') + quote.chg.toFixed(2) + '%'; chgEl.style.color = col; }
     var arrow = document.getElementById('bbg-price-arrow');
