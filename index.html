@@ -1133,6 +1133,10 @@ body{text-rendering:optimizeSpeed;}
 .panel[data-fn="CRYPTO"] .bwei-wrap {
   zoom: 1.75 !important;
 }
+/* ── WEI: stejný zoom jako CRYPTO ── */
+.panel[data-fn="WEI"] .bwei-wrap {
+  zoom: 1.75 !important;
+}
 .panel-btn { color: #2a2000 !important; }
 .panel-btn:hover { color: #F39F41 !important; background: #0d0800 !important; }
 .panel-btn.close-btn:hover { background: #3a0808 !important; color: #ff3d3d !important; }
@@ -6819,6 +6823,8 @@ function refreshAllPanels(){
       // CRYPTO má vlastní _patchCRYPTOPanel — přeskočit rerender pokud jsou DOM ID přítomná nebo je tam Bloomberg wrapper
       // Přeskočíme vždy — patch loop se stará o update, rebuild by smazal live data a resetoval scroll
       if(reg.fn==='CRYPTO' && (body.querySelector('[id^="cp-px-"]') || body.querySelector('.bwei-wrap'))) return;
+      // WEI má vlastní _refreshWEIBWEI — nikdy nepřestavovat celý panel
+      if(reg.fn==='WEI'){ if(typeof _refreshWEIBWEI==='function') _refreshWEIBWEI(); return; }
       // INTEL/JOURN/SOURCES — use direct render, never rebuild outer shell (prevents flash/loop)
       if(reg.fn==='INTEL'){ if(typeof _renderINTEL==='function'&&document.getElementById('intel-feed'))_renderINTEL(); return; }
       if(reg.fn==='JOURN'){ if(typeof buildJOURN==='function'){body.innerHTML=buildJOURN(ti);} return; }
@@ -6975,8 +6981,8 @@ function openPanel(fn,posX,posY){
   }
 
   closeAllMenus();
-  // Zavřít jen maximalizované panely — zmenšené nechat
-  Object.keys(PANEL_REGISTRY).forEach(id=>{ const r=PANEL_REGISTRY[id]; if(r&&r.maximized) closePanel(id); });
+  // Zavřít jen maximalizované panely — zmenšené nechat (CRYPTO a WEI zůstanou)
+  Object.keys(PANEL_REGISTRY).forEach(id=>{ const r=PANEL_REGISTRY[id]; if(r&&r.maximized&&r.fn!=='CRYPTO'&&r.fn!=='WEI') closePanel(id); });
   const id='pnl-'+(++panelCount);
   const overlay=document.getElementById('map-overlay');
   const tabs=getPanelTabs(fn);
@@ -7769,6 +7775,7 @@ const IDX_DATA=[
   {s:'JKSE',n:'JSE Top 40 SA',  px:72484,  chg:.44,  ytd:4.8,  hi:72680,lo:72280,open:72400,vol:'—',    reg:'ME',mc:'—'},
   {s:'EGX30',n:'EGX 30 Egypt',  px:28484,  chg:.64,  ytd:14.4, hi:28680,lo:28280,open:28340,vol:'—',    reg:'ME',mc:'—'}
 ];
+window.IDX_DATA = IDX_DATA; // expose for WEI panel
 
 function buildIDX(regionFilter){
   // Bloomberg-authentic colored cell backgrounds
@@ -11308,9 +11315,10 @@ function jitter(){
       const body=p.querySelector('.panel-body');
       if(!fn||!body)return;
 
-      // OPTIMIZATION: If this is a CRYPTO panel and it's already rendered, 
-      // skip the heavy innerHTML update. Live data is handled by _patchCRYPTOPanel & _refreshBWEI.
+      // OPTIMIZATION: If this is a CRYPTO or WEI panel and it's already rendered,
+      // skip the heavy innerHTML update. Live data is handled by _patchCRYPTOPanel & _refreshBWEI/_refreshWEIBWEI.
       if(fn === 'CRYPTO' && body.querySelector('.bwei-wrap')) return;
+      if(fn === 'WEI' && body.querySelector('.bwei-wrap')) return;
 
       if(['WEI','EQUITY','CRYPTO','COMDTY','MOVERS','MMAP'].includes(fn)){
         // Save scroll positions before destructive innerHTML update
@@ -12205,6 +12213,27 @@ async function fetchStooq(){
           const m=MKT[sym];if(!m)return;
           m.px=c;m.open=isNaN(o)?m.open:o;m.hi=isNaN(h)?m.hi:h;m.lo=isNaN(l)?m.lo:l;
           if(chgPct!=null)m.chg=chgPct;
+        }
+        // ── Sync IDX_DATA for WEI panel ──
+        // STOOQ_ALL key → IDX_DATA symbol mapping
+        const _STOOQ_TO_IDX = {
+          'SPX':'SPX','INDU':'DJIA','NDX':'NDX','NKY':'NKY','DAX':'DAX','UKX':'FTSE',
+          'CAC':'CAC','AEX':'AEX','SMI':'SMI','HSI':'HSI','SHCOMP':'SHCOMP','KOSPI':'KOSPI',
+          'SENSEX':'SENSEX','ASX200':'ASX','IBOV':'IBOV','TSX':'TSX','WIG20':'WIG',
+          'PX':'PX','IBEX':'IBEX','NDX':'NDX','FTSEMIB':'MIB','OMX':'OMX','BUX':'BUX',
+          'TASI':'TASI','ADI':'ADX','EGX30':'EGX30','TWSE':'TWSE','STI':'STI',
+          'MERV':'MERVAL','SET':'SET','NIFTY':'NIFTY'
+        };
+        const _idxSym = _STOOQ_TO_IDX[sym];
+        if(_idxSym && window.IDX_DATA){
+          const _idxD = window.IDX_DATA.find(x=>x.s===_idxSym);
+          if(_idxD){
+            _idxD.px=c;
+            if(!isNaN(o))_idxD.open=o;
+            if(!isNaN(h))_idxD.hi=h;
+            if(!isNaN(l))_idxD.lo=l;
+            if(chgPct!=null)_idxD.chg=chgPct;
+          }
         }
         results.push(sym);
       }catch(_){}
@@ -30124,6 +30153,7 @@ window.refreshLivePanels = function() {
             const bweiBody = body.querySelector('.bwei-body');
             const bst = bweiBody ? bweiBody.scrollTop : 0;
 
+            if(reg.fn === 'WEI' || reg.fn === 'CRYPTO') return;
             body.innerHTML = ti > 0 ? buildPanelContentTab(reg.fn, ti) : buildPanelContent(reg.fn);
             body.scrollTop = st;
             if (bst > 0) {
@@ -44157,8 +44187,9 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-news-line .n-time { color: #FFAA00 !important; font-weight: normal !important; text-align: left !important;}
 .n-txt { color: #FFAA00 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; padding-right: 8px !important; font-weight: bold !important; }
 /* Bloomberg style: newest row flashes amber on arrival */
-@keyframes bwterm-arrive2 { 0%{background:rgba(255,170,0,0.22);color:#fff !important;} 80%{background:rgba(255,170,0,0.06);} 100%{background:transparent;} }
-.bwterm-live-row:first-child { animation: bwterm-arrive2 1.8s ease-out forwards; }
+@keyframes bwterm-arrive2 { 0%{background:rgba(255,170,0,0.08);} 100%{background:transparent;} }
+/* bwterm-arrive2 disabled — causes flicker on paintAll */
+/* .bwterm-live-row:first-child { animation: bwterm-arrive2 1.8s ease-out forwards; } */
 
 /* ── Suggested functions footer bar ── */
 .bwei-footbar {
@@ -44591,7 +44622,7 @@ function buildBWEI(data){
       <span class="ab-item"><span style="color:#aaaaaa; font-weight:normal;">301)</span> Expand Panel</span>
     </div>
 
-    <div class="bwei-newsticker" id="bwei-newsticker">${window._bweiCurrentNewsHTML || ''}</div>
+    <div class="bwei-newsticker" id="bwei-newsticker"></div>
 
     <div class="bwei-footbar">
       <span class="fb-sf">Suggested Functions</span>
@@ -44793,6 +44824,428 @@ function getTimeStr(){
 // Expose for debug
 window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 })();
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  WEI — Bloomberg World Equity Index style panel (BWEI clone for indices)
+// ═══════════════════════════════════════════════════════════════════════════════
+(function(){
+'use strict';
+
+// ─── CATEGORY MAPPING — mirrors Bloomberg WEI regions ──────────────────────
+const WEI_CATEGORIES = [
+  {
+    name: 'Americas',
+    tickers: ['DJIA','SPX','NDX','RUT','TSX','BMV','IBOV','MERVAL','COLCAP']
+  },
+  {
+    name: 'EMEA',
+    tickers: ['STOXX','FTSE','CAC','DAX','IBEX','MIB','AEX','OMX','SMI','WIG','PX','BUX','TASI','ADX','JKSE','EGX30']
+  },
+  {
+    name: 'Asia / Pacific',
+    tickers: ['NKY','HSI','SHCOMP','SZCOMP','KOSPI','TWSE','ASX','SENSEX','NIFTY','STI','SET','JCI','VNINDEX']
+  },
+  {
+    name: 'US Sectors / Vol',
+    tickers: ['SOX','DJT','NYA','VIX']
+  }
+];
+
+// ─── MONTH CODES (same as CRYPTO panel) ────────────────────────────────────
+const _MONTH_CODES = ['F','G','H','J','K','M','N','Q','U','V','X','Z'];
+function _getFutureTag(){
+  const d = new Date();
+  const quarterlyMonths = [2,5,8,11];
+  let m = d.getMonth(), y = d.getFullYear();
+  let target = quarterlyMonths.find(qm => qm >= m);
+  if(target == null){ target = quarterlyMonths[0]; y++; }
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return { label: monthNames[target] + String(y).slice(-2), code: _MONTH_CODES[target] + String(y).slice(-1) };
+}
+
+// ─── SPARKLINE — identical algorithm to CRYPTO panel ───────────────────────
+function _renderIdxSparkline(sym, chg){
+  let points = null;
+  try {
+    if(window._idxSparkCache && window._idxSparkCache[sym]) points = window._idxSparkCache[sym];
+  } catch(e){}
+
+  if(!points || points.length < 4){
+    const n = 32;
+    const trend = (chg||0)/100;
+    let px = 100 * (1 - trend * 0.8);
+    points = [];
+    for(let i=0;i<n;i++){
+      const drift = trend/n;
+      const noise = (Math.sin(i*1.3 + (sym.charCodeAt(0)||65)*0.017)*0.6 + Math.cos(i*0.7)*0.4)*0.002;
+      px *= (1 + drift + noise);
+      points.push(px);
+    }
+  }
+
+  const splitIdx = Math.floor(points.length * 0.5);
+  const leftPts  = points.slice(0, splitIdx);
+  const rightPts = points.slice(splitIdx - 1);
+  const W = 100, H = 20;
+  const leftW = 49, rightW = 49;
+
+  function makePath(pts, panelW){
+    const mn = Math.min(...pts), mx = Math.max(...pts);
+    const rng = mx - mn || 1;
+    const step = panelW / (pts.length - 1 || 1);
+    return pts.map((p,i)=>{
+      const x = (i * step).toFixed(1);
+      const y = (H - ((p-mn)/rng)*(H-2) - 1).toFixed(1);
+      return (i===0?'M':'L') + x + ',' + y;
+    }).join('');
+  }
+
+  const pathGrey  = makePath(leftPts, leftW);
+  const pathColor = makePath(rightPts, rightW);
+  const color = chg >= 0 ? '#3CA559' : '#BE434E';
+
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="display:block;width:100%;height:100%;background:#0a0a0a">
+    <path d="${pathGrey}" stroke="#888888" stroke-width="1.3" fill="none" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+    <line x1="50" y1="0" x2="50" y2="${H}" stroke="#444" stroke-width="0.8" vector-effect="non-scaling-stroke"/>
+    <g transform="translate(51,0)">
+      <path d="${pathColor}" stroke="${color}" stroke-width="1.3" fill="none" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+    </g>
+  </svg>`;
+}
+
+// ─── FORMAT HELPERS — identical to CRYPTO panel ────────────────────────────
+function _fmtPxIdx(v){
+  if(!v && v!==0) return '';
+  if(v >= 100000) return v.toLocaleString('en', {maximumFractionDigits:0});
+  if(v >= 10000)  return v.toLocaleString('en', {maximumFractionDigits:0});
+  if(v >= 1000)   return v.toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2});
+  if(v >= 100)    return v.toFixed(2);
+  if(v >= 10)     return v.toFixed(3);
+  if(v >= 1)      return v.toFixed(4);
+  return v.toFixed(6);
+}
+function _fmtChgIdx(v){
+  // Net change in index points (like Net Chg in crypto = USD change)
+  if(!v && v!==0) return '';
+  const s = v >= 0 ? '+' : '';
+  const abs = Math.abs(v);
+  if(abs >= 1000) return s + v.toLocaleString('en', {maximumFractionDigits:1});
+  if(abs >= 100)  return s + v.toFixed(1);
+  if(abs >= 10)   return s + v.toFixed(2);
+  if(abs >= 1)    return s + v.toFixed(2);
+  return s + v.toFixed(4);
+}
+function _fmtPctIdx(v){
+  if(!v && v!==0) return '';
+  return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+}
+function _fmtMisPxIdx(v){
+  // %MisPx = basis between open (futures proxy) and current value
+  if(!v && v!==0) return '';
+  return (v >= 0 ? '+' : '') + v.toFixed(3) + '%';
+}
+function _fmtYtdIdx(v){
+  if(!v && v!==0) return '';
+  return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+}
+function _fmtAvatIdx(v){
+  if(!v && v!==0) return '';
+  return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+}
+function _getTimeNow(){
+  const d = new Date();
+  return String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0');
+}
+
+// ─── AVAT CALC — mirrors _calcAvat from CRYPTO panel ──────────────────────
+function _calcAvatIdx(sym, vol){
+  // Simplified: use vol relative to a baseline
+  try {
+    if(window._calcAvat) return window._calcAvat(sym, vol);
+  } catch(e){}
+  // Fallback: derive from chg
+  const d = (window.IDX_DATA||[]).find(x=>x.s===sym);
+  if(!d) return 0;
+  const chg = d.chg || 0;
+  return chg * (0.85 + Math.sin((sym.charCodeAt(0)||65)*0.3)*0.15);
+}
+
+// ─── BUILD ROW — exact mirror of CRYPTO buildRow ──────────────────────────
+function _buildWeiRow(sym, rowNum, futTag){
+  const d = (window.IDX_DATA||[]).find(x=>x.s===sym);
+
+  // Live flags — same pattern as CRYPTO panel
+  const _isLive = !!(d && d.px > 0);
+  const _chgLive = !!(d && (d.chg !== undefined && d.chg !== null));
+
+  const px   = d ? (d.px   || 0) : 0;
+  const open = d ? (d.open || px) : 0;
+  const chg  = _chgLive ? (d.chg || 0) : 0;
+  const ytd  = d ? (d.ytd  || 0) : 0;
+  const name = d ? (d.n    || sym) : sym;
+
+  // "Future" for indices = open price (pre-market/previous session proxy)
+  // %MisPx = basis between open and current (same concept as futures basis)
+  const futurePx = open || px;
+  const misPx = (futurePx > 0 && px > 0) ? ((px - futurePx) / futurePx * 100) : 0;
+
+  // Net change in index points (equivalent to chgUsd in crypto)
+  const chgPts = _isLive && _chgLive ? (px * chg / 100) : 0;
+
+  // Δ AVAT
+  const avat = _calcAvatIdx(sym, d ? d.vol : 0);
+  const ytdVal = ytd || (chg * (2.5 + Math.sin((sym.charCodeAt(0)||65)*0.2)*1.5));
+
+  const timeStr = _getTimeNow();
+
+  const chgClass  = chg  >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const ytdClass  = ytdVal >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const misPxClass = misPx >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const avatClass = avat >= 0 ? 'avat-pos' : 'avat-neg';
+
+  const shortName = name.length > 18 ? name.slice(0,17)+'…' : name;
+
+  const _DASH = '<span style="color:#444;">—</span>';
+
+  const _futStr  = (futurePx > 0) ? (_fmtPxIdx(futurePx) + '<span class="bwei-sfx-d">d</span>') : _DASH;
+  const _valStr  = _isLive ? (_fmtPxIdx(px) + '<span class="bwei-sfx-d">d</span>') : _DASH;
+  const _misStr  = (futurePx > 0 && _isLive) ? _fmtMisPxIdx(misPx) : _DASH;
+  const _chgStr  = (_isLive && _chgLive) ? _fmtChgIdx(chgPts) : _DASH;
+  const _pctStr  = _chgLive ? _fmtPctIdx(chg) : _DASH;
+
+  return `<div class="bwei-row" data-sym="${sym}" onclick="if(window._openChartForIndex) window._openChartForIndex('${sym}')">
+    <div class="r-num">${rowNum})</div>
+    <div class="r-name">${shortName}</div>
+    <div class="r-rmi"></div>
+    <div class="r-spark">${_renderIdxSparkline(sym, chg)}</div>
+    <div class="r-future">${_futStr}</div>
+    <div class="r-mispx ${misPxClass}">${_misStr}</div>
+    <div class="r-value">${_valStr}</div>
+    <div class="r-chg ${chgClass}">${_chgStr}</div>
+    <div class="r-pct ${chgClass}">${_pctStr}</div>
+    <div class="r-avat ${avatClass}">${_fmtAvatIdx(avat)}</div>
+    <div class="r-time">${timeStr}<span class="bwei-sfx-c">c</span></div>
+    <div class="r-ytd ${ytdClass}">${_fmtYtdIdx(ytdVal)}</div>
+  </div>`;
+}
+
+// ─── BUILD FULL PANEL — exact mirror of buildBWEI ─────────────────────────
+function buildWEIBWEI(){
+  const futTag = _getFutureTag();
+  let html = `
+  <div class="bwei-wrap">
+
+    <div class="bwei-tophdr">
+      <span class="bwei-menu">News<span class="bwei-arr">▾</span></span>
+      <span class="bwei-menu">Settings<span class="bwei-arr">▾</span></span>
+      <span class="bwei-title">WORLD EQUITY INDICES</span>
+    </div>
+
+    <div class="bwei-optbar">
+      <div class="bwei-optbar-standard">
+        <span class="bwei-opt-sel">Standard</span><span class="bwei-opt-arr">▼</span>
+      </div>
+      <div class="bwei-optbar-checks">
+        <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Futures</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> &Delta; AVAT</label>
+      </div>
+      <div class="bwei-optbar-right">
+        <span class="bwei-opt-sel">10D</span><span class="bwei-opt-arr">▼</span>
+        <span style="width:3px;flex-shrink:0;"></span>
+        <span class="bwei-opt-sel">%Chg YTD</span><span class="bwei-opt-arr">▼</span>
+        <span style="width:3px;flex-shrink:0;"></span>
+        <span class="bwei-opt-sel">USD</span><span class="bwei-opt-arr">▼</span>
+      </div>
+    </div>
+
+    <div class="bwei-body">`;
+
+  let catIdx = 1;
+  WEI_CATEGORIES.forEach(cat => {
+    // First category gets column headers — identical to CRYPTO
+    if(catIdx === 1){
+      html += `
+      <div class="bwei-cat" style="border-top:none !important;">
+        <div class="c-num">${catIdx})</div>
+        <div class="c-name">${cat.name}</div>
+        <div class="c-rmi">RMI</div>
+        <div class="c-spark">2Day</div>
+        <div>Future</div>
+        <div>%MisPx</div>
+        <div>Value</div>
+        <div>Net Chg</div>
+        <div>%Chg</div>
+        <div>&Delta; AVAT</div>
+        <div>Time</div>
+        <div>%YtdCur</div>
+      </div>`;
+    } else {
+      html += `
+      <div class="bwei-cat">
+        <div class="c-num">${catIdx})</div>
+        <div class="c-name">${cat.name}</div>
+        <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+      </div>`;
+    }
+
+    let rowIdx = 1;
+    cat.tickers.forEach(sym => {
+      const d = (window.IDX_DATA||[]).find(x=>x.s===sym);
+      if(!d) return;
+      const rn = catIdx * 10 + rowIdx;
+      html += _buildWeiRow(sym, rn, futTag);
+      rowIdx++;
+    });
+    catIdx++;
+  });
+
+  html += `</div>
+
+    <div class="bwei-actionbar">
+      <span class="ab-item"><span style="color:#aaaaaa;font-weight:normal;">300)</span> Edit Panel</span>
+      <span class="ab-item"><span style="color:#aaaaaa;font-weight:normal;">301)</span> Expand Panel</span>
+    </div>
+
+    <div class="bwei-newsticker" id="wei-newsticker"></div>
+
+    <div class="bwei-footbar">
+      <span class="fb-sf">Suggested Functions</span>
+      <span class="fb-center">
+        <span class="fb-item"><span class="fb-key">IMAP</span> <span class="fb-desc">SPX sector map &amp; index breakdown</span></span>
+      </span>
+      <span class="fb-right">
+        <span class="fb-item"><span class="fb-key">IDX</span> <span class="fb-desc">World index performance table</span></span>
+      </span>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+// ─── LIVE REFRESH — identical to CRYPTO _refreshBWEI ──────────────────────
+function _refreshWEIBWEI(){
+  try {
+    const panel = document.querySelector('.panel[data-fn="WEI"] .bwei-wrap');
+    if(!panel) return;
+
+    panel.querySelectorAll('.bwei-row').forEach(row => {
+      const sym = row.dataset.sym;
+      const d = (window.IDX_DATA||[]).find(x=>x.s===sym);
+      if(!d) return;
+
+      const px   = d.px   || 0;
+      const open = d.open || px;
+      const chg  = d.chg  || 0;
+      const ytd  = d.ytd  || 0;
+      const chgPts = px ? (px * chg / 100) : 0;
+      const futurePx = open || px;
+      const misPx = (futurePx > 0 && px > 0) ? ((px - futurePx) / futurePx * 100) : 0;
+      const avat = _calcAvatIdx(sym, d.vol);
+      const ytdVal = ytd || (chg * (2.5 + Math.sin((sym.charCodeAt(0)||65)*0.2)*1.5));
+
+      const chgClass  = chg  >= 0 ? 'bwei-gn' : 'bwei-rd';
+      const ytdClass  = ytdVal >= 0 ? 'bwei-gn' : 'bwei-rd';
+      const misPxClass = misPx >= 0 ? 'bwei-gn' : 'bwei-rd';
+      const avatClass = avat >= 0 ? 'avat-pos' : 'avat-neg';
+
+      if(!window._weiCellCache) window._weiCellCache = {};
+      const _cc = window._weiCellCache[sym] || (window._weiCellCache[sym] = {});
+      const _DASH = '<span style="color:#444;">—</span>';
+      const _setT = (el, val, key) => { if(el && _cc[key] !== val){ el.textContent = val; _cc[key] = val; } };
+      const _setH = (el, val, key) => { if(el && _cc[key] !== val){ el.innerHTML = val; _cc[key] = val; } };
+      const _setC = (el, cls, key) => { if(el && _cc[key] !== cls){ el.className = cls; _cc[key] = cls; } };
+
+      const _isLive = px > 0;
+      const _chgLive = (d.chg !== undefined && d.chg !== null);
+
+      const futureEl = row.querySelector('.r-future');
+      const mispxEl  = row.querySelector('.r-mispx');
+      const valueEl  = row.querySelector('.r-value');
+      const chgEl    = row.querySelector('.r-chg');
+      const pctEl    = row.querySelector('.r-pct');
+      const avatEl   = row.querySelector('.r-avat');
+      const timeEl   = row.querySelector('.r-time');
+      const ytdEl    = row.querySelector('.r-ytd');
+      const sparkEl  = row.querySelector('.r-spark');
+
+      if(futureEl && futurePx > 0){
+        const v = _fmtPxIdx(futurePx) + '<span class="bwei-sfx-d">d</span>';
+        _setH(futureEl, v, 'futV');
+      }
+      if(mispxEl){
+        if(futurePx > 0 && _isLive){
+          _setC(mispxEl, 'r-mispx '+misPxClass, 'misC');
+          _setT(mispxEl, _fmtMisPxIdx(misPx), 'misV');
+        } else { _setC(mispxEl,'r-mispx','misC'); _setH(mispxEl, _DASH, 'misV'); }
+      }
+      if(valueEl && _isLive){
+        const v = _fmtPxIdx(px) + '<span class="bwei-sfx-d">d</span>';
+        _setH(valueEl, v, 'valV');
+      }
+      if(chgEl){
+        if(_isLive && _chgLive){
+          _setC(chgEl, 'r-chg '+chgClass, 'chgC');
+          _setT(chgEl, _fmtChgIdx(chgPts), 'chgV');
+        } else { _setC(chgEl,'r-chg','chgC'); _setH(chgEl, _DASH, 'chgV'); }
+      }
+      if(pctEl){
+        if(_chgLive){
+          _setC(pctEl, 'r-pct '+chgClass, 'pctC');
+          _setT(pctEl, _fmtPctIdx(chg), 'pctV');
+        } else { _setC(pctEl,'r-pct','pctC'); _setH(pctEl, _DASH, 'pctV'); }
+      }
+      if(avatEl){
+        _setC(avatEl, 'r-avat '+avatClass, 'avatC');
+        _setT(avatEl, _fmtAvatIdx(avat), 'avatV');
+      }
+      if(timeEl){
+        const tv = _getTimeNow();
+        if(_cc.timeV !== tv){ timeEl.innerHTML = tv+'<span class="bwei-sfx-c">c</span>'; _cc.timeV = tv; }
+      }
+      if(ytdEl){
+        if(_chgLive){
+          _setC(ytdEl, 'r-ytd '+ytdClass, 'ytdC');
+          _setT(ytdEl, _fmtYtdIdx(ytdVal), 'ytdV');
+        } else { _setC(ytdEl,'r-ytd','ytdC'); _setH(ytdEl, _DASH, 'ytdV'); }
+      }
+      if(sparkEl && _cc.sparkChg !== chg){
+        sparkEl.innerHTML = _renderIdxSparkline(sym, chg);
+        _cc.sparkChg = chg;
+      }
+    });
+  } catch(e){}
+}
+
+// ─── PATCH buildPanelContent for WEI ──────────────────────────────────────
+(function _patchWEI(){
+  const _origPanel = window.buildPanelContent;
+  if(typeof _origPanel === 'function'){
+    window.buildPanelContent = function(fn, ...args){
+      if(fn === 'WEI'){
+        try { return buildWEIBWEI(); } catch(e){ console.error('[WEI-BWEI] build failed:', e); }
+      }
+      return _origPanel.apply(this, [fn, ...args]);
+    };
+  }
+
+
+
+  // Live refresh every 3s — same cadence as CRYPTO
+  if(!window._weiRefreshRegistered){
+    window._weiRefreshRegistered = true;
+    setInterval(_refreshWEIBWEI, 3000);
+  }
+
+  console.log('[WEI-BWEI] World Equity Index panel loaded');
+})();
+
+window.WEI_BWEI = { buildWEIBWEI, WEI_CATEGORIES };
+})();
+
 </script>
   <!-- CRYPTO DASH PANEL (Full width) -->
   <button id="crypto-dash-toggle" onclick="_toggleCryptoDash()">
@@ -45021,7 +45474,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
           '<div class="n-time">' + r.time + '</div>' +
           '<div class="n-txt">'  + r.txt  + '</div>';
         ticker.insertBefore(el, ticker.firstChild);
-        setTimeout(()=>el.classList.remove('bwterm-new'), 1800);
+        // bwterm-new class removed immediately — no delayed repaint
       });
 
       if (!ticker.children.length && !rows.length) {
