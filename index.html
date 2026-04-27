@@ -2343,9 +2343,10 @@ const _bbgMenuCategories = [
   {
     label: null,
      items: [
-       { num:1,  run:true,  cmd:'WEI',      desc:'World Equity Indices' },
-       { num:2,  run:true,  cmd:'IMAP',     desc:'SPX sector map & index breakdown' },
-       { num:3,  run:true,  cmd:'WORLD',    desc:'World Assets' },
+       { num:1,  run:true,  cmd:'WEI',        desc:'World Equity Indices' },
+       { num:2,  run:true,  cmd:'IMAP',       desc:'SPX sector map & index breakdown' },
+       { num:3,  run:true,  cmd:'WORLD',      desc:'World Assets' },
+       { num:4,  run:true,  cmd:'CRYPTOMKT',  desc:'Crypto Market — WEI Style Dashboard' },
      ]
   },
   { label: 'Stocks & Equities', isLink: true, items: [] },
@@ -3533,7 +3534,7 @@ window._bbgSecMenuGo = function(cmd, sym) {
     'JOURN':'JOURN','PORT':'PORT','RISK':'RISK','ALERTS':'ALERTS',
     'DHLO':'DHLO','SENT':'SENT','MMAP':'MMAP','FA':'FA',
     'EQUITY':'EQUITY','IDX':'WEI','WEI':'WEI','COMDTY':'COMDTY','ETFS':'ETFF',
-    'CWEI':'CWEI','CRYPTOMK':'CRYPTOMK',
+    'CWEI':'CWEI','CRYPTOMK':'CRYPTOMK','CRYPTOMKT':'WEI',
   };
   const panelId = cryptoPanels[cmd];
   if (panelId && window.openPanel) {
@@ -48877,9 +48878,9 @@ body.wei-original-active .cmd-icon-lbl,body.wei-original-active .cmd-icon span:n
 body.wei-original-active .cmd-icon .cmd-arr{font-size:14px!important;color:#bdbdbd!important;}
 body.wei-original-active .cmd-icon-help{height:36px!important;padding:0 18px!important;background:#ffcc00!important;}
 body.wei-original-active .cmd-icon-help .cmd-icon-lbl{font-size:28px!important;color:#000!important;font-weight:900!important;}
-body.wei-original-active .panel.maximized[data-fn="WEI"]{top:36px!important;height:calc(100% - 36px)!important;background:#000!important;}
-body.wei-original-active .panel[data-fn="WEI"] .panel-body{background:#000!important;overflow:hidden!important;display:block!important;position:relative!important;}
-.panel[data-fn="WEI"] .wei-original{--wei-orange:#e8922a;--wei-control:#ffaa1a;--wei-red:#cf4a5b;--wei-green:#43b86a;--wei-cream:#dcc8ad;--wei-grey:#a6a6a6;width:1900px;height:1136px;min-width:1900px;min-height:1136px;display:flex;flex:0 0 auto;flex-direction:column;position:absolute;left:0;top:0;transform-origin:0 0;background:#000;color:var(--wei-orange);font-family:Arial,Helvetica,sans-serif!important;font-weight:700;line-height:1;overflow:hidden;zoom:1!important;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}
+body.wei-original-active .panel.maximized[data-fn="WEI"],body.wei-original-active .panel.maximized[data-fn="CRYPTOMKT"]{top:36px!important;height:calc(100% - 36px)!important;background:#000!important;}
+body.wei-original-active .panel[data-fn="WEI"] .panel-body,body.wei-original-active .panel[data-fn="CRYPTOMKT"] .panel-body{background:#000!important;overflow:hidden!important;display:block!important;position:relative!important;}
+.panel[data-fn="WEI"] .wei-original,.panel[data-fn="CRYPTOMKT"] .wei-original{--wei-orange:#e8922a;--wei-control:#ffaa1a;--wei-red:#cf4a5b;--wei-green:#43b86a;--wei-cream:#dcc8ad;--wei-grey:#a6a6a6;width:1900px;height:1136px;min-width:1900px;min-height:1136px;display:flex;flex:0 0 auto;flex-direction:column;position:absolute;left:0;top:0;transform-origin:0 0;background:#000;color:var(--wei-orange);font-family:Arial,Helvetica,sans-serif!important;font-weight:700;line-height:1;overflow:hidden;zoom:1!important;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}
 .wei-original *{box-sizing:border-box;letter-spacing:0!important;}
 .wei-command{height:72px;flex:0 0 72px;background:#000;color:#fff;font-family:"Courier New",monospace;font-weight:700;}
 .wei-cmd-input{height:36px;display:flex;align-items:stretch;background:#000;}
@@ -48968,8 +48969,8 @@ var k=0;rows.forEach(function(c){out+=cat(c);c.items.forEach(function(r){out+=ro
 out+='</div><div class="wei-action"><span><b>300)</b> Edit Panel</span><span><b>301)</b> Expand Panel</span></div><div class="wei-news" id="wei-live-news"><div class="wei-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt">Loading news...</span></div><div class="wei-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div><div class="wei-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div><div class="wei-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div></div><div class="wei-foot"><div><span class="sf">Suggested Functions</span></div><div><span class="key">ECO</span><span class="desc">See upcoming economic releases &amp; events</span></div><div><span class="key">CVID</span><span class="desc">Chart current coronavirus infection data</span></div></div></div>';
 return out;}
 var oldBuild=window.buildPanelContent;
-window.buildPanelContent=function(fn){if(String(fn).toUpperCase()==='WEI')return buildWEIOriginal();return oldBuild?oldBuild.apply(this,arguments):'';};
-function markWei(){var has=!!document.querySelector('.panel[data-fn="WEI"]');document.body.classList.toggle('wei-original-active',has);if(has){var sec=document.getElementById('cmd-sec-inp'),fn=document.getElementById('cmd-fn-inp');if(sec)sec.value='Initial Jobless Claims SA Index';if(fn)fn.value='WEI';}}
+window.buildPanelContent=function(fn){var u=String(fn).toUpperCase();if(u==='WEI'||u==='CRYPTOMKT')return buildWEIOriginal();return oldBuild?oldBuild.apply(this,arguments):'';};
+function markWei(){var weipnl=document.querySelector('.panel[data-fn="WEI"], .panel[data-fn="CRYPTOMKT"]');var has=!!weipnl;document.body.classList.toggle('wei-original-active',has);if(has){var sec=document.getElementById('cmd-sec-inp'),fn=document.getElementById('cmd-fn-inp');if(sec)sec.value='Initial Jobless Claims SA Index';if(fn)fn.value=weipnl.dataset.fn;}}
 var oldOpen=window.openPanel;if(typeof oldOpen==='function'){window.openPanel=function(fn){var ret=oldOpen.apply(this,arguments);setTimeout(markWei,0);setTimeout(markWei,80);return ret;};}
 var oldClose=window.closePanel;if(typeof oldClose==='function'){window.closePanel=function(){var ret=oldClose.apply(this,arguments);setTimeout(markWei,0);return ret;};}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',markWei);else markWei();
@@ -48998,12 +48999,12 @@ window.WEI_ORIGINAL_FINAL={build:buildWEIOriginal};
     body.style.background = '#000';
   }
   function fitAll(){
-    document.querySelectorAll('.panel[data-fn="WEI"]').forEach(fitWeiPanel);
+    document.querySelectorAll('.panel[data-fn="WEI"], .panel[data-fn="CRYPTOMKT"]').forEach(fitWeiPanel);
   }
   // ResizeObserver na body každého WEI panelu
   var ro = (typeof ResizeObserver !== 'undefined') ? new ResizeObserver(function(entries){
     entries.forEach(function(e){
-      var panel = e.target.closest && e.target.closest('.panel[data-fn="WEI"]');
+      var panel = e.target.closest && e.target.closest('.panel[data-fn="WEI"], .panel[data-fn="CRYPTOMKT"]');
       if(panel) fitWeiPanel(panel);
     });
   }) : null;
@@ -49012,7 +49013,7 @@ window.WEI_ORIGINAL_FINAL={build:buildWEIOriginal};
     if(body && ro && !body.__weiObserved){ ro.observe(body); body.__weiObserved = true; }
     fitWeiPanel(panel);
   }
-  function scan(){ document.querySelectorAll('.panel[data-fn="WEI"]').forEach(attach); }
+  function scan(){ document.querySelectorAll('.panel[data-fn="WEI"], .panel[data-fn="CRYPTOMKT"]').forEach(attach); }
   // Sleduj přidání nových WEI panelů
   new MutationObserver(function(){ scan(); }).observe(document.documentElement, {childList:true, subtree:true});
   window.addEventListener('resize', fitAll, {passive:true});
@@ -49139,7 +49140,7 @@ setInterval(_weiNewsRefresh, 30000);
       });
     });
   }).observe(document.documentElement,{childList:true,subtree:true});
-  document.querySelectorAll('.panel[data-fn="WEI"] .wei-original').forEach(init);
+  document.querySelectorAll('.panel[data-fn="WEI"] .wei-original, .panel[data-fn="CRYPTOMKT"] .wei-original').forEach(init);
 })();
 </script>
 
