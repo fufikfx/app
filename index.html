@@ -292,8 +292,10 @@ body.sat-active .m-wrap{opacity:1!important;}
 .panel.maximized .panel-hd{display:none!important;}
 .panel.maximized .panel-body{zoom:1;flex:1!important;height:0!important;min-height:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
 .panel.maximized .panel-body>.bwei-wrap{flex:1!important;min-height:0!important;height:auto!important;}
-/* Odstranění horní černé mezery v maximalized CRYPTO/WEI panelech — schovat tabs */
+/* Odstranění horní černé mezery v maximalized CRYPTO/WEI/CRYPTOMK panelech — schovat tabs */
 .panel.maximized[data-fn="CRYPTO"] .panel-tabs,
+.panel.maximized[data-fn="CRYPTOMK"] .panel-tabs,
+.panel.maximized[data-fn="CWEI"] .panel-tabs,
 .panel.maximized[data-fn="WEI"] .panel-tabs { display: none !important; }
 .panel-hd{
   height:22px;background:#000;
@@ -317,21 +319,25 @@ body.sat-active .m-wrap{opacity:1!important;}
 .panel-body::-webkit-scrollbar-thumb{background:#0a0a0a;}
 .panel-body::-webkit-scrollbar-track{background:transparent;}
 
-/* ── CRYPTO & WEI PANEL COLOR ── */
-.panel[data-fn="CRYPTO"], .panel[data-fn="WEI"],
-.panel[data-fn="CRYPTO"] .panel-hd, .panel[data-fn="WEI"] .panel-hd,
-.panel[data-fn="CRYPTO"] .panel-body, .panel[data-fn="WEI"] .panel-body,
-.panel[data-fn="CRYPTO"] .panel-title, .panel[data-fn="WEI"] .panel-title,
-.panel[data-fn="CRYPTO"] .pt, .panel[data-fn="WEI"] .pt,
-.panel[data-fn="CRYPTO"] .pt th, .panel[data-fn="WEI"] .pt th {
+/* ── CRYPTO & WEI & CRYPTOMK & CWEI PANEL COLOR ── */
+.panel[data-fn="CRYPTO"], .panel[data-fn="WEI"], .panel[data-fn="CRYPTOMK"], .panel[data-fn="CWEI"],
+.panel[data-fn="CRYPTO"] .panel-hd, .panel[data-fn="WEI"] .panel-hd, .panel[data-fn="CRYPTOMK"] .panel-hd, .panel[data-fn="CWEI"] .panel-hd,
+.panel[data-fn="CRYPTO"] .panel-body, .panel[data-fn="WEI"] .panel-body, .panel[data-fn="CRYPTOMK"] .panel-body, .panel[data-fn="CWEI"] .panel-body,
+.panel[data-fn="CRYPTO"] .panel-title, .panel[data-fn="WEI"] .panel-title, .panel[data-fn="CRYPTOMK"] .panel-title, .panel[data-fn="CWEI"] .panel-title,
+.panel[data-fn="CRYPTO"] .pt, .panel[data-fn="WEI"] .pt, .panel[data-fn="CRYPTOMK"] .pt, .panel[data-fn="CWEI"] .pt,
+.panel[data-fn="CRYPTO"] .pt th, .panel[data-fn="WEI"] .pt th, .panel[data-fn="CRYPTOMK"] .pt th, .panel[data-fn="CWEI"] .pt th {
   background: #262626 !important;
   color: #D19542 !important;
 }
 .panel[data-fn="CRYPTO"] td:first-child:not([colspan]),
-.panel[data-fn="WEI"] td:first-child span {
+.panel[data-fn="WEI"] td:first-child span,
+.panel[data-fn="CRYPTOMK"] td:first-child:not([colspan]),
+.panel[data-fn="CWEI"] td:first-child:not([colspan]) {
   color: #A3A5A4 !important;
 }
-.panel[data-fn="CRYPTO"] td:nth-child(3) {
+.panel[data-fn="CRYPTO"] td:nth-child(3),
+.panel[data-fn="CRYPTOMK"] td:nth-child(3),
+.panel[data-fn="CWEI"] td:nth-child(3) {
   color: #A3A5A4 !important;
 }
 
@@ -1135,8 +1141,10 @@ body{text-rendering:optimizeLegibility;}
   background: #000000 !important;
   overflow: hidden !important;
 }
-<!-- Allow sticky inside CRYPTO/WEI panels — bwei-body handles its own scroll -->
+<!-- Allow sticky inside CRYPTO/WEI/CRYPTOMK/CWEI panels — bwei-body handles its own scroll -->
 .panel[data-fn="CRYPTO"].maximized .panel-body,
+.panel[data-fn="CRYPTOMK"].maximized .panel-body,
+.panel[data-fn="CWEI"].maximized .panel-body,
 .panel[data-fn="WEI"].maximized .panel-body {
   overflow: visible !important;
 }
@@ -1158,6 +1166,34 @@ body{text-rendering:optimizeLegibility;}
   /* Pevná "scéna" — obsah uvnitř se nikdy neroztahuje, layout zůstane jako na fotce */
   width: 1100px !important;
   height: 720px !important;
+  transform-origin: 0 0 !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  zoom: 1 !important;
+}
+/* ── CRYPTOMK (Crypto Markets — Core Assets): stejný styl jako WEI panel ── */
+.panel[data-fn="CRYPTOMK"] .panel-body { overflow: hidden !important; position: relative !important; }
+.panel[data-fn="CRYPTOMK"] .bwei-wrap {
+  width: 1100px !important;
+  height: 720px !important;
+  transform-origin: 0 0 !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  zoom: 1 !important;
+}
+/* ── CWEI (Crypto World Equity Indices): stejný styl jako WEI / CRYPTOMK panel ── */
+.panel[data-fn="CWEI"] .panel-body { overflow: hidden !important; position: relative !important; }
+.panel[data-fn="CWEI"] .bwei-wrap {
+  width: 1100px !important;
+  height: 720px !important;
+  transform-origin: 0 0 !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  zoom: 1 !important;
+}
   transform-origin: 0 0 !important;
   position: absolute !important;
   left: 0 !important;
@@ -1407,6 +1443,17 @@ body {
   color: #F39F41 !important;
 }
 
+/* === USER-REQUESTED REMOVALS === */
+/* Hide crypto dashboard panel completely */
+#crypto-dash-panel,
+#crypto-dash-panel.open { display: none !important; visibility: hidden !important; }
+/* Hide any remaining BWEI top header / option bars (incl. portal-mounted ones) */
+.bwei-tophdr,
+.bwei-optbar,
+body > .bwei-tophdr.wei-portal,
+body > .bwei-optbar.wei-portal { display: none !important; }
+/* Hide CRYPTO tab in the right sidebar */
+.sbtab[data-tab="cry"] { display: none !important; }
 </style>
 <script>/* LightweightCharts v4.1.3 inlined */
 /*!
@@ -2083,7 +2130,6 @@ window._bbgShowAcForEl = function(el) {
 
 /* ── Bloomberg Autocomplete ── */
 const _bbgCrypto = [
-  {cmd:'CRYPTO',  desc:'Market Cap Ranking — All Assets'},
   {cmd:'DOMN',    desc:'BTC / Altcoin Dominance Chart'},
   {cmd:'ETFF',    desc:'ETF Flows — Bitcoin & Ethereum'},
 ];
@@ -2296,12 +2342,11 @@ const _bbgMenuCategories = [
   { label: 'Securities, Settings & Help', isLink: true, items: [] },
   {
     label: null,
-    items: [
-      { num:1,  run:true,  cmd:'CRYPTO',  desc:'Crypto Markets Dashboard' },
-      { num:2,  run:true,  cmd:'WEI',     desc:'World Equity Indices' },
-      { num:3,  run:true,  cmd:'IMAP',    desc:'SPX sector map & index breakdown' },
-      { num:4,  run:true,  cmd:'WORLD',   desc:'World Assets' },
-    ]
+     items: [
+       { num:1,  run:true,  cmd:'WEI',      desc:'World Equity Indices' },
+       { num:2,  run:true,  cmd:'IMAP',     desc:'SPX sector map & index breakdown' },
+       { num:3,  run:true,  cmd:'WORLD',    desc:'World Assets' },
+     ]
   },
   { label: 'Stocks & Equities', isLink: true, items: [] },
   {
@@ -2350,8 +2395,7 @@ const _bbgMenuCategoriesR = [
       { num:14, run:true,  cmd:'WNTOP',    desc:'Top News Stories' },
       { num:15, run:true,  cmd:'WNMACRO',  desc:'Macro — Central Banks & Data' },
       { num:16, run:true,  cmd:'WNMKT',    desc:'Markets — Equities & FX' },
-      { num:17, run:true,  cmd:'WNCRYP',   desc:'Crypto — Digital Assets' },
-      { num:18, run:true,  cmd:'WNEARNS',  desc:'Earnings — Corp Results' },
+      { num:17, run:true,  cmd:'WNEARNS',  desc:'Earnings — Corp Results' },
       { num:19, run:true,  cmd:'WNENRG',   desc:'Energy — Oil & Gas' },
       { num:20, run:true,  cmd:'WNCB',     desc:'Central Banks — FED ECB BOE BOJ' },
       { num:21, run:true,  cmd:'CN',       desc:'Company News' },
@@ -2529,10 +2573,9 @@ function _bbgShowAC(q) {
     leftCol += secHead('FUNCTIONS', true);
     leftCol += allMenuItems.map(item => menuRow(item.cmd, item.desc, `_bbgMenuSelect('${item.cmd}')`)).join('');
   }
-  if (rCrypto.length) {
-    leftCol += secHead('CRYPTO &amp; DIGITAL ASSETS', !allMenuItems.length);
-    leftCol += rCrypto.map(f => menuRow(f.cmd, f.desc, `_bbgSelectFn('${f.cmd}')`)).join('');
-  }
+  // CRYPTO & DIGITAL ASSETS section removed per user request
+  // if (rCrypto.length) { ... }
+
   if (rMacro.length) {
     leftCol += secHead('MACRO &amp; CALENDAR', !leftCol);
     leftCol += rMacro.map(f => menuRow(f.cmd, f.desc, `_bbgSelectFn('${f.cmd}')`)).join('');
@@ -2541,10 +2584,9 @@ function _bbgShowAC(q) {
     leftCol += secHead('NEWS &amp; INTELLIGENCE', !leftCol);
     leftCol += rNews.map(f => menuRow(f.cmd, f.desc, `_bbgSelectFn('${f.cmd}')`)).join('');
   }
-  if (rSecs.length) {
-    leftCol += secHead('CRYPTO ASSETS &amp; DIGITAL', !leftCol);
-    leftCol += rSecs.map(s => secRow(s.sym.replace(' Curncy',''), s.name, 'Crypto', s.sym)).join('');
-  }
+  // CRYPTO ASSETS & DIGITAL section removed per user request
+  // if (rSecs.length) { ... }
+
 
   // Build right column
   let rightCol = '';
@@ -3491,6 +3533,7 @@ window._bbgSecMenuGo = function(cmd, sym) {
     'JOURN':'JOURN','PORT':'PORT','RISK':'RISK','ALERTS':'ALERTS',
     'DHLO':'DHLO','SENT':'SENT','MMAP':'MMAP','FA':'FA',
     'EQUITY':'EQUITY','IDX':'WEI','WEI':'WEI','COMDTY':'COMDTY','ETFS':'ETFF',
+    'CWEI':'CWEI','CRYPTOMK':'CRYPTOMK',
   };
   const panelId = cryptoPanels[cmd];
   if (panelId && window.openPanel) {
@@ -3855,7 +3898,7 @@ function _handleGlobalCmd() {
       return;
     }
     const title = getPanelTitle(fn);
-    if(title !== fn || ['WN','INTEL','DES','FA','GP','EQUITY','NWS','CRYPTO','WEI'].includes(fn)) {
+    if(title !== fn || ['WN','INTEL','DES','FA','GP','EQUITY','NWS','CRYPTO','WEI','CRYPTOMK','CWEI'].includes(fn)) {
       if(sec && typeof onSelect === 'function') {
         try { onSelect(sec); } catch(e){}
       }
@@ -4034,42 +4077,8 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <!-- CRYPTO folder -->
-      <div class="ql-folder open" onclick="event.stopPropagation()">
-        <div class="ql-folder-hd">
-          <span class="ql-folder-arrow">▶</span>
-          <span class="ql-folder-name">Crypto &amp; Digital Assets</span>
-        </div>
-        <div class="ql-folder-body">
-          <div class="ql-it" onclick="openPanel('IVOL');closeAllQL()" style="border-left:2px solid #bb44ff"><div class="ql-it-desc" style="color:#cc66ff;font-weight:700">◈ IVOL · Implied Volatility Surface</div></div>
-          <div class="ql-it" onclick="openPanel('GHREPO');closeAllQL()" style="border-left:2px solid #238636"><div class="ql-it-desc" style="color:#3fb950;font-weight:700">⬡ GHREPO · GitHub — crypto_vol_surface</div></div>
-          <div class="ql-it" onclick="openPanel('CRYEXC');closeAllQL()" style="border-left:2px solid #ff6600"><div class="ql-it-desc" style="color:#ff8800;font-weight:700">⚡ CRYEXC · Live Order Flow &amp; News</div></div>
-          <div class="ql-it" onclick="openPanel('HYPER');closeAllQL()" style="border-left:2px solid #44ffcc"><div class="ql-it-desc" style="color:#44ffcc;font-weight:700">⬡ HYPER · Hyperliquid Live Dashboard</div></div>
-          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('HYPE');closeAllQL()"><div class="ql-it-desc">HYPE · Hyperliquid Token Chart</div></div>
-          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('PEPE');closeAllQL()"><div class="ql-it-desc">PEPE · Pepe Memecoin Chart</div></div>
-          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('WIF');closeAllQL()"><div class="ql-it-desc">WIF · dogwifhat Chart</div></div>
-          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('BONK');closeAllQL()"><div class="ql-it-desc">BONK · Bonk Chart</div></div>
-          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('ONDO');closeAllQL()"><div class="ql-it-desc">ONDO · Ondo Finance Chart</div></div>
-          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('ENA');closeAllQL()"><div class="ql-it-desc">ENA · Ethena Chart</div></div>
-          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('TIA');closeAllQL()"><div class="ql-it-desc">TIA · Celestia Chart</div></div>
-          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('PENDLE');closeAllQL()"><div class="ql-it-desc">PENDLE · Pendle Finance Chart</div></div>
-          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('WLD');closeAllQL()"><div class="ql-it-desc">WLD · Worldcoin Chart</div></div>
-          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('PYTH');closeAllQL()"><div class="ql-it-desc">PYTH · Pyth Network Chart</div></div>
-          <div class="ql-it" onclick="if(window._openChartForSymbol)_openChartForSymbol('JTO');closeAllQL()"><div class="ql-it-desc">JTO · Jito Chart</div></div>
-          <div class="ql-it" onclick="openPanel('CRCL');closeAllQL()" style="border-left:2px solid #00ccff"><div class="ql-it-desc" style="color:#00ccff;font-weight:700">◉ CRCL · Circular Market Metrics</div></div>
-          <div class="ql-it" onclick="openPanel('METR');closeAllQL()" style="border-left:2px solid #ffcc00"><div class="ql-it-desc" style="color:#ffcc00;font-weight:700">◆ METR · Cross-Asset Metrics</div></div>
-          <div class="ql-it" onclick="openPanel('MULTIFEED');closeAllQL()" style="border-left:2px solid #ff44aa"><div class="ql-it-desc" style="color:#ff44aa;font-weight:700">⟳ MULTIFEED · Multi-Exchange Live Feed</div></div>
-          <div class="ql-it" onclick="openPanel('CRYPTO');closeAllQL()"><div class="ql-it-desc">Market Cap Ranking</div></div>
-          <div class="ql-it" onclick="openPanel('DOMN');closeAllQL()"><div class="ql-it-desc">BTC / Altcoin Dominance</div></div>
+      <!-- CRYPTO folder removed per user request -->
 
-          <div class="ql-it" onclick="openPanel('CHAIN');closeAllQL()"><div class="ql-it-desc">Blockchain Network Stats</div></div>
-          <div class="ql-it" onclick="openPanel('DEFI');closeAllQL()"><div class="ql-it-desc">DeFi TVL &amp; Yields</div></div>
-          
-
-          
-          
-        </div>
-      </div>
 
       <!-- WORLD ASSETS folder -->
       <div class="ql-folder open" onclick="event.stopPropagation()">
@@ -4080,6 +4089,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="ql-folder-body">
           <div class="ql-it" onclick="openPanel('WORLD');closeAllQL()"><div class="ql-it-desc">World Market Dashboard</div></div>
           <div class="ql-it" onclick="openPanel('WEI');closeAllQL()"><div class="ql-it-desc">World Equity Indices (WEI)</div></div>
+          <div class="ql-it" onclick="openPanel('CWEI');closeAllQL()"><div class="ql-it-desc">Crypto World Equity Indices (CWEI)</div></div>
+          <div class="ql-it" onclick="openPanel('CRYPTOMK');closeAllQL()"><div class="ql-it-desc">Crypto Markets — Core Assets (CRYPTOMK)</div></div>
           <div class="ql-it" onclick="openPanel('WN');closeAllQL()"><div class="ql-it-desc">Breaking World News</div></div>
         </div>
       </div>
@@ -4126,22 +4137,8 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
       </div>
 
-      <!-- MARITIME folder (Moved back and consolidated) -->
-      <div class="ql-folder open" id="ql-maritime-folder-main" onclick="event.stopPropagation()">
-        <div class="ql-folder-hd" onclick="this.parentElement.classList.toggle('open')">
-          <span class="ql-folder-arrow">▶</span>
-          <span class="ql-folder-name">Crypto Markets &amp; DASH</span>
-        </div>
-        <div class="ql-folder-body">
-          <div class="ql-it" id="ql-ais-status-item" onclick="_toggleCryptoDash();closeAllQL()" style="padding-left:22px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="color:#665840;font-size:10px;">○</span>
-              <span style="color:var(--am2);font-weight:700;font-size:9px">LIVE CRYPTO DASHBOARD (FULL PAGE)</span>
-            </div>
-          </div>
-          <div class="ql-it" onclick="_toggleCryptoDash();closeAllQL()"><div class="ql-it-desc"><span style="color:#665840;margin-right:8px;">○</span>MARKET DATA PANEL (RIGHT SIDE)</div></div>
-        </div>
-      </div>
+      <!-- Crypto Markets & DASH folder removed per user request -->
+
 
       <!-- SYSTEM folder -->
       <div class="ql-folder open" onclick="event.stopPropagation()">
@@ -7104,7 +7101,7 @@ function getPanelTabs(fn){
   return tabs[fn]||null;
 }
 function getPanelTitle(fn){
-  const t={WEI:'WORLD EQUITY INDICES',EQUITY:'US EQUITY QUOTES',IDX:'WORLD INDICES',MOVERS:'TOP MOVERS',CRYPTO:'DIGITAL ASSETS / CRYPTO',COMDTY:'COMMODITIES',ENERGY:'ENERGY MARKETS',METALS:'PRECIOUS METALS',AGRI:'AGRICULTURAL',MACRO:'MACRO DASHBOARD',WIRP:'RATE CUT PROBABILITIES',WN:'NEWS FEED',NWS:'NEWS & RESEARCH',ALERTS:'MACRO ALERTS',DES:'SECURITY DESCRIPTION',FA:'FINANCIAL ANALYSIS',MMAP:'MARKET HEATMAP',CRYPTOHEAT:'CRYPTO HEATMAP',YLDS:'TREASURY YIELD CURVE',CN:'X / SOCIAL FEED',ECON:'COUNTRY ECONOMICS',ECAL:'ECONOMIC CALENDAR',ECAL2:'ECONOMIC CALENDAR — NEXT WEEK',DEFI:'DEFI PROTOCOLS',CHAIN:'BLOCKCHAIN NETWORKS',PERF:'PERFORMANCE TABLE',BYFC:'BOND YIELD FORECASTS',ETFF:'ETF FLOWS — BITCOIN & ETHEREUM',FUND:'PERPETUAL FUNDING RATES',LIQD:'LIQUIDATIONS MONITOR',DOMN:'',NETSIT:'DATA NETWORK SYSTEM — P2P MESH VISUALIZER',DHLO:'DAILY HIGH · LOW · OPEN · CLOSE',INTEL:'GLOBAL INTELLIGENCE',JOURN:'JOURNALIST & TRADER WATCHLIST',SRCM:'SOURCE HEALTH MONITOR',SRC:'SOURCES & DATA PROVIDERS',OPT:'OPTIONS CHAIN',BNDS:'SOVEREIGN BONDS & CREDIT',EARN:'EARNINGS CALENDAR',PORT:'PORTFOLIO TRACKER',SENT:'MARKET SENTIMENT',IPO:'IPO CALENDAR',MNA:'M&A DEAL TRACKER',CRYEXC:'CRYEXC — LIVE ORDER FLOW & NEWS',RISK:'RISK METRICS',GMHM:'GLOBAL MACRO HEATMAP',ORDB:'ORDER BOOK DEPTH',CRYPTOOPT:'CRYPTO OPTIONS CHAIN',WHALE:'WHALE TRACKER & ON-CHAIN',OIDASH:'OPEN INTEREST DASHBOARD',FUNDHIST:'FUNDING RATE HISTORY',VPVR:'VOLUME PROFILE VPVR',LIQHEAT:'LIQUIDATION HEATMAP',HYPER:'HYPERLIQUID — LIVE PERP DASHBOARD',CRCL:'CRCL — CIRCULAR MARKET METRICS',METR:'METR — CROSS-ASSET METRICS DASHBOARD',MULTIFEED:'MULTI-EXCHANGE LIVE FEED',STOCKS2:'EXTENDED EQUITY UNIVERSE',OPTFLOW:'OPTIONS FLOW & GEX ANALYTICS'};
+  const t={WEI:'WORLD EQUITY INDICES',CWEI:'CRYPTO WORLD EQUITY INDICES',CRYPTOMK:'CRYPTO MARKETS — CORE ASSETS',EQUITY:'US EQUITY QUOTES',IDX:'WORLD INDICES',MOVERS:'TOP MOVERS',CRYPTO:'DIGITAL ASSETS / CRYPTO',COMDTY:'COMMODITIES',ENERGY:'ENERGY MARKETS',METALS:'PRECIOUS METALS',AGRI:'AGRICULTURAL',MACRO:'MACRO DASHBOARD',WIRP:'RATE CUT PROBABILITIES',WN:'NEWS FEED',NWS:'NEWS & RESEARCH',ALERTS:'MACRO ALERTS',DES:'SECURITY DESCRIPTION',FA:'FINANCIAL ANALYSIS',MMAP:'MARKET HEATMAP',CRYPTOHEAT:'CRYPTO HEATMAP',YLDS:'TREASURY YIELD CURVE',CN:'X / SOCIAL FEED',ECON:'COUNTRY ECONOMICS',ECAL:'ECONOMIC CALENDAR',ECAL2:'ECONOMIC CALENDAR — NEXT WEEK',DEFI:'DEFI PROTOCOLS',CHAIN:'BLOCKCHAIN NETWORKS',PERF:'PERFORMANCE TABLE',BYFC:'BOND YIELD FORECASTS',ETFF:'ETF FLOWS — BITCOIN & ETHEREUM',FUND:'PERPETUAL FUNDING RATES',LIQD:'LIQUIDATIONS MONITOR',DOMN:'',NETSIT:'DATA NETWORK SYSTEM — P2P MESH VISUALIZER',DHLO:'DAILY HIGH · LOW · OPEN · CLOSE',INTEL:'GLOBAL INTELLIGENCE',JOURN:'JOURNALIST & TRADER WATCHLIST',SRCM:'SOURCE HEALTH MONITOR',SRC:'SOURCES & DATA PROVIDERS',OPT:'OPTIONS CHAIN',BNDS:'SOVEREIGN BONDS & CREDIT',EARN:'EARNINGS CALENDAR',PORT:'PORTFOLIO TRACKER',SENT:'MARKET SENTIMENT',IPO:'IPO CALENDAR',MNA:'M&A DEAL TRACKER',CRYEXC:'CRYEXC — LIVE ORDER FLOW & NEWS',RISK:'RISK METRICS',GMHM:'GLOBAL MACRO HEATMAP',ORDB:'ORDER BOOK DEPTH',CRYPTOOPT:'CRYPTO OPTIONS CHAIN',WHALE:'WHALE TRACKER & ON-CHAIN',OIDASH:'OPEN INTEREST DASHBOARD',FUNDHIST:'FUNDING RATE HISTORY',VPVR:'VOLUME PROFILE VPVR',LIQHEAT:'LIQUIDATION HEATMAP',HYPER:'HYPERLIQUID — LIVE PERP DASHBOARD',CRCL:'CRCL — CIRCULAR MARKET METRICS',METR:'METR — CROSS-ASSET METRICS DASHBOARD',MULTIFEED:'MULTI-EXCHANGE LIVE FEED',STOCKS2:'EXTENDED EQUITY UNIVERSE',OPTFLOW:'OPTIONS FLOW & GEX ANALYTICS'};
   return t[fn]||fn;
 }
 
@@ -7140,15 +7137,15 @@ function openPanel(fn,posX,posY){
 
   closeAllMenus();
   // Zavřít jen maximalizované panely — zmenšené nechat (CRYPTO a WEI se nezavírají)
-  Object.keys(PANEL_REGISTRY).forEach(id=>{ const r=PANEL_REGISTRY[id]; if(r&&r.maximized&&r.fn!=='CRYPTO'&&r.fn!=='WEI') closePanel(id); });
+  Object.keys(PANEL_REGISTRY).forEach(id=>{ const r=PANEL_REGISTRY[id]; if(r&&r.maximized&&r.fn!=='CRYPTO'&&r.fn!=='WEI'&&r.fn!=='CWEI') closePanel(id); });
   const id='pnl-'+(++panelCount);
   const overlay=document.getElementById('map-overlay');
   const tabs=getPanelTabs(fn);
   const tabsHtml=tabs?`<div class="panel-tabs">${tabs.map((t,i)=>`<div class="ptab${i===0?' on':''}" onclick="switchPanelTab('${id}','${fn}',${i},this)">${t}</div>`).join('')}</div>`:'';
 
-  const widePanel={'CRYEXC':true,'ETFF':true,'FUND':true,'LIQD':true,'WEI':true,'CRYPTO':true,'NETSIT':true,'INTEL':true,'JOURN':true,'SRCM':true,'SRC':true,'NWS':true,'CRYPTOHEAT':true,'HYPER':true,'CRCL':true,'METR':true,'MULTIFEED':true,'STOCKS2':true,'GHREPO':true,'OPTFLOW':true};
-  const defaultW=widePanel[fn]?(fn==='CRYEXC'?620:fn==='ETFF'?920:fn==='FUND'?780:fn==='LIQD'?700:fn==='NETSIT'?820:fn==='INTEL'?820:fn==='JOURN'?620:fn==='SRCM'?580:fn==='SRC'?820:fn==='NWS'?660:fn==='CRYPTO'?1060:fn==='WEI'?900:fn==='HYPER'?860:fn==='CRCL'?780:fn==='METR'?900:fn==='MULTIFEED'?820:fn==='STOCKS2'?900:fn==='GHREPO'?1100:fn==='OPTFLOW'?1100:700):520;
-  const defaultH=widePanel[fn]?(fn==='CRYEXC'?680:fn==='ETFF'?480:fn==='FUND'?400:fn==='LIQD'?380:fn==='NETSIT'?560:fn==='INTEL'?600:fn==='JOURN'?580:fn==='SRCM'?500:fn==='SRC'?600:fn==='NWS'?600:fn==='CRYPTO'?880:fn==='WEI'?860:fn==='HYPER'?680:fn==='CRCL'?680:fn==='METR'?680:fn==='MULTIFEED'?580:fn==='STOCKS2'?680:fn==='GHREPO'?820:fn==='OPTFLOW'?780:600):500;
+  const widePanel={'CRYEXC':true,'ETFF':true,'FUND':true,'LIQD':true,'WEI':true,'CRYPTO':true,'NETSIT':true,'INTEL':true,'JOURN':true,'SRCM':true,'SRC':true,'NWS':true,'CRYPTOHEAT':true,'HYPER':true,'CRCL':true,'METR':true,'MULTIFEED':true,'STOCKS2':true,'GHREPO':true,'OPTFLOW':true,'CRYPTOMK':true,'CWEI':true};
+  const defaultW=widePanel[fn]?(fn==='CRYEXC'?620:fn==='ETFF'?920:fn==='FUND'?780:fn==='LIQD'?700:fn==='NETSIT'?820:fn==='INTEL'?820:fn==='JOURN'?620:fn==='SRCM'?580:fn==='SRC'?820:fn==='NWS'?660:fn==='CRYPTO'?1060:fn==='WEI'?900:fn==='CWEI'?900:fn==='HYPER'?860:fn==='CRCL'?780:fn==='METR'?900:fn==='MULTIFEED'?820:fn==='STOCKS2'?900:fn==='GHREPO'?1100:fn==='OPTFLOW'?1100:700):520;
+  const defaultH=widePanel[fn]?(fn==='CRYEXC'?680:fn==='ETFF'?480:fn==='FUND'?400:fn==='LIQD'?380:fn==='NETSIT'?560:fn==='INTEL'?600:fn==='JOURN'?580:fn==='SRCM'?500:fn==='SRC'?600:fn==='NWS'?600:fn==='CRYPTO'?880:fn==='WEI'?860:fn==='CWEI'?860:fn==='HYPER'?680:fn==='CRCL'?680:fn==='METR'?680:fn==='MULTIFEED'?580:fn==='STOCKS2'?680:fn==='GHREPO'?820:fn==='OPTFLOW'?780:600):500;
   const _ow=document.getElementById('map-overlay');
   const _owRect=_ow?_ow.getBoundingClientRect():{width:window.innerWidth};
   const ox=posX!=null?posX:Math.max(10, _owRect.width-defaultW-30-(panelCount-1)*22);
@@ -7201,6 +7198,16 @@ function openPanel(fn,posX,posY){
   if(fn==='WEI'){
     setTimeout(function(){
       if(typeof _refreshWEIBWEI==='function') _refreshWEIBWEI();
+    }, 80);
+  }
+  if(fn==='CWEI'){
+    setTimeout(function(){
+      if(typeof _refreshCWEI==='function') _refreshCWEI();
+    }, 80);
+  }
+  if(fn==='CRYPTOMK'){
+    setTimeout(function(){
+      if(typeof _refreshCRYPTOMK==='function') _refreshCRYPTOMK();
     }, 80);
   }
   // Hide tag + tabs for DOMN
@@ -43942,31 +43949,9 @@ function buildBWEI(data){
   let html = `
   <div class="bwei-wrap">
 
-    <div class="bwei-tophdr">
-      <span class="bwei-menu">News<span class="bwei-arr">▾</span></span>
-      <span class="bwei-menu">Settings<span class="bwei-arr">▾</span></span>
-      <span class="bwei-title">CRYPTO MARKETS</span>
-    </div>
+    <!-- Top header bar and orange option bar removed per user request -->
 
-    <div class="bwei-optbar">
-      <div class="bwei-optbar-standard">
-        <span class="bwei-opt-sel">Standard</span><span class="bwei-opt-arr">▼</span>
-      </div>
-      <div class="bwei-optbar-checks">
-        <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
-        <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
-        <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
-        <label class="bwei-opt-chk"><input type="checkbox"> Futures</label>
-        <label class="bwei-opt-chk"><input type="checkbox"> &Delta; AVAT</label>
-      </div>
-      <div class="bwei-optbar-right">
-        <span class="bwei-opt-sel">10D</span><span class="bwei-opt-arr">▼</span>
-        <span style="width:3px;flex-shrink:0;"></span>
-        <span class="bwei-opt-sel">%Chg YTD</span><span class="bwei-opt-arr">▼</span>
-        <span style="width:3px;flex-shrink:0;"></span>
-        <span class="bwei-opt-sel">USD</span><span class="bwei-opt-arr">▼</span>
-      </div>
-    </div>
+
 
     <div class="bwei-body">`;
 
@@ -45126,31 +45111,8 @@ function buildBWEI(data){
   let html = `
   <div class="bwei-wrap">
 
-    <div class="bwei-tophdr">
-      <span class="bwei-menu">News<span class="bwei-arr">▾</span></span>
-      <span class="bwei-menu">Settings<span class="bwei-arr">▾</span></span>
-      <span class="bwei-title">CRYPTO MARKETS</span>
-    </div>
+    <!-- CRYPTO MARKETS top header bar and orange option bar removed per user request -->
 
-    <div class="bwei-optbar">
-      <div class="bwei-optbar-standard">
-        <span class="bwei-opt-sel">Standard</span><span class="bwei-opt-arr">▼</span>
-      </div>
-      <div class="bwei-optbar-checks">
-        <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
-        <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
-        <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
-        <label class="bwei-opt-chk"><input type="checkbox"> Futures</label>
-        <label class="bwei-opt-chk"><input type="checkbox"> &Delta; AVAT</label>
-      </div>
-      <div class="bwei-optbar-right">
-        <span class="bwei-opt-sel">10D</span><span class="bwei-opt-arr">▼</span>
-        <span style="width:3px;flex-shrink:0;"></span>
-        <span class="bwei-opt-sel">%Chg YTD</span><span class="bwei-opt-arr">▼</span>
-        <span style="width:3px;flex-shrink:0;"></span>
-        <span class="bwei-opt-sel">USD</span><span class="bwei-opt-arr">▼</span>
-      </div>
-    </div>
 
     <div class="bwei-body">`;
 
@@ -45824,7 +45786,353 @@ window.WEI_BWEI = { buildWEIBWEI, WEI_CATEGORIES };
 })();
 
 </script>
-  <!-- CRYPTO DASH PANEL (Full width) -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CRYPTOMK · CRYPTO MARKETS — Core Assets (WEI Style)
+     Stejný layout jako WEI, ale s krypto aktivy z window.CRYPTO.
+     Pouze stabilní major/L1/DeFi/AI/Meme/Stablecoin tickery.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+'use strict';
+
+// ─── CRYPTOMK CATEGORIES — pouze stabilní, hlavní krypto aktiva ──────────
+const CRYPTOMK_CATEGORIES = [
+  {
+    name: 'Majors',
+    tickers: ['BTC','ETH','XRP','BNB','SOL','DOGE','ADA','TRX','LTC','BCH','XLM','TON']
+  },
+  {
+    name: 'Layer 1',
+    tickers: ['AVAX','DOT','NEAR','APT','ATOM','HYPE','SUI','ICP','XMR','FIL','VET','ETC']
+  },
+  {
+    name: 'DeFi & Oracles',
+    tickers: ['LINK','UNI','AAVE','MKR','LDO','CRV','PENDLE','INJ','ONDO','ENA','DYDX']
+  },
+  {
+    name: 'AI & Data',
+    tickers: ['RENDER','FET','TAO','PYTH','WLD']
+  },
+  {
+    name: 'Stablecoins',
+    tickers: ['USDT','USDC','DAI']
+  }
+];
+
+// Filter window.CRYPTO down to only the symbols we want, in defined order
+function _getCryptomkData(){
+  const allCrypto = window.CRYPTO || [];
+  const map = {};
+  allCrypto.forEach(c => { if(c && c.s) map[c.s.toUpperCase()] = c; });
+  const out = [];
+  CRYPTOMK_CATEGORIES.forEach(cat => {
+    cat.tickers.forEach(tk => {
+      const item = map[tk.toUpperCase()];
+      if(item) out.push(item);
+    });
+  });
+  return out;
+}
+
+// Build the panel by reusing BWEI builder, but with our filtered category set
+function buildCRYPTOMK(){
+  // Temporarily swap BWEI_CATEGORIES so the existing buildBWEI uses our list
+  if(typeof window.BWEI === 'undefined' || typeof window.BWEI.buildBWEI !== 'function'){
+    return '<div style="padding:20px;color:#F39F41;font-family:monospace;">Loading CRYPTO MARKETS…</div>';
+  }
+  const data = _getCryptomkData();
+  // We can't easily swap BWEI_CATEGORIES (it's a const inside an IIFE).
+  // So we render manually using the same row builder is not exposed either.
+  // Strategy: render WEI-style HTML inline using the same DOM classes (.bwei-wrap, .bwei-row).
+  return _renderCRYPTOMKHtml(data);
+}
+
+// ─── Helpers — formatters identical to BWEI panel ─────────────────────────
+function _fmtNumCM(v){
+  if(v == null || isNaN(v)) return '—';
+  const a = Math.abs(v);
+  if(a >= 1000) return v.toLocaleString('en-US',{maximumFractionDigits:0});
+  if(a >= 1)    return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(a >= 0.01) return v.toLocaleString('en-US',{minimumFractionDigits:4,maximumFractionDigits:4});
+  return v.toLocaleString('en-US',{minimumFractionDigits:6,maximumFractionDigits:8});
+}
+function _fmtChgCM(v){ if(v==null||isNaN(v)) return '—'; const s=v>=0?'+':''; return s+_fmtNumCM(v); }
+function _fmtPctCM(v){ if(v==null||isNaN(v)) return '—'; const s=v>=0?'+':''; return s+v.toFixed(2)+'%'; }
+function _fmtYtdCM(v){ if(v==null||isNaN(v)) return '—'; const s=v>=0?'+':''; return s+v.toFixed(2)+'%'; }
+function _timeNowCM(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+
+function _sparkCM(sym, chg){
+  // Reuse BWEI sparkline if available
+  try {
+    if(window.BWEI && typeof window.BWEI.renderSparkline === 'function'){
+      return window.BWEI.renderSparkline(sym, chg);
+    }
+  } catch(e){}
+  // Tiny fallback
+  const color = (chg||0) >= 0 ? '#00cc44' : '#ff3d3d';
+  return '<svg width="100" height="20" viewBox="0 0 100 20"><polyline points="0,10 50,'+(10-(chg||0)*0.5).toFixed(1)+' 100,'+(10-(chg||0)).toFixed(1)+'" fill="none" stroke="'+color+'" stroke-width="1"/></svg>';
+}
+
+function _buildRowCM(item, rn){
+  if(!item) return '';
+  const sym = item.s || '';
+  const name = (item.n || sym).toUpperCase();
+  const px = item.px;
+  const chg = item.chg;
+  const ytd = item.ytd != null ? item.ytd : (item.chg7 != null ? item.chg7 : null);
+  const _isLive = px != null && !isNaN(px) && px > 0;
+  const _chgLive = chg != null && !isNaN(chg);
+  const futurePx = item.open || px;
+  const misPx = (futurePx>0 && _isLive) ? ((px - futurePx)/futurePx*100) : null;
+  const chgPts = (_isLive && _chgLive) ? (px * chg / 100) : null;
+
+  const chgClass = (chg||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const ytdClass = (ytd||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const misClass = (misPx||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const _DASH = '<span style="color:#444;">—</span>';
+
+  return `
+  <div class="bwei-row" data-sym="${sym}">
+    <div class="r-num">${rn})</div>
+    <div class="r-name"><span class="r-sym">${sym}</span> <span class="r-fullname">${name}</span></div>
+    <div class="r-rmi"></div>
+    <div class="r-spark">${_sparkCM(sym, chg||0)}</div>
+    <div class="r-future">${futurePx>0 ? _fmtNumCM(futurePx)+'<span class="bwei-sfx-d">d</span>' : _DASH}</div>
+    <div class="r-mispx ${misPx!=null?misClass:''}">${misPx!=null ? _fmtPctCM(misPx) : _DASH}</div>
+    <div class="r-value">${_isLive ? _fmtNumCM(px)+'<span class="bwei-sfx-d">d</span>' : _DASH}</div>
+    <div class="r-chg ${_chgLive?chgClass:''}">${chgPts!=null ? _fmtChgCM(chgPts) : _DASH}</div>
+    <div class="r-pct ${_chgLive?chgClass:''}">${_chgLive ? _fmtPctCM(chg) : _DASH}</div>
+    <div class="r-avat"></div>
+    <div class="r-time">${_timeNowCM()}<span class="bwei-sfx-c">c</span></div>
+    <div class="r-ytd ${ytd!=null?ytdClass:''}">${ytd!=null ? _fmtYtdCM(ytd) : _DASH}</div>
+  </div>`;
+}
+
+function _renderCRYPTOMKHtml(data){
+  const dataMap = {};
+  (data||[]).forEach(c => { if(c && c.s) dataMap[c.s.toUpperCase()] = c; });
+
+  let html = `
+  <div class="bwei-wrap">
+
+    <div class="bwei-tophdr">
+      <span class="bwei-menu">News<span class="bwei-arr">▾</span></span>
+      <span class="bwei-menu">Settings<span class="bwei-arr">▾</span></span>
+      <span class="bwei-title">CRYPTO MARKETS — CORE ASSETS</span>
+    </div>
+
+    <div class="bwei-optbar">
+      <div class="bwei-optbar-standard">
+        <span class="bwei-opt-sel">Standard</span><span class="bwei-opt-arr">▼</span>
+      </div>
+      <div class="bwei-optbar-checks">
+        <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Futures</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> &Delta; AVAT</label>
+      </div>
+      <div class="bwei-optbar-right">
+        <span class="bwei-opt-sel">10D</span><span class="bwei-opt-arr">▼</span>
+        <span style="width:3px;flex-shrink:0;"></span>
+        <span class="bwei-opt-sel">%Chg YTD</span><span class="bwei-opt-arr">▼</span>
+        <span style="width:3px;flex-shrink:0;"></span>
+        <span class="bwei-opt-sel">USD</span><span class="bwei-opt-arr">▼</span>
+      </div>
+    </div>
+
+    <div class="bwei-body">`;
+
+  let catIdx = 1;
+  CRYPTOMK_CATEGORIES.forEach(cat => {
+    if(catIdx === 1){
+      html += `
+      <div class="bwei-cat" style="border-top:none !important;">
+        <div class="c-num">${catIdx})</div>
+        <div class="c-name">${cat.name}</div>
+        <div class="c-rmi">RMI</div>
+        <div class="c-spark">2Day</div>
+        <div>Future</div>
+        <div>%MisPx</div>
+        <div>Value</div>
+        <div>Net Chg</div>
+        <div>%Chg</div>
+        <div>&Delta; AVAT</div>
+        <div>Time</div>
+        <div>%YtdCur</div>
+      </div>`;
+    } else {
+      html += `
+      <div class="bwei-cat">
+        <div class="c-num">${catIdx})</div>
+        <div class="c-name">${cat.name}</div>
+        <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+      </div>`;
+    }
+    let rowIdx = 1;
+    cat.tickers.forEach(tk => {
+      const item = dataMap[tk.toUpperCase()];
+      if(!item) return;
+      const rn = catIdx*10 + rowIdx;
+      html += _buildRowCM(item, rn);
+      rowIdx++;
+    });
+    catIdx++;
+  });
+
+  html += `</div>
+
+    <div class="bwei-actionbar">
+      <span class="ab-item"><span style="color:#aaaaaa;font-weight:normal;">300)</span> Edit Panel</span>
+      <span class="ab-item"><span style="color:#aaaaaa;font-weight:normal;">301)</span> Expand Panel</span>
+    </div>
+
+    <div class="bwei-newsticker" id="cryptomk-newsticker"></div>
+
+    <div class="bwei-footbar">
+      <span class="fb-sf">Suggested Functions</span>
+      <span class="fb-center">
+        <span class="fb-item"><span class="fb-key">CRYPTO</span> <span class="fb-desc">Full Crypto Markets Dashboard</span></span>
+      </span>
+      <span class="fb-right">
+        <span class="fb-item"><span class="fb-key">DOMN</span> <span class="fb-desc">BTC / Altcoin Dominance</span></span>
+      </span>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+// ─── LIVE REFRESH — re-render rows in place every 3s ──────────────────────
+function _refreshCRYPTOMK(){
+  try {
+    const panel = document.querySelector('.panel[data-fn="CRYPTOMK"] .bwei-wrap');
+    if(!panel) return;
+
+    const allCrypto = window.CRYPTO || [];
+    const map = {};
+    allCrypto.forEach(c => { if(c && c.s) map[c.s.toUpperCase()] = c; });
+
+    if(!window._cryptomkCellCache) window._cryptomkCellCache = {};
+    const _DASH = '<span style="color:#444;">—</span>';
+
+    panel.querySelectorAll('.bwei-row').forEach(row => {
+      const sym = (row.dataset.sym || '').toUpperCase();
+      const item = map[sym];
+      if(!item) return;
+      const px = item.px;
+      const chg = item.chg;
+      const ytd = item.ytd != null ? item.ytd : (item.chg7 != null ? item.chg7 : null);
+      const _isLive = px != null && !isNaN(px) && px > 0;
+      const _chgLive = chg != null && !isNaN(chg);
+      const futurePx = item.open || px;
+      const misPx = (futurePx>0 && _isLive) ? ((px - futurePx)/futurePx*100) : null;
+      const chgPts = (_isLive && _chgLive) ? (px * chg / 100) : null;
+
+      const chgClass = (chg||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+      const ytdClass = (ytd||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+      const misClass = (misPx||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+
+      const _cc = window._cryptomkCellCache[sym] || (window._cryptomkCellCache[sym] = {});
+      const _setH = (el,val,key) => { if(el && _cc[key]!==val){ el.innerHTML = val; _cc[key] = val; } };
+      const _setT = (el,val,key) => { if(el && _cc[key]!==val){ el.textContent = val; _cc[key] = val; } };
+      const _setC = (el,cls,key) => { if(el && _cc[key]!==cls){ el.className = cls; _cc[key] = cls; } };
+
+      const futureEl = row.querySelector('.r-future');
+      const mispxEl  = row.querySelector('.r-mispx');
+      const valueEl  = row.querySelector('.r-value');
+      const chgEl    = row.querySelector('.r-chg');
+      const pctEl    = row.querySelector('.r-pct');
+      const timeEl   = row.querySelector('.r-time');
+      const ytdEl    = row.querySelector('.r-ytd');
+      const sparkEl  = row.querySelector('.r-spark');
+
+      if(futureEl){
+        const v = futurePx>0 ? _fmtNumCM(futurePx)+'<span class="bwei-sfx-d">d</span>' : _DASH;
+        _setH(futureEl, v, 'futV');
+      }
+      if(mispxEl){
+        if(misPx!=null){
+          _setC(mispxEl, 'r-mispx '+misClass, 'misC');
+          _setT(mispxEl, _fmtPctCM(misPx), 'misV');
+        } else { _setC(mispxEl,'r-mispx','misC'); _setH(mispxEl, _DASH, 'misV'); }
+      }
+      if(valueEl){
+        const v = _isLive ? _fmtNumCM(px)+'<span class="bwei-sfx-d">d</span>' : _DASH;
+        _setH(valueEl, v, 'valV');
+      }
+      if(chgEl){
+        if(chgPts!=null){
+          _setC(chgEl, 'r-chg '+chgClass, 'chgC');
+          _setT(chgEl, _fmtChgCM(chgPts), 'chgV');
+        } else { _setC(chgEl,'r-chg','chgC'); _setH(chgEl, _DASH, 'chgV'); }
+      }
+      if(pctEl){
+        if(_chgLive){
+          _setC(pctEl, 'r-pct '+chgClass, 'pctC');
+          _setT(pctEl, _fmtPctCM(chg), 'pctV');
+        } else { _setC(pctEl,'r-pct','pctC'); _setH(pctEl, _DASH, 'pctV'); }
+      }
+      if(timeEl){
+        const tv = _timeNowCM();
+        if(_cc.timeV !== tv){ timeEl.innerHTML = tv+'<span class="bwei-sfx-c">c</span>'; _cc.timeV = tv; }
+      }
+      if(ytdEl){
+        if(ytd!=null){
+          _setC(ytdEl, 'r-ytd '+ytdClass, 'ytdC');
+          _setT(ytdEl, _fmtYtdCM(ytd), 'ytdV');
+        } else { _setC(ytdEl,'r-ytd','ytdC'); _setH(ytdEl, _DASH, 'ytdV'); }
+      }
+      if(sparkEl && _cc.sparkChg !== chg){
+        sparkEl.innerHTML = _sparkCM(sym, chg||0);
+        _cc.sparkChg = chg;
+      }
+    });
+  } catch(e){ /* swallow */ }
+}
+
+// ─── PATCH buildPanelContent for CRYPTOMK ─────────────────────────────────
+(function _patchCRYPTOMK(){
+  function _doPatch(){
+    const _origPanel = window.buildPanelContent;
+    if(typeof _origPanel === 'function'){
+      window.buildPanelContent = function(fn, ...args){
+        if(fn === 'CRYPTOMK'){
+          try { return buildCRYPTOMK(); }
+          catch(e){ console.error('[CRYPTOMK] build failed:', e); }
+        }
+        return _origPanel.apply(this, [fn, ...args]);
+      };
+      return true;
+    }
+    return false;
+  }
+  // buildPanelContent may be defined later by other scripts; retry until present.
+  if(!_doPatch()){
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if(_doPatch() || tries > 50){ clearInterval(iv); }
+    }, 200);
+  }
+
+  // Also re-patch after WEI/CRYPTO patches run, to make sure we wrap the latest version
+  setTimeout(_doPatch, 1500);
+  setTimeout(_doPatch, 4000);
+
+  if(!window._cryptomkRefreshRegistered){
+    window._cryptomkRefreshRegistered = true;
+    setInterval(_refreshCRYPTOMK, 3000);
+  }
+
+  console.log('[CRYPTOMK] Crypto Markets — Core Assets panel loaded');
+})();
+
+window.CRYPTOMK = { buildCRYPTOMK, CRYPTOMK_CATEGORIES };
+})();
+</script>
+
   <button id="crypto-dash-toggle" onclick="_toggleCryptoDash()">
     <div class="live-dot"></div>
     <span class="cnt">CRYPTO DASH</span>
@@ -48715,15 +49023,7 @@ window.WEI_ORIGINAL_FINAL={build:buildWEIOriginal};
 </script>
 <script>
 (function(){
-  function bootWEI(){
-    if(document.querySelector('.panel[data-fn="WEI"]')) return;
-    var sec=document.getElementById('cmd-sec-inp'), fn=document.getElementById('cmd-fn-inp');
-    if(sec) sec.value='Initial Jobless Claims SA Index';
-    if(fn) fn.value='WEI';
-    if(typeof window.openPanel==='function') window.openPanel('WEI');
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ setTimeout(bootWEI, 120); });
-  else setTimeout(bootWEI, 120);
+  /* WEI auto-open at startup is disabled — uživatel si WEI otevře ručně. */
 })();
 </script>
 <script>
@@ -48842,6 +49142,694 @@ setInterval(_weiNewsRefresh, 30000);
   document.querySelectorAll('.panel[data-fn="WEI"] .wei-original').forEach(init);
 })();
 </script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CRYPTOWEI · CRYPTO MARKETS — Plný klon WEI vzhledu (1900x1136)
+     Naváže se na panel data-fn="CRYPTOMK" a používá živá data z
+     window.CRYPTO přes existující CRYPTOMK_CATEGORIES.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<style id="cryptowei-original-final-css">
+/* Skrýt předchozí CRYPTOMK zoom + bwei layout, když používáme nový klon */
+.panel[data-fn="CRYPTOMK"] .panel-body{ background:#000 !important; overflow:hidden !important; display:block !important; position:relative !important; }
+.panel[data-fn="CRYPTOMK"] .bwei-wrap{ display:none !important; }
+
+/* === Klon .wei-original pod jiným názvem, aby se nemíchal s WEI panelem === */
+.panel[data-fn="CRYPTOMK"] .cryptowei-original{
+  --wei-orange:#e8922a;--wei-control:#ffaa1a;--wei-red:#cf4a5b;--wei-green:#43b86a;--wei-cream:#dcc8ad;--wei-grey:#a6a6a6;
+  width:1900px;height:1136px;min-width:1900px;min-height:1136px;
+  display:flex;flex:0 0 auto;flex-direction:column;
+  position:absolute;left:0;top:0;transform-origin:0 0;
+  background:#000;color:var(--wei-orange);
+  font-family:Arial,Helvetica,sans-serif !important;font-weight:700;line-height:1;
+  overflow:hidden;zoom:1 !important;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;
+}
+.cryptowei-original *{box-sizing:border-box;letter-spacing:0 !important;}
+.cryptowei-original .cw-command{height:72px;flex:0 0 72px;background:#000;color:#fff;font-family:"Courier New",monospace;font-weight:700;}
+.cryptowei-original .cw-cmd-input{height:36px;display:flex;align-items:stretch;background:#000;}
+.cryptowei-original .cw-blue-strip{width:44px;background:#18a8ff;border-right:1px solid #0d5f9d;}
+.cryptowei-original .cw-input-box{height:35px;flex:1;border:2px solid #003b78;border-left:none;background:#000;margin-right:357px;box-shadow:inset 0 0 0 1px #0b4b88;}
+.cryptowei-original .cw-launch{height:36px;display:flex;align-items:center;color:#fff;font-size:31px;padding-left:0;white-space:nowrap;}
+.cryptowei-original .cw-redbar{height:36px;flex:0 0 36px;display:flex;align-items:center;background:#a61217;border-bottom:1px solid #5a0a0c;box-shadow:inset 0 1px 0 rgba(255,255,255,.16);color:#fff;}
+.cryptowei-original .cw-red-btn{height:36px;display:inline-flex;align-items:center;padding:0 12px;border-right:1px solid #76090b;font-size:30px;font-weight:500;color:#fff;}
+.cryptowei-original .cw-red-title{margin-left:auto;padding:0 26px;font-size:30px;font-weight:500;color:#fff;word-spacing:8px;}
+.cryptowei-original .cw-optbar{height:36px;flex:0 0 36px;display:flex;align-items:center;background:#000;border-bottom:1px solid #111;color:var(--wei-orange);font-size:30px;font-weight:700;white-space:nowrap;overflow:hidden;}
+.cryptowei-original .cw-select{height:34px;display:inline-flex;align-items:center;background:var(--wei-control);color:#000;border:1px solid #000;font-size:30px;font-weight:700;padding:0 9px;line-height:34px;}
+.cryptowei-original .cw-arrow{height:34px;min-width:36px;display:inline-flex;align-items:center;justify-content:center;background:#3a3a3a;color:#b8b8b8;border:1px solid #000;border-left:none;font-size:23px;line-height:34px;}
+.cryptowei-original .cw-checks{display:flex;align-items:center;justify-content:space-around;gap:42px;flex:1;min-width:0;padding:0 24px;}
+.cryptowei-original .cw-check{display:inline-flex;align-items:center;gap:12px;color:var(--wei-orange);}
+.cryptowei-original .cw-box{width:24px;height:24px;background:#444;border:2px solid #606060;display:inline-flex;align-items:center;justify-content:center;color:#000;font-size:20px;line-height:1;}
+.cryptowei-original .cw-box.on{background:#1e90ff;border-color:#1e90ff;}
+.cryptowei-original .cw-right-controls{display:flex;align-items:center;margin-left:auto;padding-right:18px;}
+.cryptowei-original .cw-grid{display:grid;grid-template-columns:54px 294px 83px 115px 217px 158px 203px 169px 140px 163px 159px 1fr;width:100%;min-width:1850px;}
+.cryptowei-original .cw-body{flex:0 0 756px;height:756px;background:#000;overflow:hidden;min-height:0;}
+.cryptowei-original .cw-cat{height:36px;background:#242424;color:#fff;font-size:30px;font-weight:700;align-items:center;}
+.cryptowei-original .cw-cat>div{height:36px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;}
+.cryptowei-original .cw-cat .cat-num{justify-content:flex-start;padding-left:1px;color:#fff;}
+.cryptowei-original .cw-cat .cat-name{justify-content:flex-start;color:#fff;font-weight:700;}
+.cryptowei-original .cw-cat .hdr{justify-content:flex-end;padding:0 8px;color:#fff;font-weight:700;}
+.cryptowei-original .cw-cat .hdr-center{justify-content:center;color:#fff;}
+.cryptowei-original .cw-row{height:36px;background:#000;color:var(--wei-orange);font-size:30px;font-weight:700;align-items:center;font-variant-numeric:tabular-nums;}
+.cryptowei-original .cw-row>div{height:36px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;padding:0 8px;}
+.cryptowei-original .cw-row .num{justify-content:flex-end;color:#989898;padding-right:6px;font-size:26px;}
+.cryptowei-original .cw-row .name{justify-content:flex-start;color:var(--wei-orange);font-size:30px;padding-left:2px;}
+.cryptowei-original .cw-row .rmi{padding:0;}
+.cryptowei-original .cw-row .spark{padding:0;background:#181818;border-left:1px solid #3a3a3a;border-right:2px solid #303030;}
+.cryptowei-original .cw-row .right{justify-content:flex-end;}
+.cryptowei-original .cw-row .value,.cryptowei-original .cw-row .future,.cryptowei-original .cw-row .time.date{color:var(--wei-orange);}
+.cryptowei-original .cw-row .time.clock{color:#fff;}
+.cryptowei-original .cw-row .green{color:var(--wei-green);}
+.cryptowei-original .cw-row .red{color:var(--wei-red);}
+.cryptowei-original .cw-row .avat-pos{color:var(--wei-cream);}
+.cryptowei-original .cw-row .avat-neg{color:#c86f2c;}
+.cryptowei-original .cw-row .suffix{color:#bfbfbf;font-size:25px;font-weight:400;margin-left:4px;}
+.cryptowei-original .cw-spark-svg{display:block;width:100%;height:36px;background:#171717;}
+.cryptowei-original .cw-action{height:36px;flex:0 0 36px;background:#003066;color:#fff;display:flex;align-items:center;justify-content:flex-end;padding:0 22px;font-size:31px;font-family:"Courier New",monospace;font-weight:700;border-top:1px solid #002050;}
+.cryptowei-original .cw-action span{margin-left:54px;}.cryptowei-original .cw-action b{color:#9ab1d6;font-weight:400;}
+.cryptowei-original .cw-news{flex:0 0 144px;height:144px;background:#003066;color:var(--wei-orange);font-family:"Courier New",monospace;font-size:30px;font-weight:700;line-height:36px;overflow:hidden;padding:0;border-top:1px solid #001c44;}
+.cryptowei-original .cw-news-line{height:36px;display:flex;align-items:center;white-space:nowrap;padding:0 4px;}
+.cryptowei-original .cw-news-line .id{width:64px;color:var(--wei-orange);}
+.cryptowei-original .cw-news-line .src{width:62px;color:var(--wei-orange);}
+.cryptowei-original .cw-news-line .tm{width:96px;color:var(--wei-orange);}
+.cryptowei-original .cw-news-line .txt{flex:1;color:var(--wei-orange);overflow:hidden;text-overflow:clip;}
+.cryptowei-original .cw-foot{flex:0 0 auto;height:56px;background:#000;color:#d6d6d6;display:grid;grid-template-columns:340px 1fr 1fr;border-top:1px solid #1a1a1a;font-family:Arial,Helvetica,sans-serif;}
+.cryptowei-original .cw-foot>div{display:flex;align-items:center;padding:0 22px;font-size:26px;overflow:hidden;white-space:nowrap;height:56px;}
+.cryptowei-original .cw-foot .sf{color:var(--wei-orange);font-weight:700;}
+.cryptowei-original .cw-foot .key{color:#fff;font-weight:900;margin-right:14px;}
+.cryptowei-original .cw-foot .desc{color:#d7d7d7;font-weight:400;}
+</style>
+<script id="cryptowei-original-final-js">
+(function(){
+'use strict';
+
+var CW_CATS = [
+  {num:'1', name:'Majors',          tickers:['BTC','ETH','XRP','BNB','SOL','DOGE','ADA','TRX','LTC','BCH','XLM','TON']},
+  {num:'2', name:'Layer 1',         tickers:['AVAX','DOT','NEAR','APT','ATOM','HYPE','SUI','ICP','XMR','FIL','VET','ETC']},
+  {num:'3', name:'DeFi & Oracles',  tickers:['LINK','UNI','AAVE','MKR','LDO','CRV','PENDLE','INJ','ONDO','ENA','DYDX']},
+  {num:'4', name:'AI & Data',       tickers:['RENDER','FET','TAO','PYTH','WLD']},
+  {num:'5', name:'Stablecoins',     tickers:['USDT','USDC','DAI']}
+];
+
+function _map(){
+  var m = {}, all = (window.CRYPTO || []);
+  for(var i=0;i<all.length;i++){ var c=all[i]; if(c && c.s) m[String(c.s).toUpperCase()] = c; }
+  return m;
+}
+function _fmtNum(v){
+  if(v == null || isNaN(v)) return '—';
+  var a = Math.abs(v);
+  if(a >= 1000) return Number(v).toLocaleString('en-US',{maximumFractionDigits:0});
+  if(a >= 1)    return Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(a >= 0.01) return Number(v).toLocaleString('en-US',{minimumFractionDigits:4,maximumFractionDigits:4});
+  return Number(v).toLocaleString('en-US',{minimumFractionDigits:6,maximumFractionDigits:8});
+}
+function _signed(v, suf){ if(v==null||isNaN(v)) return '—'; var s=v>=0?'+':''; return s + (suf==='%' ? Number(v).toFixed(2)+'%' : _fmtNum(v)); }
+function _clsSign(v){ if(v==null||isNaN(v)) return ''; return v>=0 ? 'green' : 'red'; }
+function _timeNow(){ var d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+function _sfx(x){ return x ? '<span class="suffix">'+x+'</span>' : ''; }
+
+function _spark(seed, dir){
+  var left=[], right=[], y=18;
+  for(var i=0;i<18;i++){ y += Math.sin((i+seed)*.9)*3 + (i%5===0?-5:1); if(y<5)y=5; if(y>30)y=30; left.push((i*3.1).toFixed(1)+','+y.toFixed(1)); }
+  var y2 = y;
+  for(var j=0;j<18;j++){ y2 += Math.sin((j+seed)*1.1)*2.5 + (dir>0?1.2:-1.2); if(y2<5)y2=5; if(y2>30)y2=30; right.push((58+j*3.1).toFixed(1)+','+y2.toFixed(1)); }
+  return '<svg class="cw-spark-svg" viewBox="0 0 115 36" preserveAspectRatio="none">'
+    + '<rect x="0" y="0" width="115" height="36" fill="#171717"/>'
+    + '<polyline points="'+left.join(' ')+'" fill="none" stroke="#bfc3c7" stroke-width="1.7" vector-effect="non-scaling-stroke"/>'
+    + '<line x1="56" y1="0" x2="56" y2="36" stroke="#454545" stroke-width="1"/>'
+    + '<polyline points="'+right.join(' ')+'" fill="none" stroke="'+(dir>0?'#43b86a':'#cf4a5b')+'" stroke-width="1.7" vector-effect="non-scaling-stroke"/>'
+    + '</svg>';
+}
+
+function _cell(txt, cn){ return '<div class="'+cn+'">'+txt+'</div>'; }
+
+function _row(it, num, idx){
+  var sym = (it && it.s) ? String(it.s).toUpperCase() : '';
+  var name = (it && it.n) ? String(it.n).toUpperCase() : sym;
+  var px = it ? it.px : null;
+  var chg = it ? it.chg : null;
+  var ytd = (it && it.ytd != null) ? it.ytd : (it && it.chg7 != null ? it.chg7 : null);
+  var futurePx = (it && it.open) ? it.open : px;
+  var live = (px != null && !isNaN(px) && px > 0);
+  var chgLive = (chg != null && !isNaN(chg));
+  var misPx = (futurePx>0 && live) ? ((px - futurePx)/futurePx*100) : null;
+  var chgPts = (live && chgLive) ? (px * chg / 100) : null;
+  var dir = (chg||0) >= 0 ? 1 : -1;
+  var displayName = sym + (name && name !== sym ? '  '+name : '');
+
+  return '<div class="cw-row cw-grid" data-cwsym="'+sym+'">'
+    + _cell(num+')', 'num')
+    + _cell(displayName, 'name')
+    + _cell('', 'rmi')
+    + _cell(_spark(idx+3, dir), 'spark')
+    + _cell((live ? _fmtNum(futurePx)+_sfx('d') : '—'), 'future right')
+    + _cell((misPx!=null ? _signed(misPx,'%') : '—'), 'right '+_clsSign(misPx))
+    + _cell((live ? _fmtNum(px)+_sfx('d') : '—'), 'value right')
+    + _cell((chgPts!=null ? _signed(chgPts) : '—'), 'right '+_clsSign(chgPts))
+    + _cell((chgLive ? _signed(chg,'%') : '—'), 'right '+_clsSign(chg))
+    + _cell('', 'right')
+    + _cell(_timeNow()+_sfx('c'), 'time right clock')
+    + _cell((ytd!=null ? _signed(ytd,'%') : '—'), 'right '+_clsSign(ytd))
+    + '</div>';
+}
+
+function _catRow(c, withHeaders){
+  var h = '<div class="cw-cat cw-grid">'
+        + _cell(c.num+')', 'cat-num')
+        + _cell(c.name, 'cat-name');
+  if(withHeaders){
+    h += _cell('RMI','hdr-center') + _cell('2Day','hdr-center')
+       + _cell('Future','hdr') + _cell('%MisPx','hdr') + _cell('Value','hdr')
+       + _cell('Net Chg','hdr') + _cell('%Chg','hdr') + _cell('&Delta; AVAT','hdr')
+       + _cell('Time','hdr') + _cell('%YtdCur','hdr');
+  } else {
+    for(var i=0;i<10;i++) h += _cell('','hdr');
+  }
+  return h + '</div>';
+}
+
+function buildCRYPTOWEIOriginal(){
+  var map = _map();
+  var out = '<div class="cryptowei-original">'
+    + '<div class="cw-command"><div class="cw-cmd-input"><div class="cw-blue-strip"></div><div class="cw-input-box"></div></div><div class="cw-launch">CRYPTO &lt;GO&gt; to Open Crypto Markets</div></div>'
+    + '<div class="cw-redbar"><span class="cw-red-btn">News <span style="font-size:22px;margin-left:5px;">▼</span></span><span class="cw-red-btn">Settings</span><span class="cw-red-title">World Crypto Markets</span></div>'
+    + '<div class="cw-optbar"><span class="cw-select">Standard</span><span class="cw-arrow">▼</span>'
+    +   '<div class="cw-checks">'
+    +     '<span class="cw-check"><span class="cw-box"></span>Movers</span>'
+    +     '<span class="cw-check"><span class="cw-box"></span>Volatility</span>'
+    +     '<span class="cw-check"><span class="cw-box"></span>Ratios</span>'
+    +     '<span class="cw-check"><span class="cw-box on">✓</span>Spot</span>'
+    +     '<span class="cw-check"><span class="cw-box on">✓</span>&Delta; Vol</span>'
+    +   '</div>'
+    +   '<div class="cw-right-controls">'
+    +     '<span class="cw-select">10D</span><span class="cw-arrow">▼</span>'
+    +     '<span class="cw-select" style="margin-left:18px;">%Chg YTD</span><span class="cw-arrow">▼</span>'
+    +     '<span class="cw-select" style="margin-left:18px;">USD</span><span class="cw-arrow">▼</span>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="cw-body">';
+
+  var k = 0, first = true;
+  for(var ci=0; ci<CW_CATS.length; ci++){
+    var c = CW_CATS[ci];
+    out += _catRow(c, first); first = false;
+    for(var ti=0; ti<c.tickers.length; ti++){
+      var sym = c.tickers[ti];
+      var item = map[sym.toUpperCase()] || { s: sym, n: sym, px:null, chg:null };
+      k++;
+      var displayNum = (ci+1)*10 + (ti+1);
+      out += _row(item, displayNum, k);
+    }
+  }
+
+  out += '</div>'
+    + '<div class="cw-action"><span><b>300)</b> Edit Panel</span><span><b>301)</b> Expand Panel</span></div>'
+    + '<div class="cw-news" id="cryptowei-live-news">'
+    +   '<div class="cw-news-line"><span class="id">---</span><span class="src">CRY</span><span class="tm">--:--</span><span class="txt">Loading crypto news…</span></div>'
+    +   '<div class="cw-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div>'
+    +   '<div class="cw-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div>'
+    +   '<div class="cw-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div>'
+    + '</div>'
+    + '<div class="cw-foot">'
+    +   '<div><span class="sf">Suggested Functions</span></div>'
+    +   '<div><span class="key">CRYPTO</span><span class="desc">Full Crypto Markets Dashboard</span></div>'
+    +   '<div><span class="key">DOMN</span><span class="desc">BTC / Altcoin Dominance</span></div>'
+    + '</div>'
+    + '</div>';
+  return out;
+}
+
+// Override buildPanelContent for CRYPTOMK
+var prevBuild = window.buildPanelContent;
+window.buildPanelContent = function(fn){
+  if(String(fn).toUpperCase() === 'CRYPTOMK') return buildCRYPTOWEIOriginal();
+  return prevBuild ? prevBuild.apply(this, arguments) : '';
+};
+
+// === Live refresh — update only changed cells in place ===
+function _refresh(){
+  var wraps = document.querySelectorAll('.panel[data-fn="CRYPTOMK"] .cryptowei-original');
+  if(!wraps.length) return;
+  var map = _map();
+  wraps.forEach(function(wrap){
+    wrap.querySelectorAll('.cw-row').forEach(function(row){
+      var sym = (row.dataset.cwsym || '').toUpperCase();
+      var it = map[sym]; if(!it) return;
+      var px = it.px, chg = it.chg;
+      var ytd = (it.ytd != null) ? it.ytd : (it.chg7 != null ? it.chg7 : null);
+      var futurePx = it.open || px;
+      var live = (px != null && !isNaN(px) && px > 0);
+      var chgLive = (chg != null && !isNaN(chg));
+      var misPx = (futurePx>0 && live) ? ((px - futurePx)/futurePx*100) : null;
+      var chgPts = (live && chgLive) ? (px * chg / 100) : null;
+
+      var cells = row.children;
+      // 0:num 1:name 2:rmi 3:spark 4:future 5:misPx 6:value 7:netChg 8:%chg 9:avat 10:time 11:ytd
+      function setHTML(idx, html, cls){
+        var el = cells[idx]; if(!el) return;
+        if(el.innerHTML !== html) el.innerHTML = html;
+        if(cls != null){
+          var base = el.className.split(' ').filter(function(c){ return c!=='green' && c!=='red' && c!=='avat-pos' && c!=='avat-neg'; }).join(' ');
+          el.className = (base + ' ' + cls).trim();
+        }
+      }
+      setHTML(4, live ? _fmtNum(futurePx)+_sfx('d') : '—');
+      setHTML(5, misPx!=null ? _signed(misPx,'%') : '—', 'right ' + _clsSign(misPx));
+      setHTML(6, live ? _fmtNum(px)+_sfx('d') : '—');
+      setHTML(7, chgPts!=null ? _signed(chgPts) : '—', 'right ' + _clsSign(chgPts));
+      setHTML(8, chgLive ? _signed(chg,'%') : '—', 'right ' + _clsSign(chg));
+      setHTML(10, _timeNow()+_sfx('c'));
+      setHTML(11, ytd!=null ? _signed(ytd,'%') : '—', 'right ' + _clsSign(ytd));
+    });
+  });
+}
+setInterval(_refresh, 3000);
+
+// === Fitter — scale 1900x1136 stage to panel-body ===
+var STAGE_W = 1900, STAGE_H = 1136;
+function fitOne(panel){
+  var body = panel.querySelector('.panel-body');
+  var wrap = panel.querySelector('.cryptowei-original');
+  if(!body || !wrap) return;
+  var bw = body.clientWidth, bh = body.clientHeight;
+  if(bw < 10 || bh < 10) return;
+  var sx = bw / STAGE_W, sy = bh / STAGE_H;
+  wrap.style.transform = 'translate(0,0) scale('+sx+','+sy+')';
+  wrap.style.width = STAGE_W + 'px';
+  wrap.style.height = STAGE_H + 'px';
+  body.style.overflow = 'hidden';
+  body.style.background = '#000';
+}
+function fitAll(){ document.querySelectorAll('.panel[data-fn="CRYPTOMK"]').forEach(fitOne); }
+var ro = (typeof ResizeObserver !== 'undefined') ? new ResizeObserver(function(es){
+  es.forEach(function(e){ var p = e.target.closest && e.target.closest('.panel[data-fn="CRYPTOMK"]'); if(p) fitOne(p); });
+}) : null;
+function attach(panel){
+  var body = panel.querySelector('.panel-body');
+  if(body && ro && !body.__cwObserved){ ro.observe(body); body.__cwObserved = true; }
+  fitOne(panel);
+}
+function scan(){ document.querySelectorAll('.panel[data-fn="CRYPTOMK"]').forEach(attach); }
+new MutationObserver(function(){ scan(); }).observe(document.documentElement, {childList:true, subtree:true});
+window.addEventListener('resize', fitAll, {passive:true});
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan); else scan();
+setInterval(fitAll, 1000);
+
+window.CRYPTOWEI_ORIGINAL = { build: buildCRYPTOWEIOriginal };
+console.log('[CRYPTOWEI] WEI-style Crypto Markets panel loaded');
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CWEI · CRYPTO WORLD EQUITY INDICES (WEI Style)
+     Přesná kopie WEI panelu s krypto symboly místo akciových indexů.
+     Top 20 dle market cap — bez meme coinů, bez AI/DeFi brandovaných názvů.
+     Otevíraný přes openPanel('CWEI')
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+'use strict';
+
+// ─── CWEI CATEGORIES — Top 20 market cap (no meme/AI/DeFi brands) ────────
+// Seřazeno dle market cap. Kategorie odpovídají logice WEI panelu.
+const CWEI_CATEGORIES = [
+  {
+    name: 'Store of Value',
+    tickers: ['BTC','ETH','BNB','SOL','XRP']
+  },
+  {
+    name: 'Layer 1 Networks',
+    tickers: ['ADA','AVAX','TRX','DOT','NEAR','SUI','APT','ATOM']
+  },
+  {
+    name: 'Infrastructure',
+    tickers: ['LINK','LTC','BCH','XLM','TON','XMR']
+  },
+  {
+    name: 'Stablecoins',
+    tickers: ['USDT','USDC','DAI']
+  },
+  {
+    name: 'Other',
+    tickers: ['HYPE','VET','FIL','ETC']
+  }
+];
+
+// Filter window.CRYPTO down to only CWEI symbols, in defined order
+function _getCweiData(){
+  const allCrypto = window.CRYPTO || [];
+  const map = {};
+  allCrypto.forEach(c => { if(c && c.s) map[c.s.toUpperCase()] = c; });
+  const out = [];
+  CWEI_CATEGORIES.forEach(cat => {
+    cat.tickers.forEach(tk => {
+      const item = map[tk.toUpperCase()];
+      if(item) out.push(item);
+    });
+  });
+  return out;
+}
+
+// ─── Helpers — identical formatters to WEI/CRYPTOMK ──────────────────────
+function _fmtNumCW(v){
+  if(v == null || isNaN(v)) return '—';
+  const a = Math.abs(v);
+  if(a >= 1000) return v.toLocaleString('en-US',{maximumFractionDigits:0});
+  if(a >= 1)    return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(a >= 0.01) return v.toLocaleString('en-US',{minimumFractionDigits:4,maximumFractionDigits:4});
+  return v.toLocaleString('en-US',{minimumFractionDigits:6,maximumFractionDigits:8});
+}
+function _fmtChgCW(v){ if(v==null||isNaN(v)) return '—'; const s=v>=0?'+':''; return s+_fmtNumCW(v); }
+function _fmtPctCW(v){ if(v==null||isNaN(v)) return '—'; const s=v>=0?'+':''; return s+v.toFixed(2)+'%'; }
+function _fmtYtdCW(v){ if(v==null||isNaN(v)) return '—'; const s=v>=0?'+':''; return s+v.toFixed(2)+'%'; }
+function _timeNowCW(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+
+function _sparkCW(sym, chg){
+  try {
+    if(window.BWEI && typeof window.BWEI.renderSparkline === 'function'){
+      return window.BWEI.renderSparkline(sym, chg);
+    }
+  } catch(e){}
+  const color = (chg||0) >= 0 ? '#00cc44' : '#ff3d3d';
+  return '<svg width="100" height="20" viewBox="0 0 100 20"><polyline points="0,10 50,'+(10-(chg||0)*0.5).toFixed(1)+' 100,'+(10-(chg||0)).toFixed(1)+'" fill="none" stroke="'+color+'" stroke-width="1"/></svg>';
+}
+
+function _buildRowCW(item, rn){
+  if(!item) return '';
+  const sym = item.s || '';
+  const name = (item.n || sym).toUpperCase();
+  const px = item.px;
+  const chg = item.chg;
+  const ytd = item.ytd != null ? item.ytd : (item.chg7 != null ? item.chg7 : null);
+  const _isLive = px != null && !isNaN(px) && px > 0;
+  const _chgLive = chg != null && !isNaN(chg);
+  const futurePx = item.open || px;
+  const misPx = (futurePx>0 && _isLive) ? ((px - futurePx)/futurePx*100) : null;
+  const chgPts = (_isLive && _chgLive) ? (px * chg / 100) : null;
+
+  const chgClass = (chg||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const ytdClass = (ytd||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const misClass = (misPx||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const _DASH = '<span style="color:#444;">—</span>';
+
+  return `
+  <div class="bwei-row" data-sym="${sym}">
+    <div class="r-num">${rn})</div>
+    <div class="r-name"><span class="r-sym">${sym}</span> <span class="r-fullname">${name}</span></div>
+    <div class="r-rmi"></div>
+    <div class="r-spark">${_sparkCW(sym, chg||0)}</div>
+    <div class="r-future">${futurePx>0 ? _fmtNumCW(futurePx)+'<span class="bwei-sfx-d">d</span>' : _DASH}</div>
+    <div class="r-mispx ${misPx!=null?misClass:''}">${misPx!=null ? _fmtPctCW(misPx) : _DASH}</div>
+    <div class="r-value">${_isLive ? _fmtNumCW(px)+'<span class="bwei-sfx-d">d</span>' : _DASH}</div>
+    <div class="r-chg ${_chgLive?chgClass:''}">${chgPts!=null ? _fmtChgCW(chgPts) : _DASH}</div>
+    <div class="r-pct ${_chgLive?chgClass:''}">${_chgLive ? _fmtPctCW(chg) : _DASH}</div>
+    <div class="r-avat"></div>
+    <div class="r-time">${_timeNowCW()}<span class="bwei-sfx-c">c</span></div>
+    <div class="r-ytd ${ytd!=null?ytdClass:''}">${ytd!=null ? _fmtYtdCW(ytd) : _DASH}</div>
+  </div>`;
+}
+
+// ─── openPanelSettings — CWEI Settings dialog (mirrors WEI style) ─────────
+window.openCWEIPanelSettings = function(){
+  const existing = document.getElementById('cwei-settings-overlay');
+  if(existing){ existing.remove(); return; }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'cwei-settings-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;';
+
+  const cats = CWEI_CATEGORIES.map(cat => `
+    <div style="margin-bottom:10px;">
+      <div style="color:#F39F41;font-size:10px;font-weight:bold;margin-bottom:4px;text-transform:uppercase;">${cat.name}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">
+        ${cat.tickers.map(t => `<span style="background:#1a1a1a;border:1px solid #333;color:#aaa;padding:2px 6px;font-size:9px;font-family:monospace;cursor:default;">${t}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#1a1a1a;border:1px solid #F39F41;padding:20px;min-width:480px;max-width:600px;font-family:monospace;color:#ccc;position:relative;">
+      <div style="color:#F39F41;font-size:12px;font-weight:bold;margin-bottom:4px;letter-spacing:1px;">CWEI — CRYPTO WORLD EQUITY INDICES</div>
+      <div style="color:#666;font-size:9px;margin-bottom:16px;">Top 20 by market cap · No meme coins · No branded categories</div>
+      <div style="font-size:9px;color:#888;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Active Symbols by Category</div>
+      ${cats}
+      <div style="margin-top:16px;border-top:1px solid #333;padding-top:12px;display:flex;justify-content:flex-end;gap:8px;">
+        <button onclick="document.getElementById('cwei-settings-overlay').remove()" style="background:#262626;border:1px solid #555;color:#aaa;padding:4px 14px;font-size:9px;font-family:monospace;cursor:pointer;">CLOSE</button>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+};
+
+// ─── Build CWEI HTML ───────────────────────────────────────────────────────
+function buildCWEI(){
+  const data = _getCweiData();
+  const dataMap = {};
+  (data||[]).forEach(c => { if(c && c.s) dataMap[c.s.toUpperCase()] = c; });
+
+  let html = `
+  <div class="bwei-wrap" id="cwei-wrap">
+
+    <div class="bwei-tophdr">
+      <span class="bwei-menu">News<span class="bwei-arr">▾</span></span>
+      <span class="bwei-menu" onclick="window.openCWEIPanelSettings&&window.openCWEIPanelSettings()" style="cursor:pointer;">Settings<span class="bwei-arr">▾</span></span>
+      <span class="bwei-title">CRYPTO WORLD EQUITY INDICES — CWEI</span>
+    </div>
+
+    <div class="bwei-optbar">
+      <div class="bwei-optbar-standard">
+        <span class="bwei-opt-sel">Standard</span><span class="bwei-opt-arr">▼</span>
+      </div>
+      <div class="bwei-optbar-checks">
+        <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> Futures</label>
+        <label class="bwei-opt-chk"><input type="checkbox"> &Delta; AVAT</label>
+      </div>
+      <div class="bwei-optbar-right">
+        <span class="bwei-opt-sel">10D</span><span class="bwei-opt-arr">▼</span>
+        <span style="width:3px;flex-shrink:0;"></span>
+        <span class="bwei-opt-sel">%Chg YTD</span><span class="bwei-opt-arr">▼</span>
+        <span style="width:3px;flex-shrink:0;"></span>
+        <span class="bwei-opt-sel">USD</span><span class="bwei-opt-arr">▼</span>
+      </div>
+    </div>
+
+    <div class="bwei-body">`;
+
+  let catIdx = 1;
+  CWEI_CATEGORIES.forEach(cat => {
+    if(catIdx === 1){
+      html += `
+      <div class="bwei-cat" style="border-top:none !important;">
+        <div class="c-num">${catIdx})</div>
+        <div class="c-name">${cat.name}</div>
+        <div class="c-rmi">RMI</div>
+        <div class="c-spark">2Day</div>
+        <div>Future</div>
+        <div>%MisPx</div>
+        <div>Value</div>
+        <div>Net Chg</div>
+        <div>%Chg</div>
+        <div>&Delta; AVAT</div>
+        <div>Time</div>
+        <div>%YtdCur</div>
+      </div>`;
+    } else {
+      html += `
+      <div class="bwei-cat">
+        <div class="c-num">${catIdx})</div>
+        <div class="c-name">${cat.name}</div>
+        <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
+      </div>`;
+    }
+    let rowIdx = 1;
+    cat.tickers.forEach(tk => {
+      const item = dataMap[tk.toUpperCase()];
+      if(!item) return;
+      const rn = catIdx*10 + rowIdx;
+      html += _buildRowCW(item, rn);
+      rowIdx++;
+    });
+    catIdx++;
+  });
+
+  html += `</div>
+
+    <div class="bwei-actionbar">
+      <span class="ab-item" onclick="window.openCWEIPanelSettings&&window.openCWEIPanelSettings()" style="cursor:pointer;"><span style="color:#aaaaaa;font-weight:normal;">300)</span> Edit Panel</span>
+      <span class="ab-item"><span style="color:#aaaaaa;font-weight:normal;">301)</span> Expand Panel</span>
+    </div>
+
+    <div class="bwei-newsticker" id="cwei-newsticker"></div>
+
+    <div class="bwei-footbar">
+      <span class="fb-sf">Suggested Functions</span>
+      <span class="fb-center">
+        <span class="fb-item"><span class="fb-key">CRYPTO</span> <span class="fb-desc">Full Crypto Markets Dashboard</span></span>
+      </span>
+      <span class="fb-right">
+        <span class="fb-item"><span class="fb-key">CRYPTOMK</span> <span class="fb-desc">Crypto Markets — Core Assets</span></span>
+      </span>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+// ─── FIT/SCALE — same logic as WEI / CRYPTOMK ─────────────────────────────
+function _fitCWEI(){
+  try{
+    const panel = document.querySelector('.panel[data-fn="CWEI"]');
+    if(!panel) return;
+    const body  = panel.querySelector('.panel-body');
+    const wrap  = panel.querySelector('.bwei-wrap');
+    if(!body || !wrap) return;
+    const bw = body.clientWidth  || body.offsetWidth  || 1;
+    const bh = body.clientHeight || body.offsetHeight || 1;
+    const sx = bw  / 1100;
+    const sy = bh  / 720;
+    const sc = Math.min(sx, sy);
+    wrap.style.transform = `scale(${sc})`;
+  } catch(e){}
+}
+
+// ─── LIVE REFRESH — re-render rows in place every 3s ──────────────────────
+function _refreshCWEI(){
+  try {
+    const panel = document.querySelector('.panel[data-fn="CWEI"] .bwei-wrap');
+    if(!panel) return;
+
+    const allCrypto = window.CRYPTO || [];
+    const map = {};
+    allCrypto.forEach(c => { if(c && c.s) map[c.s.toUpperCase()] = c; });
+
+    if(!window._cweiCellCache) window._cweiCellCache = {};
+    const _DASH = '<span style="color:#444;">—</span>';
+
+    panel.querySelectorAll('.bwei-row').forEach(row => {
+      const sym = (row.dataset.sym || '').toUpperCase();
+      const item = map[sym];
+      if(!item) return;
+      const px = item.px;
+      const chg = item.chg;
+      const ytd = item.ytd != null ? item.ytd : (item.chg7 != null ? item.chg7 : null);
+      const _isLive = px != null && !isNaN(px) && px > 0;
+      const _chgLive = chg != null && !isNaN(chg);
+      const futurePx = item.open || px;
+      const misPx = (futurePx>0 && _isLive) ? ((px - futurePx)/futurePx*100) : null;
+      const chgPts = (_isLive && _chgLive) ? (px * chg / 100) : null;
+
+      const chgClass = (chg||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+      const ytdClass = (ytd||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+      const misClass = (misPx||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+
+      const _cc = window._cweiCellCache[sym] || (window._cweiCellCache[sym] = {});
+      const _setH = (el,val,key) => { if(el && _cc[key]!==val){ el.innerHTML = val; _cc[key] = val; } };
+      const _setT = (el,val,key) => { if(el && _cc[key]!==val){ el.textContent = val; _cc[key] = val; } };
+      const _setC = (el,cls,key) => { if(el && _cc[key]!==cls){ el.className = cls; _cc[key] = cls; } };
+
+      const futureEl = row.querySelector('.r-future');
+      const mispxEl  = row.querySelector('.r-mispx');
+      const valueEl  = row.querySelector('.r-value');
+      const chgEl    = row.querySelector('.r-chg');
+      const pctEl    = row.querySelector('.r-pct');
+      const timeEl   = row.querySelector('.r-time');
+      const ytdEl    = row.querySelector('.r-ytd');
+      const sparkEl  = row.querySelector('.r-spark');
+
+      if(futureEl){
+        const v = futurePx>0 ? _fmtNumCW(futurePx)+'<span class="bwei-sfx-d">d</span>' : _DASH;
+        _setH(futureEl, v, 'futV');
+      }
+      if(mispxEl){
+        if(misPx!=null){
+          _setC(mispxEl, 'r-mispx '+misClass, 'misC');
+          _setT(mispxEl, _fmtPctCW(misPx), 'misV');
+        } else { _setC(mispxEl,'r-mispx','misC'); _setH(mispxEl, _DASH, 'misV'); }
+      }
+      if(valueEl){
+        const v = _isLive ? _fmtNumCW(px)+'<span class="bwei-sfx-d">d</span>' : _DASH;
+        _setH(valueEl, v, 'valV');
+      }
+      if(chgEl){
+        if(chgPts!=null){
+          _setC(chgEl, 'r-chg '+chgClass, 'chgC');
+          _setT(chgEl, _fmtChgCW(chgPts), 'chgV');
+        } else { _setC(chgEl,'r-chg','chgC'); _setH(chgEl, _DASH, 'chgV'); }
+      }
+      if(pctEl){
+        if(_chgLive){
+          _setC(pctEl, 'r-pct '+chgClass, 'pctC');
+          _setT(pctEl, _fmtPctCW(chg), 'pctV');
+        } else { _setC(pctEl,'r-pct','pctC'); _setH(pctEl, _DASH, 'pctV'); }
+      }
+      if(timeEl){
+        const tv = _timeNowCW();
+        if(_cc.timeV !== tv){ timeEl.innerHTML = tv+'<span class="bwei-sfx-c">c</span>'; _cc.timeV = tv; }
+      }
+      if(ytdEl){
+        if(ytd!=null){
+          _setC(ytdEl, 'r-ytd '+ytdClass, 'ytdC');
+          _setT(ytdEl, _fmtYtdCW(ytd), 'ytdV');
+        } else { _setC(ytdEl,'r-ytd','ytdC'); _setH(ytdEl, _DASH, 'ytdV'); }
+      }
+      if(sparkEl && _cc.sparkChg !== chg){
+        sparkEl.innerHTML = _sparkCW(sym, chg||0);
+        _cc.sparkChg = chg;
+      }
+    });
+
+    // Also run fit after every refresh so scaling is correct
+    _fitCWEI();
+  } catch(e){ /* swallow */ }
+}
+
+// ─── PATCH buildPanelContent for CWEI ─────────────────────────────────────
+(function _patchCWEI(){
+  function _doPatch(){
+    const _origPanel = window.buildPanelContent;
+    if(typeof _origPanel === 'function'){
+      window.buildPanelContent = function(fn, ...args){
+        if(fn === 'CWEI'){
+          try { return buildCWEI(); }
+          catch(e){ console.error('[CWEI] build failed:', e); }
+        }
+        return _origPanel.apply(this, [fn, ...args]);
+      };
+      return true;
+    }
+    return false;
+  }
+  if(!_doPatch()){
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if(_doPatch() || tries > 50){ clearInterval(iv); }
+    }, 200);
+  }
+  // Re-patch after other scripts run
+  setTimeout(_doPatch, 1500);
+  setTimeout(_doPatch, 4000);
+
+  if(!window._cweiRefreshRegistered){
+    window._cweiRefreshRegistered = true;
+    setInterval(_refreshCWEI, 3000);
+  }
+
+  // Fit on resize
+  window.addEventListener('resize', _fitCWEI);
+})();
+
+window.buildCWEI = buildCWEI;
+window._refreshCWEI = _refreshCWEI;
+window._fitCWEI = _fitCWEI;
+window.CWEI_CATEGORIES = CWEI_CATEGORIES;
+console.log('[CWEI] Crypto World Equity Indices panel loaded — ' + CWEI_CATEGORIES.reduce((s,c)=>s+c.tickers.length,0) + ' symbols across ' + CWEI_CATEGORIES.length + ' categories');
+})();
+</script>
+
 </body>
 </html>
 
