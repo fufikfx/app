@@ -745,6 +745,8 @@ body.sat-active .m-wrap{opacity:1!important;}
 /* Colors */
 .cdash-up { color: #00cc44 !important; }
 .cdash-dn { color: #ff3d3d !important; }
+/* Net Chg highlight — % prahy přes netChgHighlightAbsPct(sym) (≈3 % / meme ~3.5 %) */
+.cdash-nc-xl { color: #ffffff !important; }
 .cdash-amber { color: #F39F41 !important; }
 .cdash-grey { color: #666 !important; }
 
@@ -1524,8 +1526,8 @@ body > .bwei-newsticker.wei-portal { bottom: 32px !important; z-index: 214748364
 
   function portalWEI(){
     // Find the visible WEI wrap (prefer one inside a panel with data-fn="WEI")
-    var wrap = document.querySelector('.panel[data-fn="WEI"] .bwei-wrap')
-            || document.querySelector('.bwei-wrap');
+    var wrap = document.querySelector('.panel[data-fn="WEI"] .bwei-wrap');
+    // Never portal bars from other panels (CWEI/CRYPTOMK/CRYPTO also use .bwei-wrap).
     if (!wrap) { unportal(); return; }
 
     // If we already portaled the same elements, nothing to do.
@@ -3534,7 +3536,7 @@ window._bbgSecMenuGo = function(cmd, sym) {
     'JOURN':'JOURN','PORT':'PORT','RISK':'RISK','ALERTS':'ALERTS',
     'DHLO':'DHLO','SENT':'SENT','MMAP':'MMAP','FA':'FA',
     'EQUITY':'EQUITY','IDX':'WEI','WEI':'WEI','COMDTY':'COMDTY','ETFS':'ETFF',
-    'CWEI':'CWEI','CRYPTOMK':'CRYPTOMK','CRYPTOMKT':'WEI',
+    'CWEI':'CWEI','CRYPTOMK':'CRYPTOMK','CRYPTOMKT':'CWEI',
   };
   const panelId = cryptoPanels[cmd];
   if (panelId && window.openPanel) {
@@ -6164,6 +6166,9 @@ function _getSatLayer(){
           const colorCls = up ? 'cdash-up' : 'cdash-dn';
           const sign = up ? '+' : '';
           const netChg = (parseFloat(last) * (parseFloat(chg)/100)).toFixed(live && live.px < 1 ? 4 : 2);
+          const netChgNum = parseFloat(String(netChg).replace(/,/g,''));
+          const lastPx = parseFloat(String(last).replace(/,/g,''));
+          const netChgCls = (!up && netChgIsHighlightLoss(netChgNum, lastPx, parseFloat(chg), sym)) ? 'cdash-nc-xl' : colorCls;
           
           // Use real YTD if available, else mock
           const ytd = pair.ytd || (Math.random() * 50 - 5).toFixed(1);
@@ -6174,7 +6179,7 @@ function _getSatLayer(){
             <tr>
               <td style="cursor:pointer" onclick="if(window._openChartForSymbol)_openChartForSymbol('${sym}')">${pair.name}</td>
               <td class="${colorCls}">${last}</td>
-              <td class="${colorCls}">${sign}${netChg}</td>
+              <td class="${netChgCls}">${sign}${netChg}</td>
               <td class="${colorCls}">${chg}%</td>
               <td class="${parseFloat(tenD) >= 0 ? 'cdash-up' : 'cdash-dn'}">${tenD}%</td>
               <td class="${parseFloat(ytd) >= 0 ? 'cdash-up' : 'cdash-dn'}">${ytd}%</td>
@@ -7107,6 +7112,11 @@ function getPanelTitle(fn){
 }
 
 function openPanel(fn,posX,posY){
+  // Normalize aliases: CRYPTOMKT/CWIB always render as CWEI
+  try{
+    const u = String(fn).toUpperCase();
+    if(u === 'CRYPTOMKT' || u === 'CWIB') fn = 'CWEI';
+  }catch(_){}
   // Record to history (skip if navigating)
   if (!window._histSilenced) {
     _pushHist({type: 'CMD', fn, sec: document.getElementById('cmd-sec-inp')?.value || ''});
@@ -7645,6 +7655,7 @@ function buildPanelContent(fn){
     case 'IVOL':    return '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#444;font-family:monospace;font-size:12px">IVOL REMOVED</div>';
     case 'GHREPO':  return buildGHREPO();
     case 'OPTFLOW': return typeof buildOPTFLOW==='function'?buildOPTFLOW():'';
+    case 'CRYPTOMKT': return buildCWEI();
     default:       return `<div style="padding:8px;color:var(--gr);font-size:9px">Function <span style="color:var(--am)">"${fn}"</span> — enter ticker in search or open from menu</div>`;
   }
 }
@@ -8588,6 +8599,23 @@ function _fmtFundSparkline(sym){
   return '<span style="display:inline-flex;align-items:flex-end;height:10px;gap:0.5px">'+bars+'</span>';
 }
 
+/** Net Chg highlight: |denní %chg| podle aktiva — meme ~3.5 %, většina vč. BTC/ETH/HYPE ~3 %. */
+function netChgHighlightAbsPct(sym){
+  var s = (sym==null?'':String(sym)).toUpperCase().replace(/USDT|USDC|USD$/i,'');
+  if (/^(PEPE|WIF|BONK|SHIB|FLOKI|MEME|DOGE|MOG|MEW|NOT|BABYDOGE)$/.test(s)) return 3.5;
+  return 3.0;
+}
+/** chgPts=$ change; px=spot; chgPct=daily % (e.g. -3.2); sym=ticker for tier */
+function netChgIsHighlightLoss(chgPts, px, chgPct, sym){
+  var th = netChgHighlightAbsPct(sym);
+  if (chgPct!=null && !isNaN(chgPct) && chgPct < 0)
+    return Math.abs(chgPct) >= th;
+  if (px!=null && !isNaN(px) && px>0 && chgPts!=null && !isNaN(chgPts) && chgPts < 0){
+    return Math.abs((chgPts/px)*100) >= th;
+  }
+  return false;
+}
+
 function buildCRYPTOMktCap(data){
   // ── Category definitions — Bloomberg WMCO style ─────────────────────────────
   const SECTIONS = [
@@ -8609,6 +8637,7 @@ function buildCRYPTOMktCap(data){
     return v.toFixed(8);
   };
   const chgCol = v => (v==null) ? '#887060' : v>=0 ? '#00ff44' : '#ff3333';
+  const netChgCol = (v, px, chgPct, sym) => (v==null||isNaN(v)) ? '#887060' : netChgIsHighlightLoss(v, px, chgPct, sym) ? '#ffffff' : v>=0 ? '#00ff44' : '#ff3333';
   const chgStr = v => (v==null) ? '\u2014' : (v>=0?'+':'')+v.toFixed(3)+'%';
   const netStr = v => {
     if(v==null) return '\u2014';
@@ -8722,7 +8751,7 @@ function buildCRYPTOMktCap(data){
         <td style="padding:0 2px;text-align:right;font-size:7px;color:var(--gr)">d</td>
         <td style="padding:0 2px">${makeSpark(c)}</td>
         <td id="cp-px-${c.id}" style="padding:0 4px;text-align:right;color:var(--am);font-size:9.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${fmtCryptoPx(c.px)}</td>
-        <td id="cp-nc-${c.id}" style="padding:0 4px;text-align:right;color:${chgCol(netChg)};font-size:9.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${netStr(netChg)}</td>
+        <td id="cp-nc-${c.id}" style="padding:0 4px;text-align:right;color:${netChgCol(netChg, c.px, pctChg, c.s)};font-size:9.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap">${netStr(netChg)}</td>
         <td id="cp-chg-${c.id}" style="padding:0 4px;text-align:right;color:${chgCol(pctChg)};font-size:9.5px;font-weight:900;font-variant-numeric:tabular-nums;white-space:nowrap">${chgStr(pctChg)}</td>
         <td id="cp-hi-${c.id}" style="padding:0 4px;text-align:right;color:#887060;font-size:8.5px;font-variant-numeric:tabular-nums;white-space:nowrap">${hi ? fmtCryptoPx(hi) : '\u2014'}</td>
         <td id="cp-lo-${c.id}" style="padding:0 4px;text-align:right;color:#887060;font-size:8.5px;font-variant-numeric:tabular-nums;white-space:nowrap">${lo ? fmtCryptoPx(lo) : '\u2014'}</td>
@@ -8804,8 +8833,9 @@ function _patchCRYPTOPanel() {
       const txt = a>=1000?s+a.toLocaleString('en',{maximumFractionDigits:0}):a>=1?s+a.toFixed(3):a>=0.01?s+a.toFixed(4):s+a.toFixed(6);
       if (ncEl.textContent !== txt) {
         ncEl.textContent = txt;
-        ncEl.style.color = netV >= 0 ? '#00ff66' : '#ff2222';
       }
+      const ncCol = netChgIsHighlightLoss(netV, c.px, c.chg, c.s) ? '#ffffff' : (netV >= 0 ? '#00ff66' : '#ff2222');
+      if (ncEl.style.color !== ncCol) ncEl.style.color = ncCol;
     }
 
     // ── MARKET CAP ──
@@ -43550,6 +43580,7 @@ document.addEventListener('keydown', function(e){
 .bwei-row .r-mispx { font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-value { color: #ff9933 !important; font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-chg { font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-chg.bwei-nc-xl { color: #ffffff !important; }
 .bwei-row .r-pct { font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-avat { color: #ff9933 !important; font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-avat.avat-pos { color: #ff9933 !important; }
@@ -43913,6 +43944,7 @@ function buildRow(item, rowNum, futTag){
   const timeStr = getTimeNow();
 
   const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const chgNetClass = (_isLive && _chgLive && typeof netChgIsHighlightLoss==='function' && netChgIsHighlightLoss(chgUsd, c.px)) ? 'bwei-nc-xl' : chgClass;
   const ytdClass = ytd >= 0 ? 'bwei-gn' : 'bwei-rd';
   const misPxClass = misPx >= 0 ? 'bwei-gn' : 'bwei-rd';
   const avatClass = avat >= 0 ? 'avat-pos' : 'avat-neg';
@@ -43934,7 +43966,7 @@ function buildRow(item, rowNum, futTag){
     <div class="r-future">${_futStr}</div>
     <div class="r-mispx ${misPxClass}">${_misStr}</div>
     <div class="r-value">${_valStr}</div>
-    <div class="r-chg ${chgClass}">${_chgStr}</div>
+    <div class="r-chg ${chgNetClass}">${_chgStr}</div>
     <div class="r-pct ${chgClass}">${_pctStr}</div>
     <div class="r-avat ${avatClass}">${fmtAvat(avat)}</div>
     <div class="r-time">${timeStr}<span class="bwei-sfx-c">c</span></div>
@@ -44138,7 +44170,8 @@ function getTimeStr(){
         if(chgEl){
           if(_isLiveR && _chgLiveR){
             const v = fmtChg(chgUsd);
-            _setC(chgEl, 'r-chg '+chgClass, 'chgC');
+            const chgNetClass = (typeof netChgIsHighlightLoss==='function' && netChgIsHighlightLoss(chgUsd, item.px)) ? 'bwei-nc-xl' : chgClass;
+            _setC(chgEl, 'r-chg '+chgNetClass, 'chgC');
             _setT(chgEl, v, 'chgV');
           } else {
             _setC(chgEl, 'r-chg', 'chgC');
@@ -44265,7 +44298,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   flex-shrink: 0 !important;
 }
 .bwei-opt-sel {
-  background: #FFAA00 !important; color: #000 !important; font-weight: bold !important; font-size: 12px !important;
+  background: #FFAA00 !important; color: #000 !important; font-weight: 400 !important; font-size: 12px !important;
   padding: 0 6px !important; border: 1px solid #000 !important; cursor: pointer !important;
   display: inline-flex !important; align-items: center !important; height: 18px !important;
   border-radius: 0 !important; transition: background 0.1s !important;
@@ -44391,6 +44424,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .bwei-row .r-mispx { font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-value { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-chg { font-weight: bold !important; justify-content: flex-end !important; }
+.bwei-row .r-chg.bwei-nc-xl { color: #ffffff !important; }
 .bwei-row .r-pct { font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-avat { color: #E8922A !important; font-weight: bold !important; justify-content: flex-end !important; }
 .bwei-row .r-avat.avat-pos { color: #DDC09E !important; }
@@ -45075,6 +45109,7 @@ function buildRow(item, rowNum, futTag){
   const timeStr = getTimeNow();
 
   const chgClass = chg >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const chgNetClass = (_isLive && _chgLive && typeof netChgIsHighlightLoss==='function' && netChgIsHighlightLoss(chgUsd, c.px)) ? 'bwei-nc-xl' : chgClass;
   const ytdClass = ytd >= 0 ? 'bwei-gn' : 'bwei-rd';
   const misPxClass = misPx >= 0 ? 'bwei-gn' : 'bwei-rd';
   const avatClass = avat >= 0 ? 'avat-pos' : 'avat-neg';
@@ -45096,7 +45131,7 @@ function buildRow(item, rowNum, futTag){
     <div class="r-future">${_futStr}</div>
     <div class="r-mispx ${misPxClass}">${_misStr}</div>
     <div class="r-value">${_valStr}</div>
-    <div class="r-chg ${chgClass}">${_chgStr}</div>
+    <div class="r-chg ${chgNetClass}">${_chgStr}</div>
     <div class="r-pct ${chgClass}">${_pctStr}</div>
     <div class="r-avat ${avatClass}">${fmtAvat(avat)}</div>
     <div class="r-time">${timeStr}<span class="bwei-sfx-c">c</span></div>
@@ -45299,7 +45334,8 @@ function getTimeStr(){
         if(chgEl){
           if(_isLiveR && _chgLiveR){
             const v = fmtChg(chgUsd);
-            _setC(chgEl, 'r-chg '+chgClass, 'chgC');
+            const chgNetClass = (typeof netChgIsHighlightLoss==='function' && netChgIsHighlightLoss(chgUsd, item.px)) ? 'bwei-nc-xl' : chgClass;
+            _setC(chgEl, 'r-chg '+chgNetClass, 'chgC');
             _setT(chgEl, v, 'chgV');
           } else {
             _setC(chgEl, 'r-chg', 'chgC');
@@ -45542,6 +45578,7 @@ function _buildWeiRow(sym, rowNum, futTag){
   const timeStr = _getTimeNow();
 
   const chgClass  = chg  >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const chgNetClass = (_isLive && _chgLive && typeof netChgIsHighlightLoss==='function' && netChgIsHighlightLoss(chgPts, px)) ? 'bwei-nc-xl' : chgClass;
   const ytdClass  = ytdVal >= 0 ? 'bwei-gn' : 'bwei-rd';
   const misPxClass = misPx >= 0 ? 'bwei-gn' : 'bwei-rd';
   const avatClass = avat >= 0 ? 'avat-pos' : 'avat-neg';
@@ -45564,7 +45601,7 @@ function _buildWeiRow(sym, rowNum, futTag){
     <div class="r-future">${_futStr}</div>
     <div class="r-mispx ${misPxClass}">${_misStr}</div>
     <div class="r-value">${_valStr}</div>
-    <div class="r-chg ${chgClass}">${_chgStr}</div>
+    <div class="r-chg ${chgNetClass}">${_chgStr}</div>
     <div class="r-pct ${chgClass}">${_pctStr}</div>
     <div class="r-avat ${avatClass}">${_fmtAvatIdx(avat)}</div>
     <div class="r-time">${timeStr}<span class="bwei-sfx-c">c</span></div>
@@ -45703,6 +45740,7 @@ function _refreshWEIBWEI(){
 
       const _isLive = px > 0;
       const _chgLive = (d.chg !== undefined && d.chg !== null);
+      const chgNetClass = (_isLive && _chgLive && typeof netChgIsHighlightLoss==='function' && netChgIsHighlightLoss(chgPts, px)) ? 'bwei-nc-xl' : chgClass;
 
       const futureEl = row.querySelector('.r-future');
       const mispxEl  = row.querySelector('.r-mispx');
@@ -45730,7 +45768,7 @@ function _refreshWEIBWEI(){
       }
       if(chgEl){
         if(_isLive && _chgLive){
-          _setC(chgEl, 'r-chg '+chgClass, 'chgC');
+          _setC(chgEl, 'r-chg '+chgNetClass, 'chgC');
           _setT(chgEl, _fmtChgIdx(chgPts), 'chgV');
         } else { _setC(chgEl,'r-chg','chgC'); _setH(chgEl, _DASH, 'chgV'); }
       }
@@ -45889,6 +45927,7 @@ function _buildRowCM(item, rn){
   const chgPts = (_isLive && _chgLive) ? (px * chg / 100) : null;
 
   const chgClass = (chg||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const chgNetClass = (_isLive && _chgLive && typeof netChgIsHighlightLoss==='function' && netChgIsHighlightLoss(chgPts, px)) ? 'bwei-nc-xl' : chgClass;
   const ytdClass = (ytd||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
   const misClass = (misPx||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
   const _DASH = '<span style="color:#444;">—</span>';
@@ -45902,7 +45941,7 @@ function _buildRowCM(item, rn){
     <div class="r-future">${futurePx>0 ? _fmtNumCM(futurePx)+'<span class="bwei-sfx-d">d</span>' : _DASH}</div>
     <div class="r-mispx ${misPx!=null?misClass:''}">${misPx!=null ? _fmtPctCM(misPx) : _DASH}</div>
     <div class="r-value">${_isLive ? _fmtNumCM(px)+'<span class="bwei-sfx-d">d</span>' : _DASH}</div>
-    <div class="r-chg ${_chgLive?chgClass:''}">${chgPts!=null ? _fmtChgCM(chgPts) : _DASH}</div>
+    <div class="r-chg ${_chgLive?chgNetClass:''}">${chgPts!=null ? _fmtChgCM(chgPts) : _DASH}</div>
     <div class="r-pct ${_chgLive?chgClass:''}">${_chgLive ? _fmtPctCM(chg) : _DASH}</div>
     <div class="r-avat"></div>
     <div class="r-time">${_timeNowCM()}<span class="bwei-sfx-c">c</span></div>
@@ -46032,6 +46071,7 @@ function _refreshCRYPTOMK(){
       const chgPts = (_isLive && _chgLive) ? (px * chg / 100) : null;
 
       const chgClass = (chg||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+      const chgNetClass = (typeof netChgIsHighlightLoss==='function' && netChgIsHighlightLoss(chgPts, px)) ? 'bwei-nc-xl' : chgClass;
       const ytdClass = (ytd||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
       const misClass = (misPx||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
 
@@ -46065,7 +46105,7 @@ function _refreshCRYPTOMK(){
       }
       if(chgEl){
         if(chgPts!=null){
-          _setC(chgEl, 'r-chg '+chgClass, 'chgC');
+          _setC(chgEl, 'r-chg '+chgNetClass, 'chgC');
           _setT(chgEl, _fmtChgCM(chgPts), 'chgV');
         } else { _setC(chgEl,'r-chg','chgC'); _setH(chgEl, _DASH, 'chgV'); }
       }
@@ -48878,9 +48918,12 @@ body.wei-original-active .cmd-icon-lbl,body.wei-original-active .cmd-icon span:n
 body.wei-original-active .cmd-icon .cmd-arr{font-size:14px!important;color:#bdbdbd!important;}
 body.wei-original-active .cmd-icon-help{height:36px!important;padding:0 18px!important;background:#ffcc00!important;}
 body.wei-original-active .cmd-icon-help .cmd-icon-lbl{font-size:28px!important;color:#000!important;font-weight:900!important;}
-body.wei-original-active .panel.maximized[data-fn="WEI"],body.wei-original-active .panel.maximized[data-fn="CRYPTOMKT"]{top:36px!important;height:calc(100% - 36px)!important;background:#000!important;}
-body.wei-original-active .panel[data-fn="WEI"] .panel-body,body.wei-original-active .panel[data-fn="CRYPTOMKT"] .panel-body{background:#000!important;overflow:hidden!important;display:block!important;position:relative!important;}
-.panel[data-fn="WEI"] .wei-original,.panel[data-fn="CRYPTOMKT"] .wei-original{--wei-orange:#e8922a;--wei-control:#ffaa1a;--wei-red:#cf4a5b;--wei-green:#43b86a;--wei-cream:#dcc8ad;--wei-grey:#a6a6a6;width:1900px;height:1136px;min-width:1900px;min-height:1136px;display:flex;flex:0 0 auto;flex-direction:column;position:absolute;left:0;top:0;transform-origin:0 0;background:#000;color:var(--wei-orange);font-family:Arial,Helvetica,sans-serif!important;font-weight:700;line-height:1;overflow:hidden;zoom:1!important;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}
+body.wei-original-active .panel.maximized[data-fn="WEI"],
+body.wei-original-active .panel.maximized[data-fn="CWEI"]{top:36px!important;height:calc(100% - 36px)!important;background:#000!important;}
+body.wei-original-active .panel[data-fn="WEI"] .panel-body,
+body.wei-original-active .panel[data-fn="CWEI"] .panel-body{background:#000!important;overflow:hidden!important;display:block!important;position:relative!important;}
+.panel[data-fn="WEI"] .wei-original,
+.panel[data-fn="CWEI"] .wei-original{--wei-orange:#e8922a;--wei-time-date:#D4A574;--wei-control:#ffaa1a;--wei-red:#cf4a5b;--wei-green:#43b86a;--wei-cream:#dcc8ad;--wei-grey:#a6a6a6;width:1900px;height:1136px;min-width:1900px;min-height:1136px;display:flex;flex:0 0 auto;flex-direction:column;position:absolute;left:0;top:0;transform-origin:0 0;background:#000;color:var(--wei-orange);font-family:Arial,Helvetica,sans-serif!important;font-weight:700;line-height:1;overflow:hidden;zoom:1!important;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}
 .wei-original *{box-sizing:border-box;letter-spacing:0!important;}
 .wei-command{height:72px;flex:0 0 72px;background:#000;color:#fff;font-family:"Courier New",monospace;font-weight:700;}
 .wei-cmd-input{height:36px;display:flex;align-items:stretch;background:#000;}
@@ -48891,7 +48934,7 @@ body.wei-original-active .panel[data-fn="WEI"] .panel-body,body.wei-original-act
 .wei-red-btn{height:36px;display:inline-flex;align-items:center;padding:0 12px;border-right:1px solid #76090b;font-size:30px;font-weight:500;color:#fff;}
 .wei-red-title{margin-left:auto;padding:0 26px;font-size:30px;font-weight:500;color:#fff;word-spacing:8px;}
 .wei-optbar{height:36px;flex:0 0 36px;display:flex;align-items:center;background:#000;border-bottom:1px solid #111;color:var(--wei-orange);font-size:30px;font-weight:700;white-space:nowrap;overflow:hidden;}
-.wei-select{height:34px;display:inline-flex;align-items:center;background:var(--wei-control);color:#000;border:1px solid #000;font-size:30px;font-weight:700;padding:0 9px;line-height:34px;}
+.wei-select{height:34px;display:inline-flex;align-items:center;background:var(--wei-control);color:rgba(0,0,0,0.7);border:1px solid #000;font-size:30px;font-weight:400;padding:0 9px;line-height:15px;}
 .wei-arrow{height:34px;min-width:36px;display:inline-flex;align-items:center;justify-content:center;background:#3a3a3a;color:#b8b8b8;border:1px solid #000;border-left:none;font-size:23px;line-height:34px;}
 .wei-checks{display:flex;align-items:center;justify-content:space-around;gap:42px;flex:1;min-width:0;padding:0 24px;}
 .wei-check{display:inline-flex;align-items:center;gap:12px;color:var(--wei-orange);}
@@ -48913,12 +48956,13 @@ body.wei-original-active .panel[data-fn="WEI"] .panel-body,body.wei-original-act
 .wei-row .rmi{padding:0;}
 .wei-row .spark{padding:0;background:#181818;border-left:1px solid #3a3a3a;border-right:2px solid #303030;}
 .wei-row .right{justify-content:flex-end;}
-.wei-row .value,.wei-row .future,.wei-row .time.date{color:var(--wei-orange);}
-.wei-row .time.clock{color:#fff;}
+.wei-row .value,.wei-row .future{color:var(--wei-orange);}
+.wei-row .time.date,.wei-row .time.right.date{color:var(--wei-time-date,#D4A574)!important;}
+.wei-row .time.clock,.wei-row .time.right.clock{color:#ffffff!important;}
 .wei-row .green{color:var(--wei-green);}
 .wei-row .red{color:var(--wei-red);}
-.wei-row .avat-pos{color:var(--wei-cream);}
-.wei-row .avat-neg{color:#c86f2c;}
+.wei-row .avat-pos{color:#F4D4A1;}
+.wei-row .avat-neg{color:#996A38;}
 .wei-row .suffix{color:#bfbfbf;font-size:25px;font-weight:400;margin-left:4px;}
 .wei-spark-svg{display:block;width:100%;height:36px;background:#171717;}
 .wei-action{height:36px;flex:0 0 36px;background:#003066;color:#fff;display:flex;align-items:center;justify-content:flex-end;padding:0 22px;font-size:31px;font-family:"Courier New",monospace;font-weight:700;border-top:1px solid #002050;}
@@ -48929,6 +48973,34 @@ body.wei-original-active .panel[data-fn="WEI"] .panel-body,body.wei-original-act
 .wei-foot{flex:0 0 auto;height:56px;background:#000;color:#d6d6d6;display:grid;grid-template-columns:340px 1fr 1fr;border-top:1px solid #1a1a1a;font-family:Arial,Helvetica,sans-serif;}
 .wei-foot>div{display:flex;align-items:center;padding:0 22px;font-size:26px;overflow:hidden;white-space:nowrap;height:56px;}
 .wei-foot .sf{color:var(--wei-orange);font-weight:700;}.wei-foot .key{color:#fff;font-weight:900;margin-right:14px;}.wei-foot .desc{color:#d7d7d7;font-weight:400;}
+/* CWEI: Future + Value sloupce — stejná oranžová jako zbytek mřížky / Volatility */
+.panel[data-fn="CWEI"] .wei-row .value.right,
+.panel[data-fn="CWEI"] .wei-row .future.right{color:var(--wei-orange)!important;}
+.panel[data-fn="CWEI"] .wei-cat.wei-grid > div:nth-child(5),
+.panel[data-fn="CWEI"] .wei-cat.wei-grid > div:nth-child(7){color:#fff!important;}
+.panel[data-fn="CWEI"] .wei-row span[id^="cwei-px-"] .suffix,
+.panel[data-fn="CWEI"] .wei-row span[id^="cwei-fut-"] .suffix{color:#6e6e6e!important;}
+.panel[data-fn="CWEI"] .wei-row span.cwei-mis-na{color:#6e6e6e!important;}
+/* WEI/CWEI: datum / hodiny / suffix jako paleta níže; zelená/červená přes span */
+.panel[data-fn="WEI"] .wei-row > div.time.right.date,
+.panel[data-fn="CWEI"] .wei-row > div.time.right.date{color:#ffffff!important;}
+.panel[data-fn="WEI"] .wei-row > div.time.right.clock,
+.panel[data-fn="CWEI"] .wei-row > div.time.right.clock{color:#ffffff!important;}
+.panel[data-fn="WEI"] .wei-row > div.time.right .suffix,
+.panel[data-fn="CWEI"] .wei-row > div.time.right .suffix{color:#bfbfbf!important;}
+.panel[data-fn="WEI"] .wei-row span.green,
+.panel[data-fn="CWEI"] .wei-row span.green{color:var(--wei-green)!important;}
+.panel[data-fn="WEI"] .wei-row span.red,
+.panel[data-fn="CWEI"] .wei-row span.red{color:var(--wei-red)!important;}
+/* avat-neg/pos: ve statickém WEI je třída na <div class="right avat-neg">, v CWEI na <span> — cílíme obojí */
+.panel[data-fn="WEI"] .wei-row .avat-pos,
+.panel[data-fn="CWEI"] .wei-row .avat-pos{color:#F4D4A1!important;}
+.panel[data-fn="WEI"] .wei-row .avat-neg,
+.panel[data-fn="CWEI"] .wei-row .avat-neg{color:#996A38!important;}
+/* Net Chg „velká“ záporná ztráta → chg-xl (bílá); práh podle spotu — viz netChgAbsThreshold() ve sdíleném JS */
+.wei-row div.right.chg-xl,.panel[data-fn="WEI"] .wei-row div.right.chg-xl,.panel[data-fn="CWEI"] .wei-row div.right.chg-xl{color:#ffffff!important;}
+#MAIN #map-overlay .panel[data-fn="WEI"] .wei-original .wei-body .wei-row div.right.chg-xl,
+#MAIN #map-overlay .panel[data-fn="CWEI"] .wei-original .wei-body .wei-row div.right.chg-xl{color:#ffffff!important;}
 </style>
 <script id="wei-original-final-js">
 (function(){
@@ -48959,18 +49031,33 @@ var rows=[
 ['34','S&P/ASX 200','5335.00','d','+0.346%','5319.85','d','+73.96','+1.41%','-3.77%','05/04','c','-27.13%',1]
 ]}];
 function cls(v,type){if(type==='avat')return v.charAt(0)==='-'?'avat-neg':'avat-pos';if(v.indexOf('+0.000')===0)return'red';return v.charAt(0)==='-'?'red':v.charAt(0)==='+'?'green':'';}
+function clsNetChg(v,valPx){var t=String(v).replace(/,/g,'');var n=parseFloat(t);var px=parseFloat(String(valPx==null?'':valPx).replace(/,/g,''));if(!isNaN(n)&&typeof netChgIsHighlightLoss==='function'&&netChgIsHighlightLoss(n,px))return'chg-xl';return cls(v);}
+function clsMisPx(v){var s=String(v==null?'':v).replace(/,/g,'').replace(/%/g,'').trim();if(!s)return'';var n=parseFloat(s);if(isNaN(n))return'';return n>0?'green':n<0?'red':'';}
 function spark(seed,dir){var left=[],right=[],y=18;for(var i=0;i<18;i++){y+=Math.sin((i+seed)*.9)*3+(i%5===0?-5:1);if(y<5)y=5;if(y>30)y=30;left.push((i*3.1).toFixed(1)+','+y.toFixed(1));}var y2=y;for(var j=0;j<18;j++){y2+=Math.sin((j+seed)*1.1)*2.5+(dir>0?1.2:-1.2);if(y2<5)y2=5;if(y2>30)y2=30;right.push((58+j*3.1).toFixed(1)+','+y2.toFixed(1));}return '<svg class="wei-spark-svg" viewBox="0 0 115 36" preserveAspectRatio="none"><rect x="0" y="0" width="115" height="36" fill="#171717"/><polyline points="'+left.join(' ')+'" fill="none" stroke="#bfc3c7" stroke-width="1.7" vector-effect="non-scaling-stroke"/><line x1="56" y1="0" x2="56" y2="36" stroke="#454545" stroke-width="1"/><polyline points="'+right.join(' ')+'" fill="none" stroke="'+(dir>0?'#43b86a':'#cf4a5b')+'" stroke-width="1.7" vector-effect="non-scaling-stroke"/></svg>';}
 function cell(txt,cn){return'<div class="'+cn+'">'+txt+'</div>';}
 function sfx(x){return x?'<span class="suffix">'+x+'</span>':'';}
-function row(r,i){return '<div class="wei-row wei-grid">'+cell(r[0]+')','num')+cell(r[1],'name')+cell('','rmi')+cell(spark(i+3,r[13]),'spark')+cell(r[2]+sfx(r[3]),'future right')+cell(r[4],'right '+cls(r[4]))+cell(r[5]+sfx(r[6]),'value right')+cell(r[7],'right '+cls(r[7]))+cell(r[8],'right '+cls(r[8]))+cell(r[9],'right '+cls(r[9],'avat'))+cell(r[10]+sfx(r[11]),'time right '+(r[10].indexOf(':')>-1?'clock':'date'))+cell(r[12],'right '+cls(r[12]))+'</div>';}
+function row(r,i){return '<div class="wei-row wei-grid">'+cell(r[0]+')','num')+cell(r[1],'name')+cell('','rmi')+cell(spark(i+3,r[13]),'spark')+cell(r[2]+sfx(r[3]),'future right')+cell(r[4],'right '+clsMisPx(r[4]))+cell(r[5]+sfx(r[6]),'value right')+cell(r[7],'right '+clsNetChg(r[7],r[5]))+cell(r[8],'right '+cls(r[8]))+cell(r[9],'right '+cls(r[9],'avat'))+cell(r[10]+sfx(r[11]),'time right '+(r[10].indexOf(':')>-1?'clock':'date'))+cell(r[12],'right '+cls(r[12]))+'</div>';}
 function cat(c){var h='<div class="wei-cat wei-grid">'+cell(c.num+')','cat-num')+cell(c.cat,'cat-name');if(c.headers){h+=cell('RMI','hdr-center')+cell('2Day','hdr-center')+cell('Future','hdr')+cell('%MisPx','hdr')+cell('Value','hdr')+cell('Net Chg','hdr')+cell('%Chg','hdr')+cell('&Delta; AVAT','hdr')+cell('Time','hdr')+cell('%YtdCur','hdr');}else{for(var i=0;i<10;i++)h+=cell('','hdr');}return h+'</div>';}
 function buildWEIOriginal(){var out='<div class="wei-original"><div class="wei-command"><div class="wei-cmd-input"><div class="wei-blue-strip"></div><div class="wei-input-box"></div></div><div class="wei-launch">LLP &lt;GO&gt; to Open in Launchpad</div></div><div class="wei-redbar"><span class="wei-red-btn">News <span style="font-size:22px;margin-left:5px;">▼</span></span><span class="wei-red-btn">Settings</span><span class="wei-red-title">World Equity Indices</span></div><div class="wei-optbar"><span class="wei-select">Standard</span><span class="wei-arrow">▼</span><div class="wei-checks"><span class="wei-check"><span class="wei-box"></span>Movers</span><span class="wei-check"><span class="wei-box"></span>Volatility</span><span class="wei-check"><span class="wei-box"></span>Ratios</span><span class="wei-check"><span class="wei-box on">✓</span>Futures</span><span class="wei-check"><span class="wei-box on">✓</span>&Delta; AVAT</span></div><div class="wei-right-controls"><span class="wei-select">10D</span><span class="wei-arrow">▼</span><span class="wei-select" style="margin-left:18px;">%Chg YTD</span><span class="wei-arrow">▼</span><span class="wei-select" style="margin-left:18px;">USD</span><span class="wei-arrow">▼</span></div></div><div class="wei-body">';
 var k=0;rows.forEach(function(c){out+=cat(c);c.items.forEach(function(r){out+=row(r,++k);});});
 out+='</div><div class="wei-action"><span><b>300)</b> Edit Panel</span><span><b>301)</b> Expand Panel</span></div><div class="wei-news" id="wei-live-news"><div class="wei-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt">Loading news...</span></div><div class="wei-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div><div class="wei-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div><div class="wei-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div></div><div class="wei-foot"><div><span class="sf">Suggested Functions</span></div><div><span class="key">ECO</span><span class="desc">See upcoming economic releases &amp; events</span></div><div><span class="key">CVID</span><span class="desc">Chart current coronavirus infection data</span></div></div></div>';
 return out;}
 var oldBuild=window.buildPanelContent;
-window.buildPanelContent=function(fn){var u=String(fn).toUpperCase();if(u==='WEI'||u==='CRYPTOMKT')return buildWEIOriginal();return oldBuild?oldBuild.apply(this,arguments):'';};
-function markWei(){var weipnl=document.querySelector('.panel[data-fn="WEI"], .panel[data-fn="CRYPTOMKT"]');var has=!!weipnl;document.body.classList.toggle('wei-original-active',has);if(has){var sec=document.getElementById('cmd-sec-inp'),fn=document.getElementById('cmd-fn-inp');if(sec)sec.value='Initial Jobless Claims SA Index';if(fn)fn.value=weipnl.dataset.fn;}}
+window.buildPanelContent=function(fn){
+  var u=String(fn).toUpperCase();
+  if(u==='WEI') return buildWEIOriginal();
+  return oldBuild?oldBuild.apply(this,arguments):'';
+};
+function markWei(){
+  var weipnl=document.querySelector('.panel[data-fn="WEI"], .panel[data-fn="CWEI"]');
+  var has=!!weipnl;
+  document.body.classList.toggle('wei-original-active',has);
+  if(has){
+    var sec=document.getElementById('cmd-sec-inp'),fn=document.getElementById('cmd-fn-inp');
+    if(sec) sec.value = (weipnl.dataset.fn==='CWEI' ? 'Crypto World Equity Indices' : 'Initial Jobless Claims SA Index');
+    if(fn) fn.value = weipnl.dataset.fn;
+  }
+}
 var oldOpen=window.openPanel;if(typeof oldOpen==='function'){window.openPanel=function(fn){var ret=oldOpen.apply(this,arguments);setTimeout(markWei,0);setTimeout(markWei,80);return ret;};}
 var oldClose=window.closePanel;if(typeof oldClose==='function'){window.closePanel=function(){var ret=oldClose.apply(this,arguments);setTimeout(markWei,0);return ret;};}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',markWei);else markWei();
@@ -48999,12 +49086,12 @@ window.WEI_ORIGINAL_FINAL={build:buildWEIOriginal};
     body.style.background = '#000';
   }
   function fitAll(){
-    document.querySelectorAll('.panel[data-fn="WEI"], .panel[data-fn="CRYPTOMKT"]').forEach(fitWeiPanel);
+    document.querySelectorAll('.panel[data-fn="WEI"]').forEach(fitWeiPanel);
   }
   // ResizeObserver na body každého WEI panelu
   var ro = (typeof ResizeObserver !== 'undefined') ? new ResizeObserver(function(entries){
     entries.forEach(function(e){
-      var panel = e.target.closest && e.target.closest('.panel[data-fn="WEI"], .panel[data-fn="CRYPTOMKT"]');
+      var panel = e.target.closest && e.target.closest('.panel[data-fn="WEI"]');
       if(panel) fitWeiPanel(panel);
     });
   }) : null;
@@ -49013,12 +49100,51 @@ window.WEI_ORIGINAL_FINAL={build:buildWEIOriginal};
     if(body && ro && !body.__weiObserved){ ro.observe(body); body.__weiObserved = true; }
     fitWeiPanel(panel);
   }
-  function scan(){ document.querySelectorAll('.panel[data-fn="WEI"], .panel[data-fn="CRYPTOMKT"]').forEach(attach); }
+  function scan(){ document.querySelectorAll('.panel[data-fn="WEI"]').forEach(attach); }
   // Sleduj přidání nových WEI panelů
   new MutationObserver(function(){ scan(); }).observe(document.documentElement, {childList:true, subtree:true});
   window.addEventListener('resize', fitAll, {passive:true});
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan); else scan();
   // Pojistka při otvírání panelu
+  setInterval(fitAll, 1000);
+})();
+</script>
+<script>
+/* ── CWEI: použij stejnou "WEI original" scénu, jen scale ── */
+(function(){
+  var STAGE_W = 1900, STAGE_H = 1136;
+  function fitCweiPanel(panel){
+    var body = panel.querySelector('.panel-body');
+    var wrap = panel.querySelector('.wei-original');
+    if(!body || !wrap) return;
+    var bw = body.clientWidth, bh = body.clientHeight;
+    if(bw < 10 || bh < 10) return;
+    var sx = bw / STAGE_W;
+    var sy = bh / STAGE_H;
+    wrap.style.transform = 'translate(0px,0px) scale(' + sx + ',' + sy + ')';
+    wrap.style.width = STAGE_W + 'px';
+    wrap.style.height = STAGE_H + 'px';
+    body.style.overflow = 'hidden';
+    body.style.background = '#000';
+  }
+  function fitAll(){
+    document.querySelectorAll('.panel[data-fn="CWEI"]').forEach(fitCweiPanel);
+  }
+  var ro = (typeof ResizeObserver !== 'undefined') ? new ResizeObserver(function(entries){
+    entries.forEach(function(e){
+      var panel = e.target.closest && e.target.closest('.panel[data-fn="CWEI"]');
+      if(panel) fitCweiPanel(panel);
+    });
+  }) : null;
+  function attach(panel){
+    var body = panel.querySelector('.panel-body');
+    if(body && ro && !body.__cweiObserved){ ro.observe(body); body.__cweiObserved = true; }
+    fitCweiPanel(panel);
+  }
+  function scan(){ document.querySelectorAll('.panel[data-fn="CWEI"]').forEach(attach); }
+  new MutationObserver(function(){ scan(); }).observe(document.documentElement, {childList:true, subtree:true});
+  window.addEventListener('resize', fitAll, {passive:true});
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan); else scan();
   setInterval(fitAll, 1000);
 })();
 </script>
@@ -49140,7 +49266,7 @@ setInterval(_weiNewsRefresh, 30000);
       });
     });
   }).observe(document.documentElement,{childList:true,subtree:true});
-  document.querySelectorAll('.panel[data-fn="WEI"] .wei-original, .panel[data-fn="CRYPTOMKT"] .wei-original').forEach(init);
+  document.querySelectorAll('.panel[data-fn="WEI"] .wei-original').forEach(init);
 })();
 </script>
 
@@ -49174,7 +49300,7 @@ setInterval(_weiNewsRefresh, 30000);
 .cryptowei-original .cw-red-btn{height:36px;display:inline-flex;align-items:center;padding:0 12px;border-right:1px solid #76090b;font-size:30px;font-weight:500;color:#fff;}
 .cryptowei-original .cw-red-title{margin-left:auto;padding:0 26px;font-size:30px;font-weight:500;color:#fff;word-spacing:8px;}
 .cryptowei-original .cw-optbar{height:36px;flex:0 0 36px;display:flex;align-items:center;background:#000;border-bottom:1px solid #111;color:var(--wei-orange);font-size:30px;font-weight:700;white-space:nowrap;overflow:hidden;}
-.cryptowei-original .cw-select{height:34px;display:inline-flex;align-items:center;background:var(--wei-control);color:#000;border:1px solid #000;font-size:30px;font-weight:700;padding:0 9px;line-height:34px;}
+.cryptowei-original .cw-select{height:34px;display:inline-flex;align-items:center;background:var(--wei-control);color:rgba(0,0,0,0.7);border:1px solid #000;font-size:30px;font-weight:400;padding:0 9px;line-height:15px;}
 .cryptowei-original .cw-arrow{height:34px;min-width:36px;display:inline-flex;align-items:center;justify-content:center;background:#3a3a3a;color:#b8b8b8;border:1px solid #000;border-left:none;font-size:23px;line-height:34px;}
 .cryptowei-original .cw-checks{display:flex;align-items:center;justify-content:space-around;gap:42px;flex:1;min-width:0;padding:0 24px;}
 .cryptowei-original .cw-check{display:inline-flex;align-items:center;gap:12px;color:var(--wei-orange);}
@@ -49196,12 +49322,13 @@ setInterval(_weiNewsRefresh, 30000);
 .cryptowei-original .cw-row .rmi{padding:0;}
 .cryptowei-original .cw-row .spark{padding:0;background:#181818;border-left:1px solid #3a3a3a;border-right:2px solid #303030;}
 .cryptowei-original .cw-row .right{justify-content:flex-end;}
-.cryptowei-original .cw-row .value,.cryptowei-original .cw-row .future,.cryptowei-original .cw-row .time.date{color:var(--wei-orange);}
-.cryptowei-original .cw-row .time.clock{color:#fff;}
+.cryptowei-original .cw-row .value,.cryptowei-original .cw-row .future{color:var(--wei-orange);}
+.cryptowei-original .cw-row .time.date,.cryptowei-original .cw-row .time.right.date{color:#ffffff!important;}
+.cryptowei-original .cw-row .time.clock,.cryptowei-original .cw-row .time.right.clock{color:#ffffff!important;}
 .cryptowei-original .cw-row .green{color:var(--wei-green);}
 .cryptowei-original .cw-row .red{color:var(--wei-red);}
-.cryptowei-original .cw-row .avat-pos{color:var(--wei-cream);}
-.cryptowei-original .cw-row .avat-neg{color:#c86f2c;}
+.cryptowei-original .cw-row .avat-pos{color:#F4D4A1;}
+.cryptowei-original .cw-row .avat-neg{color:#996A38;}
 .cryptowei-original .cw-row .suffix{color:#bfbfbf;font-size:25px;font-weight:400;margin-left:4px;}
 .cryptowei-original .cw-spark-svg{display:block;width:100%;height:36px;background:#171717;}
 .cryptowei-original .cw-action{height:36px;flex:0 0 36px;background:#003066;color:#fff;display:flex;align-items:center;justify-content:flex-end;padding:0 22px;font-size:31px;font-family:"Courier New",monospace;font-weight:700;border-top:1px solid #002050;}
@@ -49217,6 +49344,21 @@ setInterval(_weiNewsRefresh, 30000);
 .cryptowei-original .cw-foot .sf{color:var(--wei-orange);font-weight:700;}
 .cryptowei-original .cw-foot .key{color:#fff;font-weight:900;margin-right:14px;}
 .cryptowei-original .cw-foot .desc{color:#d7d7d7;font-weight:400;}
+/* CRYPTOMK cryptowei — čas jako WEI/CWEI (override + map-overlay stejná priorita) */
+.panel[data-fn="CRYPTOMK"] .cryptowei-original .cw-row > div.time.right.date{color:#ffffff!important;}
+.panel[data-fn="CRYPTOMK"] .cryptowei-original .cw-row > div.time.right.clock{color:#ffffff!important;}
+.panel[data-fn="CRYPTOMK"] .cryptowei-original .cw-row > div.time.right .suffix{color:#bfbfbf!important;}
+#MAIN #map-overlay .panel[data-fn="CRYPTOMK"] .cryptowei-original .cw-row > div.time.right.date{color:#ffffff!important;}
+#MAIN #map-overlay .panel[data-fn="CRYPTOMK"] .cryptowei-original .cw-row > div.time.right.clock{color:#ffffff!important;}
+#MAIN #map-overlay .panel[data-fn="CRYPTOMK"] .cryptowei-original .cw-row > div.time.right .suffix{color:#bfbfbf!important;}
+/* CRYPTOMK: v jedné buňce datum (bílá) + čas (zlatá) — stejný rozpad jako WEI date/clock */
+.cryptowei-original .cw-row .time.right .cw-time-date{color:#ffffff!important;}
+.cryptowei-original .cw-row .time.right .cw-time-clock{color:#ffffff!important;}
+.panel[data-fn="CRYPTOMK"] .cryptowei-original .cw-row > div.time.right .cw-time-date{color:#ffffff!important;}
+.panel[data-fn="CRYPTOMK"] .cryptowei-original .cw-row > div.time.right .cw-time-clock{color:#ffffff!important;}
+#MAIN #map-overlay .panel[data-fn="CRYPTOMK"] .cryptowei-original .cw-row > div.time.right .cw-time-date{color:#ffffff!important;}
+#MAIN #map-overlay .panel[data-fn="CRYPTOMK"] .cryptowei-original .cw-row > div.time.right .cw-time-clock{color:#ffffff!important;}
+.cryptowei-original .cw-row div.right.chg-xl,.panel[data-fn="CRYPTOMK"] .cryptowei-original .cw-row div.right.chg-xl,#MAIN #map-overlay .panel[data-fn="CRYPTOMK"] .cryptowei-original .cw-row div.right.chg-xl{color:#ffffff!important;}
 </style>
 <script id="cryptowei-original-final-js">
 (function(){
@@ -49245,7 +49387,18 @@ function _fmtNum(v){
 }
 function _signed(v, suf){ if(v==null||isNaN(v)) return '—'; var s=v>=0?'+':''; return s + (suf==='%' ? Number(v).toFixed(2)+'%' : _fmtNum(v)); }
 function _clsSign(v){ if(v==null||isNaN(v)) return ''; return v>=0 ? 'green' : 'red'; }
+function _clsNetChgWrap(v, px){
+  if(v==null||isNaN(v)) return 'right';
+  if(typeof netChgIsHighlightLoss==='function'&&netChgIsHighlightLoss(v, px)) return 'right chg-xl';
+  var s = _clsSign(v);
+  return s ? 'right '+s : 'right';
+}
+function _clsMisPx(misPx){
+  if(misPx==null||isNaN(misPx)) return 'right';
+  return misPx>=0 ? 'right green' : 'right red';
+}
 function _timeNow(){ var d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+function _dateMmDd(){ var d=new Date(); return ('0'+(d.getMonth()+1)).slice(-2)+'/'+('0'+d.getDate()).slice(-2); }
 function _sfx(x){ return x ? '<span class="suffix">'+x+'</span>' : ''; }
 
 function _spark(seed, dir){
@@ -49283,12 +49436,12 @@ function _row(it, num, idx){
     + _cell('', 'rmi')
     + _cell(_spark(idx+3, dir), 'spark')
     + _cell((live ? _fmtNum(futurePx)+_sfx('d') : '—'), 'future right')
-    + _cell((misPx!=null ? _signed(misPx,'%') : '—'), 'right '+_clsSign(misPx))
+    + _cell((misPx!=null ? _signed(misPx,'%') : '—'), _clsMisPx(misPx))
     + _cell((live ? _fmtNum(px)+_sfx('d') : '—'), 'value right')
-    + _cell((chgPts!=null ? _signed(chgPts) : '—'), 'right '+_clsSign(chgPts))
+    + _cell((chgPts!=null ? _signed(chgPts) : '—'), _clsNetChgWrap(chgPts, px))
     + _cell((chgLive ? _signed(chg,'%') : '—'), 'right '+_clsSign(chg))
     + _cell('', 'right')
-    + _cell(_timeNow()+_sfx('c'), 'time right clock')
+    + _cell('<span class="cw-time-date">'+_dateMmDd()+'</span> <span class="cw-time-clock">'+_timeNow()+'</span>'+_sfx('c'), 'time right')
     + _cell((ytd!=null ? _signed(ytd,'%') : '—'), 'right '+_clsSign(ytd))
     + '</div>';
 }
@@ -49389,14 +49542,14 @@ function _refresh(){
         var el = cells[idx]; if(!el) return;
         if(el.innerHTML !== html) el.innerHTML = html;
         if(cls != null){
-          var base = el.className.split(' ').filter(function(c){ return c!=='green' && c!=='red' && c!=='avat-pos' && c!=='avat-neg'; }).join(' ');
+          var base = el.className.split(' ').filter(function(c){ return c!=='green' && c!=='red' && c!=='avat-pos' && c!=='avat-neg' && c!=='chg-xl'; }).join(' ');
           el.className = (base + ' ' + cls).trim();
         }
       }
       setHTML(4, live ? _fmtNum(futurePx)+_sfx('d') : '—');
-      setHTML(5, misPx!=null ? _signed(misPx,'%') : '—', 'right ' + _clsSign(misPx));
+      setHTML(5, misPx!=null ? _signed(misPx,'%') : '—', _clsMisPx(misPx));
       setHTML(6, live ? _fmtNum(px)+_sfx('d') : '—');
-      setHTML(7, chgPts!=null ? _signed(chgPts) : '—', 'right ' + _clsSign(chgPts));
+      setHTML(7, chgPts!=null ? _signed(chgPts) : '—', _clsNetChgWrap(chgPts, px));
       setHTML(8, chgLive ? _signed(chg,'%') : '—', 'right ' + _clsSign(chg));
       setHTML(10, _timeNow()+_sfx('c'));
       setHTML(11, ytd!=null ? _signed(ytd,'%') : '—', 'right ' + _clsSign(ytd));
@@ -49452,26 +49605,19 @@ console.log('[CRYPTOWEI] WEI-style Crypto Markets panel loaded');
 
 // ─── CWEI CATEGORIES — Top 20 market cap (no meme/AI/DeFi brands) ────────
 // Seřazeno dle market cap. Kategorie odpovídají logice WEI panelu.
+// CRYPTO — only top-tier projects with fastest, most stable Binance WS feeds
 const CWEI_CATEGORIES = [
   {
-    name: 'Store of Value',
-    tickers: ['BTC','ETH','BNB','SOL','XRP']
+    name: 'Majors',
+    tickers: ['BTC','ETH','SOL','BNB','XRP','ADA']
   },
   {
-    name: 'Layer 1 Networks',
-    tickers: ['ADA','AVAX','TRX','DOT','NEAR','SUI','APT','ATOM']
+    name: 'Layer 1',
+    tickers: ['AVAX','DOT','ATOM','NEAR','APT','SUI']
   },
   {
     name: 'Infrastructure',
-    tickers: ['LINK','LTC','BCH','XLM','TON','XMR']
-  },
-  {
-    name: 'Stablecoins',
-    tickers: ['USDT','USDC','DAI']
-  },
-  {
-    name: 'Other',
-    tickers: ['HYPE','VET','FIL','ETC']
+    tickers: ['ICP','LINK','TRX','XLM','LTC','BCH']
   }
 ];
 
@@ -49528,12 +49674,13 @@ function _buildRowCW(item, rn){
   const chgPts = (_isLive && _chgLive) ? (px * chg / 100) : null;
 
   const chgClass = (chg||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
+  const chgNetClass = (_isLive && _chgLive && typeof netChgIsHighlightLoss==='function' && netChgIsHighlightLoss(chgPts, px)) ? 'bwei-nc-xl' : chgClass;
   const ytdClass = (ytd||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
   const misClass = (misPx||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
   const _DASH = '<span style="color:#444;">—</span>';
 
   return `
-  <div class="bwei-row" data-sym="${sym}">
+  <div class="bwei-row" data-sym="${sym}" style="cursor:pointer !important;" title="Open chart: ${sym}" onclick="if(window._openChartForSymbol)window._openChartForSymbol('${sym}')">
     <div class="r-num">${rn})</div>
     <div class="r-name"><span class="r-sym">${sym}</span> <span class="r-fullname">${name}</span></div>
     <div class="r-rmi"></div>
@@ -49541,7 +49688,7 @@ function _buildRowCW(item, rn){
     <div class="r-future">${futurePx>0 ? _fmtNumCW(futurePx)+'<span class="bwei-sfx-d">d</span>' : _DASH}</div>
     <div class="r-mispx ${misPx!=null?misClass:''}">${misPx!=null ? _fmtPctCW(misPx) : _DASH}</div>
     <div class="r-value">${_isLive ? _fmtNumCW(px)+'<span class="bwei-sfx-d">d</span>' : _DASH}</div>
-    <div class="r-chg ${_chgLive?chgClass:''}">${chgPts!=null ? _fmtChgCW(chgPts) : _DASH}</div>
+    <div class="r-chg ${_chgLive?chgNetClass:''}">${chgPts!=null ? _fmtChgCW(chgPts) : _DASH}</div>
     <div class="r-pct ${_chgLive?chgClass:''}">${_chgLive ? _fmtPctCW(chg) : _DASH}</div>
     <div class="r-avat"></div>
     <div class="r-time">${_timeNowCW()}<span class="bwei-sfx-c">c</span></div>
@@ -49582,209 +49729,245 @@ window.openCWEIPanelSettings = function(){
   document.body.appendChild(overlay);
 };
 
-// ─── Build CWEI HTML ───────────────────────────────────────────────────────
+// ─── CWEI: velké záporné Net Chg → chg-xl (podle spotu stejně jako u BTC/altů) ───────
+function _cweiClsNetChg(chgPts, px){
+  if(typeof netChgIsHighlightLoss==='function'&&netChgIsHighlightLoss(chgPts, px))return'chg-xl';
+  var fake=(chgPts!=null&&chgPts<0?'-':'+')+'0.000';
+  if(fake.indexOf('+0.000')===0)return'red';
+  return fake.charAt(0)==='-'?'red':fake.charAt(0)==='+'?'green':'';
+}
+
+// ─── CWEI: vrátit původní WEI panel (bez refreshů), jen krypto tickery ─────
 function buildCWEI(){
-  const data = _getCweiData();
-  const dataMap = {};
-  (data||[]).forEach(c => { if(c && c.s) dataMap[c.s.toUpperCase()] = c; });
-
-  let html = `
-  <div class="bwei-wrap" id="cwei-wrap">
-
-    <div class="bwei-tophdr">
-      <span class="bwei-menu">News<span class="bwei-arr">▾</span></span>
-      <span class="bwei-menu" onclick="window.openCWEIPanelSettings&&window.openCWEIPanelSettings()" style="cursor:pointer;">Settings<span class="bwei-arr">▾</span></span>
-      <span class="bwei-title">CRYPTO WORLD EQUITY INDICES — CWEI</span>
-    </div>
-
-    <div class="bwei-optbar">
-      <div class="bwei-optbar-standard">
-        <span class="bwei-opt-sel">Standard</span><span class="bwei-opt-arr">▼</span>
-      </div>
-      <div class="bwei-optbar-checks">
-        <label class="bwei-opt-chk"><input type="checkbox"> Movers</label>
-        <label class="bwei-opt-chk"><input type="checkbox"> Volatility</label>
-        <label class="bwei-opt-chk"><input type="checkbox"> Ratios</label>
-        <label class="bwei-opt-chk"><input type="checkbox"> Futures</label>
-        <label class="bwei-opt-chk"><input type="checkbox"> &Delta; AVAT</label>
-      </div>
-      <div class="bwei-optbar-right">
-        <span class="bwei-opt-sel">10D</span><span class="bwei-opt-arr">▼</span>
-        <span style="width:3px;flex-shrink:0;"></span>
-        <span class="bwei-opt-sel">%Chg YTD</span><span class="bwei-opt-arr">▼</span>
-        <span style="width:3px;flex-shrink:0;"></span>
-        <span class="bwei-opt-sel">USD</span><span class="bwei-opt-arr">▼</span>
-      </div>
-    </div>
-
-    <div class="bwei-body">`;
-
-  let catIdx = 1;
-  CWEI_CATEGORIES.forEach(cat => {
-    if(catIdx === 1){
-      html += `
-      <div class="bwei-cat" style="border-top:none !important;">
-        <div class="c-num">${catIdx})</div>
-        <div class="c-name">${cat.name}</div>
-        <div class="c-rmi">RMI</div>
-        <div class="c-spark">2Day</div>
-        <div>Future</div>
-        <div>%MisPx</div>
-        <div>Value</div>
-        <div>Net Chg</div>
-        <div>%Chg</div>
-        <div>&Delta; AVAT</div>
-        <div>Time</div>
-        <div>%YtdCur</div>
-      </div>`;
-    } else {
-      html += `
-      <div class="bwei-cat">
-        <div class="c-num">${catIdx})</div>
-        <div class="c-name">${cat.name}</div>
-        <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
-      </div>`;
+  function cls(v,type){
+    if(type==='avat') return String(v).charAt(0)==='-'?'avat-neg':'avat-pos';
+    if(String(v).indexOf('+0.000')===0) return 'red';
+    return String(v).charAt(0)==='-'?'red':String(v).charAt(0)==='+'?'green':'';
+  }
+  function cell(txt,cn){ return '<div class="'+cn+'">'+txt+'</div>'; }
+  function sfx(x){ return x?'<span class="suffix">'+x+'</span>':''; }
+  function spark(seed,dir){
+    var left=[],right=[],y=18;
+    for(var i=0;i<18;i++){ y+=Math.sin((i+seed)*.9)*3+(i%5===0?-5:1); if(y<5)y=5; if(y>30)y=30; left.push((i*3.1).toFixed(1)+','+y.toFixed(1)); }
+    var y2=y;
+    for(var j=0;j<18;j++){ y2+=Math.sin((j+seed)*1.1)*2.5+(dir>0?1.2:-1.2); if(y2<5)y2=5; if(y2>30)y2=30; right.push((58+j*3.1).toFixed(1)+','+y2.toFixed(1)); }
+    return '<svg class="wei-spark-svg" viewBox="0 0 115 36" preserveAspectRatio="none"><rect x="0" y="0" width="115" height="36" fill="#171717"/><polyline points="'+left.join(' ')+'" fill="none" stroke="#bfc3c7" stroke-width="1.7" vector-effect="non-scaling-stroke"/><line x1="56" y1="0" x2="56" y2="36" stroke="#454545" stroke-width="1"/><polyline points="'+right.join(' ')+'" fill="none" stroke="'+(dir>0?'#43b86a':'#cf4a5b')+'" stroke-width="1.7" vector-effect="non-scaling-stroke"/></svg>';
+  }
+  function catRow(num,name,headers){
+    var h='<div class="wei-cat wei-grid">'+cell(num+')','cat-num')+cell(name,'cat-name');
+    if(headers){
+      h+=cell('RMI','hdr-center')+cell('2Day','hdr-center')+cell('Future','hdr')+cell('%MisPx','hdr')+cell('Value','hdr')+cell('Net Chg','hdr')+cell('%Chg','hdr')+cell('&Delta; AVAT','hdr')+cell('Time','hdr')+cell('%YtdCur','hdr');
+    }else{
+      for(var i=0;i<10;i++) h+=cell('','hdr');
     }
-    let rowIdx = 1;
-    cat.tickers.forEach(tk => {
-      const item = dataMap[tk.toUpperCase()];
-      if(!item) return;
-      const rn = catIdx*10 + rowIdx;
-      html += _buildRowCW(item, rn);
+    return h+'</div>';
+  }
+  function fmtPx(v){
+    if(v==null||isNaN(v)) return '—';
+    var a=Math.abs(v);
+    if(a>=1000) return v.toLocaleString('en-US',{maximumFractionDigits:0});
+    if(a>=1) return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(a>=0.01) return v.toLocaleString('en-US',{minimumFractionDigits:4,maximumFractionDigits:4});
+    return v.toLocaleString('en-US',{minimumFractionDigits:6,maximumFractionDigits:8});
+  }
+  function row(num,sym,px,chgPct,openPx,ytdPct,futPx){
+    var S = String(sym).toUpperCase();
+    var refOpen = (openPx!=null && !isNaN(openPx) && openPx>0) ? openPx : null;
+    var chgFromOpen = (refOpen!=null && px!=null && !isNaN(px) && refOpen>0) ? ((px - refOpen) / refOpen * 100) : null;
+    var effChg = (chgFromOpen!=null) ? chgFromOpen : chgPct;
+    var chgPts = (refOpen!=null && px!=null && !isNaN(px) && !isNaN(refOpen)) ? (px - refOpen) : (px!=null && chgPct!=null && !isNaN(px) && !isNaN(chgPct) ? (px*chgPct/100) : null);
+    var basis = (futPx!=null && !isNaN(futPx) && futPx>0 && px!=null && !isNaN(px)) ? ((px - futPx) / futPx * 100) : null;
+    var misPx = (basis!=null) ? basis : null;
+    var pxTxt = (px!=null && !isNaN(px)) ? fmtPx(px)+sfx('d') : '—';
+    var futTxt = (futPx!=null && !isNaN(futPx) && futPx>0) ? fmtPx(futPx)+sfx('d') : '—';
+    var pctTxt = (effChg!=null && !isNaN(effChg)) ? ((effChg>=0?'+':'')+effChg.toFixed(2)+'%') : '—';
+    var chgTxt = (chgPts!=null && !isNaN(chgPts)) ? ((chgPts>=0?'+':'')+fmtPx(chgPts)) : '—';
+    var misTxt = (misPx!=null && !isNaN(misPx)) ? ((misPx>=0?'+':'')+misPx.toFixed(2)+'%') : '—';
+    var avatVal = (effChg!=null && !isNaN(effChg)) ? ((effChg>=0?'+':'-')+Math.abs(effChg*0.40).toFixed(2)+'%') : '—';
+    var ytdTxt = (ytdPct!=null && !isNaN(ytdPct)) ? ((ytdPct>=0?'+':'')+ytdPct.toFixed(2)+'%') : '—';
+    var t = new Date(); var tm = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+    var dir = (effChg||0);
+    var misInnerCls = (misPx==null || isNaN(misPx)) ? 'cwei-mis-na' : (misPx>=0?'green':'red');
+    var misWrapCls = 'right';
+    return '<div class="wei-row wei-grid" data-sym="'+S+'">'+
+      cell(num+')','num')+
+      cell(S,'name')+
+      cell('','rmi')+
+      cell(spark(num+3,dir),'spark')+
+      cell('<span id="cwei-fut-'+S+'">'+futTxt+'</span>','future right')+
+      cell('<span id="cwei-mis-'+S+'" class="'+misInnerCls+'">'+misTxt+'</span>',misWrapCls)+
+      cell('<span id="cwei-px-'+S+'">'+pxTxt+'</span>','value right')+
+      cell('<span id="cwei-chg-'+S+'">'+chgTxt+'</span>','right '+_cweiClsNetChg(chgPts, px))+
+      cell('<span id="cwei-pct-'+S+'" class="'+(effChg>=0?'green':'red')+'">'+pctTxt+'</span>','right')+
+      cell('<span id="cwei-avat-'+S+'" class="'+cls((dir>=0?'+':'-')+'0.000','avat')+'">'+avatVal+'</span>','right')+
+      cell(tm+sfx('c'),'time right clock')+
+      cell('<span id="cwei-ytd-'+S+'" class="'+(ytdPct>=0?'green':'red')+'">'+ytdTxt+'</span>','right')+
+    '</div>';
+  }
+
+  var map = {};
+  try{
+    (window.CRYPTO||[]).forEach(function(c){
+      if(c && c.s) map[String(c.s).toUpperCase()] = c;
+    });
+  }catch(_){}
+
+  var out = '<div class="wei-original">'+
+    '<div class="wei-command"><div class="wei-cmd-input"><div class="wei-blue-strip"></div><div class="wei-input-box"></div></div><div class="wei-launch">LLP &lt;GO&gt; to Open in Launchpad</div></div>'+
+    '<div class="wei-redbar"><span class="wei-red-btn">News <span style="font-size:22px;margin-left:5px;">▼</span></span><span class="wei-red-btn">Settings</span><span class="wei-red-title">Crypto World Equity Indices</span></div>'+
+    '<div class="wei-optbar"><span class="wei-select">Standard</span><span class="wei-arrow">▼</span><div class="wei-checks"><span class="wei-check"><span class="wei-box"></span>Movers</span><span class="wei-check"><span class="wei-box"></span>Volatility</span><span class="wei-check"><span class="wei-box"></span>Ratios</span><span class="wei-check"><span class="wei-box on">✓</span>Futures</span><span class="wei-check"><span class="wei-box on">✓</span>&Delta; AVAT</span></div><div class="wei-right-controls"><span class="wei-select">10D</span><span class="wei-arrow">▼</span><span class="wei-select" style="margin-left:18px;">%Chg YTD</span><span class="wei-arrow">▼</span><span class="wei-select" style="margin-left:18px;">USD</span><span class="wei-arrow">▼</span></div></div>'+
+    '<div class="wei-body">';
+
+  var catIdx = 1;
+  CWEI_CATEGORIES.forEach(function(cat){
+    out += catRow(catIdx, cat.name, catIdx===1);
+    var rowIdx = 1;
+    cat.tickers.forEach(function(tk){
+      var it = map[String(tk).toUpperCase()] || { s: tk };
+      var ytd = (it.ytd!=null?it.ytd:(it.chg7!=null?it.chg7:null));
+      out += row(catIdx*10 + rowIdx, String(tk).toUpperCase(), it.px, it.chg, it.open, ytd, it.fut);
       rowIdx++;
     });
     catIdx++;
   });
 
-  html += `</div>
+  out += '</div>'+
+    '<div class="wei-action"><span><b>300)</b> Edit Panel</span><span><b>301)</b> Expand Panel</span></div>'+
+    '<div class="wei-news" id="cwei-live-news"><div class="wei-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div><div class="wei-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div><div class="wei-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div><div class="wei-news-line"><span class="id">---</span><span class="src">---</span><span class="tm">--:--</span><span class="txt"> </span></div></div>'+
+    '<div class="wei-foot"><div><span class="sf">Suggested Functions</span></div><div><span class="key">CRYPTO</span><span class="desc">Full Crypto Markets Dashboard</span></div><div><span class="key">CRYPTOMK</span><span class="desc">Crypto Markets — Core Assets</span></div></div></div>';
+  return out;
+}
 
-    <div class="bwei-actionbar">
-      <span class="ab-item" onclick="window.openCWEIPanelSettings&&window.openCWEIPanelSettings()" style="cursor:pointer;"><span style="color:#aaaaaa;font-weight:normal;">300)</span> Edit Panel</span>
-      <span class="ab-item"><span style="color:#aaaaaa;font-weight:normal;">301)</span> Expand Panel</span>
-    </div>
+// ─── CWEI live cells (no full refresh) ────────────────────────────────────
+function _updateCWEIFromLiveCrypto(){
+  try{
+    var map = {};
+    (window.CRYPTO||[]).forEach(function(c){
+      if(c && c.s) map[String(c.s).toUpperCase()] = c;
+    });
+    CWEI_CATEGORIES.forEach(function(cat){
+      cat.tickers.forEach(function(tk){
+        var S = String(tk).toUpperCase();
+        var it = map[S];
+        if(!it) return;
+        var px = it.px, chg = it.chg, open = it.open, fut = it.fut;
+        var refOpen = (open!=null && !isNaN(open) && open>0) ? open : null;
+        var chgFromOpen = (refOpen!=null && px!=null && !isNaN(px)) ? ((px - refOpen) / refOpen * 100) : null;
+        var effChg = (chgFromOpen!=null) ? chgFromOpen : chg;
+        var chgPts = (refOpen!=null && px!=null && !isNaN(px) && !isNaN(refOpen)) ? (px - refOpen) : (px!=null && chg!=null && !isNaN(px) && !isNaN(chg) ? (px*chg/100) : null);
+        var basis = (fut!=null && !isNaN(fut) && fut>0 && px!=null && !isNaN(px)) ? ((px - fut) / fut * 100) : null;
+        var misPx = (basis!=null) ? basis : null;
+        var ytd = (it.ytd!=null?it.ytd:(it.chg7!=null?it.chg7:null));
 
-    <div class="bwei-newsticker" id="cwei-newsticker"></div>
+        var futEl = document.getElementById('cwei-fut-'+S);
+        var misEl = document.getElementById('cwei-mis-'+S);
+        var pxEl  = document.getElementById('cwei-px-'+S);
+        var chgEl = document.getElementById('cwei-chg-'+S);
+        var pctEl = document.getElementById('cwei-pct-'+S);
+        var avatEl= document.getElementById('cwei-avat-'+S);
+        var ytdEl = document.getElementById('cwei-ytd-'+S);
+        if(!futEl && !pxEl) return;
 
-    <div class="bwei-footbar">
-      <span class="fb-sf">Suggested Functions</span>
-      <span class="fb-center">
-        <span class="fb-item"><span class="fb-key">CRYPTO</span> <span class="fb-desc">Full Crypto Markets Dashboard</span></span>
-      </span>
-      <span class="fb-right">
-        <span class="fb-item"><span class="fb-key">CRYPTOMK</span> <span class="fb-desc">Crypto Markets — Core Assets</span></span>
-      </span>
-    </div>
-  </div>`;
+        function fmtPx(v){
+          if(v==null||isNaN(v)) return '—';
+          var a=Math.abs(v);
+          if(a>=1000) return v.toLocaleString('en-US',{maximumFractionDigits:0});
+          if(a>=1) return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+          if(a>=0.01) return v.toLocaleString('en-US',{minimumFractionDigits:4,maximumFractionDigits:4});
+          return v.toLocaleString('en-US',{minimumFractionDigits:6,maximumFractionDigits:8});
+        }
+        function fmtPct(v){ if(v==null||isNaN(v)) return '—'; return (v>=0?'+':'')+v.toFixed(2)+'%'; }
+        // Stejná struktura jako buildCWEI: číslo + <span class="suffix">d</span> (textContent by rozbíjel DOM a „d“ by skákalo)
+        function pxHtml(v){
+          if (v==null || isNaN(v)) return '—';
+          return fmtPx(v) + '<span class="suffix">d</span>';
+        }
+        var pxH = pxHtml(px);
+        var futH = pxHtml(fut);
+        var chgTxt = (chgPts!=null && !isNaN(chgPts)) ? ((chgPts>=0?'+':'')+fmtPx(chgPts)) : '—';
+        var avatVal = (effChg!=null && !isNaN(effChg)) ? ((effChg>=0?'+':'-')+Math.abs(effChg*0.40).toFixed(2)+'%') : '—';
 
-  return html;
+        if (futEl && futEl.innerHTML !== futH) futEl.innerHTML = futH;
+        if (pxEl && pxEl.innerHTML !== pxH) pxEl.innerHTML = pxH;
+        if(chgEl){
+          chgEl.textContent = chgTxt;
+          var chgWrap = chgEl.parentElement;
+          if(chgWrap) chgWrap.className = 'right '+_cweiClsNetChg(chgPts, px);
+        }
+        if(pctEl){ pctEl.textContent = fmtPct(effChg); pctEl.className = (effChg||0)>=0?'green':'red'; }
+        if(misEl){
+          var misWrap = misEl.parentElement;
+          if (misPx==null || isNaN(misPx)) { misEl.textContent = '—'; misEl.className = 'cwei-mis-na'; if(misWrap) misWrap.className = 'right'; }
+          else { misEl.textContent = fmtPct(misPx); misEl.className = (misPx>=0?'green':'red'); if(misWrap) misWrap.className = 'right'; }
+        }
+        if(avatEl) avatEl.textContent = avatVal;
+        if(ytdEl){ ytdEl.textContent = fmtPct(ytd); ytdEl.className = (ytd||0)>=0?'green':'red'; }
+      });
+    });
+  }catch(_){}
+}
+
+// ─── CWEI live news (crypto) ──────────────────────────────────────────────
+function buildCWEINews(){
+  var cache = window._newsCache || [];
+  var filtered = cache.filter(function(n){
+    var tag = (n.tag||'').toUpperCase();
+    var title = (n.title||'').toLowerCase();
+    if(tag==='CRYPTO'||tag==='DEFI') return true;
+    return title.includes('bitcoin')||title.includes('btc')||title.includes('ethereum')||title.includes('eth')||title.includes('crypto')||title.includes('binance')||title.includes('etf');
+  });
+  var items = filtered.slice(0,4);
+  while(items.length < 4) items.push(null);
+  function fmtTime(ts){
+    if(!ts) return '--:--';
+    var ms = ts > 1e10 ? ts : ts * 1000;
+    var d = new Date(ms), n = new Date();
+    if(d.toDateString()===n.toDateString())
+      return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
+    return (d.getMonth()+1<10?'0':'')+(d.getMonth()+1)+'/'+(d.getDate()<10?'0':'')+d.getDate();
+  }
+  function fmtSrc(item){
+    if(!item) return '---';
+    var s = (item.src||'').toLowerCase();
+    if(s.includes('reuters'))   return 'RTS';
+    if(s.includes('bloomberg')) return 'BBG';
+    if(s.includes('coindesk'))  return 'CD';
+    if(s.includes('cointelegraph')) return 'CT';
+    if(s.includes('the block')) return 'TB';
+    return ((item.src||'NEWS').toUpperCase()).slice(0,6);
+  }
+  function esc(t){ return String(t||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var h = '';
+  items.forEach(function(it,i){
+    h += '<div class="wei-news-line"><span class="id">'+String(i+1).padStart(3,'0')+'</span><span class="src">'+fmtSrc(it)+'</span><span class="tm">'+fmtTime(it&&it.ts)+'</span><span class="txt">'+(it?esc(it.title).slice(0,120):' ')+'</span></div>';
+  });
+  return h;
+}
+function _renderCWEINews(){
+  try{
+    var el = document.getElementById('cwei-live-news');
+    if(!el) return;
+    el.innerHTML = buildCWEINews();
+  }catch(_){}
+}
+if(!window.__cweiLiveHooks){
+  window.__cweiLiveHooks = true;
+  setInterval(function(){ _updateCWEIFromLiveCrypto(); _renderCWEINews(); }, 2500);
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ _updateCWEIFromLiveCrypto(); _renderCWEINews(); });
+  else setTimeout(function(){ _updateCWEIFromLiveCrypto(); _renderCWEINews(); }, 80);
 }
 
 // ─── FIT/SCALE — same logic as WEI / CRYPTOMK ─────────────────────────────
 function _fitCWEI(){
-  try{
-    const panel = document.querySelector('.panel[data-fn="CWEI"]');
-    if(!panel) return;
-    const body  = panel.querySelector('.panel-body');
-    const wrap  = panel.querySelector('.bwei-wrap');
-    if(!body || !wrap) return;
-    const bw = body.clientWidth  || body.offsetWidth  || 1;
-    const bh = body.clientHeight || body.offsetHeight || 1;
-    const sx = bw  / 1100;
-    const sy = bh  / 720;
-    const sc = Math.min(sx, sy);
-    wrap.style.transform = `scale(${sc})`;
-  } catch(e){}
+  // Deprecated: CWEI uses WEI-original + dedicated fitCweiPanel scaler.
+  return;
 }
 
 // ─── LIVE REFRESH — re-render rows in place every 3s ──────────────────────
 function _refreshCWEI(){
-  try {
-    const panel = document.querySelector('.panel[data-fn="CWEI"] .bwei-wrap');
-    if(!panel) return;
+  // Deprecated: do not rebuild/refresh CWEI (caused flicker/duplication).
+  return;
 
-    const allCrypto = window.CRYPTO || [];
-    const map = {};
-    allCrypto.forEach(c => { if(c && c.s) map[c.s.toUpperCase()] = c; });
-
-    if(!window._cweiCellCache) window._cweiCellCache = {};
-    const _DASH = '<span style="color:#444;">—</span>';
-
-    panel.querySelectorAll('.bwei-row').forEach(row => {
-      const sym = (row.dataset.sym || '').toUpperCase();
-      const item = map[sym];
-      if(!item) return;
-      const px = item.px;
-      const chg = item.chg;
-      const ytd = item.ytd != null ? item.ytd : (item.chg7 != null ? item.chg7 : null);
-      const _isLive = px != null && !isNaN(px) && px > 0;
-      const _chgLive = chg != null && !isNaN(chg);
-      const futurePx = item.open || px;
-      const misPx = (futurePx>0 && _isLive) ? ((px - futurePx)/futurePx*100) : null;
-      const chgPts = (_isLive && _chgLive) ? (px * chg / 100) : null;
-
-      const chgClass = (chg||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
-      const ytdClass = (ytd||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
-      const misClass = (misPx||0) >= 0 ? 'bwei-gn' : 'bwei-rd';
-
-      const _cc = window._cweiCellCache[sym] || (window._cweiCellCache[sym] = {});
-      const _setH = (el,val,key) => { if(el && _cc[key]!==val){ el.innerHTML = val; _cc[key] = val; } };
-      const _setT = (el,val,key) => { if(el && _cc[key]!==val){ el.textContent = val; _cc[key] = val; } };
-      const _setC = (el,cls,key) => { if(el && _cc[key]!==cls){ el.className = cls; _cc[key] = cls; } };
-
-      const futureEl = row.querySelector('.r-future');
-      const mispxEl  = row.querySelector('.r-mispx');
-      const valueEl  = row.querySelector('.r-value');
-      const chgEl    = row.querySelector('.r-chg');
-      const pctEl    = row.querySelector('.r-pct');
-      const timeEl   = row.querySelector('.r-time');
-      const ytdEl    = row.querySelector('.r-ytd');
-      const sparkEl  = row.querySelector('.r-spark');
-
-      if(futureEl){
-        const v = futurePx>0 ? _fmtNumCW(futurePx)+'<span class="bwei-sfx-d">d</span>' : _DASH;
-        _setH(futureEl, v, 'futV');
-      }
-      if(mispxEl){
-        if(misPx!=null){
-          _setC(mispxEl, 'r-mispx '+misClass, 'misC');
-          _setT(mispxEl, _fmtPctCW(misPx), 'misV');
-        } else { _setC(mispxEl,'r-mispx','misC'); _setH(mispxEl, _DASH, 'misV'); }
-      }
-      if(valueEl){
-        const v = _isLive ? _fmtNumCW(px)+'<span class="bwei-sfx-d">d</span>' : _DASH;
-        _setH(valueEl, v, 'valV');
-      }
-      if(chgEl){
-        if(chgPts!=null){
-          _setC(chgEl, 'r-chg '+chgClass, 'chgC');
-          _setT(chgEl, _fmtChgCW(chgPts), 'chgV');
-        } else { _setC(chgEl,'r-chg','chgC'); _setH(chgEl, _DASH, 'chgV'); }
-      }
-      if(pctEl){
-        if(_chgLive){
-          _setC(pctEl, 'r-pct '+chgClass, 'pctC');
-          _setT(pctEl, _fmtPctCW(chg), 'pctV');
-        } else { _setC(pctEl,'r-pct','pctC'); _setH(pctEl, _DASH, 'pctV'); }
-      }
-      if(timeEl){
-        const tv = _timeNowCW();
-        if(_cc.timeV !== tv){ timeEl.innerHTML = tv+'<span class="bwei-sfx-c">c</span>'; _cc.timeV = tv; }
-      }
-      if(ytdEl){
-        if(ytd!=null){
-          _setC(ytdEl, 'r-ytd '+ytdClass, 'ytdC');
-          _setT(ytdEl, _fmtYtdCW(ytd), 'ytdV');
-        } else { _setC(ytdEl,'r-ytd','ytdC'); _setH(ytdEl, _DASH, 'ytdV'); }
-      }
-      if(sparkEl && _cc.sparkChg !== chg){
-        sparkEl.innerHTML = _sparkCW(sym, chg||0);
-        _cc.sparkChg = chg;
-      }
-    });
-
-    // Also run fit after every refresh so scaling is correct
-    _fitCWEI();
-  } catch(e){ /* swallow */ }
 }
 
 // ─── PATCH buildPanelContent for CWEI ─────────────────────────────────────
@@ -49793,7 +49976,7 @@ function _refreshCWEI(){
     const _origPanel = window.buildPanelContent;
     if(typeof _origPanel === 'function'){
       window.buildPanelContent = function(fn, ...args){
-        if(fn === 'CWEI'){
+        if(String(fn).toUpperCase() === 'CWEI'){
           try { return buildCWEI(); }
           catch(e){ console.error('[CWEI] build failed:', e); }
         }
@@ -49814,10 +49997,7 @@ function _refreshCWEI(){
   setTimeout(_doPatch, 1500);
   setTimeout(_doPatch, 4000);
 
-  if(!window._cweiRefreshRegistered){
-    window._cweiRefreshRegistered = true;
-    setInterval(_refreshCWEI, 3000);
-  }
+  // Disabled: CWEI no longer auto-refreshes / rebuilds (WEI-original static clone).
 
   // Fit on resize
   window.addEventListener('resize', _fitCWEI);
@@ -49828,6 +50008,139 @@ window._refreshCWEI = _refreshCWEI;
 window._fitCWEI = _fitCWEI;
 window.CWEI_CATEGORIES = CWEI_CATEGORIES;
 console.log('[CWEI] Crypto World Equity Indices panel loaded — ' + CWEI_CATEGORIES.reduce((s,c)=>s+c.tickers.length,0) + ' symbols across ' + CWEI_CATEGORIES.length + ' categories');
+})();
+
+/* ════════════════════════════════════════════════════════════════════════
+   CRYPTO PANEL — Real-time Binance WebSocket stream
+   Patches window.CRYPTO entries for the 10 selected symbols on every tick
+   and immediately calls _refreshCWEI() so the panel has zero added latency.
+   No polling, no throttle — purely event-driven from the exchange.
+   ════════════════════════════════════════════════════════════════════════ */
+(function _cweiRealtimeWS(){
+  if(window._cweiWSStarted) return;
+  window._cweiWSStarted = true;
+
+  // Symbol -> binance pair (USDT spot, highest liquidity / fastest feed)
+  var PAIRS = {
+    BTC:'btcusdt', ETH:'ethusdt', SOL:'solusdt', BNB:'bnbusdt', XRP:'xrpusdt',
+    ADA:'adausdt', AVAX:'avaxusdt', DOT:'dotusdt', ATOM:'atomusdt', NEAR:'nearusdt', APT:'aptusdt',
+    SUI:'suiusdt', ICP:'icpusdt', LINK:'linkusdt', TRX:'trxusdt', XLM:'xlmusdt', LTC:'ltcusdt', BCH:'bchusdt'
+  };
+
+  function ensureCryptoEntry(sym){
+    if(!Array.isArray(window.CRYPTO)) window.CRYPTO = [];
+    var arr = window.CRYPTO;
+    for(var i=0;i<arr.length;i++){ if(arr[i] && arr[i].s && arr[i].s.toUpperCase()===sym) return arr[i]; }
+    var obj = { s: sym, n: sym, px: 0, chg: 0, open: 0, high: 0, low: 0, fut: null, futOpen: null };
+    arr.push(obj);
+    return obj;
+  }
+
+  var refreshScheduled = false;
+  function scheduleRefresh(){
+    if(refreshScheduled) return;
+    refreshScheduled = true;
+    requestAnimationFrame(function(){
+      refreshScheduled = false;
+      try { if(typeof _updateCWEIFromLiveCrypto === 'function') _updateCWEIFromLiveCrypto(); } catch(_){}
+    });
+  }
+
+  function cweiFuturesFromRest(){
+    if (window._cweiFutRestBusy) return;
+    window._cweiFutRestBusy = true;
+    fetch('https://fapi.binance.com/fapi/v1/ticker/24hr')
+      .then(function (r) { return r.json(); })
+      .then(function (arr) {
+        if (!Array.isArray(arr)) return;
+        var by = {};
+        arr.forEach(function (t) { if (t && t.symbol) by[t.symbol] = t; });
+        Object.keys(PAIRS).forEach(function (k) {
+          var t = by[PAIRS[k].toUpperCase()];
+          if (!t) return;
+          var last = parseFloat(t.lastPrice);
+          var op = parseFloat(t.openPrice);
+          var e = ensureCryptoEntry(k);
+          if (isFinite(last) && last > 0) e.fut = last;
+          if (isFinite(op) && op > 0) e.futOpen = op;
+        });
+        scheduleRefresh();
+      })
+      .catch(function () { })
+      .finally(function () { window._cweiFutRestBusy = false; });
+  }
+  setInterval(cweiFuturesFromRest, 5000);
+  setTimeout(cweiFuturesFromRest, 400);
+
+  function connectSpot(){
+    var streams = Object.keys(PAIRS).map(function(k){ return PAIRS[k] + '@ticker'; }).join('/');
+    var url = 'wss://stream.binance.com:9443/stream?streams=' + streams;
+    var ws;
+    try { ws = new WebSocket(url); } catch(e){ setTimeout(connectSpot, 2000); return; }
+
+    ws.onopen = function(){ console.log('[CWEI-WS] SPOT @ticker (' + Object.keys(PAIRS).length + ')'); };
+    ws.onclose = function(){ setTimeout(connectSpot, 1500); };
+    ws.onerror = function(){ try{ ws.close(); }catch(_){}};
+    ws.onmessage = function(ev){
+      var msg; try { msg = JSON.parse(ev.data); } catch(_){ return; }
+      var d = msg && msg.data; if(!d || !d.s) return;
+      var binSym = d.s.toUpperCase();
+      var ourSym = null;
+      for(var k in PAIRS){ if(PAIRS[k].toUpperCase() === binSym){ ourSym = k; break; } }
+      if(!ourSym) return;
+
+      var entry = ensureCryptoEntry(ourSym);
+      var last  = parseFloat(d.c);
+      var open  = parseFloat(d.o);
+      var high  = parseFloat(d.h);
+      var low   = parseFloat(d.l);
+      var pct   = parseFloat(d.P); // 24h % change from Binance
+      if(isFinite(last))  entry.px   = last;
+      if(isFinite(open))  entry.open = open;
+      if(isFinite(high))  entry.high = high;
+      if(isFinite(low))   entry.low  = low;
+      // %Chg sladit s open/last: (c/o-1)*100 musí odpovídat sloupcům Future/Value
+      if(isFinite(last) && isFinite(open) && open > 0){
+        entry.chg = (last / open - 1) * 100;
+      } else if(isFinite(pct)){
+        entry.chg = pct;
+      }
+
+      scheduleRefresh();
+    };
+  }
+
+  function connectFutures(){
+    var streams = Object.keys(PAIRS).map(function(k){ return PAIRS[k] + '@ticker'; }).join('/');
+    var url = 'wss://fstream.binance.com/stream?streams=' + streams;
+    var ws;
+    try { ws = new WebSocket(url); } catch(e){ setTimeout(connectFutures, 2000); return; }
+    ws.onopen = function(){ console.log('[CWEI-WS] FUTURES USDT-M @ticker (' + Object.keys(PAIRS).length + ')'); };
+    ws.onclose = function(){ setTimeout(connectFutures, 1500); };
+    ws.onerror = function(){ try{ ws.close(); }catch(_){} };
+    ws.onmessage = function(ev){
+      var msg; try { msg = JSON.parse(ev.data); } catch(_){ return; }
+      var d = msg && msg.data; if (!d) return;
+      var binSym = d.s;
+      if (!binSym && msg.stream) {
+        var m = String(msg.stream).toLowerCase().match(/^([a-z0-9]+)@/);
+        if (m && m[1]) binSym = m[1].toUpperCase();
+      }
+      if (!binSym) return;
+      binSym = String(binSym).toUpperCase();
+      var ourSym = null;
+      for (var k in PAIRS) { if (PAIRS[k].toUpperCase() === binSym) { ourSym = k; break; } }
+      if (!ourSym) return;
+      var entry = ensureCryptoEntry(ourSym);
+      var last = parseFloat(d.c), op = parseFloat(d.o);
+      if (isFinite(last) && last > 0) entry.fut = last;
+      if (isFinite(op) && op > 0) entry.futOpen = op;
+      scheduleRefresh();
+    };
+  }
+
+  connectSpot();
+  connectFutures();
 })();
 </script>
 
