@@ -71,7 +71,7 @@ body{display:flex;flex-direction:column;font-family:var(--fn);font-size:11px;col
 /* TOPBAR always visible */ body.hide-stat-bar #TOPBAR { display: flex !important; }
 body.panel-open #QUICKBAR { display: none !important; }
 #TOPBAR{
-  height:26px;
+  height:32px;
   background:rgb(40,40,40);
   border-bottom:1px solid rgba(255,255,255,0.1);
   display:flex;
@@ -129,6 +129,12 @@ body.panel-open #QUICKBAR { display: none !important; }
 .cmd-icon-help{background:#FFCC00!important;color:#000!important;padding:0 10px!important;gap:1px;}
 .cmd-icon-help .cmd-icon-lbl{color:#000!important;}
 .cmd-icon-help .cmd-arr{color:#000!important;}
+.cmd-icon-help, .cmd-icon-help *{color:#000!important;fill:#000!important;}
+#TOPBAR .cmd-icon-help .cmd-icon-lbl,
+#TOPBAR .cmd-icon-help .cmd-icon-lbl *{
+  color:#000!important;
+  -webkit-text-fill-color:#000!important;
+}
 .cmd-icon-help:hover{background:#ffd81a!important;}
 
 .live-dot{width:4px;height:4px;border-radius:50%;background:#ff2222;animation:blink 2s ease-in-out infinite;}
@@ -289,9 +295,15 @@ body.sat-active .m-wrap{opacity:1!important;}
   min-height:100px;
 }
 .panel.maximized{position:fixed!important;left:0!important;top:26px!important;right:0!important;bottom:0!important;width:100%!important;height:calc(100% - 26px)!important;max-width:none!important;resize:none;z-index:1000000!important;display:flex!important;flex-direction:column!important;}
+.panel.maximized{top:32px!important;height:calc(100% - 32px)!important;}
 .panel.maximized .panel-hd{display:none!important;}
 .panel.maximized .panel-body{zoom:1;flex:1!important;height:0!important;min-height:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
 .panel.maximized .panel-body>.bwei-wrap{flex:1!important;min-height:0!important;height:auto!important;}
+/* WEI/CWEI: odstranit horní černý pruh i v nemax režimu */
+.panel[data-fn="WEI"] .panel-hd,
+.panel[data-fn="CWEI"] .panel-hd{display:none!important;}
+.panel[data-fn="WEI"] .panel-tabs,
+.panel[data-fn="CWEI"] .panel-tabs{display:none!important;}
 /* Odstranění horní černé mezery v maximalized CRYPTO/WEI/CRYPTOMK panelech — schovat tabs */
 .panel.maximized[data-fn="CRYPTO"] .panel-tabs,
 .panel.maximized[data-fn="CRYPTOMK"] .panel-tabs,
@@ -404,14 +416,14 @@ body.sat-active .m-wrap{opacity:1!important;}
 /* QUICKBAR always visible */ body.hide-stat-bar:not(.panel-open) #QUICKBAR { display: flex !important; }
 #QUICKBAR { 
   position:fixed !important; 
-  top:26px !important;
+  top:32px !important;
   left:0 !important; 
   right:0 !important; 
   width:100% !important;
   z-index:2400 !important;
 }
 #MAIN {
-  margin-top:20px;
+  margin-top:0;
 }
 .ql-tile{
   position:relative;display:flex;flex-direction:row;align-items:center;justify-content:center;
@@ -984,7 +996,7 @@ body{text-rendering:optimizeLegibility;}
 #TOPBAR {
   background: rgb(40,40,40) !important;
   border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-  height: 28px !important;
+  height: 32px !important;
 }
 
 /* Bloomberg command input fields — grey background, dark text */
@@ -2133,7 +2145,6 @@ window._bbgShowAcForEl = function(el) {
 /* ── Bloomberg Autocomplete ── */
 const _bbgCrypto = [
   {cmd:'DOMN',    desc:'BTC / Altcoin Dominance Chart'},
-  {cmd:'ETFF',    desc:'ETF Flows — Bitcoin & Ethereum'},
 ];
 const _bbgMacro = [];
 const _bbgFed = [
@@ -2361,10 +2372,6 @@ const _bbgMenuCategories = [
   {
     label: null,
     items: [
-      { num:6,  run:true,  cmd:'COMDTY',  desc:'Commodities Dashboard' },
-      { num:7, run:true,  cmd:'ENERGY',  desc:'Energy — WTI · Brent · Gas' },
-      { num:8, run:true,  cmd:'METALS',  desc:'Precious Metals — Gold · Silver' },
-      { num:9, run:true,  cmd:'AGRI',    desc:'Agricultural — Wheat · Corn · Soy' },
     ]
   },
   { label: 'Price Discovery', isLink: true, items: [] },
@@ -2372,7 +2379,6 @@ const _bbgMenuCategories = [
     label: null,
     items: [
       { num:10, run:true,  cmd:'DOMN',    desc:'BTC / Altcoin Dominance' },
-      { num:11, run:true,  cmd:'ETFF',    desc:'ETF Flows — BTC & ETH' },
     ]
   },
   { label: 'Analytics & Idea Generation', isLink: true, items: [] },
@@ -2410,7 +2416,6 @@ const _bbgMenuCategoriesR = [
   {
     label: null,
     items: [
-      { num:14, run:true,  cmd:'EQUITY',  desc:'Equity Dashboard' },
     ]
   },
   { label: null, items: [
@@ -2475,7 +2480,7 @@ function _bbgBuildFullMenu(q) {
 
 // Shared direct panel list
 const _bbgDirectPanels = ['CRYEXC','CRYPTO','DOMN','FUND','FUNDHIST','LIQD','LIQHEAT',
-    'OIDASH','ORDB','CHAIN','DEFI','WHALE','ETFF','PERF','DHLO','VPVR',
+    'OIDASH','ORDB','CHAIN','DEFI','WHALE','PERF','DHLO','VPVR',
     'MMAP','PORT','ALERTS','JOURN','SENT','RISK','ECAL','WIRP',
     'WN','NWS','INTEL','MACRO','FED','ALLQ',
     'GP','STNI','RES','BICO','GHNEWS',
@@ -2707,7 +2712,6 @@ window._bbgOpenSecMenu = function(sym) {
   if (isCrypto) {
     L.unshift({n:'0)', cmd:'CRYPTO', d:'Digital Assets Dashboard', jump:true});
   } else if (isETF) {
-    L.unshift({n:'0)', cmd:'ETFF', d:'ETF Flows Dashboard', jump:true});
   } else if (isStock) {
     L.unshift({n:'0)', cmd:'EQUITY', d:'Equity Dashboard', jump:true});
   } else if (isComdty) {
@@ -3531,10 +3535,10 @@ window._bbgSecMenuGo = function(cmd, sym) {
     'CRYPTO':'CRYPTO','DOMN':'DOMN','FUND':'FUND','LIQD':'LIQD',
     'CHAIN':'CHAIN','DEFI':'DEFI','WHALE':'WHALE','ORDB':'ORDB',
     'VPVR':'VPVR','OIDASH':'OIDASH','FUNDHIST':'FUNDHIST','LIQHEAT':'LIQHEAT',
-    'PERF':'PERF','ETFF':'ETFF','INTEL':'INTEL','WN':'WN','NWS':'NWS',
+    'PERF':'PERF','INTEL':'INTEL','WN':'WN','NWS':'NWS',
     'JOURN':'JOURN','PORT':'PORT','RISK':'RISK','ALERTS':'ALERTS',
     'DHLO':'DHLO','SENT':'SENT','MMAP':'MMAP','FA':'FA',
-    'EQUITY':'EQUITY','IDX':'WEI','WEI':'WEI','COMDTY':'COMDTY','ETFS':'ETFF',
+    'EQUITY':'EQUITY','IDX':'WEI','WEI':'WEI','COMDTY':'COMDTY',
     'CWEI':'CWEI','CRYPTOMK':'CRYPTOMK','CRYPTOMKT':'CWEI',
   };
   const panelId = cryptoPanels[cmd];
@@ -4007,7 +4011,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <span class="cmd-arr">▾</span>
     </div>
     <div class="cmd-icon cmd-icon-help">
-      <span class="cmd-icon-lbl" style="font-weight:900;font-family:Arial,sans-serif;font-size:13px;">?</span>
+      <span class="cmd-icon-lbl" style="font-weight:900;font-family:Arial,sans-serif;font-size:13px;color:#000;">?</span>
       <span class="cmd-arr" style="color:#000;font-size:7px;margin-left:1px;">▾</span>
     </div>
   </div>
@@ -4015,7 +4019,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- QUICK LAUNCH BAR -->
 <div style="display:flex;flex-shrink:0;background:#000000;width:100%;">
-<div id="QUICKBAR" style="height:20px;background:#080a14;border:1px solid #0C57B3;border-left:3px solid #0C57B3;display:flex;align-items:center;flex-shrink:0;overflow:hidden;z-index:2400;position:relative;box-sizing:border-box;width:100%;max-width:100%;margin-left:0;">
+<div id="QUICKBAR" style="height:18px;background:#080a14;border:1px solid #0C57B3;border-left:3px solid #0C57B3;display:flex;align-items:center;flex-shrink:0;overflow:hidden;z-index:2400;position:relative;box-sizing:border-box;width:100%;max-width:100%;margin-left:0;">
 
   <!-- ASSET INPUT TAB -->
   <div id="asset-tab-trigger" style="height:100%;width:8px;flex-shrink:0;background:#1a4aff;"></div>
@@ -6918,7 +6922,7 @@ window.PANEL_REGISTRY=PANEL_REGISTRY;
 
 /* ══ REFRESH ALL OPEN PANELS ══ */
 // Panels that change rarely — only refresh every N seconds
-const PANEL_SLOW = {ETFF:300, ECAL:60, DEFI:120, CHAIN:60, NETSIT:999999, INTEL:30, JOURN:60, SRCM:60, MOVERS:999999, OIDASH:30, FUNDHIST:60, WHALE:30, ORDB:999999, CRYPTOOPT:60, VPVR:60, LIQHEAT:999999};
+const PANEL_SLOW = {ECAL:60, DEFI:120, CHAIN:60, NETSIT:999999, INTEL:30, JOURN:60, SRCM:60, MOVERS:999999, OIDASH:30, FUNDHIST:60, WHALE:30, ORDB:999999, CRYPTOOPT:60, VPVR:60, LIQHEAT:999999};
 const _panelLastRefresh = {};
 
 function refreshAllPanels(){
@@ -6994,10 +6998,7 @@ function refreshAllPanels(){
       const bweiBody = body.querySelector('.bwei-body');
       const bst = bweiBody ? bweiBody.scrollTop : 0;
 
-      // For ETFF: capture the inner horizontal grid scroll by id
-      let etffGridSL = 0;
-      const etffGrid = body.querySelector('#etff-grid-scroll');
-      if(etffGrid) etffGridSL = etffGrid.scrollLeft;
+  // Preserve inner horizontal grid scroll
       // Preserve ALL inner scrollable elements (including those with class-based overflow)
       const innerScrolls=[];
       body.querySelectorAll('[style*="overflow"], .bwei-body, .wn-body, .nws-body').forEach(el=>{
@@ -7018,11 +7019,7 @@ function refreshAllPanels(){
         const newBwei = body.querySelector('.bwei-body');
         if(newBwei) newBwei.scrollTop = bst;
       }
-      // Restore ETFF grid scroll
-      if(etffGridSL>0){
-        const newGrid=body.querySelector('#etff-grid-scroll');
-        if(newGrid) newGrid.scrollLeft=etffGridSL;
-      }
+      // Restore deprecated grid scroll (no-op)
       // Restore other inner scrolls
       if(innerScrolls.length){
         innerScrolls.forEach(({selector,sl,st})=>{
@@ -7081,7 +7078,6 @@ function getPanelTabs(fn){
     NWS:[],
     MMAP:['SPX500','ALL US'],
     ECON:['GDP/CPI','RATES','EMPLOYMENT'],
-    ETFF:['BTC ETFs','ETH ETFs','NET FLOWS','YTD'],
     FUND:['ALL ASSETS','EXTREMES','HISTORY'],
     LIQD:['24H MAP','1H LIVE','BIGGEST'],
     DOMN:['OVERVIEW','TREND','STABLES'],
@@ -7093,7 +7089,7 @@ function getPanelTabs(fn){
   return tabs[fn]||null;
 }
 function getPanelTitle(fn){
-  const t={WEI:'WORLD EQUITY INDICES',CWEI:'CRYPTO WORLD EQUITY INDICES',CRYPTOMK:'CRYPTO MARKETS — CORE ASSETS',EQUITY:'US EQUITY QUOTES',IDX:'WORLD INDICES',MOVERS:'TOP MOVERS',CRYPTO:'DIGITAL ASSETS / CRYPTO',COMDTY:'COMMODITIES',ENERGY:'ENERGY MARKETS',METALS:'PRECIOUS METALS',AGRI:'AGRICULTURAL',MACRO:'MACRO DASHBOARD',WIRP:'RATE CUT PROBABILITIES',WN:'NEWS FEED',NWS:'NEWS & RESEARCH',ALERTS:'MACRO ALERTS',DES:'SECURITY DESCRIPTION',FA:'FINANCIAL ANALYSIS',MMAP:'MARKET HEATMAP',CRYPTOHEAT:'CRYPTO HEATMAP',YLDS:'TREASURY YIELD CURVE',CN:'X / SOCIAL FEED',ECON:'COUNTRY ECONOMICS',ECAL:'ECONOMIC CALENDAR',ECAL2:'ECONOMIC CALENDAR — NEXT WEEK',DEFI:'DEFI PROTOCOLS',CHAIN:'BLOCKCHAIN NETWORKS',PERF:'PERFORMANCE TABLE',BYFC:'BOND YIELD FORECASTS',ETFF:'ETF FLOWS — BITCOIN & ETHEREUM',FUND:'PERPETUAL FUNDING RATES',LIQD:'LIQUIDATIONS MONITOR',DOMN:'',NETSIT:'DATA NETWORK SYSTEM — P2P MESH VISUALIZER',DHLO:'DAILY HIGH · LOW · OPEN · CLOSE',INTEL:'GLOBAL INTELLIGENCE',JOURN:'JOURNALIST & TRADER WATCHLIST',SRCM:'SOURCE HEALTH MONITOR',SRC:'SOURCES & DATA PROVIDERS',OPT:'OPTIONS CHAIN',BNDS:'SOVEREIGN BONDS & CREDIT',EARN:'EARNINGS CALENDAR',PORT:'PORTFOLIO TRACKER',SENT:'MARKET SENTIMENT',IPO:'IPO CALENDAR',MNA:'M&A DEAL TRACKER',CRYEXC:'CRYEXC — LIVE ORDER FLOW & NEWS',RISK:'RISK METRICS',GMHM:'GLOBAL MACRO HEATMAP',ORDB:'ORDER BOOK DEPTH',CRYPTOOPT:'CRYPTO OPTIONS CHAIN',WHALE:'WHALE TRACKER & ON-CHAIN',OIDASH:'OPEN INTEREST DASHBOARD',FUNDHIST:'FUNDING RATE HISTORY',VPVR:'VOLUME PROFILE VPVR',LIQHEAT:'LIQUIDATION HEATMAP',HYPER:'HYPERLIQUID — LIVE PERP DASHBOARD',CRCL:'CRCL — CIRCULAR MARKET METRICS',METR:'METR — CROSS-ASSET METRICS DASHBOARD',MULTIFEED:'MULTI-EXCHANGE LIVE FEED',STOCKS2:'EXTENDED EQUITY UNIVERSE',OPTFLOW:'OPTIONS FLOW & GEX ANALYTICS'};
+  const t={WEI:'WORLD EQUITY INDICES',CWEI:'CRYPTO WORLD EQUITY INDICES',CRYPTOMK:'CRYPTO MARKETS — CORE ASSETS',EQUITY:'US EQUITY QUOTES',IDX:'WORLD INDICES',MOVERS:'TOP MOVERS',CRYPTO:'DIGITAL ASSETS / CRYPTO',COMDTY:'COMMODITIES',ENERGY:'ENERGY MARKETS',METALS:'PRECIOUS METALS',AGRI:'AGRICULTURAL',MACRO:'MACRO DASHBOARD',WIRP:'RATE CUT PROBABILITIES',WN:'NEWS FEED',NWS:'NEWS & RESEARCH',ALERTS:'MACRO ALERTS',DES:'SECURITY DESCRIPTION',FA:'FINANCIAL ANALYSIS',MMAP:'MARKET HEATMAP',CRYPTOHEAT:'CRYPTO HEATMAP',YLDS:'TREASURY YIELD CURVE',CN:'X / SOCIAL FEED',ECON:'COUNTRY ECONOMICS',ECAL:'ECONOMIC CALENDAR',ECAL2:'ECONOMIC CALENDAR — NEXT WEEK',DEFI:'DEFI PROTOCOLS',CHAIN:'BLOCKCHAIN NETWORKS',PERF:'PERFORMANCE TABLE',BYFC:'BOND YIELD FORECASTS',FUND:'PERPETUAL FUNDING RATES',LIQD:'LIQUIDATIONS MONITOR',DOMN:'',NETSIT:'DATA NETWORK SYSTEM — P2P MESH VISUALIZER',DHLO:'DAILY HIGH · LOW · OPEN · CLOSE',INTEL:'GLOBAL INTELLIGENCE',JOURN:'JOURNALIST & TRADER WATCHLIST',SRCM:'SOURCE HEALTH MONITOR',SRC:'SOURCES & DATA PROVIDERS',OPT:'OPTIONS CHAIN',BNDS:'SOVEREIGN BONDS & CREDIT',EARN:'EARNINGS CALENDAR',PORT:'PORTFOLIO TRACKER',SENT:'MARKET SENTIMENT',IPO:'IPO CALENDAR',MNA:'M&A DEAL TRACKER',CRYEXC:'CRYEXC — LIVE ORDER FLOW & NEWS',RISK:'RISK METRICS',GMHM:'GLOBAL MACRO HEATMAP',ORDB:'ORDER BOOK DEPTH',CRYPTOOPT:'CRYPTO OPTIONS CHAIN',WHALE:'WHALE TRACKER & ON-CHAIN',OIDASH:'OPEN INTEREST DASHBOARD',FUNDHIST:'FUNDING RATE HISTORY',VPVR:'VOLUME PROFILE VPVR',LIQHEAT:'LIQUIDATION HEATMAP',HYPER:'HYPERLIQUID — LIVE PERP DASHBOARD',CRCL:'CRCL — CIRCULAR MARKET METRICS',METR:'METR — CROSS-ASSET METRICS DASHBOARD',MULTIFEED:'MULTI-EXCHANGE LIVE FEED',STOCKS2:'EXTENDED EQUITY UNIVERSE',OPTFLOW:'OPTIONS FLOW & GEX ANALYTICS'};
   return t[fn]||fn;
 }
 
@@ -7114,7 +7110,7 @@ function openPanel(fn,posX,posY){
     'IDX':'World Indices','FA':'Financial Analysis',
     'WIRP':'Rate Probabilities','BYFC':'Bond Yield Forecasts',
     'CRYPTO':'Crypto Markets','WEI':'World Equity Indices',
-    'ETFF':'ETF Flows','FUND':'Fund Screener','NWS':'News',
+    'FUND':'Fund Screener','NWS':'News',
     'WN':'World News','INTEL':'Intelligence','JOURN':'Journals',
     'LIQD':'Liquidity','NETSIT':'Net Positions','SRCM':'Sources','SRC':'Credits',
     'ECAL':'Economic Calendar','SHIP':'Shipping Map','AIS':'AIS Vessels',
@@ -7140,9 +7136,9 @@ function openPanel(fn,posX,posY){
   const tabs=getPanelTabs(fn);
   const tabsHtml=tabs?`<div class="panel-tabs">${tabs.map((t,i)=>`<div class="ptab${i===0?' on':''}" onclick="switchPanelTab('${id}','${fn}',${i},this)">${t}</div>`).join('')}</div>`:'';
 
-  const widePanel={'CRYEXC':true,'ETFF':true,'FUND':true,'LIQD':true,'WEI':true,'CRYPTO':true,'NETSIT':true,'INTEL':true,'JOURN':true,'SRCM':true,'SRC':true,'NWS':true,'CRYPTOHEAT':true,'HYPER':true,'CRCL':true,'METR':true,'MULTIFEED':true,'STOCKS2':true,'GHREPO':true,'OPTFLOW':true,'CRYPTOMK':true,'CWEI':true};
-  const defaultW=widePanel[fn]?(fn==='CRYEXC'?620:fn==='ETFF'?920:fn==='FUND'?780:fn==='LIQD'?700:fn==='NETSIT'?820:fn==='INTEL'?820:fn==='JOURN'?620:fn==='SRCM'?580:fn==='SRC'?820:fn==='NWS'?660:fn==='CRYPTO'?1060:fn==='WEI'?900:fn==='CWEI'?900:fn==='HYPER'?860:fn==='CRCL'?780:fn==='METR'?900:fn==='MULTIFEED'?820:fn==='STOCKS2'?900:fn==='GHREPO'?1100:fn==='OPTFLOW'?1100:700):520;
-  const defaultH=widePanel[fn]?(fn==='CRYEXC'?680:fn==='ETFF'?480:fn==='FUND'?400:fn==='LIQD'?380:fn==='NETSIT'?560:fn==='INTEL'?600:fn==='JOURN'?580:fn==='SRCM'?500:fn==='SRC'?600:fn==='NWS'?600:fn==='CRYPTO'?880:fn==='WEI'?860:fn==='CWEI'?860:fn==='HYPER'?680:fn==='CRCL'?680:fn==='METR'?680:fn==='MULTIFEED'?580:fn==='STOCKS2'?680:fn==='GHREPO'?820:fn==='OPTFLOW'?780:600):500;
+  const widePanel={'CRYEXC':true,'FUND':true,'LIQD':true,'WEI':true,'CRYPTO':true,'NETSIT':true,'INTEL':true,'JOURN':true,'SRCM':true,'SRC':true,'NWS':true,'CRYPTOHEAT':true,'HYPER':true,'CRCL':true,'METR':true,'MULTIFEED':true,'STOCKS2':true,'GHREPO':true,'OPTFLOW':true,'CRYPTOMK':true,'CWEI':true};
+  const defaultW=widePanel[fn]?(fn==='CRYEXC'?620:fn==='FUND'?780:fn==='LIQD'?700:fn==='NETSIT'?820:fn==='INTEL'?820:fn==='JOURN'?620:fn==='SRCM'?580:fn==='SRC'?820:fn==='NWS'?660:fn==='CRYPTO'?1060:fn==='WEI'?900:fn==='CWEI'?900:fn==='HYPER'?860:fn==='CRCL'?780:fn==='METR'?900:fn==='MULTIFEED'?820:fn==='STOCKS2'?900:fn==='GHREPO'?1100:fn==='OPTFLOW'?1100:700):520;
+  const defaultH=widePanel[fn]?(fn==='CRYEXC'?680:fn==='FUND'?400:fn==='LIQD'?380:fn==='NETSIT'?560:fn==='INTEL'?600:fn==='JOURN'?580:fn==='SRCM'?500:fn==='SRC'?600:fn==='NWS'?600:fn==='CRYPTO'?880:fn==='WEI'?860:fn==='CWEI'?860:fn==='HYPER'?680:fn==='CRCL'?680:fn==='METR'?680:fn==='MULTIFEED'?580:fn==='STOCKS2'?680:fn==='GHREPO'?820:fn==='OPTFLOW'?780:600):500;
   const _ow=document.getElementById('map-overlay');
   const _owRect=_ow?_ow.getBoundingClientRect():{width:window.innerWidth};
   const ox=posX!=null?posX:Math.max(10, _owRect.width-defaultW-30-(panelCount-1)*22);
@@ -7603,7 +7599,6 @@ function buildPanelContent(fn){
     case 'CHAIN':  return buildCHAIN();
     case 'PERF':   return buildPERF();
     case 'BYFC':   return buildBYFC();
-    case 'ETFF':   return buildETFF(0);
     case 'FUND':   return buildFUND(0);
     case 'LIQD':   return buildLIQD(0);
     case 'DOMN':   return buildDOMN(0);
@@ -7690,7 +7685,6 @@ function buildPanelContentTab(fn,ti){
     if(ti===2)return buildECONUnem();
     return buildECON();
   }
-  if(fn==='ETFF') return buildETFF(ti);
   if(fn==='FUND') return buildFUND(ti);
   if(fn==='LIQD') return buildLIQD(ti);
   if(fn==='DOMN') return buildDOMN(ti);
@@ -14987,7 +14981,7 @@ function buildXSRCDominance(){
 }
 
 /* ═══════════════════════════════════════════════════
-   ETFF — ETF FLOWS  (real data Mar 2026)
+   ETF FLOWS (panel disabled)
 ═══════════════════════════════════════════════════ */
 function buildETFF(ti){
   /* ══════════════════════════════════════════════════════════════════════
@@ -18043,7 +18037,6 @@ const _MCMDS = {
   LIQD:   {label:'Liquidations',     cat:'C', action:()=>openPanel('LIQD')},
   FUND:   {label:'Funding Rates',    cat:'C', action:()=>openPanel('FUND')},
   DOMN:   {label:'Dominance',        cat:'C', action:()=>openPanel('DOMN')},
-  ETFF:   {label:'ETF Flows',        cat:'C', action:()=>openPanel('ETFF')},
   MACRO:  {label:'Macro Dashboard',  cat:'M', action:()=>openPanel('MACRO')},
   ECAL:   {label:'Econ Calendar',    cat:'M', action:()=>openPanel('ECAL')},
   COMDTY: {label:'Commodities',      cat:'M', action:()=>openPanel('COMDTY')},
@@ -19279,16 +19272,7 @@ function _getLiveFeedsSources(){
      fields:['title','country','impact','actual','forecast','previous','date'],
      panels:['ECAL','ALERTS'],         ok:(_macroCache?.ecal?.length||0)>0, last:_macroCache?.lastFetch||null},
     // ── ETF INTELLIGENCE ──────────────────────────────────────────
-    {group:'ETF INTELLIGENCE',
-     key:'SOSOVALUE',    label:'SoSoValue',             sub:'Bitcoin and Ether ETF Flows',
-     url:'api.sosovalue.com/api/etf',  type:'REST',interval:'5min',
-     fields:['todayNetInflow','cumulativeNetInflow','AUM','ytdNetInflow','totalHolding'],
-     panels:['ETFF'],                  ok:(_liveData?.etfMeta?.updated||0)>0&&(Date.now()-(_liveData?.etfMeta?.updated||0))<600000, last:_liveData?.etfMeta?.updated||null},
-    {group:'ETF INTELLIGENCE',
-     key:'COINGLASS-ETF', label:'CoinGlass',            sub:'ETF Holdings and Flows',
-     url:'open-api.coinglass.com/v2/etf',type:'REST',interval:'5min',
-     fields:['dailyFlow','AUM','btcHolding','price','change%','issuer'],
-     panels:['ETFF (FALLBACK)'],       ok:Object.values(_liveData?.etf||{}).some(v=>v.src==='live'), last:null}
+    // ETF intelligence sources removed (ETFF panel disabled)
   ];
 }
 
@@ -19446,7 +19430,7 @@ function _buildMenuTab(uid){
   const uid2=uid||_net.uid||'';
 
   const cats={
-    'CRYPTO AND ON-CHAIN':  {cmds:['CRYPTO','DOMN','DHLO','LIQD','FUND','ETFF'], col:'#bbbbbb'},
+    'CRYPTO AND ON-CHAIN':  {cmds:['CRYPTO','DOMN','DHLO','LIQD','FUND'], col:'#bbbbbb'},
     'EQUITIES AND INDICES': {cmds:['WEI','MOVERS','MMAP','PERF','EQUITY'],                      col:'#aaaaaa'},
     'MACRO AND CALENDAR':   {cmds:['MACRO','ECAL','COMDTY','ENERGY','METALS'],           col:'#aaaaaa'},
     'NEWS AND ALERTS':      {cmds:['WN','NWS'],                                               col:'#aaaaaa'}
@@ -48116,13 +48100,8 @@ body {
         <div class=&quot;bbg-menu-cat&quot;>Stocks &amp;amp; Equities <span class=&quot;bbg-menu-cat-arrow&quot;>&rsaquo;</span></div>
         <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;IPO&quot;><span class=&quot;bbg-menu-num&quot;>5)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>IPO</span><span class=&quot;bbg-menu-desc&quot;>IPO Calendar</span></div>
         <div class=&quot;bbg-menu-cat&quot;>Commodities <span class=&quot;bbg-menu-cat-arrow&quot;>&rsaquo;</span></div>
-        <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;COMDTY&quot;><span class=&quot;bbg-menu-num&quot;>6)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>COMDTY</span><span class=&quot;bbg-menu-desc&quot;>Commodities Dashboard</span></div>
-        <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;ENERGY&quot;><span class=&quot;bbg-menu-num&quot;>7)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>ENERGY</span><span class=&quot;bbg-menu-desc&quot;>Energy — WTI · Brent · Gas</span></div>
-        <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;METALS&quot;><span class=&quot;bbg-menu-num&quot;>8)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>METALS</span><span class=&quot;bbg-menu-desc&quot;>Precious Metals — Gold · Silver</span></div>
-        <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;AGRI&quot;><span class=&quot;bbg-menu-num&quot;>9)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>AGRI</span><span class=&quot;bbg-menu-desc&quot;>Agricultural — Wheat · Corn · Soy</span></div>
         <div class=&quot;bbg-menu-cat&quot;>Price Discovery <span class=&quot;bbg-menu-cat-arrow&quot;>&rsaquo;</span></div>
         <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;DOMN&quot;><span class=&quot;bbg-menu-num&quot;>10)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>DOMN</span><span class=&quot;bbg-menu-desc&quot;>BTC / Altcoin Dominance</span></div>
-        <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;ETFF&quot;><span class=&quot;bbg-menu-num&quot;>11)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>ETFF</span><span class=&quot;bbg-menu-desc&quot;>ETF Flows — BTC &amp;amp; ETH</span></div>
         <div class=&quot;bbg-menu-cat&quot;>Analytics &amp;amp; Idea Generation <span class=&quot;bbg-menu-cat-arrow&quot;>&rsaquo;</span></div>
         <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;MACRO&quot;><span class=&quot;bbg-menu-num&quot;>12)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>MACRO</span><span class=&quot;bbg-menu-desc&quot;>Macro Indicators — CPI·NFP</span></div>
         <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;ECAL&quot;><span class=&quot;bbg-menu-num&quot;>13)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>ECAL</span><span class=&quot;bbg-menu-desc&quot;>Economic Calendar</span></div>
@@ -48143,7 +48122,6 @@ body {
         <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;INTEL&quot;><span class=&quot;bbg-menu-num&quot;>23)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>INTEL</span><span class=&quot;bbg-menu-desc&quot;>Global Intelligence Feed</span></div>
         <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;JOURN&quot;><span class=&quot;bbg-menu-num&quot;>24)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>JOURN</span><span class=&quot;bbg-menu-desc&quot;>Journalist &amp;amp; Trader Watchlist</span></div>
         <div class=&quot;bbg-menu-cat&quot;>Equities <span class=&quot;bbg-menu-cat-arrow&quot;>&rsaquo;</span></div>
-        <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;EQUITY&quot;><span class=&quot;bbg-menu-num&quot;>29)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>EQUITY</span><span class=&quot;bbg-menu-desc&quot;>Equity Dashboard</span></div>
         <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;STNI&quot;><span class=&quot;bbg-menu-num&quot;>30)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>STNI</span><span class=&quot;bbg-menu-desc&quot;>Suggested News Feed</span></div>
         <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;RES&quot;><span class=&quot;bbg-menu-num&quot;>31)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>RES</span><span class=&quot;bbg-menu-desc&quot;>Research Home</span></div>
         <div class=&quot;bbg-menu-item&quot; data-cmd=&quot;BICO&quot;><span class=&quot;bbg-menu-num&quot;>32)</span><span class=&quot;bbg-menu-run&quot;>&#x25B8;</span><span class=&quot;bbg-menu-cmd&quot;>BICO</span><span class=&quot;bbg-menu-desc&quot;>Bloomberg Intelligence Primer</span></div>
@@ -48911,7 +48889,8 @@ setTimeout(()=>{ if(dataSource!==&quot;TV&quot;) _startSim(); }, 1000);
 
 
 <style id="wei-original-final-css">
-body.wei-original-active #TOPBAR{height:36px!important;padding:0 6px!important;background:#1b1b1b!important;border-bottom:1px solid #0b0b0b!important;box-sizing:border-box!important;}
+/* Align WEI/CWEI fullscreen panels flush under TOPBAR (no black gap). */
+body.wei-original-active #TOPBAR{height:32px!important;padding:0 6px!important;background:#1b1b1b!important;border-bottom:0!important;box-sizing:border-box!important;}
 body.wei-original-active .cmd-btn{height:36px!important;font-size:30px!important;width:42px!important;color:#d5d5d5!important;font-family:Arial,Helvetica,sans-serif!important;font-weight:700!important;line-height:1!important;}
 body.wei-original-active .cmd-group{height:30px!important;background:#cfcfcf!important;border:1px solid #8e8e8e!important;padding:0 10px!important;gap:8px!important;margin-right:8px!important;box-sizing:border-box!important;}
 body.wei-original-active #cmd-sec-wrap{width:500px!important;}
@@ -48919,16 +48898,32 @@ body.wei-original-active #cmd-fn-wrap{width:112px!important;}
 body.wei-original-active #cmd-rel-wrap{width:390px!important;height:30px!important;background:#cfcfcf!important;border:1px solid #8e8e8e!important;padding:0 10px!important;margin-right:8px!important;box-sizing:border-box!important;font-family:Arial,Helvetica,sans-serif!important;font-size:26px!important;font-weight:500!important;color:#111!important;}
 body.wei-original-active .cmd-inp{font-family:Arial,Helvetica,sans-serif!important;font-size:26px!important;font-weight:500!important;color:#111!important;letter-spacing:0!important;}
 body.wei-original-active .cmd-arr{font-size:20px!important;color:#111!important;}
-body.wei-original-active .cmd-icons{height:36px!important;right:0!important;gap:22px!important;}
+body.wei-original-active .cmd-icons{height:32px!important;right:0!important;gap:22px!important;}
 body.wei-original-active .cmd-icon svg{width:25px!important;height:25px!important;}
 body.wei-original-active .cmd-icon-lbl,body.wei-original-active .cmd-icon span:not(.cmd-arr){font-size:20px!important;color:#cfcfcf!important;font-family:Arial,Helvetica,sans-serif!important;}
 body.wei-original-active .cmd-icon .cmd-arr{font-size:14px!important;color:#bdbdbd!important;}
-body.wei-original-active .cmd-icon-help{height:36px!important;padding:0 18px!important;background:#ffcc00!important;}
-body.wei-original-active .cmd-icon-help .cmd-icon-lbl{font-size:28px!important;color:#000!important;font-weight:900!important;}
+body.wei-original-active .cmd-icon-help{height:32px!important;padding:0 14px!important;background:#ffcc00!important;}
+body.wei-original-active .cmd-icon-help .cmd-icon-lbl{font-size:24px!important;color:#000!important;font-weight:900!important;}
+body.wei-original-active .cmd-icon-help .cmd-arr{color:#000!important;}
+body.wei-original-active .cmd-icon-help,
+body.wei-original-active .cmd-icon-help *{color:#000!important;fill:#000!important;}
+body.wei-original-active #TOPBAR .cmd-icon-help .cmd-icon-lbl,
+body.wei-original-active #TOPBAR .cmd-icon-help .cmd-icon-lbl *{
+  color:#000!important;
+  -webkit-text-fill-color:#000!important;
+}
 body.wei-original-active .panel.maximized[data-fn="WEI"],
-body.wei-original-active .panel.maximized[data-fn="CWEI"]{top:36px!important;height:calc(100% - 36px)!important;background:#000!important;}
+body.wei-original-active .panel.maximized[data-fn="CWEI"]{top:32px!important;height:calc(100% - 32px)!important;background:#000!important;}
 body.wei-original-active .panel[data-fn="WEI"] .panel-body,
-body.wei-original-active .panel[data-fn="CWEI"] .panel-body{background:#000!important;overflow:hidden!important;display:block!important;position:relative!important;}
+body.wei-original-active .panel[data-fn="CWEI"] .panel-body{background:#000!important;overflow:hidden!important;display:block!important;position:relative!important;padding:0!important;padding-top:0!important;margin:0!important;border:0!important;}
+/* Remove QUICKBAR offset that leaves a black strip under TOPBAR */
+body.wei-original-active #MAIN{margin-top:0!important;}
+body.wei-original-active #QUICKBAR{display:none!important;}
+/* Nudge up slightly to eliminate tiny top gap */
+body.wei-original-active #MAIN{position:relative;top:-4px;}
+/* Pull the WEI/CWEI surface up to remove the tiny internal gap */
+body.wei-original-active .panel[data-fn="WEI"] .wei-original,
+body.wei-original-active .panel[data-fn="CWEI"] .wei-original{top:-2px!important;}
 .panel[data-fn="WEI"] .wei-original,
 .panel[data-fn="CWEI"] .wei-original{--wei-orange:#e8922a;--wei-time-date:#D4A574;--wei-control:#ffaa1a;--wei-red:#cf4a5b;--wei-green:#43b86a;--wei-cream:#dcc8ad;--wei-grey:#a6a6a6;width:1900px;height:1136px;min-width:1900px;min-height:1136px;display:flex;flex:0 0 auto;flex-direction:column;position:absolute;left:0;top:0;transform-origin:0 0;background:#000;color:var(--wei-orange);font-family:Arial,Helvetica,sans-serif!important;font-weight:700;line-height:1;overflow:hidden;zoom:1!important;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;}
 .wei-original *{box-sizing:border-box;letter-spacing:0!important;}
@@ -49021,8 +49016,8 @@ body.wei-original-active .panel[data-fn="CWEI"] .panel-body{background:#000!impo
 .wei-news{flex:0 0 144px;height:144px;background:#001035;color:var(--wei-orange);font-family:"Courier New",monospace;font-size:30px;font-weight:700;line-height:36px;overflow:hidden;padding:0;border-top:1px solid #001035;}
 .wei-news-line{height:36px;display:flex;align-items:center;white-space:nowrap;padding:0 4px;}
 .wei-news-line .id{width:64px;color:var(--wei-orange);}.wei-news-line .src{width:62px;color:var(--wei-orange);}.wei-news-line .tm{width:96px;color:var(--wei-orange);}.wei-news-line .txt{flex:1;color:var(--wei-orange);overflow:hidden;text-overflow:clip;}
-.wei-foot{flex:0 0 auto;height:62px;background:#1A1A1A;color:#d6d6d6;display:grid;grid-template-columns:360px 1fr 1fr;border-top:1px solid #111;font-family:Arial,Helvetica,sans-serif;}
-.wei-foot>div{display:flex;align-items:center;padding:0 22px;font-size:27px;overflow:hidden;white-space:nowrap;height:62px;justify-content:center;}
+.wei-foot{flex:0 0 auto;height:56px;background:#1A1A1A;color:#d6d6d6;display:grid;grid-template-columns:360px 1fr 1fr;border-top:1px solid #111;font-family:Arial,Helvetica,sans-serif;}
+.wei-foot>div{display:flex;align-items:center;padding:0 22px;font-size:27px;overflow:hidden;white-space:nowrap;height:56px;justify-content:center;}
 .wei-foot>div:first-child{justify-content:flex-start;}
 .wei-foot>div:last-child{justify-content:flex-start;}
 .wei-foot>div + div{border-left:1px solid #000;}
