@@ -1640,6 +1640,16 @@ body > .bwei-newsticker.wei-portal { bottom: 32px !important; z-index: 214748364
 }
 </style>
 <script>
+// Polyfill: Safari/older engines missing AbortSignal.timeout
+try{
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout !== 'function') {
+    AbortSignal.timeout = function timeout(ms){
+      const ac = new AbortController();
+      setTimeout(() => { try{ ac.abort(new DOMException('Timeout','TimeoutError')); }catch(_){ ac.abort(); } }, ms|0);
+      return ac.signal;
+    };
+  }
+}catch(_){}
 (function(){
   // Move WEI's top/bottom bars out of the panel and into <body> so position:fixed
   // is anchored to the viewport (not clipped/contained by panel ancestors with
@@ -3900,23 +3910,34 @@ window._histSilenced = window._histSilenced || false;
 
 function _histLabel(h) {
   if (!h) return '';
-  if (h.type === 'MAP')   return 'Mapa';
+  if (h.type === 'MAP')   return 'HOME';
   if (h.type === 'CHART') return 'Graf: ' + (h.sym || '?');
+  if (h.type === 'IMAP')  return 'IMAP';
   if (h.type === 'CMD')   return (h.fn || '') + (h.sec ? ' · ' + h.sec : '');
   if (h.type === 'QL')    return 'Menu: ' + (h.id || '');
   return '';
 }
 
 function _updateNavBtns() {
-  const btns = document.querySelectorAll('.cmd-btn');
+  const root = document.getElementById('TOPBAR') || document;
+  // Only the 2 navigation arrows in TOPBAR
+  const btns = root.querySelectorAll('.cmd-nav .cmd-btn');
   if (!btns.length) return;
   // btns[0] = '<' = back = index decreases
   // btns[1] = '>' = forward = index increases
-  const canBack = window._cmdIndex > 0;
-  const canFwd  = window._cmdIndex < window._cmdHistory.length - 1;
+  const histLen = (window._cmdHistory && window._cmdHistory.length) ? window._cmdHistory.length : 0;
+  const idx = (typeof window._cmdIndex === 'number') ? window._cmdIndex : -1;
+  const canBack = histLen > 0 && idx > 0;
+  const canFwd  = histLen > 0 && idx >= 0 && idx < histLen - 1;
   if (btns[0]) {
     btns[0].style.color   = canBack ? '#e8c060' : '#2a2a2a';
     btns[0].style.opacity = canBack ? '1' : '0.3';
+    btns[0].style.pointerEvents = canBack ? 'auto' : 'none';
+    btns[0].style.cursor = canBack ? 'pointer' : 'default';
+    // Inline onclick může stále fungovat v některých enginech; přepíšeme handler explicitně.
+    btns[0].onclick = canBack
+      ? function(ev){ try{ ev && ev.stopPropagation && ev.stopPropagation(); }catch(_){ } window._cmdHist(-1); }
+      : function(ev){ try{ ev && ev.preventDefault && ev.preventDefault(); ev && ev.stopPropagation && ev.stopPropagation(); }catch(_){ } return false; };
     btns[0].title = canBack
       ? ('← ' + _histLabel(window._cmdHistory[window._cmdIndex - 1]))
       : 'Začátek historie';
@@ -3924,6 +3945,11 @@ function _updateNavBtns() {
   if (btns[1]) {
     btns[1].style.color   = canFwd ? '#e8c060' : '#2a2a2a';
     btns[1].style.opacity = canFwd ? '1' : '0.3';
+    btns[1].style.pointerEvents = canFwd ? 'auto' : 'none';
+    btns[1].style.cursor = canFwd ? 'pointer' : 'default';
+    btns[1].onclick = canFwd
+      ? function(ev){ try{ ev && ev.stopPropagation && ev.stopPropagation(); }catch(_){ } window._cmdHist(1); }
+      : function(ev){ try{ ev && ev.preventDefault && ev.preventDefault(); ev && ev.stopPropagation && ev.stopPropagation(); }catch(_){ } return false; };
     btns[1].title = canFwd
       ? ('→ ' + _histLabel(window._cmdHistory[window._cmdIndex + 1]))
       : 'Konec historie';
@@ -3980,14 +4006,6 @@ function _pushHist(entry) {
   window._cmdHistory.push(entry);
   window._cmdIndex = window._cmdHistory.length - 1;
   setTimeout(_updateNavBtns, 0); // defer so DOM is ready
-
-  try {
-    if (window._cmdIndex === 0) {
-      window.history.replaceState({cmdIndex: 0}, '');
-    } else {
-      window.history.pushState({cmdIndex: window._cmdIndex}, '');
-    }
-  } catch(e) {}
 }
 
 function _restoreHist(h) {
@@ -3998,7 +4016,10 @@ function _restoreHist(h) {
   window._histSilenced = true;
   try {
     if (h.type === 'MAP') {
-      // Map is always visible under panels — nothing to open
+      // HOME is the base "page" (no map in this bundle).
+      if (typeof openPanel === 'function') openPanel('HOME');
+    } else if (h.type === 'IMAP') {
+      if (typeof window.openImapPanel === 'function') window.openImapPanel();
     } else if (h.type === 'CHART') {
       if (h.sym && window._openChartForSymbol) {
         window._openChartForSymbol(h.sym);
@@ -4034,29 +4055,15 @@ function _cmdHist(dir) {
   if (!window._cmdHistory || !window._cmdHistory.length) return;
   const next = window._cmdIndex + dir;
   if (next < 0 || next >= window._cmdHistory.length) return;
-  
-  try {
-    if (dir === -1) {
-      window.history.back();
-    } else if (dir === 1) {
-      window.history.forward();
-    }
-    return;
-  } catch(e) {}
-  
+
+  // Nepoužívat history.back()/forward() — u file:// a WebKit to často „přeskočí“ na MAP,
+  // a graf se pak načte až na druhý krok. Obnovíme stav přímo.
   window._cmdIndex = next;
   _restoreHist(window._cmdHistory[next]);
 }
 
-window.addEventListener('popstate', function(e) {
-  if (e.state && typeof e.state.cmdIndex === 'number') {
-    const next = e.state.cmdIndex;
-    if (next >= 0 && next < window._cmdHistory.length) {
-      window._cmdIndex = next;
-      _restoreHist(window._cmdHistory[next]);
-    }
-  }
-});
+// Note: we intentionally don't bind to browser history here.
+// On file:// (and some WebKit builds) back/forward can jump to "MAP" state unexpectedly.
 
 // Expose globally
 window._pushHist              = _pushHist;
@@ -4133,7 +4140,7 @@ function _handleGlobalCmd() {
 
 
 // ── Bootstrap nav history ──
-// Functions are defined above; seed MAP as first state
+// Functions are defined above; seed HOME as first state (type: MAP = HOME)
 window._cmdHistory   = [];
 window._cmdIndex     = -1;
 window._histSilenced = false;
@@ -4141,6 +4148,16 @@ _pushHist({ type: 'MAP' });  // index becomes 0
 
 document.addEventListener('DOMContentLoaded', function() {
   if (typeof _updateNavBtns === 'function') _updateNavBtns();
+  // Při startu vždy otevřít HOME jako hlavní stránku.
+  try{
+    // Otevři HOME bez přidání kroku do historie (HOME je "base", ne navigační krok navíc).
+    window._histSilenced = true;
+    if(typeof openPanel==='function') openPanel('HOME');
+  }catch(_){
+  }finally{
+    window._histSilenced = false;
+    try{ if (typeof _updateNavBtns === 'function') _updateNavBtns(); }catch(__){}
+  }
 });
 
 </script>
@@ -4872,8 +4889,7 @@ function toggleQL(el){
     // Record to history
     if(el.dataset.ql) _pushHist({type: 'QL', id: el.dataset.ql});
   } else {
-    // If we closed it, we are back on the map
-    _pushHist({type: 'MAP'});
+    // Closing menus should NOT add history steps (prevents double-press on arrows)
   }
 }
 
@@ -4884,7 +4900,7 @@ document.addEventListener('click',()=>{
   const hadOpen = document.querySelectorAll('.ql-tile.open, .menu-item.open').length > 0;
   closeAllQL();
   closeAllMenus();
-  if(hadOpen) _pushHist({type: 'MAP'});
+  // Closing menus should NOT add history steps (prevents double-press on arrows)
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -7185,9 +7201,12 @@ function openPanel(fn,posX,posY){
     const u = String(fn).toUpperCase();
     if(u === 'CRYPTOMKT' || u === 'CWIB') fn = 'CWEI';
   }catch(_){}
-  // Record to history (skip if navigating)
+  // Record to history (skip if navigating). HOME is the base page → don't record it as a CMD step.
   if (!window._histSilenced) {
-    _pushHist({type: 'CMD', fn, sec: document.getElementById('cmd-sec-inp')?.value || ''});
+    const ufnHist = String(fn || '').toUpperCase();
+    if (ufnHist !== 'HOME') {
+      _pushHist({type: 'CMD', fn, sec: document.getElementById('cmd-sec-inp')?.value || ''});
+    }
   }
 
   // Auto-update TOPBAR with panel name
@@ -7207,7 +7226,12 @@ function openPanel(fn,posX,posY){
   };
   const secInp = document.getElementById('cmd-sec-inp');
   const fnInp = document.getElementById('cmd-fn-inp');
-  if (fnInp) fnInp.value = fn;
+  // Don't clobber user's typing in the top inputs (prevents "we" appearing while typing on HOME).
+  try{
+    const ae = document.activeElement;
+    const typingTop = ae && (ae === secInp || ae === fnInp);
+    if (fnInp && !typingTop && !fnInp.dataset.userEdited) fnInp.value = fn;
+  }catch(_){}
   if (secInp) {
     if (!secInp.value.trim()) {
       if (_panelNames[fn]) secInp.value = _panelNames[fn];
@@ -7347,8 +7371,7 @@ function closePanel(id){
   if(hasNoPanels){
     document.body.classList.remove('panel-open');
     const _st=document.getElementById('STAT'); if(_st) _st.style.display='';
-    // Record to history if no folders are open either
-    if (!window._histSilenced && !document.querySelector('.ql-tile.open')) _pushHist({type: 'MAP'});
+    // Don't push HOME/MAP on close — base state already exists, extra pushes cause double-press on arrows.
   }
 }
 
@@ -18361,8 +18384,7 @@ document.addEventListener('DOMContentLoaded', function(){
   document.body.classList.remove('panel-open');
 
   try{ localStorage.removeItem('bmap_layout'); }catch(e){}
-  // Open Bloomberg-like HOME screen on startup
-  setTimeout(function(){ try{ if(typeof openPanel==='function') openPanel('HOME'); }catch(e){} }, 50);
+  // HOME is opened by unified navigation bootstrap (silenced) — don't open again (prevents extra history step).
   // Optimized: start feeds immediately, news slightly deferred
   try{ if(typeof _startAllFeeds==='function') _startAllFeeds(); }catch(e){}
   setTimeout(function(){ try{ fetchAllNews(true); }catch(e){} }, 200);
@@ -29966,7 +29988,7 @@ window._initBbg = function() {
           const el = document.getElementById(id);
           if (el) el.style.setProperty('display', show ? '' : 'none', show ? '' : 'important');
       });
-      // STAT bar: only show when map is visible (no panels open)
+      // STAT bar: only show when HOME is visible (no panels open)
       if (show) {
           const noPanels = Object.keys(window.PANEL_REGISTRY || {}).length === 0;
           const statEl = document.getElementById('STAT');
@@ -30000,8 +30022,7 @@ window._initBbg = function() {
       // QUICKBAR is removed permanently
       // 8) Update panel count
       if(typeof updatePanelCount === 'function') updatePanelCount();
-      // 9) Push MAP to history so < can bring chart back
-      if(!window._histSilenced) _pushHist({ type: 'MAP' });
+      // Do not push HOME/MAP here — it creates an extra history step and forces double-click on arrows.
   };
 
   window._maximizeChart = function() {
@@ -30385,17 +30406,52 @@ window._stopBbgLiveSync = function(){
 window._openChartForSymbol = function(sym) {
     if (!sym) return;
     window._bbgCurrentSym = sym.toUpperCase(); // track active symbol
-    // Push to history (unless navigating)
-    if (!window._histSilenced) _pushHist({ type: 'CHART', sym: sym });
     var pnlId = 'bbg-chart-panel';
     var panel = document.getElementById(pnlId);
     if (!panel) return;
+
+    // Vyčistit horní vstupy (modrý řádek / TOPBAR), aby v grafu nezůstávalo předchozí psaní.
+    // (Např. text z HOME/CWEI inputu se jinak vizuálně "lepí" a mate.)
+    try{
+      const secInp = document.getElementById('cmd-sec-inp');
+      const fnInp  = document.getElementById('cmd-fn-inp');
+      if(secInp){ secInp.value = ''; delete secInp.dataset.userEdited; }
+      if(fnInp){ fnInp.value  = ''; delete fnInp.dataset.userEdited; }
+      // Vyčistit i WEI/CWEI modrý quickbar (uvnitř panelů), který na screenshotu zůstával jako "cwe".
+      document.querySelectorAll('.wei-input-box, #cwei-global-qb, #wei-global-qb').forEach(function(inp){
+        try{
+          if(inp && typeof inp.value === 'string') inp.value = '';
+          if(inp && inp.dataset) delete inp.dataset.userEdited;
+        }catch(_){}
+      });
+      // Zrušit focus na původním inputu, aby se hodnoty nevracely přes focus/blur handlery.
+      try{ if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }catch(_){}
+    }catch(_){}
+
+    // Zavírání panelů nesmí přidávat extra HOME/MAP krok do historie (jinak je potřeba mačkat šipku 2×).
+    const _prevSilence = !!window._histSilenced;
+    window._histSilenced = true;
 
     // 1) Close ALL other panels — registry first, then nuke any survivors from DOM
     var idsToClose = Object.keys(window.PANEL_REGISTRY || {}).filter(function(id) { return id !== pnlId; });
     idsToClose.forEach(function(id) { try { closePanel(id); } catch(e){} });
     
-    // 0) Instant price fill from cache — before any async calls
+    // Teď teprve přidat jediný history krok pro graf.
+    window._histSilenced = _prevSilence;
+    if (!window._histSilenced) _pushHist({ type: 'CHART', sym: sym });
+
+    // 0) Zobraz panel co nejdřív (rychlejší pocit načítání) + instant fill z cache
+    panel.style.display = 'flex';
+    panel.style.zIndex = '1000000';
+    panel.classList.add('maximized');
+
+    // Inicializuj graf co nejdřív (iframe + default TF), aby se po kliknutí v CWEI načetl hned.
+    try{
+      if (!document.getElementById('bbg-tv-iframe') && typeof window._initBbg === 'function') window._initBbg();
+      if (typeof window._setChartInterval === 'function') window._setChartInterval('1d');
+    }catch(_){}
+
+    // Instant price fill from cache — before any async calls
     // Reset TF-switch guard so STKS preload fires on new symbol load
     window._bbgLastRenderedSym = null;
     window._bbgInstantFill(sym);
@@ -30421,19 +30477,10 @@ window._openChartForSymbol = function(sym) {
     window._clow = null;
     window._lastBbgPriceTick = null;
     
-    // 2) Nuke ANY .panel element anywhere in the page except chart panel
-    setTimeout(function() {
-        document.querySelectorAll('.panel').forEach(function(el) {
-            if (el.id !== pnlId) {
-                try { el.remove(); } catch(e) { el.style.display = 'none'; }
-            }
-        });
-    }, 0);
+    // 2) Neodstraňuj všechny .panel v DOMu — to zbytečně zpomaluje návrat a může rozbít historii.
+    // Vše ostatní se zavírá přes PANEL_REGISTRY výše.
 
-    // 3) Show chart panel
-    panel.style.display = 'flex';
-    panel.style.zIndex = '1000000';
-    panel.classList.add('maximized');
+    // 3) Panel už je zobrazený výše (kvůli rychlosti); tady nic.
 
     // Store raw symbol globally so _setChartInterval can use it directly
     window._bbgActiveSym = sym;
@@ -49382,9 +49429,17 @@ setTimeout(()=>{ if(dataSource!==&quot;TV&quot;) _startSim(); }, 1000);
   function openImap(){
     // inline srcdoc — no external load needed
     overlay.classList.add('open');
+    try{
+      // History: IMAP je samostatná "obrazovka" (jako na Bloomberg) → šipka zpět vrátí předchozí panel (WEI/HOME).
+      if(!window._histSilenced && typeof window._pushHist === 'function') window._pushHist({ type:'IMAP' });
+    }catch(_){}
   }
   function closeImap(){
     overlay.classList.remove('open');
+    try{
+      // Zavření IMAP = návrat na předchozí stav v historii
+      if(!window._histSilenced && typeof window._cmdHist === 'function') window._cmdHist(-1);
+    }catch(_){}
   }
 
   closeBt.addEventListener('click', closeImap);
