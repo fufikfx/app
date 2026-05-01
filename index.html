@@ -221,10 +221,40 @@ body.panel-open #MAIN { background:#000000 !important; }
 body.panel-open #MAIN > #mapgl,
 body.panel-open #MAIN > #map { visibility:hidden !important; }
 
-/* Crypto bundle only (NE Downloads/terminal.html): #MAIN negeneruje vlastní celoobrazovkový box — v DOM zůstává kvůli skriptům (getElementById('MAIN')). */
-#MAIN{
-  display: contents !important;
+/* ═══════════════════════════════════════════════════════════════════════
+   MAPA TRVALE SKRYTÁ — terminál bez mapy.
+   Necháme ji v DOMu (Leaflet potřebuje rozměry), ale je neviditelná
+   a nereaguje na klikání. MAIN má vždy černé pozadí.
+═══════════════════════════════════════════════════════════════════════ */
+#MAIN { background:#000000 !important; }
+#MAIN > #mapgl,
+#MAIN > #map {
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  z-index:-1 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SPODNÍ STATUS BAR (HODINY) TRVALE SKRYTÝ — terminál bez stat baru.
+   STAT pruh obsahoval UTC čas, datum a city clocks (NYC/LON/FRA/DUB/SIN/TOK).
+   --stat-h se nastaví na 0 aby MAIN/layout neměl prázdný prostor dole.
+═══════════════════════════════════════════════════════════════════════ */
+:root { --stat-h:0px !important; }
+#STAT {
+  display:none !important;
+  visibility:hidden !important;
+  height:0 !important;
+  min-height:0 !important;
+  max-height:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  position:fixed !important;
+  bottom:-9999px !important;
+  pointer-events:none !important;
+}
+
 
 /* ══ ASSET INPUT TAB (in QUICKBAR) ══ */
 #asset-tab{display:flex;align-items:center;position:relative;z-index:100;flex:1;min-width:0;}
@@ -1683,20 +1713,9 @@ body > .bwei-newsticker.wei-portal { bottom: 32px !important; z-index: 214748364
   window.addEventListener('orientationchange', schedule);
 })();
 </script>
-
-<style id="map-clocks-hidden">
-/* MAP hidden — elements stay in DOM so JS works normally */
-#mapgl, #map { display: none !important; visibility: hidden !important; pointer-events: none !important; }
-#map-ticker, #minimap-btn { display: none !important; }
-/* CLOCKS / STAT bar hidden */
-#STAT { display: none !important; }
-#sb-sec-utc, #sb-sec-cities, #st-utc, .stat-city { display: none !important; }
-/* Reclaim space that STAT bar used to take */
-:root { --stat-h: 0px !important; }
-</style>
 </head>
 <body>
-<div id="bbg-debug-panel" style="display:none" data-removed="1" style="position:fixed; top:0; left:0; width:100%; height:22px; background:#400; color:#f66; font-family:monospace; font-size:11px; z-index:999999; display:none; align-items:center; padding:0 12px; border-bottom:1px solid #d00; pointer-events:none;">
+<div id="bbg-debug-panel" style="position:fixed; top:0; left:0; width:100%; height:22px; background:#400; color:#f66; font-family:monospace; font-size:11px; z-index:999999; display:none; align-items:center; padding:0 12px; border-bottom:1px solid #d00; pointer-events:none;">
     [SYSTEM ERROR] <span id="bbg-debug-msg" style="margin-left:8px;"></span>
 </div>
 <script>
@@ -1732,7 +1751,81 @@ body > .bwei-newsticker.wei-portal { bottom: 32px !important; z-index: 214748364
 /* (reverted) fixed-stage + wei-lite chrome removed */
 </style>
 
-<!-- boot-overlay removed -->
+<div id="boot-overlay" style="
+  position:fixed;inset:0;z-index:99999;
+  background:#000;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  font-family:'Courier New',Courier,monospace;">
+
+  <div style="width:660px;max-width:96vw;padding:0 16px">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+      <div style="color:#ff6600;font-size:14px;font-weight:700;letter-spacing:5px">&nbsp;</div>
+      <div id="boot-clock" style="color:#887760;font-size:9px;letter-spacing:2px"></div>
+    </div>
+    <div style="color:#887760;font-size:7px;letter-spacing:2px;margin-bottom:20px;border-bottom:1px solid #1a0800;padding-bottom:12px">AUTHENTICATION REQUIRED — ALL DATA FEEDS LOCKED</div>
+
+    <!-- API KEY INPUT BLOCK -->
+    <div style="border:1px solid #3a1800;background:#050200;padding:18px 20px;margin-bottom:16px">
+      <div style="color:#ff6600;font-size:9px;font-weight:700;letter-spacing:2px;margin-bottom:12px">⬡ ANTHROPIC API KEY REQUIRED</div>
+      <div style="color:#998870;font-size:7.5px;margin-bottom:14px;line-height:1.8">
+        All market data feeds are locked until a valid API key is provided.<br>
+        Get your key at <span style="color:#664422">console.anthropic.com</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+        <input id="boot-key-input" type="password" placeholder="sk-ant-api03-..."
+          style="flex:1;background:#000;border:1px solid #ff6600;color:#ff8800;font-family:'Courier New',monospace;font-size:11px;padding:6px 12px;outline:none;letter-spacing:1px"
+          onkeydown="if(event.key==='Enter') _bootVerifyKey()" />
+        <button id="boot-verify-btn" onclick="_bootVerifyKey()"
+          style="background:#ff6600;color:#000;border:none;font-family:'Courier New',monospace;font-size:9px;font-weight:700;padding:7px 20px;cursor:pointer;letter-spacing:2px;white-space:nowrap">
+          VERIFY &amp; CONNECT
+        </button>
+      </div>
+      <!-- Verification status row -->
+      <div id="boot-verify-status" style="display:none;align-items:center;gap:8px;padding:6px 0 2px 0">
+        <span id="boot-verify-icon" style="font-size:11px">⏳</span>
+        <div>
+          <div id="boot-verify-text" style="font-size:8px;letter-spacing:1px;font-weight:700"></div>
+          <div id="boot-verify-detail" style="font-size:7px;color:#998870;margin-top:2px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONNECTION TABLE + NETWORK GRAPH -->
+    <div style="display:flex;gap:10px;align-items:flex-start">
+
+      <!-- Blockchain network canvas -->
+      <div style="flex-shrink:0;border:1px solid #1a0800;background:#000;padding:6px 6px 4px;opacity:0.4;transition:opacity .5s" id="boot-canvas-wrap">
+        <div style="color:#887760;font-size:5.5px;letter-spacing:2px;text-align:center;margin-bottom:3px">DATA NETWORK</div>
+        <canvas id="boot-network-canvas" width="200" height="200" style="display:block"></canvas>
+        <div id="boot-net-count" style="color:#887760;font-size:6px;letter-spacing:1px;text-align:center;margin-top:3px;font-family:'Courier New',monospace">0/18 LIVE</div>
+      </div>
+
+      <!-- Feed table -->
+      <div style="flex:1;border:1px solid #1a0800;overflow:hidden;opacity:0.4;transition:opacity .5s" id="boot-table-wrap">
+        <div style="display:grid;grid-template-columns:130px 55px 60px 1fr;background:#080500;padding:3px 8px;border-bottom:1px solid #1a0800">
+          <div style="color:#887760;font-size:6px;letter-spacing:1px">EXCHANGE / FEED</div>
+          <div style="color:#887760;font-size:6px;letter-spacing:1px">STATUS</div>
+          <div style="color:#887760;font-size:6px;letter-spacing:1px">LATENCY</div>
+          <div style="color:#887760;font-size:6px;letter-spacing:1px">DETAIL</div>
+        </div>
+        <div id="boot-feeds" style="display:flex;flex-direction:column;max-height:210px;overflow:hidden"></div>
+      </div>
+
+    </div>
+
+    <!-- Bottom -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px">
+      <div id="boot-status" style="color:#887760;font-size:7px;letter-spacing:1px">LOCKED — AUTHENTICATION REQUIRED</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="boot-timer" style="color:#1a0e00;font-size:7px">0.0s</div>
+        <div id="boot-pct" style="color:#887760;font-size:10px;font-weight:700;letter-spacing:1px">LOCKED</div>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 <script>
 // ══════════════════════════════════════════════════
@@ -1996,7 +2089,7 @@ const _boot = {
   _boot._timerIv=setInterval(function(){ const el=document.getElementById('boot-timer'); if(el)el.textContent=((Date.now()-_boot.startTs)/1000).toFixed(1)+'s'; },100);
 })();
 
-// _boot.render removed
+_boot.render();
 
 // ── AUTO-DISMISS boot + spustit vše automaticky ──────────
 (function(){
@@ -2102,7 +2195,7 @@ async function _bootVerifyKey() {
       if(bi) bi.value = k;
       // Mark key as verified in boot system
       _boot.keyVerified = true;
-      // _boot.render removed
+      _boot.render();
       // Start all feeds — overlay dismisses automatically when 3+ feeds connect
       setTimeout(() => { _activateAIFeatures(); }, 600);
 
@@ -2123,7 +2216,7 @@ async function _bootVerifyKey() {
       window.ANTHROPIC_API_KEY = k;
       if(btn) { btn.textContent='✓ VALID'; btn.style.background='#332200'; btn.style.color='#ff8800'; }
       _boot.keyVerified = true;
-      // _boot.render removed
+      _boot.render();
       setTimeout(()=>_activateAIFeatures(), 1000);
 
     } else {
@@ -4584,6 +4677,129 @@ document.addEventListener('DOMContentLoaded', function() {
     
     
 
+  </div>
+</div>
+
+<!-- STATUS BAR (Stacked: Ticker -> Clocks) -->
+<div id="STAT">
+  <div id="map-ticker"><div id="map-tick-inner"></div></div>
+  <div id="stat-clocks-row">
+
+  <!-- UTC + DATE -->
+  <div class="sb-sec" id="sb-sec-utc">
+    <div id="sb-utc">
+      <div id="sb-utc-time">--:--:--</div>
+      <div id="sb-utc-date">SAT 14 MAR 2026</div>
+      <script>
+      (function(){
+        function _updClk(){
+          if(window._tabHidden) return;
+          var n=new Date();
+          var hh=String(n.getHours()).padStart(2,'0');
+          var mm=String(n.getMinutes()).padStart(2,'0');
+          var ss=String(n.getSeconds()).padStart(2,'0');
+          var u=document.getElementById('sb-utc-time');
+          var d=document.getElementById('sb-utc-date');
+          if(u)u.textContent=hh+':'+mm+':'+ss;
+          if(d)d.textContent=n.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+        }
+        _updClk();
+        setInterval(_updClk,1000);
+      })();
+      </script>
+    </div>
+    
+  </div>
+
+
+
+  <!-- CITY CLOCKS + WEATHER -->
+  <div class="sb-sec" id="sb-sec-cities" style="flex:1;overflow:hidden">
+    <div id="stat-cities" style="display:flex;align-items:stretch;width:100%">
+      <div class="stat-city" id="sc-nyc">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#ff6600"></div><span class="stat-city-name">NEW YORK</span><span class="stat-city-time" id="sc-nyc-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-nyc-wx"></span><span class="stat-city-temp" id="sc-nyc-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-nyc-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-lon">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#ff8800"></div><span class="stat-city-name">LONDON</span><span class="stat-city-time" id="sc-lon-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-lon-wx"></span><span class="stat-city-temp" id="sc-lon-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-lon-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-fra">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#cc5500"></div><span class="stat-city-name">FRANKFURT</span><span class="stat-city-time" id="sc-fra-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-fra-wx"></span><span class="stat-city-temp" id="sc-fra-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-fra-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-dub">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#ff6600"></div><span class="stat-city-name">DUBAI</span><span class="stat-city-time" id="sc-dub-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-dub-wx"></span><span class="stat-city-temp" id="sc-dub-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-dub-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-sin">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#00aa33"></div><span class="stat-city-name">SINGAPORE</span><span class="stat-city-time" id="sc-sin-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-sin-wx"></span><span class="stat-city-temp" id="sc-sin-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-sin-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-tok">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#0099bb"></div><span class="stat-city-name">TOKYO</span><span class="stat-city-time" id="sc-tok-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-tok-wx"></span><span class="stat-city-temp" id="sc-tok-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-tok-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-hkg">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#1166cc"></div><span class="stat-city-name">HONG KONG</span><span class="stat-city-time" id="sc-hkg-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-hkg-wx"></span><span class="stat-city-temp" id="sc-hkg-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-hkg-desc"></span></div>
+      </div>
+      <div class="stat-city" id="sc-syd" style="border-right:none">
+        <div class="stat-city-top"><div class="stat-city-dot" style="background:#774488"></div><span class="stat-city-name">SYDNEY</span><span class="stat-city-time" id="sc-syd-t">--:--</span></div>
+        <div class="stat-city-bot"><span class="stat-city-wx" id="sc-syd-wx"></span><span class="stat-city-temp" id="sc-syd-tmp" style="color:#888">--°</span><span style="color:#887760;font-size:5.5px" id="sc-syd-desc"></span></div>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- DATA FEEDS -->
+  <div class="sb-sec hidden" id="sb-sec-feeds" style="display:none !important">
+    <div id="sb-feeds">
+      <span class="si-badge" id="si-bnb">BNB</span>
+      <span class="si-badge" id="si-cb">CBS</span>
+      <span class="si-badge" id="si-okx">OKX</span>
+      <span class="si-badge" id="si-bybit">BYB</span>
+      <span class="si-badge" id="si-idx">IDX</span>
+      <span class="si-badge" id="si-defi">DFI</span>
+      <span class="si-badge" id="si-cg">CGK</span>
+      <span class="si-badge" id="si-sol">SOL</span>
+      <span class="si-badge" id="si-eth">ETH</span>
+      <span class="si-badge" id="si-hl">HYP</span>
+      <span class="si-badge" id="si-kraken">KRK</span>
+      <span class="si-badge" id="si-kucoin">KCN</span>
+      <span class="si-badge" id="si-gate">GAT</span>
+      <span class="si-badge" id="si-mexc">MXC</span>
+      <span class="si-badge" id="si-htx">HTX</span>
+      <span class="si-badge" id="si-bitget">BGT</span>
+    </div>
+  </div>
+
+  <!-- NETWORK + MAP LAYERS STATUS -->
+  <div class="sb-sec" id="sb-sec-status" style="display:none" style="border-top:1px solid #1a0a00;padding-top:4px;">
+    <div style="color:#887760;font-size:6px;letter-spacing:1px;margin-bottom:3px;padding:0 2px;">NETWORK &amp; LAYERS</div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px;padding:0 2px;">
+      <span class="si-badge" id="si-net" title="Internet connection" style="cursor:default">NET</span>
+      <span class="si-badge" id="si-ai" title="Anthropic AI — click to set key" style="cursor:pointer" onclick="document.getElementById('api-key-banner').style.display='flex'">AI</span>
+      <span class="si-badge" id="si-layer-inst" title="Institutions layer (map)">INST</span>
+      <span class="si-badge" id="si-layer-cb" title="Central Banks layer (map)">CB</span>
+      <span class="si-badge" id="si-layer-macro" title="Macro data layer (map)">MACRO</span>
+      <span class="si-badge" id="si-layer-crypto" title="Crypto layer (map)">CRYP</span>
+      <span class="si-badge" id="si-layer-news" title="News feed">NEWS</span>
+      <span class="si-badge" id="si-layer-yahoo" title="Yahoo Finance equities">YHO</span>
+      <span class="si-badge" id="si-layer-stooq" title="Stooq indices">STQ</span>
+      <span class="si-badge" id="si-layer-cables" title="Power Cables — zoom in to load" style="cursor:pointer;color:#555;border-color:#333;" onclick="window._toggleCablesLayer&&_toggleCablesLayer()">⬡ PWR</span>
+
+    </div>
+  </div>
+
+  <!-- COORD + MSG -->
+  <div id="st-coord" style="color:#887760;font-size:8px;white-space:nowrap;padding:0 10px;flex-shrink:0;display:flex;align-items:center;border-left:1px solid #1a0a00"></div>
+  <div id="st-msg" style="display:none"></div>
+  <div id="st-panels" style="display:none"></div>
+  <div id="st-mode" style="display:none"></div>
+  <div id="st-utc" style="display:none"></div>
+  <span class="si-badge" id="si-kraken" style="display:none"></span>
+  <span class="si-badge" id="si-kucoin" style="display:none"></span>
   </div>
 </div>
 
@@ -18146,7 +18362,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
   try{ localStorage.removeItem('bmap_layout'); }catch(e){}
   // Open Bloomberg-like HOME screen on startup
-  try{ if(typeof openPanel==='function') openPanel('HOME'); }catch(e){}
+  setTimeout(function(){ try{ if(typeof openPanel==='function') openPanel('HOME'); }catch(e){} }, 50);
   // Optimized: start feeds immediately, news slightly deferred
   try{ if(typeof _startAllFeeds==='function') _startAllFeeds(); }catch(e){}
   setTimeout(function(){ try{ fetchAllNews(true); }catch(e){} }, 200);
@@ -49618,69 +49834,66 @@ body.panel-wei-open .panel.maximized{top:0!important;height:100%!important;}
 #MAIN #map-overlay .panel[data-fn="CWEI"] .wei-original .wei-body .wei-row div.right.red.mis-xl{color:#ffffff!important;}
 
 /* ═══════════════════════════════════════════════════════════════════════
-   HOME panel — sdílí TOPBAR styl s WEI (velké dropdowny, fonty, ikony),
-   ALE nepoužívá WEI-specifické position:fixed pro panel ani nepřebíjí
-   layout HOME panelu. CWEI_TOPBAR (modrý pruh) zůstává viditelný pod TOPBAR.
+   VŠECHNY PANELY (HOME, LOGI, NWS, ECON, ECAL, ALERTS, MOVERS, MAP, ...)
+   POUŽÍVAJÍ STEJNÝ LAYOUT JAKO WEI/CWEI:
+   - Velký TOPBAR fixed nahoře (přes wei-original-active)
+   - Modrý CWEI_TOPBAR pod TOPBAR
+   - Panel přes celý viewport s padding-top:72px (TOPBAR 36 + modrý pruh 36)
+   Aktivuje se pomocí body.wei-home-mode (= jakýkoli panel != WEI/CWEI)
 ═══════════════════════════════════════════════════════════════════════ */
 
-/* Když je aktivní HOME režim, NEschovávat QUICKBAR (pro WEI je schován) */
+/* QUICKBAR schován (stejně jako u WEI) */
 body.wei-original-active.wei-home-mode #QUICKBAR{display:none!important;}
 
-/* TOPBAR v HOME režimu — stejné velké rozměry jako u WEI (zděděno z wei-original-active),
-   ALE zůstává v normálním flow (position:relative), ne fixed.
-   Tím se vyhneme tomu, že by přebíjel obsah HOME panelu. */
-body.wei-original-active.wei-home-mode #TOPBAR{
-  position:relative!important;
-  top:auto!important;
-  left:auto!important;
-  right:auto!important;
-  transform:none!important;
-  margin-left:auto!important;
-  margin-right:auto!important;
-  z-index:3000!important;
-  width:min(2558px, 100%)!important;
-}
+/* TOPBAR — STEJNÉ stylování jako u WEI/CWEI (fixed, top:0, centered).
+   Žádný override potřeba — dědí z `body.wei-original-active #TOPBAR` výše. */
 
-/* CWEI_TOPBAR (modrý pruh + input) zůstává fixed pod TOPBAR, stejné rozměry jako vždy */
+/* CWEI_TOPBAR (modrý pruh + input) — viditelný pro všechny non-WEI panely, fixed pod TOPBAR */
 body.wei-original-active.wei-home-mode #CWEI_TOPBAR{
   display:block!important;
   position:fixed!important;
-  top:var(--topbar-h)!important;
+  top:var(--topbar-h,36px)!important;
+  left:50%!important;
+  right:auto!important;
+  transform:translateX(-50%)!important;
+  width:min(var(--term-w),100vw)!important;
   z-index:1000002!important;
 }
 
-/* MAIN: zachovat normální flow pro HOME, neaplikovat top:0 z WEI módu */
-body.wei-original-active.wei-home-mode #MAIN{
-  position:relative!important;
-  top:auto!important;
-  margin-top:0!important;
-  padding-top:0!important;
-}
+/* MAIN — STEJNĚ jako u WEI (margin-top:0, dědí z wei-original-active) */
+/* Žádný override potřeba */
 
-/* HOME panel: necháme normální layout (žádné WEI-specifické padding-top) */
-body.wei-original-active.wei-home-mode .panel.maximized[data-fn="HOME"]{
+/* VŠECHNY PANELY (kromě WEI/CWEI) — IDENTICKÝ layout jako WEI/CWEI panel:
+   absolutní pozice, top:0, plný viewport, padding-top pro headery */
+body.wei-original-active.wei-home-mode .panel.maximized:not([data-fn="WEI"]):not([data-fn="CWEI"]){
   position:absolute!important;
-  top:36px!important; /* místo pro CWEI_TOPBAR pod TOPBAR */
+  top:0!important;
   left:0!important;
   right:0!important;
   bottom:0!important;
   width:100%!important;
   height:auto!important;
   max-height:none!important;
-  padding:0!important;
+  /* TOPBAR (36px) + CWEI_TOPBAR (36px) = 72px header overlay */
+  padding-top:calc(var(--topbar-h,36px) + 36px)!important;
+  padding-left:0!important;
+  padding-right:0!important;
+  padding-bottom:0!important;
+  box-sizing:border-box!important;
   background:#000!important;
   margin:0!important;
   border:0!important;
-  box-sizing:border-box!important;
 }
 
-/* HOME panel header/tabs — schovat (stejně jako u WEI), aby splash začínal hned */
-body.wei-original-active.wei-home-mode .panel.maximized[data-fn="HOME"] .panel-hd,
-body.wei-original-active.wei-home-mode .panel.maximized[data-fn="HOME"] .panel-tabs{
+/* Panel header/tabs — schovat pro všechny panely (stejně jako u WEI/CWEI) */
+body.wei-original-active.wei-home-mode .panel.maximized:not([data-fn="WEI"]):not([data-fn="CWEI"]) .panel-hd,
+body.wei-original-active.wei-home-mode .panel.maximized:not([data-fn="WEI"]):not([data-fn="CWEI"]) .panel-tabs{
   display:none!important;height:0!important;min-height:0!important;max-height:0!important;
   margin:0!important;padding:0!important;border:0!important;
 }
-body.wei-original-active.wei-home-mode .panel[data-fn="HOME"] .panel-body{
+
+/* Panel body — flex layout, vyplní zbytek panelu (pro všechny non-WEI panely) */
+body.wei-original-active.wei-home-mode .panel:not([data-fn="WEI"]):not([data-fn="CWEI"]) .panel-body{
   background:#000!important;
   overflow:auto!important;
   display:flex!important;
@@ -49691,10 +49904,11 @@ body.wei-original-active.wei-home-mode .panel[data-fn="HOME"] .panel-body{
   margin:0!important;
   border:0!important;
   height:100%!important;
+  width:100%!important;
 }
 
-/* body padding-top: nechat normální (ne 0 jako u WEI) */
-body.wei-original-active.wei-home-mode{padding-top:0!important;}
+/* body padding-top:0 — STEJNÉ jako u WEI (dědí z wei-original-active) */
+/* Žádný override potřeba */
 
 </style>
 <script id="wei-original-final-js">
@@ -49745,13 +49959,21 @@ window.buildPanelContent=function(fn){
 };
 function markWei(){
   var weipnl=document.querySelector('.panel[data-fn="WEI"], .panel[data-fn="CWEI"]');
-  var homepnl=document.querySelector('.panel[data-fn="HOME"]');
+  /* Najdi JAKÝKOLI maximalizovaný panel (kromě WEI/CWEI) — všechny dostanou stejný velký TOPBAR vzhled */
+  var anyOtherPnl=document.querySelector('.panel.maximized:not([data-fn="WEI"]):not([data-fn="CWEI"])')
+                  || document.querySelector('.panel:not([data-fn="WEI"]):not([data-fn="CWEI"])');
   var has=!!weipnl;
-  var hasHome=!!homepnl && !has; /* HOME jen pokud není současně otevřený WEI/CWEI */
-  /* Aktivujeme stejnou wei-original-active stylizaci i pro HOME, aby měl TOPBAR + blue strip stejný velký vzhled jako u WEI */
-  document.body.classList.toggle('wei-original-active', has || hasHome);
-  /* Speciální flag, aby HOME nedostal WEI-only layout změny (position:fixed pro panel atd.) */
-  document.body.classList.toggle('wei-home-mode', hasHome);
+  var hasOther=!!anyOtherPnl && !has;
+  /* Aktivujeme stejnou wei-original-active stylizaci pro VŠECHNY panely — velký TOPBAR jako u WEI */
+  document.body.classList.toggle('wei-original-active', has || hasOther);
+  /* wei-home-mode aktivní pro všechny panely KROMĚ WEI/CWEI, aby nedostali WEI-only layout (např. tabulka uvnitř) */
+  document.body.classList.toggle('wei-home-mode', hasOther);
+  /* Pro identifikaci konkrétního panelu v CSS — třeba aby šlo selectovat dle data-fn */
+  if(hasOther){
+    document.body.setAttribute('data-active-panel', anyOtherPnl.dataset.fn||'');
+  } else {
+    document.body.removeAttribute('data-active-panel');
+  }
   if(has){
     var sec=document.getElementById('cmd-sec-inp'),fn=document.getElementById('cmd-fn-inp');
     // Do not overwrite user typing / quickbar state (prevents "refresh" of text like QUICKBAR).
@@ -49844,7 +50066,8 @@ window.WEI_ORIGINAL_FINAL={build:buildWEIOriginal};
 /* Po fit/scale odstranit případné inline top/height — layout drží CSS (padding-top na panelu), ne součet body padding + JS top. */
 (function(){
   window.syncWeiMaxPanelsToTopbar = function(){
-    document.querySelectorAll('.panel.maximized[data-fn="WEI"], .panel.maximized[data-fn="CWEI"]').forEach(function(p){
+    /* Všechny maximalizované panely dostanou stejný layout reset jako WEI */
+    document.querySelectorAll('.panel.maximized').forEach(function(p){
       if(!document.body.classList.contains('wei-original-active')){
         p.style.removeProperty('top');
         p.style.removeProperty('left');
@@ -49945,18 +50168,14 @@ window.WEI_ORIGINAL_FINAL={build:buildWEIOriginal};
     wrap.style.marginTop = '0px';
   }
   window.flushWeiOriginalCmdRow = flushCmdRow;
-  function fitWeiPanel(panel, _retry){
+  function fitWeiPanel(panel){
     if(window._weiDeferObserversForTopbar && window._weiDeferObserversForTopbar()) return;
     if(typeof window.syncWeiMaxPanelsToTopbar === 'function') window.syncWeiMaxPanelsToTopbar();
     var body = panel.querySelector('.panel-body');
     var wrap = panel.querySelector('.wei-original');
     if(!body || !wrap) return;
     var bw = body.clientWidth, bh = body.clientHeight;
-    if(bw < 10 || bh < 10){
-      var rw = _retry | 0;
-      if(rw < 28) requestAnimationFrame(function(){ fitWeiPanel(panel, rw + 1); });
-      return;
-    }
+    if(bw < 10 || bh < 10) return;
     var inner = wrap.querySelector('.wei-scale-inner');
     var cmdEl = wrap.querySelector('.wei-command');
     if(inner && cmdEl){
@@ -49972,7 +50191,7 @@ window.WEI_ORIGINAL_FINAL={build:buildWEIOriginal};
       inner.style.marginTop = '';
       inner.style.transform = 'translate3d(0,0,0) scale(' + sx + ',' + sy + ')';
       inner.style.width = STAGE_W + 'px';
-      inner.style.height = innerBh + 'px';
+      inner.style.height = STAGE_SCALE_H + 'px';
       wrap.style.marginTop = '';
       wrap.style.transform = '';
       wrap.style.width = '';
@@ -50009,8 +50228,6 @@ window.WEI_ORIGINAL_FINAL={build:buildWEIOriginal};
     if(body && ro && !body.__weiObserved){ ro.observe(body); body.__weiObserved = true; }
     bindWeiInputBridge(panel);
     fitWeiPanel(panel);
-    setTimeout(function(){ fitWeiPanel(panel); }, 120);
-    setTimeout(function(){ fitWeiPanel(panel); }, 400);
   }
   function scan(){ document.querySelectorAll('.panel[data-fn="WEI"]').forEach(attach); }
   // Sleduj jen overlay s panely (ne celý dokument). Filtruj změny uvnitř quickbaru,
@@ -50102,18 +50319,14 @@ window.WEI_ORIGINAL_FINAL={build:buildWEIOriginal};
     });
     // Don't auto-close menu on blur; keep it sticky like QUICKBAR.
   }
-  function fitCweiPanel(panel, _retry){
+  function fitCweiPanel(panel){
     if(window._weiDeferObserversForTopbar && window._weiDeferObserversForTopbar()) return;
     if(typeof window.syncWeiMaxPanelsToTopbar === 'function') window.syncWeiMaxPanelsToTopbar();
     var body = panel.querySelector('.panel-body');
     var wrap = panel.querySelector('.wei-original');
     if(!body || !wrap) return;
     var bw = body.clientWidth, bh = body.clientHeight;
-    if(bw < 10 || bh < 10){
-      var rc = _retry | 0;
-      if(rc < 28) requestAnimationFrame(function(){ fitCweiPanel(panel, rc + 1); });
-      return;
-    }
+    if(bw < 10 || bh < 10) return;
     var inner = wrap.querySelector('.wei-scale-inner');
     var cmdEl = wrap.querySelector('.wei-command');
     if(inner && cmdEl){
@@ -50128,7 +50341,7 @@ window.WEI_ORIGINAL_FINAL={build:buildWEIOriginal};
       inner.style.marginTop = '';
       inner.style.transform = 'translate3d(0,0,0) scale(' + sx + ',' + sy + ')';
       inner.style.width = STAGE_W + 'px';
-      inner.style.height = innerBh + 'px';
+      inner.style.height = STAGE_SCALE_H + 'px';
       wrap.style.marginTop = '';
       wrap.style.transform = '';
       wrap.style.width = '';
@@ -50164,8 +50377,6 @@ window.WEI_ORIGINAL_FINAL={build:buildWEIOriginal};
     if(body && ro && !body.__cweiObserved){ ro.observe(body); body.__cweiObserved = true; }
     bindWeiInputBridge(panel);
     fitCweiPanel(panel);
-    setTimeout(function(){ fitCweiPanel(panel); }, 120);
-    setTimeout(function(){ fitCweiPanel(panel); }, 400);
   }
   function scan(){ document.querySelectorAll('.panel[data-fn="CWEI"]').forEach(attach); }
   var cweiMoTarget = document.getElementById('map-overlay') || document.body;
