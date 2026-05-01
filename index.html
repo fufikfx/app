@@ -1599,6 +1599,137 @@ body > .bwei-optbar.wei-portal { display: none !important; }
 /* Hide CRYPTO tab in the right sidebar */
 .sbtab[data-tab="cry"] { display: none !important; }
 </style>
+
+<script id="bbg-inspect-mode">
+// Inspect mode: highlight elements + copy selector. Toggle: Ctrl+Alt+I. Exit: Esc.
+(function(){
+  'use strict';
+  var enabled = false;
+  var box, label;
+
+  function ensureUi(){
+    if(box) return;
+    box = document.createElement('div');
+    box.id = 'bbg-inspect-box';
+    box.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;pointer-events:none;z-index:2147483647;border:2px solid #18a8ff;box-shadow:none;background:transparent;display:none;';
+    label = document.createElement('div');
+    label.id = 'bbg-inspect-label';
+    label.style.cssText = 'position:fixed;left:0;top:0;max-width:min(900px,calc(100vw - 16px));pointer-events:none;z-index:2147483647;background:rgba(0,0,0,.92);color:#ff9900;border:1px solid #2a1800;font:12px/1.2 "Courier New",monospace;padding:6px 8px;display:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    document.body.appendChild(box);
+    document.body.appendChild(label);
+  }
+
+  function cssEscapeIdent(s){
+    try{ return CSS && CSS.escape ? CSS.escape(s) : String(s).replace(/[^a-zA-Z0-9_\\-]/g,'\\\\$&'); }catch(_){ return String(s); }
+  }
+
+  function selectorFor(el){
+    if(!el || el.nodeType !== 1) return '';
+    if(el.id) return '#' + cssEscapeIdent(el.id);
+    var parts = [];
+    var cur = el;
+    for(var depth=0; cur && cur.nodeType===1 && depth<5; depth++){
+      var name = cur.nodeName.toLowerCase();
+      var cls = (cur.className && typeof cur.className === 'string') ? cur.className.trim().split(/\\s+/).filter(Boolean).slice(0,3) : [];
+      var seg = name + (cls.length ? '.'+cls.map(cssEscapeIdent).join('.') : '');
+      var parent = cur.parentElement;
+      if(parent){
+        var same = Array.prototype.filter.call(parent.children, function(ch){
+          return ch.nodeName === cur.nodeName;
+        });
+        if(same.length > 1){
+          var idx = same.indexOf(cur) + 1;
+          seg += ':nth-of-type(' + idx + ')';
+        }
+      }
+      parts.unshift(seg);
+      if(cur.id) break;
+      cur = parent;
+    }
+    return parts.join(' > ');
+  }
+
+  function setEnabled(on){
+    enabled = !!on;
+    ensureUi();
+    box.style.display = enabled ? 'block' : 'none';
+    label.style.display = enabled ? 'block' : 'none';
+    if(!enabled){
+      box.style.width = '0'; box.style.height='0';
+      label.textContent = '';
+    } else {
+      label.textContent = 'INSPECT: move mouse, click to copy selector, ESC to exit';
+      label.style.left = '8px';
+      label.style.top = '8px';
+    }
+  }
+
+  function onMove(e){
+    if(!enabled) return;
+    var el = e.target;
+    if(!el || el === box || el === label) return;
+    var r;
+    try{ r = el.getBoundingClientRect(); }catch(_){ return; }
+    box.style.left = Math.round(r.left) + 'px';
+    box.style.top  = Math.round(r.top) + 'px';
+    box.style.width  = Math.round(r.width) + 'px';
+    box.style.height = Math.round(r.height) + 'px';
+    var sel = selectorFor(el);
+    label.textContent = sel || '(no selector)';
+    var lx = Math.min(Math.max(8, Math.round(r.left)), window.innerWidth - 16);
+    var ly = Math.min(Math.max(8, Math.round(r.top - 28)), window.innerHeight - 16);
+    label.style.left = lx + 'px';
+    label.style.top  = ly + 'px';
+  }
+
+  async function copyText(t){
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        await navigator.clipboard.writeText(t);
+        return true;
+      }
+    }catch(_){}
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = t;
+      ta.style.cssText='position:fixed;left:-9999px;top:-9999px;';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    }catch(_){}
+    return false;
+  }
+
+  function onClick(e){
+    if(!enabled) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var el = e.target;
+    var sel = selectorFor(el);
+    copyText(sel);
+    label.textContent = 'COPIED: ' + sel;
+  }
+
+  document.addEventListener('keydown', function(e){
+    // Toggle: Ctrl+Alt+I
+    if((e.ctrlKey || e.metaKey) && e.altKey && (e.key === 'i' || e.key === 'I')){
+      e.preventDefault();
+      setEnabled(!enabled);
+      return;
+    }
+    if(e.key === 'Escape' && enabled){
+      e.preventDefault();
+      setEnabled(false);
+      return;
+    }
+  }, true);
+
+  document.addEventListener('mousemove', onMove, true);
+  document.addEventListener('click', onClick, true);
+})();
+</script>
 <script>/* LightweightCharts v4.1.3 inlined */
 /*!
  * @license
@@ -47933,24 +48064,40 @@ console.log('[RIBBON-LOCK] Anti-flicker patch loaded for bbg-* elements');
      ============================================================ -->
 <style>
   #imap-overlay {
-    position: fixed; inset: 0; background: #000; z-index: 2147483646;
-    display: none; flex-direction: column;
+    /* Match panel.maximized geometry: always under TOPBAR */
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    /* Under global TOPBAR only (no extra IMAP blue row) */
+    top: var(--topbar-h);
+    height: calc(100% - var(--topbar-h));
+    background: #000;
+    z-index: 2147483646;
+    display: none;
+    flex-direction: column;
   }
   #imap-overlay.open { display: flex; }
+  /* When IMAP is open, keep only global TOPBAR (no extra pinned rows).
+     Must beat later `body.wei-original-active.wei-home-mode #CWEI_TOPBAR{display:block!important;}` */
+  body.imap-open.wei-original-active.wei-home-mode #CWEI_TOPBAR{display:none!important;}
+  body.imap-open #CWEI_TOPBAR{display:none!important;}
+  body.imap-open #WEI_TOPBAR{display:none!important;}
+  /* Some versions also render the blue strip inside the active panel */
+  body.imap-open .panel[data-fn="CWEI"] .wei-cmd-input{display:none!important;}
+  /* Remove IMAP overlay blue row completely */
+  #imap-bluebar{display:none!important;height:0!important;min-height:0!important;max-height:0!important;overflow:hidden!important;}
   #imap-overlay iframe {
     width: 100%; height: auto; border: none; display: block; flex: 1;
+    outline: none !important;
+    box-shadow: none !important;
   }
-  #imap-overlay-close {
-    position: absolute; top: 8px; right: 8px; z-index: 2147483647;
-    background: #850000; color: #fff; border: 1px solid #ff9900;
-    padding: 4px 12px; font-family: Arial, sans-serif;
-    font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 1px;
-  }
-  #imap-overlay-close:hover { background: #a00000; }
+  #imap-overlay iframe:focus{ outline:none !important; }
+  #imap-overlay, #imap-overlay *{ -webkit-tap-highlight-color: transparent; }
+  #imap-overlay-close { display:none !important; }
 </style>
-<div id="imap-overlay" role="dialog" aria-label="IMAP S&P 500" aria-modal="true">
-  <button id="imap-overlay-close" type="button" aria-label="Close IMAP">✕ CLOSE</button>
-  <iframe id="imap-overlay-frame" title="IMAP S&P 500" srcdoc="<!DOCTYPE html>
+<div id="imap-overlay" role="dialog" aria-label="IMAP" aria-modal="true">
+  <button id="imap-overlay-close" type="button" aria-label="Close IMAP"></button>
+  <div id="imap-bluebar" aria-hidden="true"></div>
+  <iframe id="imap-overlay-frame" title="" srcdoc="<!DOCTYPE html>
 <html lang=&quot;en&quot;>
 <head>
 <meta charset=&quot;UTF-8&quot;>
@@ -47977,6 +48124,7 @@ html, body {
   width: 100%; height: 100%;
   overflow: hidden;
 }
+*:focus{ outline:none !important; box-shadow:none !important; }
 body { 
   background: var(--bg-black); 
   color: #fff; 
@@ -47996,6 +48144,15 @@ body {
   cursor: default;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
+}
+
+/* Hide IMAP-internal top bars (we use outer TOPBAR + blue strip) */
+#TOPBAR,
+.red-bar,
+.blue-bar,
+.bluebar,
+.bb-bluebar{
+  display:none !important;
 }
 
 /* HIGH-DPI SHARPNESS — Retina / MacBook Pro / 4K */
@@ -48039,7 +48196,7 @@ body {
   position: relative; 
   font-family: Arial, Helvetica, sans-serif;
 }
-.top-nav { background: #000; display: flex; align-items: center; padding: 0 6px; height: 18px; gap: 4px; border-bottom: 1px solid #333; flex-shrink: 0; }
+.top-nav { background: #000; display: flex; align-items: center; padding: 0 6px; height: 18px; gap: 4px; border-bottom: 0 !important; flex-shrink: 0; box-shadow:none !important; outline:0 !important; }
 .nav-arrows { color: #fff; font-weight: bold; font-size: 14px; padding: 0 4px; cursor: pointer; letter-spacing: 2px; }
 .nav-dd { 
   background: #e0e0e0; 
@@ -48071,7 +48228,7 @@ body {
 .top-right .help { background: var(--bb-gold); color: #000; font-weight: bold; padding: 0 6px; height: 18px; }
 
 /* BACK BAR */
-.back-bar { height: 16px; padding: 0 10px; font-size: 9px; color: #555; flex-shrink: 0; display: flex; align-items: center; border-bottom: 1px solid #1a1100; background: #000; letter-spacing: 0.3px; }
+.back-bar { display: none !important; height: 0 !important; padding: 0 !important; border: 0 !important; }
 
 /* RED HEADER */
 .red-bar-wrap {
@@ -48116,13 +48273,13 @@ body {
 .red-bar { background: var(--bb-red-hdr); display: flex; align-items: center; padding: 3px 8px; font-size: 14px; font-weight: normal; height: 28px; flex-shrink: 0; }
 
 /* CONTROLS */
-.control-bar { background: #000; display: flex; align-items: stretch; padding: 0; gap: 1px; flex-shrink: 0; border-bottom: 1px solid #222; font-size: 11px; height: 14px; margin: 0; letter-spacing: -0.2px; }
-.c-item { color: #000; background: var(--bb-orange); padding: 0 5px; font-weight: 500; font-size: 10px; font-family: Arial, Helvetica, sans-serif; display: flex; align-items: center; min-width: 170px; }
-.c-val { color: #000; background: var(--bb-orange); padding: 0 5px; font-weight: 500; cursor: pointer; font-size: 10px; font-family: Arial, Helvetica, sans-serif; display: flex; align-items: center; min-width: 140px; }
-.c-arrow { background: #444; color: #fff; padding: 0 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 8px; width: 16px; box-sizing: border-box; }
-.c-label { color: var(--bb-gold); font-weight: normal; margin-left: 8px; margin-right: 2px; font-size: 13px; }
-.c-group { display: flex; align-items: center; gap: 10px; color: var(--bb-gold); font-weight: normal; margin-left: 10px; }
-.c-group .ri { display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 13px; color: var(--bb-gold); }
+.control-bar { background: #000; display: flex; align-items: stretch; padding: 0; gap: 1px; flex-shrink: 0; border-bottom: 1px solid #222; font-size: 13px; height: 17px; margin: 0; letter-spacing: -0.2px; line-height: 1; }
+.c-item { color: #000; background: var(--bb-orange); padding: 0 6px; font-weight: 500; font-size: 13px; line-height: 1; font-family: Arial, Helvetica, sans-serif; display: flex; align-items: center; min-width: 170px; }
+.c-val { color: #000; background: var(--bb-orange); padding: 0 6px; font-weight: 500; cursor: pointer; font-size: 13px; line-height: 1; font-family: Arial, Helvetica, sans-serif; display: flex; align-items: center; min-width: 140px; }
+.c-arrow { background: #444; color: #fff; padding: 0 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 9px; line-height: 1; width: 18px; box-sizing: border-box; }
+.c-label { color: var(--bb-gold); font-weight: normal; margin-left: 8px; margin-right: 2px; font-size: 13px; line-height: 1; display: flex; align-items: center; }
+.c-group { display: flex; align-items: center; gap: 10px; color: var(--bb-gold); font-weight: normal; margin-left: 10px; line-height: 1; }
+.c-group .ri { display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 13px; line-height: 1; color: var(--bb-gold); }
 .c-group .rdot { width: 9px; height: 9px; border-radius: 50%; background: #555; border: none; }
 .c-group .ri.on .rdot { background: #000; border: 2px solid #00ccff; }
 .c-group .ri.on { color: var(--bb-gold); }
@@ -48375,6 +48532,152 @@ body {
 .bbg-menu-cat:hover { color:#888888; }
 .bbg-menu-cat-arrow { color:#3a5060; }
 .bbg-menu-hidden { display:none !important; }
+
+/* ═══ SPX BIG PRICE BANNER (top) ═══ */
+.spx-price-bar {
+  background: #000000;
+  border-bottom: 1px solid #1a1a1a;
+  flex-shrink: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 2px 0 3px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.spx-row1 {
+  display: flex;
+  align-items: center;
+  height: 18px;
+  padding-left: 0;
+  position: relative;
+  background: #000000;
+}
+.spx-row1 .spx-key {
+  display: inline-flex;
+  align-items: stretch;
+  background: #000000;
+  height: 16px;
+  margin: 0 12px 0 0;
+  align-self: center;
+  border: none;
+  overflow: hidden;
+}
+.spx-row1 .spx-key-bar {
+  width: 7px;
+  background: #1f9be0;
+  flex-shrink: 0;
+  display: block;
+}
+.spx-row1 .spx-key-input {
+  background: transparent;
+  color: #ffffff;
+  border: none;
+  outline: none;
+  padding: 0 10px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  width: 60px;
+  height: 100%;
+  cursor: text;
+  text-transform: uppercase;
+}
+.spx-row1 .spx-key-input:focus {
+  outline: none;
+  background: #0a0a0a;
+}
+.spx-row1 .spx-key-input::selection {
+  background: #1f9be0;
+  color: #ffffff;
+}
+.spx-row1 .spx-c {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-right: 6px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.spx-row1 .spx-px {
+  color: #00d63a;
+  font-size: 17px;
+  font-weight: 700;
+  margin-right: 8px;
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: -0.3px;
+}
+.spx-row1 .spx-chg {
+  color: #00d63a;
+  font-size: 13px;
+  font-weight: 700;
+  margin-right: 8px;
+  font-family: 'Courier New', Courier, monospace;
+}
+.spx-row1 .spx-spark {
+  width: 110px;
+  height: 16px;
+  margin-right: 8px;
+  flex-shrink: 0;
+  display: block;
+}
+.spx-row1 .spx-range {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  margin-left: auto;
+  padding-right: 2px;
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: -0.2px;
+}
+.spx-row1 .spx-range .sep { color: #ffffff; padding: 0; }
+.spx-row2 {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 2px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  color: #ffffff;
+  font-weight: 700;
+  height: 18px;
+  background: #000000;
+}
+.spx-row2 .spx-icon {
+  width: 16px;
+  height: 16px;
+  background: #ffcc33;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+  flex-shrink: 0;
+  color: #000;
+  font-size: 10px;
+  font-weight: 900;
+}
+.spx-row2 .spx-on,
+.spx-row2 .spx-d-marker {
+  color: #ffe24a;
+  margin-right: 3px;
+  font-weight: 700;
+  font-family: 'Courier New', Courier, monospace;
+}
+.spx-row2 .spx-date {
+  color: #ffffff;
+  margin-right: 4px;
+  font-weight: 700;
+  font-family: 'Courier New', Courier, monospace;
+}
+.spx-row2 .spx-ohlc {
+  color: #ffffff;
+  margin-right: 6px;
+  font-weight: 700;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+}
+.spx-row2 .spx-ohlc .lbl { color: #ffe24a; padding-right: 4px; }
 </style>
 </head>
 <body>
@@ -48423,13 +48726,36 @@ body {
   </div>
 </div>
 
-<div style=&quot;display:flex;height:18px;flex-shrink:0;&quot;>
-  <div style=&quot;width:4px;background:#4a90e2;flex-shrink:0;&quot;></div>
-  <div style=&quot;background:#000;display:flex;align-items:center;padding:0 6px;flex:1;&quot; onclick=&quot;document.getElementById('ticker-input').focus()&quot;>
-    <input type=&quot;text&quot; id=&quot;ticker-input&quot; autocomplete=&quot;off&quot; spellcheck=&quot;false&quot; style=&quot;background:transparent;border:none;outline:none;color:#4a90e2;font-size:9px;font-family:Arial,sans-serif;width:100%;caret-color:#4a90e2;&quot; placeholder=&quot;&quot; />
+<!-- removed: small IMAP internal blue search bar (use outer blue bar) -->
+<div class=&quot;back-bar&quot;>&amp;lt;Back&amp;gt; to Return</div>
+
+<!-- ═══ SPX BIG PRICE BANNER ═══ -->
+<div class=&quot;spx-price-bar&quot;>
+  <div class=&quot;spx-row1&quot;>
+    <span class=&quot;spx-key&quot;>
+      <span class=&quot;spx-key-bar&quot;></span>
+      <input type=&quot;text&quot; class=&quot;spx-key-input&quot; value=&quot;SPX&quot; spellcheck=&quot;false&quot; autocomplete=&quot;off&quot; />
+    </span>
+    <span class=&quot;spx-c&quot;>C</span>
+    <span class=&quot;spx-px&quot; id=&quot;spx-px-val&quot;>2842.74</span>
+    <span class=&quot;spx-chg&quot; id=&quot;spx-chg-val&quot;>+12.03</span>
+    <svg class=&quot;spx-spark&quot; viewBox=&quot;0 0 200 30&quot; preserveAspectRatio=&quot;none&quot;>
+      <polyline points=&quot;0,18 8,16 16,19 24,14 32,17 40,12 48,15 56,9 64,13 72,8 80,12 88,7 96,11 104,6 112,10 120,5 128,9 136,4 144,8 152,3 160,7 168,5 176,9 184,4 192,8 200,6&quot; fill=&quot;none&quot; stroke=&quot;#dddddd&quot; stroke-width=&quot;1.4&quot;/>
+      <polyline points=&quot;0,22 12,20 24,24 36,19 48,22 60,17 72,21 84,15 96,19 108,13 120,17 132,12 144,15 156,10 168,13 180,9 192,12 200,11&quot; fill=&quot;none&quot; stroke=&quot;#ff3333&quot; stroke-width=&quot;1.2&quot;/>
+    </svg>
+    <span class=&quot;spx-range&quot;>2799.41<span class=&quot;sep&quot;>/</span>3058.27</span>
+  </div>
+  <div class=&quot;spx-row2&quot;>
+    <span class=&quot;spx-icon&quot;>⏱</span>
+    <span class=&quot;spx-on&quot;>On</span>
+    <span class=&quot;spx-date&quot;>04 May</span>
+    <span class=&quot;spx-d-marker&quot;>d</span>
+    <span class=&quot;spx-ohlc&quot;><span class=&quot;lbl&quot;>O</span>2815.01</span>
+    <span class=&quot;spx-ohlc&quot;><span class=&quot;lbl&quot;>H</span>2844.24</span>
+    <span class=&quot;spx-ohlc&quot;><span class=&quot;lbl&quot;>L</span>2797.85</span>
+    <span class=&quot;spx-ohlc&quot;><span class=&quot;lbl&quot;>Prev</span>2842.74</span>
   </div>
 </div>
-<div class=&quot;back-bar&quot;>&amp;lt;Back&amp;gt; to Return</div>
 
 <div class=&quot;red-bar-wrap&quot;>
   <span class=&quot;red-bar-btn&quot;>Export</span>
@@ -48460,20 +48786,20 @@ body {
 
 <div class=&quot;tabs&quot;>
   <div class=&quot;tab&quot; data-v=&quot;both&quot; onclick=&quot;setT(this)&quot;>Pie Chart &amp; Table</div>
-  <div class=&quot;tab active&quot; data-v=&quot;table&quot; onclick=&quot;setT(this)&quot;>Table</div>
-  <div class=&quot;tab&quot; data-v=&quot;pie&quot; onclick=&quot;setT(this)&quot;>Pie Chart</div>
+  <div class=&quot;tab&quot; data-v=&quot;table&quot; onclick=&quot;setT(this)&quot;>Table</div>
+  <div class=&quot;tab active&quot; data-v=&quot;pie&quot; onclick=&quot;setT(this)&quot;>Pie Chart</div>
 </div>
 
 <div class=&quot;chart-header&quot;>SPX Percent Price Change by GICS Sector</div>
 
 <div class=&quot;main-area&quot;>
   <!-- PIE VIEW -->
-  <div id=&quot;view-pie&quot; class=&quot;view-pane pie-wrap&quot; style=&quot;display:none;&quot;>
+  <div id=&quot;view-pie&quot; class=&quot;view-pane pie-wrap active&quot;>
     <svg id=&quot;svg-chart&quot; viewBox=&quot;0 0 1000 600&quot;></svg>
   </div>
 
   <!-- TABLE VIEW (Bloomberg-style sector table) -->
-  <div id=&quot;view-table&quot; class=&quot;view-pane bb-tbl-wrap active&quot;>
+  <div id=&quot;view-table&quot; class=&quot;view-pane bb-tbl-wrap&quot; style=&quot;display:none;&quot;>
     <div class=&quot;bb-tbl-scroll&quot;>
       <table class=&quot;bb-tbl&quot;>
         <thead>
@@ -49447,6 +49773,27 @@ setTimeout(()=>{ if(dataSource!==&quot;TV&quot;) _startSim(); }, 1000);
   function openImap(){
     // inline srcdoc — no external load needed
     overlay.classList.add('open');
+    try{ document.body.classList.add('imap-open'); }catch(_){}
+    try{
+      // Force-hide CWEI pinned blue row while IMAP is open
+      var ctb = document.getElementById('CWEI_TOPBAR');
+      if(ctb) ctb.style.setProperty('display','none','important');
+    }catch(_){}
+    try{
+      // Align overlay top exactly under TOPBAR (like other maximized panels)
+      // IMAP hides the blue CWEI_TOPBAR → no extra 36px offset
+      overlay.style.top = 'var(--topbar-h)';
+      overlay.style.height = 'calc(100% - var(--topbar-h))';
+    }catch(_){}
+    try{
+      // IMAP blue box label (avoid "No Security Loaded" / empty)
+      var qb = document.getElementById('imap-global-qb');
+      if(qb){
+        qb.value = 'IMAP';
+        qb.setAttribute('placeholder','IMAP');
+        qb.readOnly = true;
+      }
+    }catch(_){}
     try{
       // History: IMAP je samostatná "obrazovka" (jako na Bloomberg) → šipka zpět vrátí předchozí panel (WEI/HOME).
       if(!window._histSilenced && typeof window._pushHist === 'function') window._pushHist({ type:'IMAP' });
@@ -49454,6 +49801,12 @@ setTimeout(()=>{ if(dataSource!==&quot;TV&quot;) _startSim(); }, 1000);
   }
   function closeImap(){
     overlay.classList.remove('open');
+    try{ document.body.classList.remove('imap-open'); }catch(_){}
+    try{
+      // Restore pinned CWEI bar when leaving IMAP
+      var ctb = document.getElementById('CWEI_TOPBAR');
+      if(ctb) ctb.style.removeProperty('display');
+    }catch(_){}
     try{
       // Zavření IMAP = návrat na předchozí stav v historii
       if(!window._histSilenced && typeof window._cmdHist === 'function') window._cmdHist(-1);
