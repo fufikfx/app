@@ -30616,6 +30616,24 @@ window._openChartForSymbol = function(sym) {
 
 };
 
+// CWEI click reliability: ensure clicking any CWEI row always opens the chart immediately.
+// Some WebKit/file:// builds can occasionally skip inline onclick on rapidly re-rendered panels.
+(function(){
+  if(window.__cweiChartClickBound) return;
+  window.__cweiChartClickBound = true;
+  document.addEventListener('click', function(e){
+    try{
+      const row = e.target && e.target.closest && e.target.closest('.panel[data-fn="CWEI"] .wei-row[data-sym], .panel[data-fn="CWEI"] .wei-row.wei-grid[data-sym]');
+      if(!row) return;
+      const sym = (row.getAttribute('data-sym') || row.dataset.sym || '').trim();
+      if(!sym) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if(typeof window._openChartForSymbol === 'function') window._openChartForSymbol(sym);
+    }catch(_){}
+  }, true);
+})();
+
 /* ── STAT BAR always visible ── */
 window._statBarVisible = true;
 
