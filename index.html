@@ -1148,20 +1148,30 @@ body.sat-active .m-wrap{opacity:1!important;}
   padding-left: 11px !important;
   padding-right: 11px !important;
   box-sizing: border-box !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
 }
 
-/* Oranžový titulek — line-height = vnitřní výška (řádek 36px − 2× border) */
+/* Oranžový titulek — šířka pod textem; kap na velmi dlouhé tickery */
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar #bbg-toolbar-title > div{
-  padding: 0 12px !important;
+  padding: 0 14px 0 8px !important;
+  min-width: 0 !important;
+  width: max-content !important;
+  max-width: min(480px,42vw) !important;
   line-height: 34px !important;
   box-sizing: border-box !important;
   display: flex !important;
   align-items: stretch !important;
+  font-weight: 400 !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar #bbg-toolbar-title-text{
   display: block !important;
   line-height: 34px !important;
   font-size: 20px !important;
+  font-weight: 400 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-dd[data-bbg-cwei="last-px"],
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-dd[data-bbg-cwei="local-ccy"]{
@@ -5427,50 +5437,50 @@ document.addEventListener('DOMContentLoaded', function() {
             <div style="width:4px;height:4px;background:#808080;border-radius:50%;"></div>
             <div style="width:4px;height:4px;background:#808080;border-radius:50%;"></div>
           </div>
-          <div style="width:22px;height:22px;background:#c9a84c;border-radius:2px;display:flex;align-items:center;justify-content:center;">
+          <div style="width:22px;height:22px;background:#ffa027;border-radius:2px;display:flex;align-items:center;justify-content:center;">
             <span style="color:#1a1a1a;font-size:12px;font-weight:700;">M</span>
           </div>
-          <span style="color:#808080;font-size:18px;font-weight:400;">At <span id="bbg-time" style="color:#e8e0cc;font-weight:700;">—:—</span> <span style="color:#c39e54;">d</span></span>
+          <span style="color:#808080;font-size:18px;font-weight:400;">At <span id="bbg-time" style="color:#e8e0cc;font-weight:700;">—:—</span> <span style="color:#ffa027;">d</span></span>
           <span style="color:#808080;font-size:18px;font-weight:400;">Vol</span>
           <span id="bbg-volume" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
-          <span style="color:#c9a84c;font-size:18px;font-weight:400;margin-left:2px;">O</span>
+          <span style="color:#ffa027;font-size:18px;font-weight:400;margin-left:2px;">O</span>
           <span id="bbg-start" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
-          <span style="color:#c9a84c;font-size:18px;font-weight:400;margin-left:2px;">H</span>
+          <span style="color:#ffa027;font-size:18px;font-weight:400;margin-left:2px;">H</span>
           <span id="bbg-high" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
-          <span style="color:#c9a84c;font-size:18px;font-weight:400;margin-left:2px;">L</span>
+          <span style="color:#ffa027;font-size:18px;font-weight:400;margin-left:2px;">L</span>
           <span id="bbg-low" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
           <span style="color:#808080;font-size:18px;font-weight:400;">Val</span>
           <span id="bbg-close" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
         </div>
 
         <!-- Row 3: Red Toolbar -->
-        <div class="bbg-ribbon-red-toolbar" style="background:#7a1f2e;display:flex;padding:0;height:34px;align-items:stretch;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;font-size:18px;font-weight:400;color:#ffffff;justify-content:space-between;box-sizing:border-box;">
+        <div class="bbg-ribbon-red-toolbar" style="background:#87101E;display:flex;padding:0;height:36px;align-items:stretch;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;font-size:20px;font-weight:400;color:#ffffff;justify-content:space-between;box-sizing:border-box;">
           <div style="display:flex;align-items:stretch;height:100%;">
             <div id="bbg-toolbar-title" style="display:inline-flex;align-items:stretch;align-self:stretch;position:relative;z-index:1;box-sizing:border-box;cursor:default;">
-              <div style="display:flex;align-items:stretch;background:#f5a64b;color:#1a1a1a;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:19px;font-weight:500;border:1px solid #000;box-sizing:border-box;line-height:32px;">
-                <span id="bbg-toolbar-title-text" data-symbol="BTC" style="line-height:32px;">Bitcoin Crncy</span>
+              <div style="display:flex;align-items:stretch;background:#ffa027;color:#1a1a1a;padding:0 14px 0 8px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:20px;font-weight:400;border:1px solid #000;box-sizing:border-box;line-height:34px;max-width:min(480px,42vw);width:max-content;">
+                <span id="bbg-toolbar-title-text" data-symbol="BTC" style="line-height:34px;font-weight:400;">Bitcoin crypto</span>
               </div>
             </div>
-            <div style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#e0e0e0;border-right:1px solid #000;">
-              <span>Suggested Charts</span>
+            <div style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#ffffff;border-right:1px solid #000;margin-left:4px;">
+              <span><span class="bbg-tb-cmd-prefix">94)</span> Suggested Charts</span>
               <span style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
             </div>
-            <div id="bbg-chart-actions-btn" onclick="window._toggleChartIndicators(this)" style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#e0e0e0;border-right:1px solid #000;">
-              <span>Actions</span>
+            <div id="bbg-chart-actions-btn" onclick="window._toggleChartIndicators(this)" style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#ffffff;border-right:1px solid #000;">
+              <span><span class="bbg-tb-cmd-prefix">96)</span> Actions</span>
               <span style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
             </div>
-            <div style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#e0e0e0;border-right:1px solid #000;">
-              <span>Edit</span>
+            <div style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#ffffff;border-right:1px solid #000;">
+              <span><span class="bbg-tb-cmd-prefix">97)</span> Edit</span>
               <span style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
             </div>
           </div>
-          <div style="display:flex;align-items:center;padding-right:16px;color:#e0e0e0;font-size:18px;font-weight:400;">
+          <div style="display:flex;align-items:center;padding-right:16px;color:#ffffff;font-size:18px;font-weight:400;">
             Line Chart
           </div>
         </div>
 
         <!-- Row 4: Config Bar (dates, Last Px, Local CCY, Mov Avgs, Key Events) -->
-        <div class="bbg-ribbon-config-bar" style="background:#111111;display:flex;align-items:flex-start;min-height:0;padding:4px 0 0;gap:6px;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:400;color:#cfcfcf;">
+        <div class="bbg-ribbon-config-bar" style="background:#111111;display:flex;align-items:flex-start;min-height:0;padding:4px 0 0;gap:6px;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:400;color:#cfcfcf;">
           <div style="display:flex;align-items:flex-start;gap:3px;">
             <div class="bbg-cwei-dd" data-bbg-cwei="date-from" title="Start date" style="display:inline-flex;align-items:stretch;">
               <span class="bbg-cwei-pill">09/06/2023</span>
@@ -5520,7 +5530,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         <!-- Row 5: Timeframe Bar -->
-        <div class="bbg-ribbon-tf-bar" style="background:#1a1a1a;display:flex;align-items:stretch;padding:0;height:34px;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:400;">
+        <div class="bbg-ribbon-tf-bar" style="background:#1a1a1a;display:flex;align-items:stretch;padding:0;height:30px;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;font-size:13px;font-weight:400;">
           <div style="display:flex;align-items:stretch;gap:0;flex-shrink:0;" id="bbg-tf-btns">
             <span class="tf-btn tf-btn-cell" data-interval="1d" onclick="window._selectTF(this,'1d')" style="display:flex;align-items:center;justify-content:center;padding:0 10px;color:#b0b0b0;cursor:pointer;border-right:1px solid #2a2a2a;font-size:15px;font-weight:500;">1D</span>
             <span class="tf-btn tf-btn-cell" data-interval="3d" onclick="window._selectTF(this,'3d')" style="display:flex;align-items:center;justify-content:center;padding:0 10px;color:#b0b0b0;cursor:pointer;border-right:1px solid #2a2a2a;font-size:15px;font-weight:500;">3D</span>
@@ -5537,20 +5547,24 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="bbg-tf-black-gap" aria-hidden="true"></div>
             <!-- Line chart icon (active) -->
-            <div class="bbg-tf-icon bbg-tf-icon-active" title="Line / area chart">
-              <svg width="22" height="16" viewBox="0 0 22 16" xmlns="http://www.w3.org/2000/svg">
-                <polyline points="1,15 1,12 4,9 7,11 10,5 13,8 16,3 19,6 21,4 21,15" fill="rgba(255,255,255,0.22)" stroke="none"/>
-                <polyline points="1,12 4,9 7,11 10,5 13,8 16,3 19,6 21,4" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            <div class="bbg-tf-icon bbg-tf-icon-active" data-bbg-lwc-style="area" title="Line / area chart" role="button" tabindex="0" onclick="window._bbgTfChartStyleClick&&window._bbgTfChartStyleClick('area',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window._bbgTfChartStyleClick&&window._bbgTfChartStyleClick('area',this);}">
+              <svg class="bbg-tf-line-chart-svg" width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M3 3v16a2 2 0 0 0 2 2h16" fill="none" stroke="rgba(255,255,255,0.48)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M7 21 L7 13 L10 10 L14 14 L19 9 L19 21 Z" fill="rgba(255,255,255,0.2)"/>
+                <path d="M7 13 L10 10 L14 14 L19 9" fill="none" stroke="#ffffff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
             <div class="bbg-tf-black-gap" aria-hidden="true"></div>
-            <!-- Bar chart icon -->
-            <div class="bbg-tf-icon" title="Bar / histogram">
-              <svg width="20" height="16" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg">
-                <line x1="3"    y1="14" x2="3"    y2="9"  stroke="#e8e8e8" stroke-width="1.8" stroke-linecap="round"/>
-                <line x1="7.5"  y1="14" x2="7.5"  y2="5"  stroke="#e8e8e8" stroke-width="1.8" stroke-linecap="round"/>
-                <line x1="12"   y1="14" x2="12"   y2="2"  stroke="#e8e8e8" stroke-width="1.8" stroke-linecap="round"/>
-                <line x1="16.5" y1="14" x2="16.5" y2="7"  stroke="#e8e8e8" stroke-width="1.8" stroke-linecap="round"/>
+            <!-- Candlestick chart -->
+            <div class="bbg-tf-icon" data-bbg-lwc-style="candlestick" title="Candlestick" role="button" tabindex="0" onclick="window._bbgTfChartStyleClick&&window._bbgTfChartStyleClick('candlestick',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window._bbgTfChartStyleClick&&window._bbgTfChartStyleClick('candlestick',this);}">
+              <svg class="bbg-tf-candle-chart-svg" width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M3 3v16a2 2 0 0 0 2 2h16" fill="none" stroke="rgba(255,255,255,0.48)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="7" y1="6.5" x2="7" y2="19" stroke="#e8e8e8" stroke-width="1.2" stroke-linecap="round"/>
+                <rect x="6.15" y="11" width="1.7" height="5.2" rx="0.35" fill="#e8e8e8" stroke="none"/>
+                <line x1="12" y1="5" x2="12" y2="19" stroke="#e8e8e8" stroke-width="1.2" stroke-linecap="round"/>
+                <rect x="11.15" y="8" width="1.7" height="7" rx="0.35" fill="none" stroke="#e8e8e8" stroke-width="1.2"/>
+                <line x1="17" y1="9" x2="17" y2="19" stroke="#e8e8e8" stroke-width="1.2" stroke-linecap="round"/>
+                <rect x="16.15" y="13" width="1.7" height="4" rx="0.35" fill="#e8e8e8" stroke="none"/>
               </svg>
             </div>
             <div class="bbg-tf-black-gap" aria-hidden="true"></div>
@@ -5567,6 +5581,10 @@ document.addEventListener('DOMContentLoaded', function() {
               </svg>
               <span>Table</span>
             </div>
+            <div class="bbg-tf-black-gap" aria-hidden="true"></div>
+            <button type="button" id="bbg-lwc-grid-toggle" class="bbg-tf-grid-toggle" aria-pressed="true" title="Mřížka grafu — zapnuto (klik = vypnout)" onclick="event.stopPropagation();window._bbgLwcToggleGrid&&window._bbgLwcToggleGrid();return false;">
+              <svg width="15" height="15" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 3h4.5v4.5H3V3zm6.75 0H21v4.5H9.75V3zM3 9.75h4.5V21H3V9.75zm6.75 0H21V21H9.75V9.75z" fill="none" stroke="#e8e8e8" stroke-width="1.25"/></svg>
+            </button>
           </div>
           <!-- Right side controls — Add Data kompaktní šířka; zbytek lišty prázdný; černé mezery mezi bloky -->
           <div class="wei-right-controls bbg-tf-right-actions" style="display:flex;flex-wrap:nowrap;align-items:stretch;margin-left:auto;flex:0 0 auto;gap:0;padding-left:4px;">
@@ -31684,6 +31702,9 @@ window._updateTVChart = function(sym, interval) {
 
   /** Čárkovaná last-price linka — broskvová s lehkým posunem k oranžové. */
   var TV_LAST_PRICE_LINE = '#f29a4e';
+  /* Svíčky v barvách blízkých Hyperliquid UI (mint nahoru, růžovo-červená dolů). */
+  var BBG_HL_CANDLE_UP = '#00E8BE';
+  var BBG_HL_CANDLE_DOWN = '#FF3D6E';
 
   function _bbgSamePx(a, b) {
     if (a == null || b == null || isNaN(Number(a)) || isNaN(Number(b))) return true;
@@ -31786,6 +31807,10 @@ window._updateTVChart = function(sym, interval) {
   /* Výšku jen z plot wrapu — ne z celého chart containeru (spodní časový panel nesmí měnit „virtuální“ výšku série / zoom). */
   var h = Math.max(200, rr.height || (wrapMeas && wrapMeas.clientHeight) || host.clientHeight || 300);
 
+  var _bbgGridLs = null;
+  try { _bbgGridLs = localStorage.getItem('bbg_lwc_grid_on'); } catch (_gls0) {}
+  var _bbgShowInitGrid = _bbgGridLs === null || _bbgGridLs !== '0';
+
   var chart = LC.createChart(host, {
     width: w,
     height: h,
@@ -31795,8 +31820,8 @@ window._updateTVChart = function(sym, interval) {
       fontSize: 13
     },
     grid: {
-      vertLines: { color: 'rgba(72, 74, 82, 0.38)', style: LC.LineStyle.Solid },
-      horzLines: { color: 'rgba(72, 74, 82, 0.22)', style: LC.LineStyle.Solid }
+      vertLines: { visible: _bbgShowInitGrid, color: 'rgba(72, 74, 82, 0.38)', style: LC.LineStyle.Solid },
+      horzLines: { visible: _bbgShowInitGrid, color: 'rgba(72, 74, 82, 0.22)', style: LC.LineStyle.Solid }
     },
     crosshair: {
       mode: LC.CrosshairMode.Normal,
@@ -31847,17 +31872,15 @@ window._updateTVChart = function(sym, interval) {
     }
   } catch (_eLa) {}
 
-  var series = chart.addAreaSeries({
+  var _bbgLwcAreaSeriesOpts = {
     lineColor: '#ffffff',
     topColor: 'rgba(180, 180, 180, 0.14)',
     bottomColor: 'rgba(0,0,0,0)',
     lineWidth: 1.5,
-    /* Bez přetahování last-price čáry až k pravému okraji (sloupec cen). */
     priceLineVisible: false,
     priceLineWidth: 1,
     priceLineColor: TV_LAST_PRICE_LINE,
     priceLineStyle: LC.LineStyle.Dotted,
-    /* false = žádný štítek na ose vpravo (ten často kreslí vodorovnou čárku k levé hraně osy). Cena je v ribbonu (#bbg-current-price). */
     lastValueVisible: false,
     lastPriceAnimation: _lpAnimInit,
     crosshairMarkerVisible: false,
@@ -31866,10 +31889,52 @@ window._updateTVChart = function(sym, interval) {
     crosshairMarkerBorderWidth: 3,
     crosshairMarkerBorderColor: 'rgba(255,255,255,0.48)',
     crosshairMarkerBackgroundColor: '#ffffff'
-  });
+  };
+  var chartStyleMode = 'area';
+  try { window._bbgLwcChartStyle = 'area'; } catch (_styInit) {}
+
+  /** Pryč s low/high = 0 z feedů (jinak knot na 0 / celá výška grafu). */
+  function _bbgSafeOhlcBar(b) {
+    var c = Number(b.close);
+    var t = b.time;
+    if (isNaN(c)) {
+      return { time: t, open: Number(b.open) || 0, high: Number(b.high) || 0, low: Number(b.low) || 0, close: c };
+    }
+    if (c <= 0) {
+      return { time: t, open: c, high: c, low: c, close: c };
+    }
+    var o = (b.open != null && !isNaN(b.open) && Number(b.open) > 0) ? Number(b.open) : c;
+    var h = (b.high != null && !isNaN(b.high) && Number(b.high) > 0) ? Number(b.high) : Math.max(o, c);
+    var l = (b.low != null && !isNaN(b.low) && Number(b.low) > 0) ? Number(b.low) : Math.min(o, c);
+    h = Math.max(h, o, c);
+    l = Math.min(l, o, c);
+    return { time: t, open: o, high: h, low: l, close: c };
+  }
+
+  function _bbgMapBarsToLwcData(bars) {
+    if (!bars || !bars.length) return [];
+    if (chartStyleMode === 'candlestick') {
+      return bars.map(function (b) {
+        var x = _bbgSafeOhlcBar(b);
+        return { time: x.time, open: x.open, high: x.high, low: x.low, close: x.close };
+      });
+    }
+    return bars.map(function (b) { return { time: b.time, value: b.close }; });
+  }
+
+  var series = chart.addAreaSeries(_bbgLwcAreaSeriesOpts);
 
   window._bbgChart = chart;
   window._currentBbgSeries = series;
+
+  try {
+    if (typeof window._bbgApplyLwcGridVisibility === 'function') {
+      window._bbgApplyLwcGridVisibility(_bbgShowInitGrid);
+    }
+  } catch (_gAp0) {}
+  try {
+    if (typeof window._bbgSyncGridToggleUi === 'function') window._bbgSyncGridToggleUi(_bbgShowInitGrid);
+  } catch (_gsu0) {}
 
   try {
     window._bbgLivePriceLine = series.createPriceLine({
@@ -32070,6 +32135,92 @@ window._updateTVChart = function(sym, interval) {
   var loadState = { exhausted: false, loadingLeft: false };
   var allBars = [];
 
+  function _bbgRefreshLwcSeriesData() {
+    var ser = window._currentBbgSeries;
+    if (!ser || typeof ser.setData !== 'function' || !allBars.length) return;
+    if (chartStyleMode === 'candlestick') {
+      for (var si = 0; si < allBars.length; si++) {
+        var sb = _bbgSafeOhlcBar(allBars[si]);
+        allBars[si].open = sb.open;
+        allBars[si].high = sb.high;
+        allBars[si].low = sb.low;
+        allBars[si].close = sb.close;
+      }
+      try { window._bbgLwcBars = allBars; } catch (_wbr) {}
+    }
+    ser.setData(_bbgMapBarsToLwcData(allBars));
+  }
+
+  function _bbgSyncTfStyleButtons() {
+    var root = document.getElementById('bbg-tf-btns');
+    if (!root) return;
+    var mode = chartStyleMode;
+    var icons = root.querySelectorAll('.bbg-tf-icon[data-bbg-lwc-style]');
+    for (var i = 0; i < icons.length; i++) {
+      var ic = icons[i];
+      ic.classList.toggle('bbg-tf-icon-active', ic.getAttribute('data-bbg-lwc-style') === mode);
+    }
+  }
+
+  window._bbgApplyLwcChartStyle = function (mode) {
+    if (myGen !== window._bbgLwcGen || !chart) return;
+    if (mode !== 'area' && mode !== 'candlestick') return;
+    if (mode === chartStyleMode) return;
+    chartStyleMode = mode;
+    try { window._bbgLwcChartStyle = mode; } catch (_styEx) {}
+    try { chart.removeSeries(window._currentBbgSeries); } catch (_rsDel) {}
+    window._bbgLivePriceLine = null;
+    var newSer;
+    if (mode === 'candlestick') {
+      newSer = chart.addCandlestickSeries({
+        upColor: BBG_HL_CANDLE_UP,
+        downColor: BBG_HL_CANDLE_DOWN,
+        borderUpColor: BBG_HL_CANDLE_UP,
+        borderDownColor: BBG_HL_CANDLE_DOWN,
+        wickUpColor: BBG_HL_CANDLE_UP,
+        wickDownColor: BBG_HL_CANDLE_DOWN,
+        wickVisible: true,
+        borderVisible: true,
+        priceLineVisible: false,
+        priceLineWidth: 1,
+        priceLineColor: TV_LAST_PRICE_LINE,
+        priceLineStyle: LC.LineStyle.Dotted,
+        lastValueVisible: false,
+        lastPriceAnimation: _lpAnimInit,
+        crosshairMarkerVisible: false,
+        pointMarkersVisible: false,
+        crosshairMarkerRadius: 6,
+        crosshairMarkerBorderWidth: 3,
+        crosshairMarkerBorderColor: 'rgba(255,255,255,0.48)',
+        crosshairMarkerBackgroundColor: '#ffffff'
+      });
+    } else {
+      newSer = chart.addAreaSeries(_bbgLwcAreaSeriesOpts);
+    }
+    window._currentBbgSeries = newSer;
+    try {
+      var _lpPx0 = allBars.length ? Number(allBars[allBars.length - 1].close) : 0;
+      window._bbgLivePriceLine = newSer.createPriceLine({
+        price: _lpPx0,
+        color: '#f29a4e',
+        lineWidth: 1,
+        lineStyle: LC.LineStyle.Solid,
+        axisLabelVisible: true,
+        title: ''
+      });
+    } catch (_plMake) {}
+    try {
+      var _rpsSw = chart.priceScale('right');
+      if (_rpsSw && typeof _rpsSw.applyOptions === 'function') {
+        _rpsSw.applyOptions({ ticksVisible: false, borderVisible: true });
+      }
+    } catch (_rpsSwE) {}
+    _bbgRefreshLwcSeriesData();
+    syncTvLastMarker(newSer, allBars);
+    _lwcScheduleTimeAxis();
+    _bbgSyncTfStyleButtons();
+  };
+
   (async function () {
     var st = null;
     try {
@@ -32089,13 +32240,12 @@ window._updateTVChart = function(sym, interval) {
     }
     allBars = st.bars.slice();
     window._bbgLwcBars = allBars;
-    series.setData(allBars.map(function (b) {
-      return { time: b.time, value: b.close };
-    }));
-    syncTvLastMarker(series, allBars);
+    _bbgRefreshLwcSeriesData();
+    syncTvLastMarker(window._currentBbgSeries, allBars);
     seedLwcPrevTick(allBars);
     chart.timeScale().fitContent();
     _lwcScheduleTimeAxis();
+    _bbgSyncTfStyleButtons();
 
     try {
       var older = null;
@@ -32109,10 +32259,8 @@ window._updateTVChart = function(sym, interval) {
       if (older && older.length) {
         allBars = mergeBars(allBars, older);
         window._bbgLwcBars = allBars;
-        series.setData(allBars.map(function (b) {
-          return { time: b.time, value: b.close };
-        }));
-        syncTvLastMarker(series, allBars);
+        _bbgRefreshLwcSeriesData();
+        syncTvLastMarker(window._currentBbgSeries, allBars);
         seedLwcPrevTick(allBars);
         _lwcScheduleTimeAxis();
       }
@@ -32136,13 +32284,41 @@ window._updateTVChart = function(sym, interval) {
         }
 
         if (tBar > last.time) {
-          allBars.push({ time: tBar, open: px, high: hi && !isNaN(hi) ? hi : px, low: lo && !isNaN(lo) ? lo : px, close: px, vol: 0 });
-          ser.update({ time: tBar, value: px });
+          var oNew = px;
+          var hNew = (hi != null && !isNaN(hi) && hi > 0) ? hi : px;
+          var lNew = (lo != null && !isNaN(lo) && lo > 0) ? lo : px;
+          hNew = Math.max(hNew, oNew, px);
+          lNew = Math.min(lNew, oNew, px);
+          var _nb = { time: tBar, open: oNew, high: hNew, low: lNew, close: px, vol: 0 };
+          var sxNew = _bbgSafeOhlcBar(_nb);
+          allBars.push({ time: sxNew.time, open: sxNew.open, high: sxNew.high, low: sxNew.low, close: sxNew.close, vol: 0 });
+          if (chartStyleMode === 'candlestick') {
+            ser.update({ time: sxNew.time, open: sxNew.open, high: sxNew.high, low: sxNew.low, close: sxNew.close });
+          } else {
+            ser.update({ time: tBar, value: px });
+          }
         } else {
           last.close = px;
-          if (hi != null && !isNaN(hi)) last.high = Math.max(last.high != null && !isNaN(last.high) ? last.high : px, hi, px);
-          if (lo != null && !isNaN(lo)) last.low = Math.min(last.low != null && !isNaN(last.low) ? last.low : px, lo, px);
-          ser.update({ time: last.time, value: px });
+          var _prevH = last.high != null && !isNaN(last.high) && last.high > 0 ? last.high : px;
+          var _prevL = last.low != null && !isNaN(last.low) && last.low > 0 ? last.low : px;
+          if (hi != null && !isNaN(hi) && hi > 0) last.high = Math.max(_prevH, hi, px);
+          if (lo != null && !isNaN(lo) && lo > 0) last.low = Math.min(_prevL, lo, px);
+          var sx = _bbgSafeOhlcBar(last);
+          last.open = sx.open;
+          last.high = sx.high;
+          last.low = sx.low;
+          last.close = sx.close;
+          if (chartStyleMode === 'candlestick') {
+            ser.update({
+              time: sx.time,
+              open: sx.open,
+              high: sx.high,
+              low: sx.low,
+              close: sx.close
+            });
+          } else {
+            ser.update({ time: last.time, value: px });
+          }
         }
         syncTvLastMarker(ser, allBars, dotOv, true);
         window._bbgLwcPrevTickPx = Number(px);
@@ -32198,10 +32374,8 @@ window._updateTVChart = function(sym, interval) {
       if (!older || !older.length) return;
       allBars = mergeBars(allBars, older);
       window._bbgLwcBars = allBars;
-      series.setData(allBars.map(function (b) {
-        return { time: b.time, value: b.close };
-      }));
-      syncTvLastMarker(series, allBars);
+      _bbgRefreshLwcSeriesData();
+      syncTvLastMarker(window._currentBbgSeries, allBars);
       seedLwcPrevTick(allBars);
       _lwcScheduleTimeAxis();
     }
@@ -32240,6 +32414,71 @@ window._updateTVChart = function(sym, interval) {
       try { if (_lwcResizeObs) _lwcResizeObs.disconnect(); } catch (_e3) {}
     };
   })();
+};
+
+window._bbgTfChartStyleClick = function (mode, el) {
+  if (typeof window._bbgApplyLwcChartStyle !== 'function') return;
+  try {
+    window._bbgApplyLwcChartStyle(mode);
+  } catch (_e) {}
+};
+
+window._bbgApplyLwcGridVisibility = function (show) {
+  var ch = window._bbgChart;
+  var LCref = window.LightweightCharts;
+  if (!ch || typeof ch.applyOptions !== 'function' || !LCref) return;
+  var st = LCref.LineStyle != null ? LCref.LineStyle.Solid : 0;
+  var vCol = show ? 'rgba(72, 74, 82, 0.38)' : 'rgba(0,0,0,0)';
+  var hCol = show ? 'rgba(72, 74, 82, 0.22)' : 'rgba(0,0,0,0)';
+  var gopts = {
+    grid: {
+      vertLines: { visible: !!show, color: vCol, style: st },
+      horzLines: { visible: !!show, color: hCol, style: st }
+    }
+  };
+  try {
+    ch.applyOptions(gopts);
+  } catch (_g) {}
+  try {
+    var w = document.getElementById('bbg-lwc-wrap');
+    if (w && ch) {
+      var r = w.getBoundingClientRect();
+      if (r.width > 2 && r.height > 2 && typeof ch.applyOptions === 'function') {
+        ch.applyOptions({ width: Math.floor(r.width), height: Math.floor(r.height) });
+      }
+    }
+  } catch (_r) {}
+  try {
+    requestAnimationFrame(function () {
+      try {
+        if (!window._bbgChart || window._bbgChart !== ch) return;
+        ch.applyOptions(gopts);
+      } catch (_g2) {}
+    });
+  } catch (_raf) {}
+};
+
+window._bbgSyncGridToggleUi = function (on) {
+  var btn = document.getElementById('bbg-lwc-grid-toggle');
+  if (!btn) return;
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  btn.title = on ? 'Mřížka grafu — zapnuto (klik = vypnout)' : 'Mřížka grafu — vypnuto (klik = zapnout)';
+  btn.classList.toggle('bbg-lwc-grid-toggle-off', !on);
+};
+
+window._bbgLwcToggleGrid = function () {
+  var cur = true;
+  try {
+    var v = localStorage.getItem('bbg_lwc_grid_on');
+    cur = v === null || v !== '0';
+  } catch (_ls) {}
+  var next = !cur;
+  try { localStorage.setItem('bbg_lwc_grid_on', next ? '1' : '0'); } catch (_ls2) {}
+  window._bbgSyncGridToggleUi(next);
+  if (!window._bbgChart || typeof window._bbgChart.applyOptions !== 'function') {
+    return;
+  }
+  window._bbgApplyLwcGridVisibility(next);
 };
 
 window._bbgFmtDeltaAbs = function(d) {
@@ -33222,7 +33461,7 @@ window._openChartForSymbol = function(sym) {
     };
     var pair = pairMap[sym] || (sym + 'USDT');
     var suffix = assetType[sym] || 'Crypto';
-    // Bloomberg Terminal style crypto naming: full name + "Crncy" (e.g. "Bitcoin Crncy")
+    // Toolbar crypto title: full name + "crypto" (e.g. "Bitcoin crypto")
     var cryptoName = {
         'BTC':'Bitcoin','ETH':'Ethereum','SOL':'Solana','BNB':'Binance Coin','XRP':'Ripple',
         'ADA':'Cardano','DOGE':'Dogecoin','DOT':'Polkadot','MATIC':'Polygon','AVAX':'Avalanche',
@@ -33246,7 +33485,7 @@ window._openChartForSymbol = function(sym) {
     } else if (suffix !== 'Crypto') {
         displayPair = sym + ' ' + suffix;
     } else {
-        displayPair = (cryptoName[sym] || sym) + ' Crncy';
+        displayPair = (cryptoName[sym] || sym) + ' crypto';
     }
     var tbTitleTx = document.getElementById('bbg-toolbar-title-text');
     if (tbTitleTx) {
@@ -48066,7 +48305,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 .control-bar,
 .c-item,
 .c-val{
-  background:#F69F26 !important;
+  background:#ffa027 !important;
   color:#000 !important;
   font-family:Arial,Helvetica,sans-serif !important;
   font-size:9px !important;
@@ -48085,8 +48324,7 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 
 /* === GRAFOVÝ ČERVENÝ TOOLBAR — buttons UVNITŘ NEMAJÍ highlight === */
 #bbg-chart-ribbon [style*="border-right:1px solid #700a18"],
-#bbg-chart-ribbon [style*="border-right: 1px solid #700a18"],
-#bbg-chart-actions-btn{
+#bbg-chart-ribbon [style*="border-right: 1px solid #700a18"]{
   border-right:1px solid #77090b !important;
   border-top:none !important;
   box-shadow:none !important;
@@ -48116,16 +48354,16 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 }
 
 /* Oranžové pills v grafu (Period/Range/Time) */
-#bbg-chart-ribbon [style*="background:#F69F26"],
-#bbg-chart-ribbon [style*="background: #F69F26"],
+#bbg-chart-ribbon [style*="background:#ffa027"],
+#bbg-chart-ribbon [style*="background: #ffa027"],
 [id^="bbg-chart-time"],
 [id="bbg-chart-mode-label"]{
-  background:#F69F26 !important;
+  background:#ffa027 !important;
   color:#000000 !important;
   font-family:Arial,Helvetica,sans-serif !important;
   font-size:9px !important;
   font-weight:bold !important;
-  border-color:#F69F26 !important;
+  border-color:#ffa027 !important;
   box-shadow:none !important;
 }
 
@@ -48168,7 +48406,7 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   align-items:flex-start !important;
   font-size:14px !important;
   font-weight:400 !important;
-  color:#f5a64b !important;
+  color:#ffa027 !important;
   line-height:normal !important;
   box-sizing:border-box !important;
   min-height:0 !important;
@@ -48188,7 +48426,7 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   align-items:flex-start !important;
   align-self:stretch !important;
   min-height:0 !important;
-  background:#f5a64b !important;
+  background:#ffa027 !important;
   color:#1a1208 !important;
   border:1px solid #000 !important;
   border-right:none !important;
@@ -48243,22 +48481,22 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar label[style*="color:#cfcfcf"],
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar > div[style*="color:#cfcfcf"],
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar > span[style*="color:#9b8b66"]{
-  color:#f5a64b !important;
+  color:#ffa027 !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar label > span:not([style*="border"]):not([style*="line-height:0"]){
-  color:#f5a64b !important;
+  color:#ffa027 !important;
 }
 /* Pencil icon u Mov Avgs — sladěno do CWEI oranžové */
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar label svg path[stroke="#cfcfcf"],
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar label svg line[stroke="#cfcfcf"]{
-  stroke:#f5a64b !important;
+  stroke:#ffa027 !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar > svg{
   align-self:center !important;
   margin-top:2px !important;
 }
 
-/* Červený toolbar — mírně vyšší řádek (20px / 34px) */
+/* Červený toolbar — pozadí #87101E; nic se neřeže overflow:hidden */
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar{
   font-size:20px !important;
   font-weight:400 !important;
@@ -48267,11 +48505,25 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   height:36px !important;
   align-items:stretch !important;
   box-sizing:border-box !important;
+  background-color:#87101E !important;
+  -webkit-font-smoothing:antialiased !important;
+  overflow:visible !important;
 }
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-cmd-prefix{
+  color:#C2989B !important;
+}
+/* Levý cluster — žádné ořezávání „Suggested Charts“; buňky se nesmí smršťovat */
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar > div:first-child{
+  display:flex !important;
   align-items:stretch !important;
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  overflow:visible !important;
 }
-/* Toolbar title — jednotná oranžová #f5a64b */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar > div:first-child > div{
+  flex-shrink:0 !important;
+}
+/* Toolbar title — jednotná oranžová #ffa027 */
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-toolbar-title-dd.bbg-cwei-dd{
   display:inline-flex !important;
   align-items:stretch !important;
@@ -48289,24 +48541,29 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   align-items:center !important;
   align-self:stretch !important;
   justify-content:flex-start !important;
-  background:#f5a64b !important;
+  background:#ffa027 !important;
   color:#1a1208 !important;
   border:1px solid #000 !important;
   font-family:Arial,Helvetica,sans-serif !important;
   font-size:20px !important;
-  font-weight:500 !important;
+  font-weight:400 !important;
   letter-spacing:.12px !important;
-  padding:0 8px !important;
+  padding:0 14px 0 8px !important;
   line-height:34px !important;
   box-sizing:border-box !important;
   min-width:0 !important;
+  width:max-content !important;
+  max-width:min(480px,42vw) !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-toolbar-title-dd #bbg-toolbar-title-text{
   display:block !important;
   line-height:34px !important;
   font-size:20px !important;
   color:#1a1208 !important;
-  font-weight:500 !important;
+  font-weight:400 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar > div:first-child > div:not(#bbg-toolbar-title){
   font-size:20px !important;
@@ -48349,8 +48606,8 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   align-items:stretch !important;
   background:transparent !important;
   align-self:stretch !important;
-  min-height:28px !important;
-  height:28px !important;
+  min-height:30px !important;
+  height:30px !important;
   box-sizing:border-box !important;
 }
 /* TF buňky (1D…Max) — segment bez mezer: svislé předěly černě (#000) */
@@ -48360,12 +48617,12 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   justify-content:center !important;
   align-self:stretch !important;
   height:auto !important;
-  min-height:28px !important;
-  min-width:30px !important;
-  padding:0 10px !important;
+  min-height:30px !important;
+  min-width:32px !important;
+  padding:0 11px !important;
   background:#221f23 !important;
   color:#e8e8e8 !important;
-  font-size:15px !important;
+  font-size:16px !important;
   font-weight:500 !important;
   line-height:1 !important;
   border:none !important;
@@ -48444,7 +48701,7 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   border:1px solid #000 !important;
   border-top:1px solid #252526 !important;
   border-right:none !important;
-  font-size:15px !important;
+  font-size:16px !important;
   font-weight:500 !important;
   font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif !important;
   letter-spacing:0 !important;
@@ -48491,7 +48748,7 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   border:1px solid #000 !important;
   border-top:1px solid #252526 !important;
   border-radius:0 !important;
-  font-size:15px !important;
+  font-size:16px !important;
   font-weight:400 !important;
   font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif !important;
   letter-spacing:0 !important;
@@ -48508,13 +48765,47 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   background:#2d2a2e !important;
   color:#f0f0f0 !important;
 }
+/* Mřížka grafu — vedle Table */
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-grid-toggle{
+  cursor:pointer !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  align-self:stretch !important;
+  width:30px !important;
+  min-height:30px !important;
+  height:auto !important;
+  margin:0 !important;
+  padding:0 !important;
+  background:#221f23 !important;
+  border:1px solid #000 !important;
+  border-top:1px solid #252526 !important;
+  border-radius:0 !important;
+  box-sizing:border-box !important;
+  flex-shrink:0 !important;
+  position:relative !important;
+  z-index:1000040 !important;
+  pointer-events:auto !important;
+  -webkit-appearance:none !important;
+  appearance:none !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-grid-toggle svg{
+  display:block !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-grid-toggle:hover{
+  background:#2d2a2e !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-grid-toggle.bbg-lwc-grid-toggle-off svg path{
+  stroke:#7a7d85 !important;
+  opacity:0.85 !important;
+}
 
 /* Skupina ikonek (line/bar) + caret — STANDARD BOX vzor: 1px solid #000 obrys, ikonky tmavé,
    pravý caret jako wei-arrow (#3a3a3a + 1px černý border-left dělící čára). */
 #bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon-box{
   display:inline-flex !important;
   align-items:stretch !important;
-  height:22px !important;
+  height:26px !important;
   margin:0 !important;
   background:#221f23 !important;
   border:1px solid #000 !important;
@@ -48524,9 +48815,21 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   gap:0 !important;
   overflow:hidden !important;
 }
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon svg,
 #bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon-box svg{
   shape-rendering:geometricPrecision !important;
   -webkit-font-smoothing:antialiased !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon .bbg-tf-line-chart-svg,
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon .bbg-tf-candle-chart-svg{
+  display:block !important;
+  flex-shrink:0 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon.bbg-tf-icon-active .bbg-tf-candle-chart-svg [stroke]:not([stroke="none"]){
+  stroke:#ffffff !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon.bbg-tf-icon-active .bbg-tf-candle-chart-svg [fill]:not([fill="none"]){
+  fill:#ffffff !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon{
   cursor:pointer !important;
@@ -48534,7 +48837,7 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   align-items:center !important;
   justify-content:center !important;
   align-self:stretch !important;
-  width:30px !important;
+  width:32px !important;
   height:auto !important;
   min-height:0 !important;
   padding:0 !important;
@@ -48587,18 +48890,18 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
 
 /* Spodní TF řádek — barva panelu (mezery .bbg-tf-black-gap jsou průhledné = žádná „černá“ paspárek) */
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar{
-  min-height:28px !important;
-  height:28px !important;
-  font-size:12px !important;
+  min-height:30px !important;
+  height:30px !important;
+  font-size:13px !important;
   padding:0 !important;
   align-items:stretch !important;
   background-color:#1a1a1a !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .tf-btn{
-  font-size:12px !important;
+  font-size:13px !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar #bbg-delta-toggle{
-  font-size:11px !important;
+  font-size:12px !important;
 }
 /* Pravá část TF baru — bez mezery vpravo (kolečko u vnitřního kraje jako 1D vlevo) */
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-tf-right-actions.wei-right-controls{
@@ -48625,7 +48928,7 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   box-sizing:border-box !important;
   display:inline-flex !important;
   align-items:center !important;
-  background:var(--wei-control,#ffaa1a) !important;
+  background:var(--wei-control,#ffa027) !important;
   color:rgba(0,0,0,.78) !important;
   font-family:Arial,Helvetica,sans-serif !important;
 }
@@ -48669,18 +48972,18 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   align-self:stretch !important;
   flex:0 0 auto !important;
   width:auto !important;
-  min-width:122px !important;
+  min-width:132px !important;
   justify-content:flex-start !important;
-  background:#f5a64b !important;
+  background:#ffa027 !important;
   color:#2f2318 !important;
   border:none !important;
   border-right:1px solid #000000 !important;
   font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif !important;
-  font-size:15px !important;
+  font-size:16px !important;
   font-weight:300 !important;
   letter-spacing:.2px !important;
   padding:0 3px !important;
-  line-height:26px !important;
+  line-height:28px !important;
   box-sizing:border-box !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar #bbg-add-data-btn .bbg-cwei-arr{
@@ -48758,19 +49061,19 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   -webkit-font-smoothing:antialiased !important;
   text-rendering:geometricPrecision !important;
 }
-#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row span[style*="color:#F69F26"],
-#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row span[style*="color: #F69F26"]{
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row span[style*="color:#ffa027"],
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row span[style*="color: #ffa027"]{
   font-size:14px !important;
 }
-#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row span[style*="background:#F69F26"],
-#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row span[style*="background: #F69F26"]{
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row span[style*="background:#ffa027"],
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row span[style*="background: #ffa027"]{
   font-size:14px !important;
 }
 
 /* Oranžové texty (Period/Range labels) */
-#bbg-chart-ribbon span[style*="color:#F69F26"],
-#bbg-chart-ribbon span[style*="color: #F69F26"]{
-  color:#ff9900 !important;
+#bbg-chart-ribbon span[style*="color:#ffa027"],
+#bbg-chart-ribbon span[style*="color: #ffa027"]{
+  color:#ffa027 !important;
   font-size:9px !important;
 }
 
