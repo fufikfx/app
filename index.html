@@ -1144,6 +1144,49 @@ body.sat-active .m-wrap{opacity:1!important;}
 #bbg-chart-panel #bbg-chart-ribbon{
   position: relative;
   z-index: 1000030;
+  /* Černý „gutter“ od okrajů panelu (prosvítí background #bbg-chart-panel) */
+  padding-left: 11px !important;
+  padding-right: 11px !important;
+  box-sizing: border-box !important;
+}
+
+/* Oranžový titulek — line-height = vnitřní výška (řádek 36px − 2× border) */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar #bbg-toolbar-title > div{
+  padding: 0 12px !important;
+  line-height: 34px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: stretch !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar #bbg-toolbar-title-text{
+  display: block !important;
+  line-height: 34px !important;
+  font-size: 20px !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-dd[data-bbg-cwei="last-px"],
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-dd[data-bbg-cwei="local-ccy"]{
+  align-items:stretch !important;
+  box-sizing:border-box !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-dd[data-bbg-cwei="last-px"] .bbg-cwei-pill,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-dd[data-bbg-cwei="local-ccy"] .bbg-cwei-pill{
+  font-size:17px !important;
+  line-height:1.12 !important;
+  align-self:stretch !important;
+  align-items:flex-start !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-dd[data-bbg-cwei="local-ccy"] .bbg-cwei-pill{
+  padding:1px 3px 2px !important;
+  min-width:110px !important;
+  justify-content:flex-start !important;
+  box-sizing:border-box !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-dd[data-bbg-cwei="last-px"] .bbg-cwei-pill{
+  padding:1px 3px 2px !important;
+  min-width:112px !important;
+  justify-content:flex-start !important;
+  box-sizing:border-box !important;
+  border-right:1px solid #000 !important;
 }
 
 /* ── Panel toolbar ── */
@@ -5353,233 +5396,204 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="panel" id="bbg-chart-panel" style="position:fixed; top:26px; left:0px; width:900px; height:600px; display:none; flex-direction:column; z-index:9999; background:#000; border:none !important; box-shadow:none;">
 
       <div id="bbg-chart-ribbon" style="flex-shrink:0;">
-          <!-- Row 1: CWEI modrý pruh + #cwei-global-qb (slot) + ticker — stejný řádek jako index-14 -->
-          <div class="bbg-ribbon-ticker-row" style="display:flex;align-items:stretch;background:#000;border-bottom:1px solid #1a1a1a;font-family:'Roboto Mono',monospace;font-size:18px;font-weight:700;">
-            <div id="bbg-ribbon-cmd-slot" class="bbg-ribbon-cwei-cmd-slot" data-bbg-part="ribbon-cwei-cmd" title="CWEI vstup v ribbonu — #bbg-ribbon-cmd-slot > .wei-cmd-input (#cwei-global-qb)" style="flex:0 0 auto;display:flex;align-items:stretch;align-self:stretch;border-right:1px solid #1a1a1a;position:relative;z-index:1;"></div>
-            <div class="bbg-ribbon-ticker-main" style="flex:1;min-width:0;display:flex;align-items:center;gap:16px;padding:6px 14px 4px 0;">
-                <span style="color:#ffffff; font-size:15px;" id="bbg-chart-title">BTC/USDT</span>
-                <span id="bbg-current-price-container" style="color:#ffffff; font-size:15px;"><span id="bbg-price-arrow" style="font-size:13px;"></span> <span id="bbg-current-price">—</span></span>
-                <span id="bbg-price-change" style="color:#ffffff; font-size:12px; font-weight:400;">—</span>
+
+        <!-- Row 0: cmd slot (preserved for CWEI input injection) -->
+        <div id="bbg-ribbon-cmd-slot" class="bbg-ribbon-cwei-cmd-slot" data-bbg-part="ribbon-cwei-cmd" style="display:none;"></div>
+
+        <!-- Row 1: Ticker -->
+        <div style="display:flex;align-items:center;background:#000;padding:3px 6px;height:34px;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span id="bbg-ticker-symbol" style="color:#c0c0c0;font-size:20px;font-weight:400;letter-spacing:0.5px;">BTC</span>
+            <span id="bbg-ticker-ccy" style="color:#808080;font-size:18px;font-weight:400;">USD</span>
+            <svg width="11" height="11" viewBox="0 0 11 11" style="margin-left:2px;">
+              <path id="bbg-price-arrow-svg" d="M5.5 1 L10 6 L1 6 Z" fill="#4CAF50"/>
+            </svg>
+            <span id="bbg-current-price" style="color:#4CAF50;font-size:25px;font-weight:600;letter-spacing:-0.3px;">—</span>
+            <span id="bbg-price-change" style="color:#4CAF50;font-size:21px;font-weight:400;">—</span>
+            <!-- Sparkline -->
+            <svg id="bbg-ticker-spark" width="140" height="24" viewBox="0 0 140 24" preserveAspectRatio="none" style="margin:0 6px;flex:0 0 auto;">
+              <polyline id="bbg-spark-left"  fill="none" stroke="#7a6a48" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="0,12 20,11 40,13 60,10 80,14 100,9 120,11 140,8"/>
+              <polyline id="bbg-spark-right" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points=""/>
+            </svg>
+            <span id="bbg-ticker-bidask" style="color:#808080;font-size:19px;font-weight:400;margin-left:4px;">L—/—L</span>
+            <span id="bbg-ticker-size" style="color:#808080;font-size:19px;font-weight:400;margin-left:4px;">3747 × 802</span>
+          </div>
+        </div>
+
+        <!-- Row 2: OHLC Details -->
+        <div class="bbg-ribbon-ohlc-row" style="display:flex;align-items:center;background:#000;padding:2px 6px;height:30px;gap:10px;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;">
+          <div style="display:flex;align-items:center;gap:2px;">
+            <div style="width:4px;height:4px;background:#808080;border-radius:50%;"></div>
+            <div style="width:4px;height:4px;background:#808080;border-radius:50%;"></div>
+            <div style="width:4px;height:4px;background:#808080;border-radius:50%;"></div>
+          </div>
+          <div style="width:22px;height:22px;background:#c9a84c;border-radius:2px;display:flex;align-items:center;justify-content:center;">
+            <span style="color:#1a1a1a;font-size:12px;font-weight:700;">M</span>
+          </div>
+          <span style="color:#808080;font-size:18px;font-weight:400;">At <span id="bbg-time" style="color:#e8e0cc;font-weight:700;">—:—</span> <span style="color:#c39e54;">d</span></span>
+          <span style="color:#808080;font-size:18px;font-weight:400;">Vol</span>
+          <span id="bbg-volume" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
+          <span style="color:#c9a84c;font-size:18px;font-weight:400;margin-left:2px;">O</span>
+          <span id="bbg-start" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
+          <span style="color:#c9a84c;font-size:18px;font-weight:400;margin-left:2px;">H</span>
+          <span id="bbg-high" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
+          <span style="color:#c9a84c;font-size:18px;font-weight:400;margin-left:2px;">L</span>
+          <span id="bbg-low" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
+          <span style="color:#808080;font-size:18px;font-weight:400;">Val</span>
+          <span id="bbg-close" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
+        </div>
+
+        <!-- Row 3: Red Toolbar -->
+        <div class="bbg-ribbon-red-toolbar" style="background:#7a1f2e;display:flex;padding:0;height:34px;align-items:stretch;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;font-size:18px;font-weight:400;color:#ffffff;justify-content:space-between;box-sizing:border-box;">
+          <div style="display:flex;align-items:stretch;height:100%;">
+            <div id="bbg-toolbar-title" style="display:inline-flex;align-items:stretch;align-self:stretch;position:relative;z-index:1;box-sizing:border-box;cursor:default;">
+              <div style="display:flex;align-items:stretch;background:#f5a64b;color:#1a1a1a;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:19px;font-weight:500;border:1px solid #000;box-sizing:border-box;line-height:32px;">
+                <span id="bbg-toolbar-title-text" data-symbol="BTC" style="line-height:32px;">Bitcoin Crncy</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#e0e0e0;border-right:1px solid #000;">
+              <span>Suggested Charts</span>
+              <span style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
+            </div>
+            <div id="bbg-chart-actions-btn" onclick="window._toggleChartIndicators(this)" style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#e0e0e0;border-right:1px solid #000;">
+              <span>Actions</span>
+              <span style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
+            </div>
+            <div style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#e0e0e0;border-right:1px solid #000;">
+              <span>Edit</span>
+              <span style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
             </div>
           </div>
-
-          <!-- Row 2: OHLC Data -->
-          <div class="bbg-ribbon-ohlc-row" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding:9px 18px 10px;min-height:30px;font-family:'Roboto Mono',monospace;font-size:15px;font-weight:600;color:#fff;background:#000;border-bottom:1px solid #2a2a2a;">
-             <span style="color:#fa9428;font-weight:700;">At <span style="color:#ffffff;font-weight:700;" id="bbg-time">—:—</span></span>
-             <span style="color:#fa9428;font-weight:700;">Op <span style="color:#ffffff;font-weight:700;" id="bbg-start">—</span></span>
-             <span style="color:#fa9428;font-weight:700;">Hi <span style="color:#ffffff;font-weight:700;" id="bbg-high">—</span></span>
-             <span style="color:#fa9428;font-weight:700;">Lo <span style="color:#ffffff;font-weight:700;" id="bbg-low">—</span></span>
-             <span style="color:#fa9428;font-weight:700;">Close <span style="color:#ffffff;font-weight:700;" id="bbg-close">—</span></span>
-             <span style="color:#fa9428;font-weight:700;"><span id="bbg-volume-label" title="Objem (zdroj dle aktivního grafu).">Vol</span> <span style="color:#ffffff;font-weight:700;" id="bbg-volume">—</span></span>
+          <div style="display:flex;align-items:center;padding-right:16px;color:#e0e0e0;font-size:18px;font-weight:400;">
+            Line Chart
           </div>
+        </div>
 
-          <!-- Row 3: Red Toolbar (třída + CSS níže přebíjí globální 9px u A61217) -->
-          <div class="bbg-ribbon-red-toolbar" style="background: #A61217; display:flex; padding:0; height:34px; align-items:center; font-family: Arial, sans-serif; font-size:14px; font-weight:bold; color:#ffffff; justify-content:space-between; border-top:1px solid #000; border-bottom:1px solid #000; letter-spacing:-0.1px;">
-             <div style="display:flex; height:100%;">
-                <div style="background:#F69F26; color:#000000; padding:0 11px; font-weight:bold; height:calc(100% + 2px); margin-top:-1px; margin-bottom:-1px; display:flex; align-items:center; font-size:14px; border:1px solid #F69F26; box-sizing:border-box; position:relative; z-index:1;" id="bbg-toolbar-title">
-                   <span>BTCUSDT Curncy</span>
-                </div>
-                <div style="padding:0 16px; border-right:1px solid #700a18; line-height:34px; cursor:pointer; color:#D3D3D3 !important; font-weight:bold !important;"><span style="color:#D48A94 !important; opacity:1;">94)</span> Suggested Charts ▾</div>
-                <div id="bbg-chart-actions-btn" onclick="window._toggleChartIndicators(this)" style="padding:0 16px; border-right:1px solid #700a18; line-height:34px; cursor:pointer; color:#D3D3D3 !important; font-weight:bold !important;"><span style="color:#D48A94 !important; opacity:1;">96)</span> Actions ▾</div>
-                <div style="padding:0 16px; line-height:34px; cursor:pointer; color:#D3D3D3 !important; font-weight:bold !important;"><span style="color:#D48A94 !important; opacity:1;">97)</span> Edit ▾</div>
-             </div>
-             <div style="display:flex; gap:16px; align-items:center; padding-right:12px;">
-                <span style="font-weight:bold;font-size:14px;">Line chart ⬆ ▾</span>
-                <!-- MacOS Traffic Light Style controls -->
-                <div style="display:flex; gap:8px; align-items:center; position:relative; z-index:100;">
-
-
-                </div>
-             </div>
-          </div>
-
-          <!-- Row 4: Controls and Timeframes (Bloomberg Style Dense Ribbon) -->
-          <!-- Row 4: Controls and Timeframes (Bloomberg Style Dense Ribbon) -->
-          <div style="font-family: 'Open Sans', Arial, sans-serif; font-size:10px; color:#ccc; border-bottom:1px solid #000; display:flex; flex-direction:column; padding:0;">
-             <!-- Top Tier: Data Indicators -->
-             <div class="bbg-ribbon-period-row" style="background:#000; display:flex; align-items:center; gap:18px; padding:4px 18px; min-height:32px; height:32px; border-bottom:1px solid #1a1a1a; font-size:14px; font-weight:600;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                   <span style="color:#F69F26; font-size:14px; font-weight:700;">Period</span>
-                   <span style="background:#F69F26; padding:2px 8px; color:#362400; font-weight:600; font-size:14px; border-radius:1px;" id="bbg-chart-mode-label">15M</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                   <span style="color:#F69F26; font-size:14px; font-weight:700;">Range</span>
-                   <span style="background:#F69F26; padding:2px 8px; color:#362400; font-weight:600; font-size:14px; border-radius:1px;">1D</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:8px; margin-left:8px;">
-                   <span style="background:#F69F26; padding:2px 8px; color:#362400; font-weight:600; font-size:14px; border-radius:1px;" id="bbg-chart-time-start">27.00</span>
-                   <span style="color:#F69F26; font-weight:700; font-size:14px;">-</span>
-                   <span style="background:#F69F26; padding:2px 8px; color:#362400; font-weight:600; font-size:14px; border-radius:1px;" id="bbg-chart-time-end">68.30</span>
-                </div>
-                <div style="display:flex; align-items:center; margin-left:8px;">
-                   <span style="background:#F69F26; padding:2px 10px; color:#362400; font-weight:600; font-size:14px; border-radius:1px;" id="bbg-chart-session-name">3/12/16-17 / 1/24/11</span>
-                </div>
-             </div>
-             
-             <!-- Bottom Tier: Timeframe Selectors & Utilities -->
-             <div class="bbg-ribbon-tf-bar" style="background:#221D1F; display:flex; align-items:center; padding:6px 14px; min-height:32px; height:32px; border-bottom:1px solid #000; font-size:14px; font-weight:600;">
-                <div style="display:flex; align-items:center; gap:10px;" id="bbg-tf-btns">
-                   <span class="tf-btn" data-interval="1m" style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '1m')">1m</span>
-                   <span class="tf-btn" data-interval="5m" style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '5m')">5m</span>
-                   <span class="tf-btn" data-interval="15m" style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '15m')">15m</span>
-                   <span class="tf-btn" data-interval="30m" style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '30m')">30m</span>
-                   <span class="tf-btn" data-interval="1h" style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '1h')">1H</span>
-                   <span class="tf-btn" data-interval="4h" style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '4h')">4H</span>
-                   <span class="tf-btn" data-interval="3d" style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '3d')">3D</span>
-                   <span class="tf-btn" data-interval="1d" style="cursor:pointer; color:#fff; font-size:14px; background:#1d4e9e; font-weight:bold; border-radius:2px; padding:2px 8px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '1d')">1D</span>
-                   <span class="tf-btn" data-interval="6m_h" style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '6m_h')">6M</span>
-                   <span class="tf-btn" data-interval="ytd" style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, 'ytd')">YTD</span>
-                   <span class="tf-btn" data-interval="1y" style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '1y')">1Y</span>
-                   <span class="tf-btn" data-interval="5y" style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, '5y')">5Y</span>
-                   <span class="tf-btn" data-interval="max" style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;" onclick="window._selectTF(this, 'max')">Max</span>
-                   <span style="color:#666; margin:0 2px; font-size:14px;">│</span>
-                   <span style="cursor:pointer; color:#fff; font-size:14px; position:relative; z-index:20000; pointer-events:auto;">Daily ▾</span>
-                   <span style="color:#666; margin:0 2px; font-size:14px;">│</span>
-                   <span id="bbg-delta-toggle" style="cursor:pointer; color:#aaa; font-size:13px; position:relative; z-index:20000; pointer-events:auto; font-weight:normal;" onclick="window._bbgToggleDeltaFloat()" title="Plovoucí štítky změny ceny (absolutní + %) u grafu">Δ štítky</span>
-
-                </div>
-
-                <div class="wei-right-controls bbg-tf-right-actions" style="display:flex; flex-wrap:wrap; gap:10px 12px; align-items:center; margin-left:auto;">
-                   <div title="Related Data" style="cursor:pointer; display:flex; align-items:center; gap:3px; color:#fff; font-size:14px;">
-                      <span style="font-weight:bold;">+</span> Related Data ▾
-                   </div>
-                   <div id="bbg-add-data-btn" title="Add Data" style="display:inline-flex; align-items:center; cursor:pointer;">
-                      <span class="wei-select" style="margin:0;">Add Data</span>
-                   </div>
-                   <div style="color:#aaa; font-size:16px; cursor:pointer; font-weight:700;">«</div>
-                   <div style="cursor:pointer; display:flex; align-items:center; gap:3px; color:#ccc; font-size:14px;" onclick="window._openChartSettings()">
-                      <span>✎</span> Edit Chart
-                   </div>
-                   <div onclick="window._openChartSettings()" style="cursor:pointer; color:#fff; font-size:16px; margin-left:2px; transition:color .15s;" onmouseover="this.style.color='#F39F41'" onmouseout="this.style.color='#fff'">⚙</div>
-
-                </div>
-             </div>
-
-          </div>
-          <!-- Row 5: MMT Market Data API Controls — panel hidden, JS still active -->
-          <div id="mmt-ctrl-row" style="background:#0a0600;display:none;align-items:center;padding:0 8px;height:26px;gap:6px;border-bottom:1px solid #1a1000;flex-shrink:0;overflow:hidden;">
-            <!-- MMT badge -->
-            <div style="flex-shrink:0;background:#F39F41;color:#000;font-weight:700;font-size:8px;letter-spacing:.8px;padding:1px 5px;border-radius:1px;">MMT</div>
-            <!-- API Key -->
-            <input id="mmt-api-key" type="password" placeholder="API KEY" autocomplete="off" spellcheck="false"
-              style="width:100px;background:#111;border:1px solid #2a1800;color:#F39F41;font-family:'Roboto Mono',monospace;font-size:9px;padding:1px 5px;outline:none;height:18px;border-radius:1px;"
-              title="MMT API Key (eu-central-1.mmt.gg)"
-              oninput="try{localStorage.setItem('mmt_api_key',this.value);}catch(e){}" />
-            <div style="width:1px;height:14px;background:#2a1800;flex-shrink:0;"></div>
-            <!-- Chart Quick-Switch -->
-            <div id="mmt-chart-switcher" style="display:flex;align-items:center;gap:2px;flex-shrink:0;">
-              <span style="color:#444;font-size:8px;font-family:'Roboto Mono',monospace;letter-spacing:.3px;margin-right:2px;">CHART▸</span>
-              <button onclick="window._mmtSwitchChart('BTC')" title="Switch to BTC chart" style="background:#1a1000;border:1px solid #3a2800;color:#F39F41;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:16px;cursor:pointer;border-radius:1px;letter-spacing:.3px;">BTC</button>
-              <button onclick="window._mmtSwitchChart('ETH')" title="Switch to ETH chart" style="background:#1a1000;border:1px solid #3a2800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:16px;cursor:pointer;border-radius:1px;letter-spacing:.3px;">ETH</button>
-              <button onclick="window._mmtSwitchChart('SOL')" title="Switch to SOL chart" style="background:#1a1000;border:1px solid #3a2800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:16px;cursor:pointer;border-radius:1px;letter-spacing:.3px;">SOL</button>
-              <button onclick="window._mmtSwitchChart('BNB')" title="Switch to BNB chart" style="background:#1a1000;border:1px solid #3a2800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:16px;cursor:pointer;border-radius:1px;letter-spacing:.3px;">BNB</button>
-              <button onclick="window._mmtSwitchChart('XRP')" title="Switch to XRP chart" style="background:#1a1000;border:1px solid #3a2800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:16px;cursor:pointer;border-radius:1px;letter-spacing:.3px;">XRP</button>
-              <button onclick="window._mmtSwitchChart('HYPE')" title="Switch to HYPE chart" style="background:#1a1000;border:1px solid #3a2800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:16px;cursor:pointer;border-radius:1px;letter-spacing:.3px;">HYPE</button>
+        <!-- Row 4: Config Bar (dates, Last Px, Local CCY, Mov Avgs, Key Events) -->
+        <div class="bbg-ribbon-config-bar" style="background:#111111;display:flex;align-items:flex-start;min-height:0;padding:4px 0 0;gap:6px;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:400;color:#cfcfcf;">
+          <div style="display:flex;align-items:flex-start;gap:3px;">
+            <div class="bbg-cwei-dd" data-bbg-cwei="date-from" title="Start date" style="display:inline-flex;align-items:stretch;">
+              <span class="bbg-cwei-pill">09/06/2023</span>
+              <span class="bbg-cwei-arr" style="display:flex;align-items:center;justify-content:center;margin-left:0;">
+                <svg width="13" height="13" viewBox="0 0 13 13" style="display:block;">
+                  <rect x="0.5" y="2.5" width="12" height="10" fill="none" stroke="#b0b0b0" stroke-width="1"/>
+                  <rect x="0.5" y="2.5" width="12" height="3" fill="#b0b0b0"/>
+                  <line x1="3" y1="0.5" x2="3" y2="3.5" stroke="#b0b0b0" stroke-width="1.2"/>
+                  <line x1="10" y1="0.5" x2="10" y2="3.5" stroke="#b0b0b0" stroke-width="1.2"/>
+                </svg>
+              </span>
             </div>
-            <div style="width:1px;height:14px;background:#2a1800;flex-shrink:0;"></div>
-            <!-- Exchange -->
-            <select id="mmt-exchange" title="Exchange"
-              style="background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:0 3px;height:18px;outline:none;border-radius:1px;cursor:pointer;">
-              <option value="binancef">binancef</option>
-              <option value="bybitf">bybitf</option>
-              <option value="okxf">okxf</option>
-              <option value="hyperliquid">hyperliquid</option>
-              <option value="hyperliquid-xyz">hyperliquid-xyz</option>
-              <option value="deribitf">deribitf</option>
-              <option value="bitmexf">bitmexf</option>
-              <option value="bitfinexf">bitfinexf</option>
-              <option value="bybitf-inverse">bybitf-inverse</option>
-              <option value="binance">binance (spot)</option>
-              <option value="bybit">bybit (spot)</option>
-              <option value="coinbase">coinbase (spot)</option>
-              <option value="binancef:bybitf">binancef:bybitf (agg)</option>
-              <option value="binancef:bybitf:okxf">binancef:bybitf:okxf (agg)</option>
-            </select>
-            <!-- Symbol -->
-            <input id="mmt-symbol" type="text" value="btc/usd" placeholder="btc/usd" spellcheck="false"
-              style="width:65px;background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:1px 5px;outline:none;height:18px;border-radius:1px;text-transform:lowercase;"
-              title="Unified symbol (e.g. btc/usd, eth/usd)" />
-            <!-- Endpoint -->
-            <select id="mmt-endpoint" title="Data endpoint" onchange="window._mmtEndpointChanged()"
-              style="background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:0 3px;height:18px;outline:none;border-radius:1px;cursor:pointer;">
-              <option value="candles">/candles — OHLCVT</option>
-              <option value="stats">/stats — market stats</option>
-              <option value="oi">/oi — open interest</option>
-              <option value="vd">/vd — volume delta</option>
-              <option value="volumes">/volumes — vol profile</option>
-              <option value="flat_heatmap_sd">/flat_heatmap_sd</option>
-              <option value="flat_heatmap_hd">/flat_heatmap_hd</option>
-              <option value="heatmap_sd">/heatmap_sd</option>
-              <option value="heatmap_hd">/heatmap_hd</option>
-              <option value="stop_heatmap">/stop_heatmap (HL)</option>
-              <option value="tp_heatmap">/tp_heatmap (HL)</option>
-              <option value="liquidation_heatmap">/liq_heatmap (HL)</option>
-              <option value="orderbook">/orderbook (snapshot)</option>
-            </select>
-            <!-- Timeframe -->
-            <select id="mmt-tf" title="Timeframe"
-              style="background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:0 3px;height:18px;outline:none;border-radius:1px;cursor:pointer;">
-              <option value="1m">1m</option>
-              <option value="5m" selected>5m</option>
-              <option value="15m">15m</option>
-              <option value="30m">30m</option>
-              <option value="1h">1h</option>
-              <option value="4h">4h</option>
-              <option value="12h">12h</option>
-              <option value="1d">1d</option>
-              <option value="1w">1w</option>
-            </select>
-            <!-- Range -->
-            <select id="mmt-range" title="Lookback range"
-              style="background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:0 3px;height:18px;outline:none;border-radius:1px;cursor:pointer;">
-              <option value="3600">1h</option>
-              <option value="14400">4h</option>
-              <option value="86400" selected>1D</option>
-              <option value="259200">3D</option>
-              <option value="604800">1W</option>
-              <option value="2592000">30D</option>
-              <option value="7776000">90D</option>
-              <option value="31536000">1Y</option>
-            </select>
-            <!-- VD bucket (hidden unless /vd) -->
-            <select id="mmt-bucket" title="Volume delta bucket" style="display:none;background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:0 3px;height:18px;outline:none;border-radius:1px;cursor:pointer;">
-              <option value="1">all trades</option>
-              <option value="2">$1–1K</option>
-              <option value="3">$1K–10K</option>
-              <option value="4">$10K–25K</option>
-              <option value="5">$25K–50K</option>
-              <option value="6">$50K–100K</option>
-              <option value="7">$100K–250K</option>
-              <option value="8">$250K–500K</option>
-              <option value="9">$500K–1M</option>
-              <option value="10">$1M–5M</option>
-              <option value="11">$5M+</option>
-            </select>
-            <!-- Orderbook levels (hidden unless /orderbook) -->
-            <select id="mmt-ob-levels" title="Orderbook levels" style="display:none;background:#111;border:1px solid #2a1800;color:#ccc;font-family:'Roboto Mono',monospace;font-size:9px;padding:0 3px;height:18px;outline:none;border-radius:1px;cursor:pointer;">
-              <option value="100">100 levels</option>
-              <option value="1000" selected>1000 levels</option>
-              <option value="5000">5000 levels</option>
-              <option value="full">full book</option>
-            </select>
-            <!-- FETCH button -->
-            <button id="mmt-fetch-btn" onclick="window._mmtFetch()" title="Fetch MMT data"
-              style="flex-shrink:0;background:#F39F41;border:none;color:#000;font-weight:700;font-family:'Roboto Mono',monospace;font-size:9px;letter-spacing:.5px;padding:0 8px;height:18px;cursor:pointer;border-radius:1px;">
-              FETCH
-            </button>
-            <!-- Status / result preview -->
-            <div id="mmt-status" style="flex:1;font-family:'Roboto Mono',monospace;font-size:9px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;padding-left:2px;"></div>
-            <!-- Copy URL button -->
-            <button id="mmt-copy-url" onclick="window._mmtCopyUrl()" title="Copy API request URL"
-              style="flex-shrink:0;background:transparent;border:1px solid #2a1800;color:#666;font-family:'Roboto Mono',monospace;font-size:8px;padding:0 5px;height:18px;cursor:pointer;border-radius:1px;">
-              URL
-            </button>
+            <span style="color:#b0b0b0;font-size:14px;margin:0 1px;">-</span>
+            <div class="bbg-cwei-dd" data-bbg-cwei="date-to" title="End date" style="display:inline-flex;align-items:stretch;">
+              <span class="bbg-cwei-pill">09/05/2024</span>
+              <span class="bbg-cwei-arr" style="display:flex;align-items:center;justify-content:center;margin-left:0;">
+                <svg width="13" height="13" viewBox="0 0 13 13" style="display:block;">
+                  <rect x="0.5" y="2.5" width="12" height="10" fill="none" stroke="#b0b0b0" stroke-width="1"/>
+                  <rect x="0.5" y="2.5" width="12" height="3" fill="#b0b0b0"/>
+                  <line x1="3" y1="0.5" x2="3" y2="3.5" stroke="#b0b0b0" stroke-width="1.2"/>
+                  <line x1="10" y1="0.5" x2="10" y2="3.5" stroke="#b0b0b0" stroke-width="1.2"/>
+                </svg>
+              </span>
+            </div>
           </div>
-          <!-- MMT Results Panel (collapsible) -->
-          <div id="mmt-results-panel" style="display:none;background:#0c0e12;border-bottom:1px solid #363a45;max-height:320px;overflow-y:auto;padding:6px 10px;font-family:'Roboto Mono',monospace;font-size:9px;color:#aaa;position:relative;">
-            <div style="position:absolute;top:4px;right:8px;cursor:pointer;color:#555;font-size:10px;" onclick="document.getElementById('mmt-results-panel').style.display='none'">✕</div>
-            <div id="mmt-results-content"></div>
+          <div class="bbg-cwei-dd" data-bbg-cwei="last-px" title="Price source" style="display:inline-flex;align-items:stretch;cursor:pointer;">
+            <span class="bbg-cwei-pill">Last Px</span>
           </div>
+          <div class="bbg-cwei-dd" data-bbg-cwei="local-ccy" title="Currency mode" style="display:inline-flex;align-items:stretch;cursor:pointer;">
+            <span class="bbg-cwei-pill">Local CCY</span>
+            <span class="bbg-cwei-arr" style="margin-left:0;">
+              <svg width="9" height="6" viewBox="0 0 11 7" style="display:block;" xmlns="http://www.w3.org/2000/svg"><path d="M1.2 1.5 L5.5 5.2 L9.8 1.5" fill="none" stroke="#b0b0b0" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </div>
+          <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:#b0b0b0;font-size:14px;">
+            <span style="display:inline-block;width:12px;height:12px;background:#3a3a3a;border:1px solid #555555;border-radius:1px;"></span>
+            <span>Mov Avgs</span>
+          </label>
+          <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:#b0b0b0;font-size:14px;">
+            <span style="display:inline-block;width:12px;height:12px;background:#3a3a3a;border:1px solid #555555;border-radius:1px;"></span>
+            <span>Key Events</span>
+          </label>
+          <svg width="11" height="11" viewBox="0 0 12 12" style="cursor:pointer;display:block;flex-shrink:0;">
+            <path d="M1 11 L1.6 8.4 L8.4 1.6 L10.4 3.6 L3.6 10.4 Z" fill="none" stroke="#b0b0b0" stroke-width="0.9" stroke-linejoin="round"/>
+            <line x1="7.6" y1="2.4" x2="9.6" y2="4.4" stroke="#b0b0b0" stroke-width="0.9"/>
+          </svg>
+        </div>
+
+        <!-- Row 5: Timeframe Bar -->
+        <div class="bbg-ribbon-tf-bar" style="background:#1a1a1a;display:flex;align-items:stretch;padding:0;height:34px;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;font-size:12px;font-weight:400;">
+          <div style="display:flex;align-items:stretch;gap:0;flex-shrink:0;" id="bbg-tf-btns">
+            <span class="tf-btn tf-btn-cell" data-interval="1d" onclick="window._selectTF(this,'1d')" style="display:flex;align-items:center;justify-content:center;padding:0 10px;color:#b0b0b0;cursor:pointer;border-right:1px solid #2a2a2a;font-size:15px;font-weight:500;">1D</span>
+            <span class="tf-btn tf-btn-cell" data-interval="3d" onclick="window._selectTF(this,'3d')" style="display:flex;align-items:center;justify-content:center;padding:0 10px;color:#b0b0b0;cursor:pointer;border-right:1px solid #2a2a2a;font-size:15px;font-weight:500;">3D</span>
+            <span class="tf-btn tf-btn-cell" data-interval="1mo" onclick="window._selectTF(this,'1mo')" style="display:flex;align-items:center;justify-content:center;padding:0 10px;color:#b0b0b0;cursor:pointer;border-right:1px solid #2a2a2a;font-size:15px;font-weight:500;">1M</span>
+            <span class="tf-btn tf-btn-cell" data-interval="6m_h" onclick="window._selectTF(this,'6m_h')" style="display:flex;align-items:center;justify-content:center;padding:0 10px;color:#b0b0b0;cursor:pointer;border-right:1px solid #2a2a2a;font-size:15px;font-weight:500;">6M</span>
+            <span class="tf-btn tf-btn-cell" data-interval="ytd" onclick="window._selectTF(this,'ytd')" style="display:flex;align-items:center;justify-content:center;padding:0 10px;color:#b0b0b0;cursor:pointer;border-right:1px solid #2a2a2a;font-size:15px;font-weight:500;">YTD</span>
+            <span class="tf-btn tf-btn-cell" data-interval="1y" onclick="window._selectTF(this,'1y')" style="display:flex;align-items:center;justify-content:center;padding:0 10px;color:#b0b0b0;cursor:pointer;border-right:1px solid #2a2a2a;font-size:15px;font-weight:500;">1Y</span>
+            <span class="tf-btn tf-btn-cell tf-btn-active" data-interval="5y" onclick="window._selectTF(this,'5y')" style="display:flex;align-items:center;justify-content:center;padding:0 10px;cursor:pointer;border-right:1px solid #2a2a2a;font-size:15px;font-weight:500;">5Y</span>
+            <span class="tf-btn tf-btn-cell" data-interval="max" onclick="window._selectTF(this,'max')" style="display:flex;align-items:center;justify-content:center;padding:0 10px;color:#b0b0b0;cursor:pointer;font-size:15px;font-weight:500;">Max</span>
+            <div class="bbg-tf-black-gap" aria-hidden="true"></div>
+            <div class="bbg-daily-dd bbg-cwei-dd" title="Periodicita">
+              <span class="bbg-cwei-pill">Daily</span>
+              <span class="bbg-cwei-arr" aria-hidden="true"><svg width="11" height="7" viewBox="0 0 11 7" xmlns="http://www.w3.org/2000/svg"><path d="M1.2 1.5 L5.5 5.2 L9.8 1.5" fill="none" stroke="#ffffff" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </div>
+            <div class="bbg-tf-black-gap" aria-hidden="true"></div>
+            <!-- Line chart icon (active) -->
+            <div class="bbg-tf-icon bbg-tf-icon-active" title="Line / area chart">
+              <svg width="22" height="16" viewBox="0 0 22 16" xmlns="http://www.w3.org/2000/svg">
+                <polyline points="1,15 1,12 4,9 7,11 10,5 13,8 16,3 19,6 21,4 21,15" fill="rgba(255,255,255,0.22)" stroke="none"/>
+                <polyline points="1,12 4,9 7,11 10,5 13,8 16,3 19,6 21,4" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="bbg-tf-black-gap" aria-hidden="true"></div>
+            <!-- Bar chart icon -->
+            <div class="bbg-tf-icon" title="Bar / histogram">
+              <svg width="20" height="16" viewBox="0 0 20 16" xmlns="http://www.w3.org/2000/svg">
+                <line x1="3"    y1="14" x2="3"    y2="9"  stroke="#e8e8e8" stroke-width="1.8" stroke-linecap="round"/>
+                <line x1="7.5"  y1="14" x2="7.5"  y2="5"  stroke="#e8e8e8" stroke-width="1.8" stroke-linecap="round"/>
+                <line x1="12"   y1="14" x2="12"   y2="2"  stroke="#e8e8e8" stroke-width="1.8" stroke-linecap="round"/>
+                <line x1="16.5" y1="14" x2="16.5" y2="7"  stroke="#e8e8e8" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="bbg-tf-black-gap" aria-hidden="true"></div>
+            <div class="bbg-tf-icon-caret" title="Více">&#9660;</div>
+            <div class="bbg-tf-black-gap" aria-hidden="true"></div>
+            <!-- Table -->
+            <div class="bbg-tf-table-btn bbg-cwei-dd" title="Table" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:#e8e8e8;font-size:15px;padding:0 12px;height:100%;flex-shrink:0;background:#221f23;align-self:stretch;box-sizing:border-box;border:1px solid #000;border-top:1px solid #252526;">
+              <svg width="16" height="13" viewBox="0 0 16 13" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0.5" y="0.5" width="15" height="12" fill="none" stroke="#e8e8e8" stroke-width="1"/>
+                <line x1="0.5" y1="4.5" x2="15.5" y2="4.5" stroke="#e8e8e8" stroke-width="1"/>
+                <line x1="0.5" y1="8.5" x2="15.5" y2="8.5" stroke="#e8e8e8" stroke-width="1"/>
+                <line x1="5.5" y1="0.5" x2="5.5" y2="12.5" stroke="#e8e8e8" stroke-width="1"/>
+                <line x1="10.5" y1="0.5" x2="10.5" y2="12.5" stroke="#e8e8e8" stroke-width="1"/>
+              </svg>
+              <span>Table</span>
+            </div>
+          </div>
+          <!-- Right side controls — Add Data kompaktní šířka; zbytek lišty prázdný; černé mezery mezi bloky -->
+          <div class="wei-right-controls bbg-tf-right-actions" style="display:flex;flex-wrap:nowrap;align-items:stretch;margin-left:auto;flex:0 0 auto;gap:0;padding-left:4px;">
+            <div id="bbg-related-data-btn" class="bbg-tf-related-data-btn" title="Related Data" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:#e8e8e8;font-size:15px;padding:0 12px;flex-shrink:0;background:#221f23;align-self:stretch;box-sizing:border-box;border:1px solid #000;border-top:1px solid #252526;">
+              <span style="font-weight:700;">+</span>
+              <span>Related Data</span>
+              <span style="font-size:9px;line-height:1;margin-left:2px;">&#9660;</span>
+            </div>
+            <div class="bbg-tf-black-gap" aria-hidden="true"></div>
+            <div class="bbg-add-data-grow" style="flex:0 0 auto;display:flex;align-items:stretch;">
+              <div id="bbg-add-data-btn" class="bbg-cwei-dd" title="Add Data" style="display:inline-flex;align-items:stretch;flex:0 0 auto;">
+                <span class="bbg-cwei-pill">Add Data</span>
+                <span class="bbg-cwei-arr" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><polyline points="15 6 9 12 15 18" stroke="#e8e8e8" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/><polyline points="21 6 15 12 21 18" stroke="#e8e8e8" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+              </div>
+            </div>
+            <div class="bbg-tf-black-gap" aria-hidden="true"></div>
+            <div class="bbg-tf-edit-chart-btn" onclick="window._openChartSettings()" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:#e8e8e8;font-size:15px;padding:0 12px;flex-shrink:0;background:#221f23;align-self:stretch;box-sizing:border-box;border:1px solid #000;border-top:1px solid #252526;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e8e8e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <span>Edit Chart</span>
+            </div>
+            <div class="bbg-tf-black-gap" aria-hidden="true"></div>
+            <div class="bbg-tf-gear-btn" onclick="window._openChartSettings()" style="cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 10px;color:#e8e8e8;flex-shrink:0;background:#221f23;font-size:16px;align-self:stretch;min-width:36px;box-sizing:border-box;border:1px solid #000;border-top:1px solid #252526;">
+              ⚙
+            </div>
+          </div>
+        </div>
+
       </div>
       
       <!-- Chart Canvas Container -->
@@ -29884,15 +29898,17 @@ window._selectTF = function(btn, interval) {
     if(!btn) return;
     console.log('[BBG] Selecting TF:', interval);
     document.querySelectorAll('#bbg-tf-btns .tf-btn').forEach(b => {
-        b.style.background = 'transparent'; 
+        b.classList.remove('tf-btn-active');
+        b.style.background = '';
         b.style.color = '#fff';
-        b.style.fontWeight = 'normal';
-        b.style.padding = '0';
+        b.style.fontWeight = '';
+        b.style.padding = '';
+        b.style.borderRadius = '';
     });
-    btn.style.background = '#1d4e9e'; 
+    btn.classList.add('tf-btn-active');
     btn.style.color = '#fff';
     btn.style.fontWeight = 'bold';
-    
+
     const labelEl = document.getElementById('bbg-chart-mode-label');
     if(labelEl) labelEl.innerText = btn.innerText;
     if(window._setChartInterval) window._setChartInterval(interval);
@@ -29975,7 +29991,7 @@ window._setChartInterval = async function(interval) {
         'ytd':'D','1y':'D','5y':'W','max':'M'
     };
     const tvInterval = tvIntervalMap[interval] || 'D';
-    const binanceInterval = {'1m':'1m','5m':'5m','15m':'15m','30m':'30m','1h':'1h','3d':'1h','1d':'1d','6m_h':'1h','ytd':'1d','1y':'1d','5y':'1w','max':'1M'}[interval] || '1d';
+    const binanceInterval = {'1m':'1m','5m':'5m','15m':'15m','30m':'30m','1h':'1h','3d':'1h','1d':'1d','1mo':'1d','6m_h':'1h','ytd':'1d','1y':'1d','5y':'1w','max':'1M'}[interval] || '1d';
 
     let rawSym = ((window._bbgActiveSym || 'BTC').toUpperCase()).replace('/', '')
         .replace(/\s+(INDEX|EQUITY|FUTURES?|CURNCY|COMDTY|GOVT)\s*$/i, '').trim();
@@ -33038,11 +33054,13 @@ window._openChartForSymbol = function(sym) {
       const fnInp  = document.getElementById('cmd-fn-inp');
       if(secInp){ secInp.value = ''; delete secInp.dataset.userEdited; }
       if(fnInp){ fnInp.value  = ''; delete fnInp.dataset.userEdited; }
-      // Vyčistit i WEI/CWEI modrý quickbar (uvnitř panelů), který na screenshotu zůstával jako "cwe".
-      document.querySelectorAll('.wei-input-box, #cwei-global-qb, #wei-global-qb').forEach(function(inp){
+      // Vyčistit WEI/CWEI quickbary uvnitř panelů — ale ne #cwei-global-qb / #wei-global-qb (ten je v ribbonu = aktivní název).
+      document.querySelectorAll('.wei-input-box').forEach(function(inp){
         try{
-          if(inp && typeof inp.value === 'string') inp.value = '';
-          if(inp && inp.dataset) delete inp.dataset.userEdited;
+          if(!inp || typeof inp.value !== 'string') return;
+          if(inp.id === 'cwei-global-qb' || inp.id === 'wei-global-qb') return;
+          inp.value = '';
+          if(inp.dataset) delete inp.dataset.userEdited;
         }catch(_){}
       });
       // Zrušit focus na původním inputu, aby se hodnoty nevracely přes focus/blur handlery.
@@ -33204,21 +33222,48 @@ window._openChartForSymbol = function(sym) {
     };
     var pair = pairMap[sym] || (sym + 'USDT');
     var suffix = assetType[sym] || 'Crypto';
-    // For futures indices: show "ES1! Futures", for equity: "AAPL Equity", for crypto: "BTC/USDT"
+    // Bloomberg Terminal style crypto naming: full name + "Crncy" (e.g. "Bitcoin Crncy")
+    var cryptoName = {
+        'BTC':'Bitcoin','ETH':'Ethereum','SOL':'Solana','BNB':'Binance Coin','XRP':'Ripple',
+        'ADA':'Cardano','DOGE':'Dogecoin','DOT':'Polkadot','MATIC':'Polygon','AVAX':'Avalanche',
+        'LINK':'Chainlink','UNI':'Uniswap','LTC':'Litecoin','ATOM':'Cosmos','TRX':'Tron',
+        'BCH':'Bitcoin Cash','XLM':'Stellar','ETC':'Ethereum Classic','NEAR':'NEAR Protocol',
+        'APT':'Aptos','ARB':'Arbitrum','OP':'Optimism','FIL':'Filecoin','HBAR':'Hedera',
+        'ICP':'Internet Computer','VET':'VeChain','ALGO':'Algorand','SUI':'Sui','TON':'Toncoin',
+        'SHIB':'Shiba Inu','PEPE':'Pepe','INJ':'Injective','TAO':'Bittensor','KAS':'Kaspa',
+        'RNDR':'Render','RUNE':'THORChain','AAVE':'Aave','MKR':'Maker','SNX':'Synthetix',
+        'CRV':'Curve','LDO':'Lido','GRT':'The Graph','SAND':'The Sandbox','MANA':'Decentraland',
+        'AXS':'Axie Infinity','APE':'ApeCoin','FTM':'Fantom','EGLD':'MultiversX','THETA':'Theta',
+        'XMR':'Monero','ZEC':'Zcash','DASH':'Dash','EOS':'EOS','XTZ':'Tezos',
+        'CAKE':'PancakeSwap','SUSHI':'SushiSwap','COMP':'Compound','YFI':'yearn.finance',
+        'IMX':'Immutable','GALA':'Gala','CHZ':'Chiliz','FLOW':'Flow','ENS':'Ethereum Name Service',
+        'STX':'Stacks','QNT':'Quant','OCEAN':'Ocean Protocol','BAT':'Basic Attention','ZRX':'0x Protocol',
+        'ENJ':'Enjin Coin','1INCH':'1inch','BAL':'Balancer','REN':'Ren','KSM':'Kusama'
+    };
     var displayPair;
     if (futuresName[sym]) {
         displayPair = futuresName[sym] + ' Futures';
     } else if (suffix !== 'Crypto') {
         displayPair = sym + ' ' + suffix;
     } else {
-        displayPair = sym + '/USDT';
+        displayPair = (cryptoName[sym] || sym) + ' Crncy';
     }
-    var titleEl = document.getElementById('bbg-chart-title');
-    if (titleEl) titleEl.innerText = displayPair;
-    var tbTitle = document.getElementById('bbg-toolbar-title');
-    if (tbTitle) tbTitle.innerHTML = '<span>' + displayPair + '</span>';
+    var tbTitleTx = document.getElementById('bbg-toolbar-title-text');
+    if (tbTitleTx) {
+      tbTitleTx.textContent = displayPair;
+      try { tbTitleTx.setAttribute('data-symbol', sym); } catch(_){}
+    }
+    else {
+      var tbTitle = document.getElementById('bbg-toolbar-title');
+      if (tbTitle) tbTitle.textContent = displayPair;
+    }
     var blueBarLabel = document.getElementById('bbg-blue-bar-label');
     if (blueBarLabel) blueBarLabel.textContent = displayPair;
+    var cweiQb = document.getElementById('cwei-global-qb');
+    if (cweiQb) {
+      cweiQb.value = displayPair;
+      try { if (cweiQb.dataset) delete cweiQb.dataset.userEdited; } catch(_){}
+    }
 
     // Register state
     if (!window.PANEL_REGISTRY) window.PANEL_REGISTRY = {};
@@ -45044,14 +45089,15 @@ function refreshTickerIfStale() {
 }
 
 // ── 6. CHART SYMBOL WATCHER — detect when chart switches to commodity ────────
-// Watches bbg-chart-title for changes and seeds header data
+// Watches #bbg-toolbar-title for changes and seeds header data
 let _lastChartSym = '';
 function watchChartSymbol() {
-  const titleEl = document.getElementById('bbg-chart-title');
+  const titleEl = document.getElementById('bbg-toolbar-title');
   if (!titleEl) return;
 
   const observer = new MutationObserver(() => {
-    const sym = titleEl.innerText || titleEl.textContent;
+    const titleTx = document.getElementById('bbg-toolbar-title-text');
+    const sym = (titleTx && titleTx.getAttribute && titleTx.getAttribute('data-symbol')) || (titleTx && titleTx.textContent && titleTx.textContent.trim()) || (titleEl.innerText || titleEl.textContent || '').replace(/\s*[\u25BC\u25BE]\s*$/,'').trim();
     if (sym && sym !== _lastChartSym) {
       _lastChartSym = sym;
       // Delay slightly to let TradingView iframe load first
@@ -45066,12 +45112,6 @@ function watchChartSymbol() {
   });
 
   observer.observe(titleEl, { childList: true, characterData: true, subtree: true });
-
-  // Also check toolbar title
-  const toolbarTitle = document.getElementById('bbg-toolbar-title');
-  if (toolbarTitle) {
-    observer.observe(toolbarTitle, { childList: true, characterData: true, subtree: true });
-  }
 }
 
 // ── 7. MAIN PATCH RUNNER ─────────────────────────────────────────────────────
@@ -45094,9 +45134,10 @@ async function runPatch(isInitial) {
   }
 
   // Always try to seed chart header in case it's empty
-  const chartTitle = document.getElementById('bbg-chart-title');
+  const chartTitle = document.getElementById('bbg-toolbar-title');
   if (chartTitle) {
-    const sym = chartTitle.innerText || chartTitle.textContent;
+    const titleTx = document.getElementById('bbg-toolbar-title-text');
+    const sym = (titleTx && titleTx.getAttribute && titleTx.getAttribute('data-symbol')) || (titleTx && titleTx.textContent && titleTx.textContent.trim()) || (chartTitle.innerText || chartTitle.textContent || '').replace(/\s*[\u25BC\u25BE]\s*$/,'').trim();
     if (sym) seedChartHeaderFromComdty(sym);
   }
 
@@ -48060,27 +48101,25 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   background:rgba(255,255,255,0.10) !important;
 }
 
-/* Číselné prefixy (94), 96), 97) */
-#bbg-chart-ribbon span[style*="color:#D48A94"],
-#bbg-chart-ribbon span[style*="color: #D48A94"]{
-  color:rgba(255,255,255,0.70) !important;
-  font-size:9px !important;
+/* Číselné prefixy 94)/96)/97) — dusty pink tón jako v referenci */
+/* Číslice 94)/96)/97) — světle pink tón, jak je v referenci */
+#bbg-chart-ribbon .bbg-ribbon-red-toolbar span[style*="color:#F0B0B8"],
+#bbg-chart-ribbon .bbg-ribbon-red-toolbar span[style*="color: #F0B0B8"]{
+  color:#F0B0B8 !important;
 }
 
-/* Šedý text v chart toolbaru → bílý */
-#bbg-chart-ribbon [style*="color:#D3D3D3"],
-#bbg-chart-ribbon [style*="color: #D3D3D3"]{
-  color:#ffffff !important;
-  font-size:9px !important;
+/* Texty Suggested Charts / Actions / Edit — světle růžová ladící s 94) */
+/* Texty Suggested Charts / Actions / Edit — světle růžové tóny */
+#bbg-chart-ribbon .bbg-ribbon-red-toolbar [style*="color:#F0D0D5"],
+#bbg-chart-ribbon .bbg-ribbon-red-toolbar [style*="color: #F0D0D5"]{
+  color:#F0D0D5 !important;
 }
 
 /* Oranžové pills v grafu (Period/Range/Time) */
 #bbg-chart-ribbon [style*="background:#F69F26"],
 #bbg-chart-ribbon [style*="background: #F69F26"],
 [id^="bbg-chart-time"],
-[id="bbg-chart-mode-label"],
-[id="bbg-chart-session-name"],
-[id="bbg-toolbar-title"]{
+[id="bbg-chart-mode-label"]{
   background:#F69F26 !important;
   color:#000000 !important;
   font-family:Arial,Helvetica,sans-serif !important;
@@ -48124,43 +48163,448 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   min-height:0 !important;
 }
 
-/* Červený toolbar v grafu — přebije globální 9px (!) z řádků 48001–48008 a 48045–48075 */
-#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar{
+/* Config bar — bez mezery nad TF řádkem; oranžové boxy zarovnané nahoru */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar{
+  align-items:flex-start !important;
   font-size:14px !important;
-  min-height:34px !important;
-  height:34px !important;
+  font-weight:400 !important;
+  color:#f5a64b !important;
+  line-height:normal !important;
+  box-sizing:border-box !important;
+  min-height:0 !important;
+  height:auto !important;
+  padding:4px 0 0 !important;
 }
-#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar #bbg-toolbar-title{
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-dd{
+  display:inline-flex !important;
+  align-items:stretch !important;
+  align-self:flex-start !important;
+  height:auto !important;
+  cursor:pointer !important;
+  user-select:none !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-pill{
+  display:inline-flex !important;
+  align-items:flex-start !important;
+  align-self:stretch !important;
+  min-height:0 !important;
+  background:#f5a64b !important;
+  color:#1a1208 !important;
+  border:1px solid #000 !important;
+  border-right:none !important;
+  font-family:Arial,Helvetica,sans-serif !important;
   font-size:14px !important;
+  font-weight:500 !important;
+  letter-spacing:.05px !important;
+  padding:2px 7px 2px !important;
+  line-height:1.12 !important;
+  box-sizing:border-box !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar [data-bbg-cwei="date-from"] .bbg-cwei-pill,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar [data-bbg-cwei="date-to"] .bbg-cwei-pill{
+  font-size:17px !important;
+  align-self:stretch !important;
+  align-items:flex-start !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-arr{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  align-self:stretch !important;
+  min-height:0 !important;
+  min-width:24px !important;
+  background:#3a3a3a !important;
+  color:#dcdcdc !important;
+  border:1px solid #000 !important;
+  border-left:none !important;
+  font-family:Arial,Helvetica,sans-serif !important;
+  font-size:11px !important;
+  line-height:1 !important;
+  padding:0 5px !important;
+  box-sizing:border-box !important;
+}
+/* Jednotný černý lem pilulek a šedých tlačítek (kalendář / šipka) */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-pill,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar .bbg-cwei-arr{
+  border-color:#000 !important;
+}
+/* Labely Mov Avgs / Key Events / "-" separator — jemná CWEI oranžová */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar > div,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar label,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar > span{
+  font-size:14px !important;
+  line-height:normal !important;
+  font-weight:400 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar label{
+  align-self:center !important;
+  margin-top:1px !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar label[style*="color:#cfcfcf"],
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar > div[style*="color:#cfcfcf"],
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar > span[style*="color:#9b8b66"]{
+  color:#f5a64b !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar label > span:not([style*="border"]):not([style*="line-height:0"]){
+  color:#f5a64b !important;
+}
+/* Pencil icon u Mov Avgs — sladěno do CWEI oranžové */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar label svg path[stroke="#cfcfcf"],
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar label svg line[stroke="#cfcfcf"]{
+  stroke:#f5a64b !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-config-bar > svg{
+  align-self:center !important;
+  margin-top:2px !important;
+}
+
+/* Červený toolbar — mírně vyšší řádek (20px / 34px) */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar{
+  font-size:20px !important;
+  font-weight:400 !important;
+  line-height:34px !important;
+  min-height:36px !important;
+  height:36px !important;
+  align-items:stretch !important;
+  box-sizing:border-box !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar > div:first-child{
+  align-items:stretch !important;
+}
+/* Toolbar title — jednotná oranžová #f5a64b */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-toolbar-title-dd.bbg-cwei-dd{
+  display:inline-flex !important;
+  align-items:stretch !important;
+  align-self:stretch !important;
+  cursor:default !important;
+  user-select:none !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  font-size:20px !important;
+  line-height:1 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-toolbar-title-dd .bbg-cwei-pill{
+  display:inline-flex !important;
+  align-items:center !important;
+  align-self:stretch !important;
+  justify-content:flex-start !important;
+  background:#f5a64b !important;
+  color:#1a1208 !important;
+  border:1px solid #000 !important;
+  font-family:Arial,Helvetica,sans-serif !important;
+  font-size:20px !important;
+  font-weight:500 !important;
+  letter-spacing:.12px !important;
+  padding:0 8px !important;
+  line-height:34px !important;
+  box-sizing:border-box !important;
+  min-width:0 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-toolbar-title-dd #bbg-toolbar-title-text{
+  display:block !important;
+  line-height:34px !important;
+  font-size:20px !important;
+  color:#1a1208 !important;
+  font-weight:500 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar > div:first-child > div:not(#bbg-toolbar-title){
+  font-size:20px !important;
+  font-weight:400 !important;
+  line-height:34px !important;
+  letter-spacing:-0.02em !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar > div:first-child > div{
+  font-size:20px !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar #bbg-chart-actions-btn,
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar > div:first-child > div[style*="700a18"]{
-  font-size:14px !important;
+  font-size:20px !important;
+  line-height:34px !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar > div:last-child,
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar > div:last-child span{
-  font-size:14px !important;
+  font-size:20px !important;
+  line-height:34px !important;
 }
-#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar span[style*="D48A94"]{
-  font-size:14px !important;
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar span[style*="F0B0B8"]{
+  font-size:20px !important;
 }
 
-/* Spodní šedý TF řádek (1m 5m … Add Data) — větší výška a písmo, jen v grafu */
+/* Černá mezera mezi config barem a TF řádkem (tenký „groove“ jako na terminálu) */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-sep{
+  height:2px !important;
+  min-height:2px !important;
+  background:#000 !important;
+  flex-shrink:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  border:0 !important;
+}
+/* TF řádek — mezery jen jako tenká čára mezi buňkami (bez pruhu pozadí mezi 1D…Max) */
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns{
+  gap:0 !important;
+  align-items:stretch !important;
+  background:transparent !important;
+  align-self:stretch !important;
+  min-height:28px !important;
+  height:28px !important;
+  box-sizing:border-box !important;
+}
+/* TF buňky (1D…Max) — segment bez mezer: svislé předěly černě (#000) */
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .tf-btn-cell{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  align-self:stretch !important;
+  height:auto !important;
+  min-height:28px !important;
+  min-width:30px !important;
+  padding:0 10px !important;
+  background:#221f23 !important;
+  color:#e8e8e8 !important;
+  font-size:15px !important;
+  font-weight:500 !important;
+  line-height:1 !important;
+  border:none !important;
+  border-top:1px solid #252526 !important;
+  border-bottom:1px solid #000 !important;
+  border-right:1px solid #000 !important;
+  border-radius:0 !important;
+  margin:0 !important;
+  position:relative !important;
+  box-sizing:border-box !important;
+  cursor:pointer !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .tf-btn-cell:first-child{
+  border-left:1px solid #000 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns span.tf-btn-cell:last-of-type{
+  border-right:1px solid #000 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .tf-btn-cell:hover{
+  background:#2d2a2e !important;
+  color:#f0f0f0 !important;
+  z-index:2 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .tf-btn-cell.tf-btn-active{
+  background:#1e68d7 !important;
+  color:#fff !important;
+  font-weight:600 !important;
+  border:none !important;
+  border-top:1px solid #1a55b0 !important;
+  border-bottom:1px solid #000 !important;
+  border-right:1px solid #000 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.22) !important;
+  z-index:3 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .tf-btn-cell.tf-btn-active:first-child{
+  border-left:1px solid #000 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns span.tf-btn-cell.tf-btn-active:last-of-type{
+  border-right:1px solid #000 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .tf-btn-cell.tf-btn-active:hover{
+  background:#2b74db !important;
+  border-top:1px solid #1a55b0 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.24) !important;
+}
+/* Separátor │ — schovaný (řešíme jen černými 2px mezerami mezi buňkami) */
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-sep{
+  display:none !important;
+}
+/* "Daily" — stejný tmavý vzor jako Table / Edit (#221F23 + horní linka #252526), světlý text */
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-daily-dd.bbg-cwei-dd{
+  display:flex !important;
+  align-items:stretch !important;
+  align-self:stretch !important;
+  height:auto !important;
+  margin:0 !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:0 !important;
+  padding:0 !important;
+  cursor:pointer !important;
+  position:relative !important;
+  z-index:20000 !important;
+  pointer-events:auto !important;
+  box-sizing:border-box !important;
+  font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-daily-dd.bbg-cwei-dd .bbg-cwei-pill{
+  display:inline-flex !important;
+  align-items:center !important;
+  align-self:stretch !important;
+  height:auto !important;
+  padding:0 10px !important;
+  background:#221f23 !important;
+  color:#e8e8e8 !important;
+  border:1px solid #000 !important;
+  border-top:1px solid #252526 !important;
+  border-right:none !important;
+  font-size:15px !important;
+  font-weight:500 !important;
+  font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif !important;
+  letter-spacing:0 !important;
+  white-space:nowrap !important;
+  box-sizing:border-box !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-daily-dd.bbg-cwei-dd .bbg-cwei-arr{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  align-self:stretch !important;
+  min-width:26px !important;
+  height:auto !important;
+  padding:0 4px !important;
+  background:#221f23 !important;
+  color:#ffffff !important;
+  border:1px solid #000 !important;
+  border-top:1px solid #252526 !important;
+  box-sizing:border-box !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-daily-dd.bbg-cwei-dd .bbg-cwei-arr svg{
+  display:block !important;
+  flex-shrink:0 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-daily-dd.bbg-cwei-dd:hover .bbg-cwei-pill{
+  background:#2d2a2e !important;
+  color:#f0f0f0 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-daily-dd.bbg-cwei-dd:hover .bbg-cwei-arr{
+  background:#2d2a2e !important;
+}
+/* Table — #221F23 + horní linka (stejně jako Edit Chart) */
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn.bbg-cwei-dd{
+  display:flex !important;
+  align-items:center !important;
+  align-self:stretch !important;
+  height:auto !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 12px !important;
+  gap:6px !important;
+  background:#221f23 !important;
+  color:#e8e8e8 !important;
+  border:1px solid #000 !important;
+  border-top:1px solid #252526 !important;
+  border-radius:0 !important;
+  font-size:15px !important;
+  font-weight:400 !important;
+  font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif !important;
+  letter-spacing:0 !important;
+  box-sizing:border-box !important;
+  position:relative !important;
+  z-index:20000 !important;
+  pointer-events:auto !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn.bbg-cwei-dd svg,
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn.bbg-cwei-dd svg * {
+  stroke:#e8e8e8 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn.bbg-cwei-dd:hover{
+  background:#2d2a2e !important;
+  color:#f0f0f0 !important;
+}
+
+/* Skupina ikonek (line/bar) + caret — STANDARD BOX vzor: 1px solid #000 obrys, ikonky tmavé,
+   pravý caret jako wei-arrow (#3a3a3a + 1px černý border-left dělící čára). */
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon-box{
+  display:inline-flex !important;
+  align-items:stretch !important;
+  height:22px !important;
+  margin:0 !important;
+  background:#221f23 !important;
+  border:1px solid #000 !important;
+  border-top:1px solid #252526 !important;
+  border-radius:0 !important;
+  box-sizing:border-box !important;
+  gap:0 !important;
+  overflow:hidden !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon-box svg{
+  shape-rendering:geometricPrecision !important;
+  -webkit-font-smoothing:antialiased !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon{
+  cursor:pointer !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  align-self:stretch !important;
+  width:30px !important;
+  height:auto !important;
+  min-height:0 !important;
+  padding:0 !important;
+  border:1px solid #000 !important;
+  border-top:1px solid #252526 !important;
+  border-radius:0 !important;
+  background:#221f23 !important;
+  margin:0 !important;
+  box-sizing:border-box !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon:hover{
+  background:#2d2a2e !important;
+}
+/* Aktivní line/area — modrá výplň, stejný černý obrys jako ostatní; horní „linka“ jako inset (ne šedá #252526 na modré) */
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon-active{
+  background:#1e68d7 !important;
+  border:1px solid #000 !important;
+  border-top:1px solid #1a55b0 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.22) !important;
+}
+/* Bez tohoto by :hover na .bbg-tf-icon přebarvil aktivní ikonu na #2d2a2e (vyšší specificita kvůli :hover) */
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon.bbg-tf-icon-active:hover{
+  background:#2b74db !important;
+  border:1px solid #000 !important;
+  border-top:1px solid #1a55b0 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.24) !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon-caret{
+  cursor:pointer !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  align-self:stretch !important;
+  min-width:22px !important;
+  height:auto !important;
+  font-size:9px !important;
+  color:#ffffff !important;
+  line-height:1 !important;
+  margin:0 !important;
+  flex-shrink:0 !important;
+  background:#221f23 !important;
+  border:1px solid #000 !important;
+  border-top:1px solid #252526 !important;
+  box-sizing:border-box !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-icon-caret:hover{
+  color:#fff !important;
+  background:#4a4a4a !important;
+}
+
+/* Spodní TF řádek — barva panelu (mezery .bbg-tf-black-gap jsou průhledné = žádná „černá“ paspárek) */
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar{
-  min-height:32px !important;
-  height:32px !important;
-  font-size:14px !important;
-  padding:6px 14px !important;
+  min-height:28px !important;
+  height:28px !important;
+  font-size:12px !important;
+  padding:0 !important;
+  align-items:stretch !important;
+  background-color:#1a1a1a !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .tf-btn{
-  font-size:14px !important;
+  font-size:12px !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar #bbg-delta-toggle{
-  font-size:13px !important;
+  font-size:11px !important;
 }
-/* Stejný typ jako CWEI .wei-right-controls (oranžový štítek + šedý ▼) — Related Data / Add Data */
+/* Pravá část TF baru — bez mezery vpravo (kolečko u vnitřního kraje jako 1D vlevo) */
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-tf-right-actions.wei-right-controls{
-  padding-right:8px !important;
+  padding-right:0 !important;
+  align-self:stretch !important;
+  align-items:stretch !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-dd-wei{
   display:inline-flex !important;
@@ -48168,13 +48612,13 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   cursor:pointer !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-dd-wei .wei-select{
-  height:26px !important;
-  min-height:26px !important;
-  max-height:26px !important;
+  height:22px !important;
+  min-height:22px !important;
+  max-height:22px !important;
   font-size:12px !important;
   font-weight:600 !important;
-  line-height:26px !important;
-  padding:0 9px !important;
+  line-height:22px !important;
+  padding:0 7px !important;
   margin:0 !important;
   border:1px solid #000 !important;
   border-right:none !important;
@@ -48186,13 +48630,13 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   font-family:Arial,Helvetica,sans-serif !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-dd-wei .wei-arrow{
-  height:26px !important;
-  min-height:26px !important;
-  max-height:26px !important;
-  min-width:28px !important;
-  width:28px !important;
-  font-size:12px !important;
-  line-height:26px !important;
+  height:22px !important;
+  min-height:22px !important;
+  max-height:22px !important;
+  min-width:22px !important;
+  width:22px !important;
+  font-size:10px !important;
+  line-height:22px !important;
   margin:0 !important;
   padding:0 !important;
   box-sizing:border-box !important;
@@ -48205,23 +48649,84 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   border-left:none !important;
   font-family:Arial,Helvetica,sans-serif !important;
 }
-/* Add Data — jen oranžový štítek (bez .bbg-dd-wei / šedého ▼), stejné rozměry jako dřív u dvojice */
-#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar #bbg-add-data-btn .wei-select{
-  height:26px !important;
-  min-height:26px !important;
-  max-height:26px !important;
-  font-size:12px !important;
-  font-weight:600 !important;
-  line-height:26px !important;
-  padding:0 9px !important;
-  margin:0 !important;
-  border:1px solid #000 !important;
+/* Add Data — oranžová pilulka + tmavý box se dvojitou šipkou vlevo (viz ref.) */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar #bbg-add-data-btn.bbg-cwei-dd{
+  display:inline-flex !important;
+  align-items:stretch !important;
+  align-self:stretch !important;
+  flex:0 0 auto !important;
+  width:auto !important;
+  max-width:max-content !important;
+  cursor:pointer !important;
+  user-select:none !important;
+  border:1px solid #000000 !important;
   box-sizing:border-box !important;
+  background:transparent !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar #bbg-add-data-btn .bbg-cwei-pill{
   display:inline-flex !important;
   align-items:center !important;
-  background:var(--wei-control,#ffaa1a) !important;
-  color:rgba(0,0,0,.78) !important;
-  font-family:Arial,Helvetica,sans-serif !important;
+  align-self:stretch !important;
+  flex:0 0 auto !important;
+  width:auto !important;
+  min-width:122px !important;
+  justify-content:flex-start !important;
+  background:#f5a64b !important;
+  color:#2f2318 !important;
+  border:none !important;
+  border-right:1px solid #000000 !important;
+  font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif !important;
+  font-size:15px !important;
+  font-weight:300 !important;
+  letter-spacing:.2px !important;
+  padding:0 3px !important;
+  line-height:26px !important;
+  box-sizing:border-box !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar #bbg-add-data-btn .bbg-cwei-arr{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  align-self:stretch !important;
+  min-width:28px !important;
+  background:#221f23 !important;
+  color:#e8e8e8 !important;
+  border:none !important;
+  line-height:1 !important;
+  padding:0 6px !important;
+  box-sizing:border-box !important;
+  box-shadow:inset 0 1px 0 #252526 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-tf-black-gap{
+  width:2px !important;
+  min-width:2px !important;
+  flex-shrink:0 !important;
+  align-self:stretch !important;
+  background:transparent !important;
+  pointer-events:none !important;
+}
+/* Pravý cluster — bez 2px mezer mezi Related / Add Data (šipky) / Edit / gear */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-tf-right-actions .bbg-tf-black-gap{
+  width:0 !important;
+  min-width:0 !important;
+}
+/* Related / Edit / gear — #221F23 + horní linka #252526 */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-tf-right-actions .bbg-tf-related-data-btn,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-tf-right-actions .bbg-tf-edit-chart-btn,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-tf-right-actions .bbg-tf-gear-btn{
+  background:#221f23 !important;
+  color:#e8e8e8 !important;
+  border:1px solid #000 !important;
+  border-top:1px solid #252526 !important;
+  box-sizing:border-box !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-tf-right-actions .bbg-tf-edit-chart-btn svg{
+  stroke:#e8e8e8 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-tf-right-actions .bbg-add-data-grow{
+  display:flex !important;
+  align-items:stretch !important;
+  flex:0 0 auto !important;
 }
 
 /* Horní černý řádek Period / Range / čas — přebije globální 9px u oranžových pillů v #bbg-chart-ribbon */
@@ -48232,12 +48737,26 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   padding:4px 18px !important;
   gap:18px !important;
 }
+/* Period / Range / čas / seance — IMAP .c-item / .c-val (--bb-orange #ffab2e, text #000); text zůstává z JS */
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row #bbg-chart-mode-label,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row #bbg-chart-range-label,
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row #bbg-chart-time-start,
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row #bbg-chart-time-end,
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row #bbg-chart-session-name{
+  display:inline-flex !important;
+  align-items:center !important;
+  box-sizing:border-box !important;
+  background:#ffab2e !important;
+  color:#000 !important;
+  font-family:Arial,Helvetica,sans-serif !important;
   font-size:14px !important;
   font-weight:600 !important;
+  line-height:1.2 !important;
+  padding:2px 8px !important;
+  border-radius:0 !important;
+  border:1px solid #222 !important;
+  -webkit-font-smoothing:antialiased !important;
+  text-rendering:geometricPrecision !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row span[style*="color:#F69F26"],
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-period-row span[style*="color: #F69F26"]{
