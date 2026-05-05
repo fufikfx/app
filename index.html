@@ -46568,7 +46568,7 @@ window._OF = _OF;
       var n = document.createElement('div');
       n.setAttribute('role', 'status');
       n.style.cssText =
-        'position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:100060;' +
+        'position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:2147483647;' +
         'background:#1a1a1a;color:#e8e8e8;border:1px solid #444;padding:9px 20px;font:14px Arial,Helvetica,sans-serif;' +
         'box-shadow:0 6px 24px rgba(0,0,0,.55);pointer-events:none;max-width:min(520px,92vw);text-align:center;';
       n.textContent = msg;
@@ -46611,21 +46611,15 @@ window._OF = _OF;
   function _bbgTbMenuClosedStyle(menuEl) {
     if (!menuEl) return;
     menuEl.classList.remove('bbg-tb-menu--open');
-    menuEl.classList.remove('bbg-tb-menu--portal');
-    menuEl.style.display = '';
     menuEl.style.removeProperty('display');
     menuEl.style.removeProperty('visibility');
     menuEl.style.removeProperty('opacity');
+    menuEl.style.display = 'none';
     menuEl.setAttribute('hidden', 'hidden');
     menuEl.style.position = '';
     menuEl.style.left = '';
     menuEl.style.top = '';
-    menuEl.style.right = '';
-    menuEl.style.bottom = '';
     menuEl.style.zIndex = '';
-    menuEl.style.minWidth = '';
-    menuEl.style.maxHeight = '';
-    menuEl.style.overflowY = '';
     _bbgTbRestoreMenuSlot(menuEl);
   }
 
@@ -46634,7 +46628,7 @@ window._OF = _OF;
       var _ind = document.getElementById('bbg-indicators-menu');
       if (_ind) _ind.remove();
     } catch (_ix) {}
-    document.querySelectorAll('.bbg-tb-menu.bbg-tb-menu--open').forEach(function (m) {
+    document.querySelectorAll('.bbg-tb-menu.bbg-tb-menu--open, .bbg-tb-menu--portal').forEach(function (m) {
       _bbgTbMenuClosedStyle(m);
     });
     document.querySelectorAll('.bbg-tb-dd-trigger[aria-expanded="true"]').forEach(function (b) {
@@ -46643,19 +46637,16 @@ window._OF = _OF;
   }
   window._bbgTbCloseStaticMenus = closeStaticMenus;
 
-  /** Dropdowns must escape #bbg-chart-ribbon overflow (overflow-x:auto forces vertical clipping in browsers). */
   function placeTbMenuUnderTrigger(menuEl, triggerEl) {
     var r = triggerEl.getBoundingClientRect();
     var vw = window.innerWidth || 0;
     var margin = 8;
-    var minW = 280;
+    var minW = 320;
     menuEl.style.position = 'fixed';
-    menuEl.style.top = r.bottom + 'px';
-    menuEl.style.right = 'auto';
-    menuEl.style.bottom = 'auto';
-    menuEl.style.zIndex = '2147483000';
-    menuEl.style.setProperty('z-index', '2147483000', 'important');
-    menuEl.style.maxHeight = 'min(480px, calc(100vh - 24px))';
+    menuEl.style.top = (r.bottom + 1) + 'px';
+    menuEl.style.zIndex = '2147483500';
+    menuEl.style.setProperty('z-index', '2147483500', 'important');
+    menuEl.style.maxHeight = 'min(520px, calc(100vh - 40px))';
     menuEl.style.overflowY = 'auto';
     var left = r.left;
     if (vw && left + minW > vw - margin) left = Math.max(margin, vw - minW - margin);
@@ -46666,50 +46657,29 @@ window._OF = _OF;
   function toggleMenu(menuEl, triggerEl, open) {
     if (!menuEl || !triggerEl) return;
     if (open) {
+      closeStaticMenus();
       _bbgTbDetachMenuToBody(menuEl);
       menuEl.removeAttribute('hidden');
       menuEl.style.setProperty('display', 'block', 'important');
       menuEl.style.setProperty('visibility', 'visible', 'important');
       menuEl.style.setProperty('opacity', '1', 'important');
-      menuEl.style.setProperty('box-sizing', 'border-box', 'important');
       menuEl.classList.add('bbg-tb-menu--open');
       triggerEl.setAttribute('aria-expanded', 'true');
       placeTbMenuUnderTrigger(menuEl, triggerEl);
-      try {
-        var tw = triggerEl.getBoundingClientRect().width;
-        if (tw > 40) menuEl.style.minWidth = Math.ceil(tw) + 'px';
-      } catch (_mw) {}
-      try {
-        requestAnimationFrame(function () {
-          try {
-            if (menuEl.classList.contains('bbg-tb-menu--open')) placeTbMenuUnderTrigger(menuEl, triggerEl);
-          } catch (_r) {}
-        });
-      } catch (_raf) {}
+      var tw = triggerEl.getBoundingClientRect().width;
+      if (tw > 60) menuEl.style.minWidth = Math.ceil(tw) + 'px';
+      requestAnimationFrame(function () {
+        if (menuEl.classList.contains('bbg-tb-menu--open')) placeTbMenuUnderTrigger(menuEl, triggerEl);
+      });
     } else {
       triggerEl.setAttribute('aria-expanded', 'false');
       _bbgTbMenuClosedStyle(menuEl);
     }
   }
 
-  /** Jednotný capture listener na panelu — spolehlivější než jednotlivé listenry na tlačítkách (vrstvy / WebKit). */
   function attachRibbonPanelCapture() {
     var panel = document.getElementById('bbg-chart-panel');
     if (!panel) return;
-    ['bbg-tb-suggested-trigger', 'bbg-tb-edit-trigger', 'bbg-chart-actions-btn'].forEach(function (bid) {
-      var tr = document.getElementById(bid);
-      if (!tr) return;
-      if (tr._bbgTbDropdownClick) {
-        tr.removeEventListener('click', tr._bbgTbDropdownClick, true);
-        tr.removeEventListener('click', tr._bbgTbDropdownClick, false);
-        tr._bbgTbDropdownClick = null;
-      }
-      if (tr._bbgTbActionsClick) {
-        tr.removeEventListener('click', tr._bbgTbActionsClick, true);
-        tr.removeEventListener('click', tr._bbgTbActionsClick, false);
-        tr._bbgTbActionsClick = null;
-      }
-    });
     if (panel._bbgTbRibbonPanelCapture) {
       panel.removeEventListener('click', panel._bbgTbRibbonPanelCapture, true);
     }
@@ -46721,245 +46691,121 @@ window._OF = _OF;
       e.stopPropagation();
       if (trig.id === 'bbg-chart-actions-btn') {
         var imA = document.getElementById('bbg-indicators-menu');
-        if (imA) {
-          imA.remove();
-          return;
-        }
+        if (imA) { imA.remove(); return; }
         if (typeof window._toggleChartIndicators !== 'function') return;
-        if (window._bbgTbCloseStaticMenus) window._bbgTbCloseStaticMenus();
+        closeStaticMenus();
         window._toggleChartIndicators(trig);
         return;
       }
       var menuId = trig.getAttribute('aria-controls');
       var me = menuId ? document.getElementById(menuId) : null;
       if (!me) return;
-      var im = document.getElementById('bbg-indicators-menu');
-      if (im) im.remove();
-      var willOpen = !me.classList.contains('bbg-tb-menu--open');
-      closeStaticMenus();
-      if (willOpen) toggleMenu(me, trig, true);
+      var isOpen = me.classList.contains('bbg-tb-menu--open');
+      toggleMenu(me, trig, !isOpen);
     };
     panel.addEventListener('click', panel._bbgTbRibbonPanelCapture, true);
   }
 
   function copyRibbonSnapshot() {
-    var ids = [
-      'bbg-toolbar-title-text',
-      'bbg-ticker-symbol',
-      'bbg-current-price',
-      'bbg-price-change',
-      'bbg-time',
-      'bbg-volume',
-      'bbg-start',
-      'bbg-high',
-      'bbg-low',
-      'bbg-value-traded',
-      'bbg-ticker-bidask'
-    ];
+    var ids = ['bbg-toolbar-title-text','bbg-ticker-symbol','bbg-current-price','bbg-price-change','bbg-time','bbg-volume','bbg-start','bbg-high','bbg-low'];
     var lines = [];
     ids.forEach(function (id) {
       var e = document.getElementById(id);
-      if (e && e.textContent) lines.push(e.textContent.trim().replace(/\s+/g, ' '));
+      if (e && e.textContent) lines.push(e.textContent.trim());
     });
     var t = lines.filter(Boolean).join('\n');
-    if (!t) {
-      _notify('No ribbon text to copy');
-      return;
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(t).then(
-        function () {
-          _notify('Copied chart ribbon data to clipboard');
-        },
-        function () {
-          _notify('Clipboard blocked — copy manually from ribbon');
-        }
-      );
-    } else {
-      _notify('Clipboard API not available in this context');
+    if (!t) return _notify('No data to copy');
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(t).then(function(){ _notify('Data copied'); });
     }
   }
 
-  function scrollToDateRange() {
-    var bar = document.querySelector('#bbg-chart-panel .bbg-ribbon-config-bar');
-    if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    var df = document.querySelector('[data-bbg-cwei="date-from"] .bbg-cwei-pill');
-    if (df) {
-      try {
-        df.focus({ preventScroll: true });
-      } catch (_f) {}
+  function onSuggestItem(row) {
+    var text = row.textContent.trim().toLowerCase();
+    closeStaticMenus();
+    _notify('Opening: ' + row.textContent.trim());
+    if (typeof window.openPanel === 'function') {
+      if (text.includes('risk premium') || text.includes('premium')) window.openPanel('WEI');
+      else if (text.includes('term structure')) window.openPanel('OPTFLOW');
+      else if (text.includes('skew')) window.openPanel('GHREPO');
+      else if (text.includes('vol surface')) window.openPanel('GHREPO');
+      else if (text.includes('seasonality')) window.openPanel('PERF');
+      else if (text.includes('correlation')) window.openPanel('PERF');
+      else window.openPanel('WEI');
     }
-    _notify('Date range — use calendar pills in the bar below');
   }
 
   function onEditItem(row) {
     var k = row.getAttribute('data-bbg-edit');
     closeStaticMenus();
-    switch (k) {
-      case 'securities':
-        _notify('Securities & Data — wire your security list / symbology here (stub)');
-        break;
-      case 'norm':
-        _notify('Normalization — price rebasing / indexation (stub)');
-        break;
-      case 'colors':
-        _notify('Chart colors / styles — match TV theme & CWEI prefs (stub)');
-        break;
-      case 'daterange':
-        scrollToDateRange();
-        break;
-      case 'legend':
-        _notify('Legend options — show/hide studies & comparison keys (stub)');
-        break;
-      case 'copy-data':
-        copyRibbonSnapshot();
-        break;
-      case 'copy-img':
-        _notify('Image copy: use system screenshot or chart export — browser cannot read canvas without extra permission');
-        break;
-      case 'cf-settings':
-        _notify('Chart functions settings — studies defaults (stub)');
-        break;
-      case 'data-refresh':
-        _notify('Data refresh / streaming interval (stub)');
-        break;
-      case 'data-holidays':
-        _notify('Holiday calendar — exchange schedule (stub)');
-        break;
-      case 'data-fields':
-        _notify('Field display — OHLC column layout (stub)');
-        break;
-      default:
-        _notify(row.textContent.trim());
+    if (k === 'copy-data') copyRibbonSnapshot();
+    else if (k === 'daterange') {
+       var bar = document.querySelector('.bbg-ribbon-config-bar');
+       if (bar) bar.scrollIntoView({behavior:'smooth'});
+       _notify('Date range: use bar below');
+    } else {
+      _notify('Edit: ' + row.textContent.trim() + ' (Stub)');
     }
   }
 
   function init() {
     attachRibbonPanelCapture();
-
     var _tfCaret = document.querySelector('#bbg-tf-btns .bbg-tf-icon-caret');
     var _sugTr = document.getElementById('bbg-tb-suggested-trigger');
     var _sugMe = document.getElementById('bbg-tb-menu-suggested');
     if (_tfCaret && _sugTr && _sugMe) {
-      if (_tfCaret._bbgTbCaretClick) {
-        _tfCaret.removeEventListener('click', _tfCaret._bbgTbCaretClick, true);
-        _tfCaret.removeEventListener('click', _tfCaret._bbgTbCaretClick, false);
-      }
-      if (_tfCaret._bbgTbCaretKeydown) {
-        _tfCaret.removeEventListener('keydown', _tfCaret._bbgTbCaretKeydown);
-      }
-      _tfCaret.style.cursor = 'pointer';
-      if (!_tfCaret.getAttribute('role')) _tfCaret.setAttribute('role', 'button');
-      if (!_tfCaret.getAttribute('tabindex')) _tfCaret.setAttribute('tabindex', '0');
-      _tfCaret.setAttribute('title', 'Suggested Charts — stejné menu jako 94)');
-      _tfCaret._bbgTbCaretClick = function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var im = document.getElementById('bbg-indicators-menu');
-        if (im) im.remove();
-        var willOpen = !_sugMe.classList.contains('bbg-tb-menu--open');
+      if (_tfCaret._bbgBound) _tfCaret.removeEventListener('click', _tfCaret._bbgBound, true);
+      _tfCaret._bbgBound = function (e) {
+        e.preventDefault(); e.stopPropagation();
+        var isOpen = _sugMe.classList.contains('bbg-tb-menu--open');
         closeStaticMenus();
-        if (willOpen) {
+        if (!isOpen) {
           toggleMenu(_sugMe, _sugTr, true);
           placeTbMenuUnderTrigger(_sugMe, _tfCaret);
         }
       };
-      _tfCaret.addEventListener('click', _tfCaret._bbgTbCaretClick, true);
-      _tfCaret._bbgTbCaretKeydown = function (e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          _tfCaret.click();
-        }
-      };
-      _tfCaret.addEventListener('keydown', _tfCaret._bbgTbCaretKeydown);
+      _tfCaret.addEventListener('click', _tfCaret._bbgBound, true);
     }
-
     var sug = document.getElementById('bbg-tb-menu-suggested');
     if (sug) {
-      if (sug._bbgTbSugDelegatedClick) {
-        sug.removeEventListener('click', sug._bbgTbSugDelegatedClick, true);
-        sug.removeEventListener('click', sug._bbgTbSugDelegatedClick, false);
-      }
-      sug._bbgTbSugDelegatedClick = function (e) {
+      if (sug._bbgBound) sug.removeEventListener('click', sug._bbgBound, true);
+      sug._bbgBound = function (e) {
         e.stopPropagation();
-        var row = e.target.closest && e.target.closest('.bbg-tb-menu-item');
+        var row = e.target.closest('.bbg-tb-menu-item');
         if (!row || !sug.contains(row)) return;
         e.preventDefault();
-        closeStaticMenus();
-        _notify('Suggested chart: ' + row.textContent.trim());
+        onSuggestItem(row);
       };
-      sug.addEventListener('click', sug._bbgTbSugDelegatedClick, true);
+      sug.addEventListener('click', sug._bbgBound, true);
     }
-
     var ed = document.getElementById('bbg-tb-menu-edit');
     if (ed) {
-      if (ed._bbgTbEditDelegatedClick) {
-        ed.removeEventListener('click', ed._bbgTbEditDelegatedClick, true);
-        ed.removeEventListener('click', ed._bbgTbEditDelegatedClick, false);
-      }
-      ed._bbgTbEditDelegatedClick = function (e) {
+      if (ed._bbgBound) ed.removeEventListener('click', ed._bbgBound, true);
+      ed._bbgBound = function (e) {
         e.stopPropagation();
-        var row = e.target.closest && e.target.closest('.bbg-tb-menu-item[role="menuitem"]');
+        var row = e.target.closest('.bbg-tb-menu-item[role="menuitem"]');
         if (!row || !ed.contains(row)) return;
         if (row.classList.contains('bbg-tb-menu-item--sub')) return;
         e.preventDefault();
         onEditItem(row);
       };
-      ed.addEventListener('click', ed._bbgTbEditDelegatedClick, true);
+      ed.addEventListener('click', ed._bbgBound, true);
     }
-
     if (!window._bbgTbOutsideMenuClickBound) {
       window._bbgTbOutsideMenuClickBound = true;
-      document.addEventListener(
-        'click',
-        function (e) {
-          if (e.target.closest && e.target.closest('.bbg-tb-menu')) return;
-          if (e.target.closest && e.target.closest('.bbg-tb-dd-trigger')) return;
-          if (e.target.closest && e.target.closest('.bbg-tf-icon-caret')) return;
-          if (e.target.closest && e.target.closest('#bbg-indicators-menu')) return;
-          closeStaticMenus();
-        },
-        false
-      );
-    }
-
-    if (!window._bbgTbRibbonKeydownBound) {
-      window._bbgTbRibbonKeydownBound = true;
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeStaticMenus();
-      });
-    }
-
-    if (!window._bbgTbRibbonResizeBound) {
-      window._bbgTbRibbonResizeBound = true;
-      window.addEventListener(
-        'resize',
-        function () {
-          closeStaticMenus();
-        },
-        false
-      );
-    }
-    var rb = document.getElementById('bbg-chart-ribbon');
-    if (rb && !rb._bbgTbRibbonScrollBound) {
-      rb._bbgTbRibbonScrollBound = true;
-      rb.addEventListener(
-        'scroll',
-        function () {
-          closeStaticMenus();
-        },
-        false
-      );
+      document.addEventListener('click', function (e) {
+        if (e.target.closest('.bbg-tb-menu') || e.target.closest('.bbg-tb-dd-trigger') || e.target.closest('.bbg-tf-icon-caret')) return;
+        closeStaticMenus();
+      }, false);
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeStaticMenus(); });
     }
   }
 
   window._bbgTbEnsureRibbonMenus = init;
-  window._bbgTbAttachRibbonPanelCapture = attachRibbonPanelCapture;
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  init();
 })();
 
+</script>
 
 <script>
 // ── Chart Indicators Menu (Actions dropdown) ──
