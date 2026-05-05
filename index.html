@@ -101,6 +101,226 @@
     if (isNaN(cl)) return null;
     return { t: tMs, c: cl };
   };
+  window._bbgHlParseBarOhlc = function (bar) {
+    if (!bar) return null;
+    var tRaw = bar.t != null ? bar.t : (Array.isArray(bar) ? bar[0] : null);
+    var tMs = parseInt(tRaw, 10);
+    if (!tMs) return null;
+    var oRaw = bar.o != null ? bar.o : (Array.isArray(bar) ? bar[1] : null);
+    var hRaw = bar.h != null ? bar.h : (Array.isArray(bar) ? bar[2] : null);
+    var lRaw = bar.l != null ? bar.l : (Array.isArray(bar) ? bar[3] : null);
+    var o = parseFloat(oRaw);
+    var h = parseFloat(hRaw);
+    var l = parseFloat(lRaw);
+    if (!isFinite(h) || !isFinite(l)) return null;
+    return { t: tMs, o: isFinite(o) ? o : NaN, h: h, l: l };
+  };
+  /** HL metaAndAssetCtxs PerpAssetCtx nemá dayHigh/dayLow — denní O/H/L z candleSnapshot (UTC den). „0“ na Bloomberg ribbonu = Open dne, ne písmeno O. */
+  window._bbgHlRibbonDayHiLoCache = { coin: '', hi: 0, lo: 0, open: 0, ts: 0, inflight: null };
+  window._bbgHlFetchRibbonUtcDayHiLo = function (coin, curPx) {
+    var c = String(coin || '').toUpperCase();
+    var px = parseFloat(curPx);
+    var now = Date.now();
+    var cache = window._bbgHlRibbonDayHiLoCache;
+    if (cache.coin !== c) {
+      cache.coin = c;
+      cache.hi = 0;
+      cache.lo = 0;
+      cache.open = 0;
+      cache.ts = 0;
+      cache.inflight = null;
+    }
+    if (cache.inflight) return cache.inflight;
+    var stale = now - cache.ts > 60000 || !(cache.hi > 0) || !(cache.lo > 0);
+    if (!stale) return Promise.resolve({ hi: cache.hi, lo: cache.lo, open: cache.open > 0 ? cache.open : 0 });
+    var d = new Date(now);
+    var utcStart = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    cache.inflight = fetch('https://api.hyperliquid.xyz/info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'candleSnapshot',
+        req: { coin: c, interval: '15m', startTime: utcStart, endTime: now }
+      }),
+      cache: 'no-store',
+      priority: 'low'
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var hi = 0;
+        var lo = Infinity;
+        var bars = [];
+        if (Array.isArray(data)) {
+          var i;
+          for (i = 0; i < data.length; i++) {
+            var b = window._bbgHlParseBarOhlc(data[i]);
+            if (!b) continue;
+            bars.push(b);
+            if (b.h > hi) hi = b.h;
+            if (b.l > 0 && b.l < lo) lo = b.l;
+          }
+        }
+        if (isFinite(px) && px > 0) {
+          if (px > hi) hi = px;
+          if (!isFinite(lo) || lo === Infinity || px < lo) lo = px;
+        }
+        if (!isFinite(lo) || lo === Infinity) lo = 0;
+        var dayOpen = 0;
+        if (bars.length) {
+          bars.sort(function (a, b2) {
+            return a.t - b2.t;
+          });
+          var o0 = bars[0].o;
+          if (isFinite(o0) && o0 > 0) dayOpen = o0;
+        }
+        var out = { hi: hi > 0 ? hi : 0, lo: lo > 0 ? lo : 0, open: dayOpen > 0 ? dayOpen : 0 };
+        if (out.hi > 0 && out.lo > 0) {
+          cache.hi = out.hi;
+          cache.lo = out.lo;
+          cache.ts = Date.now();
+        }
+        if (out.open > 0) cache.open = out.open;
+        return out;
+      })
+      .catch(function () {
+        return { hi: cache.hi > 0 ? cache.hi : 0, lo: cache.lo > 0 ? cache.lo : 0, open: cache.open > 0 ? cache.open : 0 };
+      })
+      .finally(function () {
+        cache.inflight = null;
+      });
+    return cache.inflight;
+  };
+  /** Bloomberg „L“ u Open/High/Low = Local (měna výpisu); hodnota v #bbg-start|high|low, „L“ v sourozenci .bbg-ohlc-sfx. */
+  window._bbgRibbonOhlcSetVal = function (id, displayText) {
+    var e = document.getElementById(id);
+    if (!e) return;
+    var t = displayText == null || displayText === '' ? '\u2014' : String(displayText);
+    e.textContent = t;
+    var sfx = e.parentElement && e.parentElement.querySelector('.bbg-ohlc-sfx');
+    if (sfx) {
+      var tr = t.trim();
+      var hideL = !tr || /^[\u2014\u2013\u2012\-–—]+$/.test(tr);
+      sfx.style.display = hideL ? 'none' : 'inline';
+    }
+  };
+  window._bbgHlRibbonBookCache = { coin: '', bid: 0, ask: 0, bidSz: 0, askSz: 0, ts: 0, inflight: null };
+  /** 24h objem v základové měně (kontraktech) z metaAndAssetCtxs — jen pro tooltip u velikostí. */
+  window._bbgHlLastDayBaseVlm = null;
+  window._bbgHlFetchRibbonTopOfBook = function (coin) {
+    var c = String(coin || '').toUpperCase().replace(/USDT$|USDC$|USD$/i, '');
+    if (!c) return Promise.resolve(null);
+    var now = Date.now();
+    var cache = window._bbgHlRibbonBookCache;
+    if (cache.coin !== c) {
+      cache.coin = c;
+      cache.bid = 0;
+      cache.ask = 0;
+      cache.bidSz = 0;
+      cache.askSz = 0;
+      cache.ts = 0;
+      cache.inflight = null;
+    }
+    if (cache.inflight) return cache.inflight;
+    /* Kratší TTL než interval pollHlMid (1200–3000 ms), ať se kniha průběžně obnovuje. */
+    if (now - cache.ts < 900 && cache.bid > 0 && cache.ask > 0) {
+      return Promise.resolve({ bid: cache.bid, ask: cache.ask, bidSz: cache.bidSz, askSz: cache.askSz });
+    }
+    cache.inflight = fetch('https://api.hyperliquid.xyz/info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'l2Book', coin: c }),
+      cache: 'no-store',
+      priority: 'low'
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var bids = d.levels && d.levels[0];
+        var asks = d.levels && d.levels[1];
+        var b0 = bids && bids[0];
+        var a0 = asks && asks[0];
+        var bid = b0 ? parseFloat(b0.px) : 0;
+        var ask = a0 ? parseFloat(a0.px) : 0;
+        var bidSz = b0 ? parseFloat(b0.sz || 0) : 0;
+        var askSz = a0 ? parseFloat(a0.sz || 0) : 0;
+        if (bid > 0 && ask > 0) {
+          cache.bid = bid;
+          cache.ask = ask;
+          cache.bidSz = bidSz;
+          cache.askSz = askSz;
+          cache.ts = Date.now();
+        }
+        return { bid: bid, ask: ask, bidSz: bidSz, askSz: askSz };
+      })
+      .catch(function () {
+        return { bid: cache.bid, ask: cache.ask, bidSz: cache.bidSz, askSz: cache.askSz };
+      })
+      .finally(function () {
+        cache.inflight = null;
+      });
+    return cache.inflight;
+  };
+  /** Horní řádek: Lbid / askL + velikosti 1. úrovně order booku (bidSz × askSz v kontraktech HL; není to jednotlivý „obchod“). */
+  window._bbgHlPaintRibbonBidAsk = function (coin, fmtP) {
+    var route = window._bbgLwcRoute || {};
+    var hlChart = route.ex === 'HYPERLIQUID' || window.BBG_HL_BTC_CHART_ONLY;
+    if (!hlChart) return Promise.resolve();
+    var _f =
+      fmtP ||
+      window._bbgFmtP ||
+      function (v) {
+        if (!v || isNaN(v)) return '\u2014';
+        return v >= 1000
+          ? v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          : v >= 1
+            ? parseFloat(v.toFixed(4)).toString()
+            : parseFloat(v.toPrecision(5)).toString();
+      };
+    function fmtSz(s) {
+      if (s == null || s === '') return '\u2014';
+      var n = typeof s === 'string' ? parseFloat(s) : Number(s);
+      if (!isFinite(n)) return '\u2014';
+      if (n === 0) return '0';
+      if (n >= 1000) return n.toLocaleString('en-US', { maximumFractionDigits: 4 });
+      if (n >= 1) {
+        var r = Math.round(n * 100) / 100;
+        return String(r).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+      }
+      var t = n.toPrecision(4);
+      return String(parseFloat(t));
+    }
+    var c = String(coin || route.tk || (window.BBG_HL_BTC_CHART_ONLY ? 'BTC' : '') || '')
+      .toUpperCase()
+      .replace(/USDT$|USDC$|USD$/i, '');
+    if (!c) return Promise.resolve();
+    return window._bbgHlFetchRibbonTopOfBook(c).then(function (bk) {
+      var el = document.getElementById('bbg-ticker-bidask');
+      var szEl = document.getElementById('bbg-ticker-size');
+      if (!el) return;
+      if (!bk || !(bk.bid > 0) || !(bk.ask > 0)) {
+        el.textContent = 'L\u2014 / \u2014L';
+        if (szEl) {
+          szEl.textContent = '\u2014 \u00d7 \u2014';
+          szEl.title = 'Hyperliquid: žádná data order booku (l2Book).';
+        }
+        el.title = 'Hyperliquid perp: nejlepší bid / ask z l2Book.';
+        return;
+      }
+      el.textContent = 'L' + _f(bk.bid) + ' / ' + _f(bk.ask) + 'L';
+      el.title = 'Hyperliquid perp: best bid / best ask (\u2248 spread, L = local display).';
+      if (szEl) {
+        var sb = fmtSz(bk.bidSz);
+        var sa = fmtSz(bk.askSz);
+        szEl.textContent = sb + ' \u00d7 ' + sa;
+        var v24 = window._bbgHlLastDayBaseVlm;
+        var extra =
+          v24 != null && isFinite(v24) && v24 > 0
+            ? ' 24h obrat (dayBaseVlm): ' + fmtSz(v24) + ' ' + c + '.'
+            : '';
+        szEl.title =
+          'Kontrakty na nejlepší ceně: velikost bid \u00d7 velikost ask (top of book, Hyperliquid).' + extra;
+      }
+    });
+  };
   window._bbgBuildHlCweiSparkSvg = function (leftCloses, rightCloses, gMin, gMax) {
     if (!leftCloses || !rightCloses || leftCloses.length < 2 || rightCloses.length < 2) return '';
     var lo = gMin;
@@ -154,12 +374,530 @@
       '" stroke-width="1.7" vector-effect="non-scaling-stroke"/></svg>'
     );
   };
-  window._bbgFetchHlCwei2DaySpark = function (coin) {
+  /**
+   * Poslední swing high / low z řady závěrek (vnitřní pivoty); výstup `rangeHigh` ≥ `rangeLow` pro p = (c-lo)/(hi-lo).
+   * Chybí-li pivoty, použije se min/max řady.
+   */
+  window._bbgRibbonSwingRangeFromCloses = function (closes) {
+    var n = closes.length;
+    var i;
+    var fallback = function () {
+      var hi = Math.max.apply(null, closes);
+      var lo = Math.min.apply(null, closes);
+      return hi > lo ? { rangeHigh: hi, rangeLow: lo } : { rangeHigh: hi + 1, rangeLow: hi - 1 };
+    };
+    if (!closes || n < 2) return { rangeHigh: 1, rangeLow: 0 };
+    if (n < 3) return fallback();
+    var lastHi = -1;
+    var lastLo = -1;
+    for (i = 1; i < n - 1; i++) {
+      if (closes[i] > closes[i - 1] && closes[i] > closes[i + 1]) lastHi = i;
+      if (closes[i] < closes[i - 1] && closes[i] < closes[i + 1]) lastLo = i;
+    }
+    if (lastHi < 0 && lastLo < 0) return fallback();
+    var sh = lastHi >= 0 ? closes[lastHi] : Math.max.apply(null, closes);
+    var sl = lastLo >= 0 ? closes[lastLo] : Math.min.apply(null, closes);
+    var rangeHigh = Math.max(sh, sl);
+    var rangeLow = Math.min(sh, sl);
+    if (!(rangeHigh > rangeLow)) return fallback();
+    return { rangeHigh: rangeHigh, rangeLow: rangeLow };
+  };
+  /** Společné rozdělení 96 h dat na „den 1 / den 2“ podle času ~48 h nazpět od `now`. */
+  window._bbgHlSplitBarsToLeftRight2Day = function (bars, now) {
+    if (!bars || bars.length < 4) return null;
+    var halfMs = 48 * 3600000;
+    var mid = now - halfMs;
+    var split = 0;
+    var i;
+    for (i = 0; i < bars.length; i++) {
+      if (bars[i].t >= mid) {
+        split = i;
+        break;
+      }
+    }
+    if (split < 2) split = Math.max(2, Math.floor(bars.length / 2));
+    if (split > bars.length - 2) split = bars.length - 2;
+    var left = [];
+    var right = [];
+    for (i = 0; i <= split; i++) left.push(bars[i].c);
+    for (i = split; i < bars.length; i++) right.push(bars[i].c);
+    if (left.length < 2 || right.length < 2) return null;
+    var allC = [];
+    for (i = 0; i < bars.length; i++) allC.push(bars[i].c);
+    var gLo = Math.min.apply(null, allC);
+    var gHi = Math.max.apply(null, allC);
+    var swing = window._bbgRibbonSwingRangeFromCloses(allC);
+    return {
+      left: left,
+      right: right,
+      gMin: gLo,
+      gMax: gHi,
+      swingRangeHigh: swing.rangeHigh,
+      swingRangeLow: swing.rangeLow
+    };
+  };
+  /**
+   * Mini sparkline: černé pozadí, bílá historie vlevo; vpravo barva podle úrovně ceny v rozsahu posledního swing high/low (p).
+   */
+  window._bbgRibbonSparkGen = 0;
+  window._bbgRibbonSparkInterval = null;
+  /** Hodnota obratu (Val) — stejná škála jako u Bloomberg terminálu (M / B / …). */
+  window._bbgFmtRibbonValueTraded = function (v) {
+    if (v == null || isNaN(v) || v <= 0) return '—';
+    if (v >= 1e12) return (v / 1e12).toFixed(3) + 'T';
+    if (v >= 1e9) return (v / 1e9).toFixed(3) + 'B';
+    if (v >= 1e6) return (v / 1e6).toFixed(3) + 'M';
+    if (v >= 1e3) return (v / 1e3).toFixed(2) + 'K';
+    return String(Math.round(v));
+  };
+  /**
+   * Čas události z Forex Factory řádku (ISO nebo YYYY-MM-DD + time).
+   */
+  window._bbgFfEventTimestampMs = function (ev) {
+    if (!ev || !ev.date) return NaN;
+    var s = String(ev.date);
+    if (s.indexOf('T') >= 0) {
+      var dx = new Date(s);
+      return isNaN(dx.getTime()) ? NaN : dx.getTime();
+    }
+    var t = String(ev.time || '').replace(/\s/g, '').toLowerCase();
+    var m = t.match(/^(\d{1,2}):(\d{2})(am|pm)$/i);
+    var ds = s.length >= 10 ? s.slice(0, 10) : s;
+    if (!m) {
+      var day = new Date(ds + 'T12:00:00');
+      return isNaN(day.getTime()) ? NaN : day.getTime();
+    }
+    var h = parseInt(m[1], 10);
+    var mi = parseInt(m[2], 10);
+    var ap = m[3].toLowerCase();
+    if (ap === 'pm' && h !== 12) h += 12;
+    if (ap === 'am' && h === 12) h = 0;
+    var d = new Date(ds + 'T' + String(h).padStart(2, '0') + ':' + String(mi).padStart(2, '0') + ':00');
+    return isNaN(d.getTime()) ? NaN : d.getTime();
+  };
+  /**
+   * „Objem“ makrozpráv: váhy High/Med/Low v okně −2h…+36h → stupeň 1–5 (stejná vizualizace, druhý sloupec nejvyšší při ≥2).
+   */
+  window._bbgMacroEventVolumeMeta = function (evts) {
+    var now = Date.now();
+    var horizon = now + 36 * 3600000;
+    var past = now - 2 * 3600000;
+    var W = 0;
+    var nHigh = 0;
+    var nMed = 0;
+    var nLow = 0;
+    var list = Array.isArray(evts) ? evts : [];
+    var i;
+    var ev;
+    var t;
+    var imp;
+    for (i = 0; i < list.length; i++) {
+      ev = list[i];
+      t = window._bbgFfEventTimestampMs(ev);
+      if (!isFinite(t) || t < past || t > horizon) continue;
+      imp = String(ev.impact || 'Low').toLowerCase();
+      if (imp === 'high') {
+        W += 4;
+        nHigh++;
+      } else if (imp === 'medium') {
+        W += 2;
+        nMed++;
+      } else {
+        W += 1;
+        nLow++;
+      }
+    }
+    var lvl;
+    if (W <= 0) lvl = 2;
+    else if (W <= 3) lvl = 2;
+    else if (W <= 7) lvl = 3;
+    else if (W <= 12) lvl = 4;
+    else lvl = 5;
+    if (nHigh >= 2 && lvl < 4) lvl = 4;
+    if (nHigh >= 4) lvl = 5;
+    lvl = Math.max(1, Math.min(5, lvl));
+    var tooltip =
+      'Macro news density (Forex Factory + kalendář): příští ~36h — ' +
+      nHigh +
+      ' high / ' +
+      nMed +
+      ' medium / ' +
+      nLow +
+      ' low · stupeň ' +
+      lvl +
+      '/5 (jako signal volume)';
+    return { level: lvl, tooltip: tooltip, counts: { high: nHigh, med: nMed, low: nLow, score: W } };
+  };
+  window._bbgFetchFfCalendarEventsMinimal = function () {
+    return Promise.all([
+      fetch('https://nfs.faireconomy.media/ff_calendar_thisweek.json', { cache: 'no-store', priority: 'low' })
+        .then(function (r) {
+          return r.json();
+        })
+        .catch(function () {
+          return [];
+        }),
+      fetch('https://nfs.faireconomy.media/ff_calendar_nextweek.json', { cache: 'no-store', priority: 'low' })
+        .then(function (r) {
+          return r.json();
+        })
+        .catch(function () {
+          return [];
+        })
+    ]).then(function (pair) {
+      var CCYS = { USD: 1, EUR: 1, GBP: 1, JPY: 1, CAD: 1, AUD: 1, CHF: 1, NZD: 1, CNY: 1 };
+      var impMap = { Holiday: 'Low', Low: 'Low', Medium: 'Medium', High: 'High' };
+      function parseJSON(arr) {
+        return (Array.isArray(arr) ? arr : [])
+          .map(function (e) {
+            var country = e.country || e.currency || '';
+            if (!CCYS[country]) return null;
+            var d = new Date(e.date);
+            var dateStr = isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+            return {
+              date: dateStr,
+              time: e.time || '',
+              currency: country,
+              impact: impMap[e.impact] || 'Low',
+              title: e.title || ''
+            };
+          })
+          .filter(Boolean);
+      }
+      return parseJSON(pair[0]).concat(parseJSON(pair[1]));
+    });
+  };
+  window._bbgRefreshRibbonMacroEventVolumeSync = function () {
+    var evts = window._ffLiveEvts || (window._macroCache && window._macroCache.ecal) || [];
+    if (!evts.length) return;
+    var meta = window._bbgMacroEventVolumeMeta(evts);
+    window._bbgApplyRibbonNewsRisk(meta.level);
+    var root = document.getElementById('bbg-ribbon-risk-bars');
+    if (root) root.title = meta.tooltip;
+  };
+  window._bbgRefreshRibbonMacroEventVolume = function () {
+    var evts = window._ffLiveEvts || (window._macroCache && window._macroCache.ecal) || [];
+    function apply(list) {
+      var meta = window._bbgMacroEventVolumeMeta(list);
+      window._bbgApplyRibbonNewsRisk(meta.level);
+      var root = document.getElementById('bbg-ribbon-risk-bars');
+      if (root) root.title = meta.tooltip;
+    }
+    if (evts.length > 0) {
+      apply(evts);
+      return;
+    }
+    window._bbgFetchFfCalendarEventsMinimal().then(function (fetched) {
+      if (fetched && fetched.length) apply(fetched);
+      else if (typeof window.fetchMacroCalendar === 'function')
+        window
+          .fetchMacroCalendar(true)
+          .then(function () {
+            var e2 = window._ffLiveEvts || (window._macroCache && window._macroCache.ecal) || [];
+            if (e2.length) apply(e2);
+            else window._bbgApplyRibbonNewsRisk(2);
+          })
+          .catch(function () {
+            window._bbgApplyRibbonNewsRisk(2);
+          });
+      else window._bbgApplyRibbonNewsRisk(2);
+    }).catch(function () {
+      window._bbgApplyRibbonNewsRisk(2);
+    });
+  };
+  /* Vynucený pull přímo z Forex Factory JSON (bez závislosti na sdílené cache). */
+  window._bbgRefreshRibbonMacroEventVolumeStrict = function () {
+    function apply(list) {
+      var meta = window._bbgMacroEventVolumeMeta(list);
+      window._bbgRibbonRiskLastTs = Date.now();
+      window._bbgRibbonRiskLastCounts = meta && meta.counts ? meta.counts : null;
+      window._bbgApplyRibbonNewsRisk(meta.level);
+      var root = document.getElementById('bbg-ribbon-risk-bars');
+      if (root) root.title = meta.tooltip;
+    }
+    window
+      ._bbgFetchFfCalendarEventsMinimal()
+      .then(function (fetched) {
+        if (fetched && fetched.length) {
+          apply(fetched);
+          return;
+        }
+        /* fallback: interní live cache kalendáře, když FF JSON dočasně spadne */
+        var e2 = window._ffLiveEvts || (window._macroCache && window._macroCache.ecal) || [];
+        if (e2.length) apply(e2);
+        else window._bbgApplyRibbonNewsRisk(2);
+      })
+      .catch(function () {
+        var e2 = window._ffLiveEvts || (window._macroCache && window._macroCache.ecal) || [];
+        if (e2.length) apply(e2);
+        else window._bbgApplyRibbonNewsRisk(2);
+      });
+  };
+  /**
+   * 5 segmentů — „volume“ makro zpráv (Forex Factory / sdílený kalendář), ne headline klíčová slova.
+   */
+  window._bbgRibbonNewsRiskLevel = 2;
+  window._bbgApplyRibbonNewsRisk = function (level) {
+    var n = parseInt(level, 10);
+    if (!isFinite(n) || n < 1) n = window._bbgRibbonNewsRiskLevel || 2;
+    if (n > 5) n = 5;
+    window._bbgRibbonNewsRiskLevel = n;
+    var root = document.getElementById('bbg-ribbon-risk-bars');
+    if (!root) return;
+    var bars = root.querySelectorAll('[data-bbg-risk-i]');
+    var ORANGE = '#d48821';
+    var GRAY = '#3a3a3a';
+    var i;
+    for (i = 0; i < bars.length; i++) {
+      var el = bars[i];
+      var on = i < n;
+      var h = on && i === 1 ? 10 : 5;
+      el.style.height = h + 'px';
+      el.style.background = on ? ORANGE : GRAY;
+    }
+  };
+  window._bbgDeriveRibbonRiskFromNews = function () {
+    window._bbgRefreshRibbonMacroEventVolume();
+  };
+  window._bbgPaintRibbon2DayPlaceholder = function () {
+    var gl = document.getElementById('bbg-spark-left-segs');
+    var gr = document.getElementById('bbg-spark-right-segs');
+    if (!gl || !gr) return;
+    var ns = 'http://www.w3.org/2000/svg';
+    var sparkStrokeW = '1.2';
+    function clearG(g) {
+      while (g.firstChild) g.removeChild(g.firstChild);
+    }
+    function poly(g, pairs, stroke, filt) {
+      var pl = document.createElementNS(ns, 'polyline');
+      pl.setAttribute('points', pairs.map(function (p) { return p[0] + ',' + p[1]; }).join(' '));
+      pl.setAttribute('fill', 'none');
+      pl.setAttribute('stroke', stroke);
+      pl.setAttribute('stroke-width', sparkStrokeW);
+      pl.setAttribute('stroke-linecap', 'round');
+      pl.setAttribute('stroke-linejoin', 'round');
+      if (filt) pl.setAttribute('filter', filt);
+      g.appendChild(pl);
+    }
+    function phP(yy) {
+      var p = (27 - yy) / 24;
+      return p < 0 ? 0 : p > 1 ? 1 : p;
+    }
+    function phSplitT(p0, p1) {
+      var lo = Math.min(p0, p1);
+      var hi = Math.max(p0, p1);
+      var b = [0.3, 0.5, 0.7];
+      var out = [];
+      var k;
+      if (Math.abs(p1 - p0) < 1e-9) return out;
+      for (k = 0; k < b.length; k++) {
+        var P = b[k];
+        if (P > lo && P < hi) out.push((P - p0) / (p1 - p0));
+      }
+      out.sort(function (a, b) {
+        return a - b;
+      });
+      return out;
+    }
+    function phStroke(p) {
+      if (p < 0.3) return { s: '#9c223c', f: 'url(#bbg-spark-glow-red)' };
+      if (p < 0.5) return { s: '#ff4a5c', f: 'url(#bbg-spark-glow-red)' };
+      if (p < 0.7) return { s: '#6fe8b8', f: 'url(#bbg-spark-glow-green)' };
+      return { s: '#00ff8c', f: 'url(#bbg-spark-glow-green)' };
+    }
+    function phEdge(g, x0, y0, x1, y1) {
+      var p0 = phP(y0);
+      var p1 = phP(y1);
+      var ts = phSplitT(p0, p1);
+      var br = [0].concat(ts).concat([1]);
+      var s;
+      for (s = 0; s < br.length - 1; s++) {
+        var ta = br[s];
+        var tb = br[s + 1];
+        if (tb - ta < 1e-9) continue;
+        var pa = p0 + ta * (p1 - p0);
+        var pb = p0 + tb * (p1 - p0);
+        var pm = (pa + pb) * 0.5;
+        var lk = phStroke(pm);
+        var xm0 = x0 + ta * (x1 - x0);
+        var ym0 = y0 + ta * (y1 - y0);
+        var xm1 = x0 + tb * (x1 - x0);
+        var ym1 = y0 + tb * (y1 - y0);
+        poly(g, [[xm0, ym0], [xm1, ym1]], lk.s, lk.f);
+      }
+    }
+    clearG(gl);
+    clearG(gr);
+    poly(gl, [[0, 15], [23, 13], [46, 18], [58, 26], [70, 26]], 'rgba(255,255,255,0.94)', 'url(#bbg-spark-glow-white)');
+    phEdge(gr, 70, 15, 93, 12);
+    phEdge(gr, 93, 12, 116, 19);
+    phEdge(gr, 116, 19, 140, 14);
+  };
+  window._bbgPaintRibbonHl2DaySpark = function (leftCloses, rightCloses, gMin, gMax, swingRangeHigh, swingRangeLow) {
+    if (!leftCloses || !rightCloses || leftCloses.length < 2 || rightCloses.length < 2) return;
+    var gl = document.getElementById('bbg-spark-left-segs');
+    var gr = document.getElementById('bbg-spark-right-segs');
+    if (!gl || !gr) return;
+    var lo = gMin;
+    var hi = gMax;
+    if (lo == null || hi == null || !isFinite(lo) || !isFinite(hi)) {
+      var merged = leftCloses.concat(rightCloses);
+      lo = Math.min.apply(null, merged);
+      hi = Math.max.apply(null, merged);
+    }
+    function normY(c) {
+      if (!isFinite(lo) || !isFinite(hi) || hi <= lo) return 15;
+      var t = (c - lo) / (hi - lo);
+      var yy = 27 - t * 24;
+      if (yy < 3) yy = 3;
+      if (yy > 27) yy = 27;
+      return yy;
+    }
+    function downsample(closes, n) {
+      var out = [];
+      var i;
+      for (i = 0; i < n; i++) {
+        var idx = Math.round(n === 1 ? 0 : (i * (closes.length - 1)) / (n - 1));
+        out.push(closes[idx]);
+      }
+      return out;
+    }
+    var npt = 18;
+    var lS = downsample(leftCloses, npt);
+    var rS = downsample(rightCloses, npt);
+    var xDiv = 70;
+    var xEnd = 140;
+    var xsL = [];
+    var ysL = [];
+    var xsR = [];
+    var ysR = [];
+    var i;
+    for (i = 0; i < npt; i++) {
+      xsL.push(i * (xDiv / (npt - 1)));
+      ysL.push(normY(lS[i]));
+    }
+    for (i = 0; i < npt; i++) {
+      xsR.push(xDiv + i * ((xEnd - xDiv) / (npt - 1)));
+      ysR.push(normY(rS[i]));
+    }
+    var rBot = swingRangeLow != null && isFinite(swingRangeLow) ? swingRangeLow : null;
+    var rTop = swingRangeHigh != null && isFinite(swingRangeHigh) ? swingRangeHigh : null;
+    if (rBot == null || rTop == null || !(rTop > rBot)) {
+      rBot = lo;
+      rTop = hi;
+    }
+    var ns = 'http://www.w3.org/2000/svg';
+    var strokeHist = 'rgba(255,255,255,0.94)';
+    var sparkStrokeW = '1.2';
+    var filtW = 'url(#bbg-spark-glow-white)';
+    var filtG = 'url(#bbg-spark-glow-green)';
+    var filtR = 'url(#bbg-spark-glow-red)';
+    function clearG(g) {
+      while (g.firstChild) g.removeChild(g.firstChild);
+    }
+    function appendPoly(g, xs, ys, j0, j1, stroke, svgFilter) {
+      if (j1 <= j0) return;
+      var pts = [];
+      var k;
+      for (k = j0; k <= j1; k++) {
+        pts.push(xs[k].toFixed(2) + ',' + ys[k].toFixed(2));
+      }
+      var pl = document.createElementNS(ns, 'polyline');
+      pl.setAttribute('points', pts.join(' '));
+      pl.setAttribute('fill', 'none');
+      pl.setAttribute('stroke', stroke);
+      pl.setAttribute('stroke-width', sparkStrokeW);
+      pl.setAttribute('stroke-linecap', 'round');
+      pl.setAttribute('stroke-linejoin', 'round');
+      if (svgFilter) pl.setAttribute('filter', svgFilter);
+      g.appendChild(pl);
+    }
+    function levelKey(price, rangeLo, rangeHi) {
+      var span = rangeHi - rangeLo;
+      if (!(span > 0) || !isFinite(span) || !isFinite(price)) return 'g2';
+      var p = (price - rangeLo) / span;
+      if (p < 0) p = 0;
+      if (p > 1) p = 1;
+      if (p < 0.3) return 'r0';
+      if (p < 0.5) return 'r1';
+      if (p < 0.7) return 'g1';
+      return 'g2';
+    }
+    function levelStrokeAndFilt(price, rangeLo, rangeHi) {
+      var k = levelKey(price, rangeLo, rangeHi);
+      if (k === 'r0') return { stroke: '#9c223c', filt: filtR };
+      if (k === 'r1') return { stroke: '#ff4a5c', filt: filtR };
+      if (k === 'g1') return { stroke: '#6fe8b8', filt: filtG };
+      return { stroke: '#00ff8c', filt: filtG };
+    }
+    function splitTAtPriceLevels(c0, c1, rangeLo, rangeHi) {
+      var span = rangeHi - rangeLo;
+      if (!(span > 0) || Math.abs(c1 - c0) < 1e-14) return [];
+      var prices = [rangeLo + 0.3 * span, rangeLo + 0.5 * span, rangeLo + 0.7 * span];
+      var lo = Math.min(c0, c1);
+      var hi = Math.max(c0, c1);
+      var out = [];
+      var jx;
+      for (jx = 0; jx < prices.length; jx++) {
+        var P = prices[jx];
+        if (P > lo && P < hi) out.push((P - c0) / (c1 - c0));
+      }
+      out.sort(function (a, b) {
+        return a - b;
+      });
+      return out;
+    }
+    function appendSeg2(g, x0, y0, x1, y1, stroke, svgFilter) {
+      var pl = document.createElementNS(ns, 'polyline');
+      pl.setAttribute('points', x0.toFixed(2) + ',' + y0.toFixed(2) + ' ' + x1.toFixed(2) + ',' + y1.toFixed(2));
+      pl.setAttribute('fill', 'none');
+      pl.setAttribute('stroke', stroke);
+      pl.setAttribute('stroke-width', sparkStrokeW);
+      pl.setAttribute('stroke-linecap', 'round');
+      pl.setAttribute('stroke-linejoin', 'round');
+      if (svgFilter) pl.setAttribute('filter', svgFilter);
+      g.appendChild(pl);
+    }
+    function drawSegsLeftWhite(g, xs, ys) {
+      appendPoly(g, xs, ys, 0, xs.length - 1, strokeHist, filtW);
+    }
+    function drawSegsRightByLevel(g, xs, ys, closes, rangeLo, rangeHi) {
+      var j;
+      for (j = 0; j < xs.length - 1; j++) {
+        var x0 = xs[j];
+        var y0 = ys[j];
+        var c0 = closes[j];
+        var x1 = xs[j + 1];
+        var y1 = ys[j + 1];
+        var c1 = closes[j + 1];
+        var ts = splitTAtPriceLevels(c0, c1, rangeLo, rangeHi);
+        var br = [0].concat(ts).concat([1]);
+        var s;
+        for (s = 0; s < br.length - 1; s++) {
+          var ta = br[s];
+          var tb = br[s + 1];
+          if (tb - ta < 1e-9) continue;
+          var ca = c0 + ta * (c1 - c0);
+          var cb = c0 + tb * (c1 - c0);
+          var midC = (ca + cb) * 0.5;
+          var lk = levelStrokeAndFilt(midC, rangeLo, rangeHi);
+          var xm0 = x0 + ta * (x1 - x0);
+          var ym0 = y0 + ta * (y1 - y0);
+          var xm1 = x0 + tb * (x1 - x0);
+          var ym1 = y0 + tb * (y1 - y0);
+          appendSeg2(g, xm0, ym0, xm1, ym1, lk.stroke, lk.filt);
+        }
+      }
+    }
+    clearG(gl);
+    clearG(gr);
+    drawSegsLeftWhite(gl, xsL, ysL);
+    drawSegsRightByLevel(gr, xsR, ysR, rS, rBot, rTop);
+  };
+  window._bbgFetchHlRibbon2DaySparkSplit = function (coin) {
     var c = String(coin || 'BTC').toUpperCase();
     var now = Date.now();
-    /* ~4 dny dat; 30m = méně „useknutí“ než dvě samostatné 15m škály. Poloviny po ~48 h. */
     var spanMs = 96 * 3600000;
-    var halfMs = 48 * 3600000;
     var start = now - spanMs;
     return fetch('https://api.hyperliquid.xyz/info', {
       method: 'POST',
@@ -182,28 +920,142 @@
         bars.sort(function (a, b) {
           return a.t - b.t;
         });
-        if (bars.length < 4) return null;
-        var mid = now - halfMs;
-        var split = 0;
-        for (i = 0; i < bars.length; i++) {
-          if (bars[i].t >= mid) {
-            split = i;
-            break;
-          }
+        return window._bbgHlSplitBarsToLeftRight2Day(bars, now);
+      })
+      .catch(function () {
+        return null;
+      });
+  };
+  window._bbgRibbonHlCoinFromRoute = function () {
+    var r = window._bbgLwcRoute;
+    if (!r || !r.tk) return '';
+    var u = String(r.tk).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    return u.replace(/USDT$|USDC$|USD$/i, '') || '';
+  };
+  window._bbgBinanceSymbolForRibbon = function () {
+    var r = window._bbgLwcRoute;
+    if (!r || r.ex !== 'BINANCE') return '';
+    var u = String(r.tk || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!u) return '';
+    if (/USDT$|USDC$|BUSD$|FDUSD$/.test(u)) return u;
+    return u + 'USDT';
+  };
+  window._bbgFetchBinanceRibbon2DaySparkSplit = function () {
+    var sym = window._bbgBinanceSymbolForRibbon();
+    if (!sym) return Promise.resolve(null);
+    var now = Date.now();
+    return fetch(
+      'https://api.binance.com/api/v3/klines?symbol=' + encodeURIComponent(sym) + '&interval=30m&limit=500',
+      { cache: 'no-store', priority: 'low' }
+    )
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (rows) {
+        if (!Array.isArray(rows) || rows.length < 4) return null;
+        var bars = [];
+        var i;
+        for (i = 0; i < rows.length; i++) {
+          var row = rows[i];
+          if (!row || row.length < 5) continue;
+          var tMs = parseInt(row[0], 10);
+          var cl = parseFloat(row[4]);
+          if (!tMs || isNaN(cl)) continue;
+          bars.push({ t: tMs, c: cl });
         }
-        if (split < 2) split = Math.max(2, Math.floor(bars.length / 2));
-        if (split > bars.length - 2) split = bars.length - 2;
-        /* Společná cena na hranici: levá končí i=split, pravá začíná split → navazuje podle ceny. */
-        var left = [];
-        var right = [];
-        for (i = 0; i <= split; i++) left.push(bars[i].c);
-        for (i = split; i < bars.length; i++) right.push(bars[i].c);
-        if (left.length < 2 || right.length < 2) return null;
-        var allC = [];
-        for (i = 0; i < bars.length; i++) allC.push(bars[i].c);
-        var gMin = Math.min.apply(null, allC);
-        var gMax = Math.max.apply(null, allC);
-        return window._bbgBuildHlCweiSparkSvg(left, right, gMin, gMax);
+        bars.sort(function (a, b) {
+          return a.t - b.t;
+        });
+        return window._bbgHlSplitBarsToLeftRight2Day(bars, now);
+      })
+      .catch(function () {
+        return null;
+      });
+  };
+  window._bbgRefreshRibbon2DaySpark = function () {
+    if (typeof window._bbgPaintRibbonHl2DaySpark !== 'function') return;
+    var gen = ++window._bbgRibbonSparkGen;
+    var r = window._bbgLwcRoute;
+    var coinHl = window._bbgRibbonHlCoinFromRoute();
+    var p = null;
+    if (r && r.ex === 'BINANCE') {
+      p = window._bbgFetchBinanceRibbon2DaySparkSplit();
+    } else if (r && r.ex === 'HYPERLIQUID' && coinHl) {
+      p = window._bbgFetchHlRibbon2DaySparkSplit(coinHl);
+    } else if (coinHl) {
+      p = window._bbgFetchHlRibbon2DaySparkSplit(coinHl);
+    } else {
+      window._bbgPaintRibbon2DayPlaceholder();
+      return;
+    }
+    Promise.resolve(p).then(function (split) {
+      if (gen !== window._bbgRibbonSparkGen) return;
+      if (!split) {
+        window._bbgPaintRibbon2DayPlaceholder();
+        return;
+      }
+      window._bbgPaintRibbonHl2DaySpark(split.left, split.right, split.gMin, split.gMax, split.swingRangeHigh, split.swingRangeLow);
+    });
+  };
+  window._bbgScheduleRibbon2DaySpark = function () {
+    if (typeof window._bbgRefreshRibbon2DaySpark !== 'function') return;
+    window._bbgRefreshRibbon2DaySpark();
+    if (window._bbgRibbonSparkInterval) return;
+    window._bbgRibbonSparkInterval = setInterval(function () {
+      try {
+        window._bbgRefreshRibbon2DaySpark();
+      } catch (_e) {}
+    }, 120000);
+  };
+  (function _bbgRibbonRiskFromNewsPoll() {
+    function kick() {
+      try {
+        if (typeof window._bbgRefreshRibbonMacroEventVolumeStrict === 'function') window._bbgRefreshRibbonMacroEventVolumeStrict();
+        else if (typeof window._bbgDeriveRibbonRiskFromNews === 'function') window._bbgDeriveRibbonRiskFromNews();
+      } catch (_e) {}
+    }
+    try {
+      if (typeof document !== 'undefined') {
+        if (document.readyState === 'loading')
+          document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(kick, 600);
+          });
+        else setTimeout(kick, 600);
+        /* Častější refresh, aby risk bary žily podle FF dat. */
+        setInterval(kick, 45000);
+      }
+    } catch (_e2) {}
+  })();
+  window._bbgFetchHlCwei2DaySpark = function (coin) {
+    var c = String(coin || 'BTC').toUpperCase();
+    var now = Date.now();
+    /* ~4 dny dat; 30m = méně „useknutí“ než dvě samostatné 15m škály. Poloviny po ~48 h. */
+    var spanMs = 96 * 3600000;
+    var start = now - spanMs;
+    return fetch('https://api.hyperliquid.xyz/info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'candleSnapshot', req: { coin: c, interval: '30m', startTime: start, endTime: now } }),
+      cache: 'no-store',
+      priority: 'low'
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (data) {
+        if (!Array.isArray(data) || data.length < 4) return null;
+        var bars = [];
+        var i;
+        for (i = 0; i < data.length; i++) {
+          var p = window._bbgHlBarTc(data[i]);
+          if (p) bars.push(p);
+        }
+        bars.sort(function (a, b) {
+          return a.t - b.t;
+        });
+        var splitObj = window._bbgHlSplitBarsToLeftRight2Day(bars, now);
+        if (!splitObj) return null;
+        return window._bbgBuildHlCweiSparkSvg(splitObj.left, splitObj.right, splitObj.gMin, splitObj.gMax);
       })
       .catch(function () {
         return null;
@@ -607,7 +1459,13 @@
           return v >= 1000 ? v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
             : v >= 1 ? parseFloat(v.toFixed(4)).toString() : parseFloat(v.toPrecision(5)).toString();
         };
-        var setR = function(id, t){ var e = document.getElementById(id); if(e) e.innerText = t; };
+        var setR = function(id, t){
+          if ((id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low') && typeof window._bbgRibbonOhlcSetVal === 'function') {
+            window._bbgRibbonOhlcSetVal(id, t);
+            return;
+          }
+          var e = document.getElementById(id); if(e) e.innerText = t;
+        };
         setR('bbg-current-price', fmtP(px));
         setR('bbg-close', fmtP(px));
         var chgEl = document.getElementById('bbg-price-change');
@@ -2472,12 +3330,23 @@ body > .bwei-optbar.wei-portal { display: none !important; }
 
   function _bbgClearPriceDom(){
     try{
-      ['bbg-current-price','bbg-close','bbg-start','bbg-high','bbg-low','bbg-volume','bbg-time',
+      ['bbg-current-price','bbg-close','bbg-start','bbg-high','bbg-low','bbg-volume','bbg-value-traded','bbg-time',
        'bbg-chart-time-start','bbg-chart-time-end',
        'ov-start','ov-close','ov-high','ov-low','ov-open','bbg-price-change'].forEach(function(id){
         var e = document.getElementById(id);
         if(e) e.textContent = '\u2014';
       });
+      try{
+        if(typeof window._bbgRibbonOhlcSetVal==='function'){
+          window._bbgRibbonOhlcSetVal('bbg-start','\u2014');
+          window._bbgRibbonOhlcSetVal('bbg-high','\u2014');
+          window._bbgRibbonOhlcSetVal('bbg-low','\u2014');
+        }
+      }catch(_){}
+      var _ba = document.getElementById('bbg-ticker-bidask');
+      if(_ba) _ba.textContent = 'L\u2014 / \u2014L';
+      var _tsz = document.getElementById('bbg-ticker-size');
+      if(_tsz) _tsz.textContent = '\u2014 \u00d7 \u2014';
       var chg = document.getElementById('bbg-price-change');
       if(chg) chg.style.color = '#555';
       var arr = document.getElementById('bbg-price-arrow');
@@ -5411,67 +6280,132 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="bbg-ribbon-cmd-slot" class="bbg-ribbon-cwei-cmd-slot" data-bbg-part="ribbon-cwei-cmd" style="display:none;"></div>
 
         <!-- Row 1: Ticker -->
-        <div style="display:flex;align-items:center;background:#000;padding:3px 6px;height:34px;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <span id="bbg-ticker-symbol" style="color:#c0c0c0;font-size:20px;font-weight:400;letter-spacing:0.5px;">BTC</span>
-            <span id="bbg-ticker-ccy" style="color:#808080;font-size:18px;font-weight:400;">USD</span>
-            <svg width="11" height="11" viewBox="0 0 11 11" style="margin-left:2px;">
+        <div style="display:flex;align-items:center;background:#000;padding:4px 8px;min-height:44px;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;">
+          <div style="display:flex;align-items:center;gap:20px;">
+            <span id="bbg-ticker-symbol" style="color:#c0c0c0;font-size:23px;font-weight:400;letter-spacing:0.5px;">BTC</span>
+            <span id="bbg-ticker-ccy" style="color:#6B6B6A;font-size:20px;font-weight:400;">USD</span>
+            <svg width="13" height="13" viewBox="0 0 11 11" style="margin-left:2px;">
               <path id="bbg-price-arrow-svg" d="M5.5 1 L10 6 L1 6 Z" fill="#4CAF50"/>
             </svg>
-            <span id="bbg-current-price" style="color:#4CAF50;font-size:25px;font-weight:600;letter-spacing:-0.3px;">—</span>
-            <span id="bbg-price-change" style="color:#4CAF50;font-size:21px;font-weight:400;">—</span>
+            <span id="bbg-current-price" style="color:#4CAF50;font-size:28px;font-weight:600;letter-spacing:-0.3px;">—</span>
+            <span id="bbg-price-change" style="color:#4CAF50;font-size:24px;font-weight:400;">—</span>
             <!-- Sparkline -->
-            <svg id="bbg-ticker-spark" width="140" height="24" viewBox="0 0 140 24" preserveAspectRatio="none" style="margin:0 6px;flex:0 0 auto;">
-              <polyline id="bbg-spark-left"  fill="none" stroke="#7a6a48" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points="0,12 20,11 40,13 60,10 80,14 100,9 120,11 140,8"/>
-              <polyline id="bbg-spark-right" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" points=""/>
+            <svg id="bbg-ticker-spark" width="200" height="43" viewBox="0 0 140 30" preserveAspectRatio="none" style="margin:0 8px;flex:0 0 auto;background:#000;">
+              <defs>
+                <filter id="bbg-spark-glow-white" x="-55%" y="-55%" width="210%" height="210%" color-interpolation-filters="sRGB">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="0.85" result="b"/>
+                  <feMerge>
+                    <feMergeNode in="b"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+                <filter id="bbg-spark-glow-green" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="1.05" result="b"/>
+                  <feMerge>
+                    <feMergeNode in="b"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+                <filter id="bbg-spark-glow-red" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="1.05" result="b"/>
+                  <feMerge>
+                    <feMergeNode in="b"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+              <g id="bbg-spark-left-segs" fill="none"></g>
+              <line id="bbg-spark-divider" x1="70" y1="2.5" x2="70" y2="27.5" stroke="rgba(255,255,255,0.32)" stroke-width="0.65" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+              <g id="bbg-spark-right-segs" fill="none"></g>
             </svg>
-            <span id="bbg-ticker-bidask" style="color:#808080;font-size:19px;font-weight:400;margin-left:4px;">L—/—L</span>
-            <span id="bbg-ticker-size" style="color:#808080;font-size:19px;font-weight:400;margin-left:4px;">3747 × 802</span>
+            <span id="bbg-ticker-bidask" style="color:#B7B2AF;font-size:20px;font-weight:400;margin-left:6px;">L— / —L</span>
+            <span id="bbg-ticker-size" style="color:#808080;font-size:20px;font-weight:400;margin-left:6px;">— × —</span>
           </div>
         </div>
 
-        <!-- Row 2: OHLC Details -->
-        <div class="bbg-ribbon-ohlc-row" style="display:flex;align-items:center;background:#000;padding:2px 6px;height:30px;gap:10px;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;">
-          <div style="display:flex;align-items:center;gap:2px;">
-            <div style="width:4px;height:4px;background:#808080;border-radius:50%;"></div>
-            <div style="width:4px;height:4px;background:#808080;border-radius:50%;"></div>
-            <div style="width:4px;height:4px;background:#808080;border-radius:50%;"></div>
+        <!-- Row 2: OHLC — vnitřní mezera label↔hodnota (jako BB); větší odstup mezi skupinami -->
+        <div class="bbg-ribbon-ohlc-row" style="display:flex;align-items:center;background:#000;padding:4px 8px;min-height:40px;gap:0;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;position:relative;">
+          <div id="bbg-ribbon-risk-bars" title="News risk (1–5) / riziko z titulků" class="bbg-ohlc-cell" style="display:flex;align-items:flex-end;gap:2px;height:11px;margin-right:12px;flex-shrink:0;">
+            <div data-bbg-risk-i="0" style="width:5px;height:5px;background:#d48821;border-radius:1px;flex-shrink:0;"></div>
+            <div data-bbg-risk-i="1" style="width:5px;height:10px;background:#d48821;border-radius:1px;flex-shrink:0;"></div>
+            <div data-bbg-risk-i="2" style="width:5px;height:5px;background:#3a3a3a;border-radius:1px;flex-shrink:0;"></div>
+            <div data-bbg-risk-i="3" style="width:5px;height:5px;background:#3a3a3a;border-radius:1px;flex-shrink:0;"></div>
+            <div data-bbg-risk-i="4" style="width:5px;height:5px;background:#3a3a3a;border-radius:1px;flex-shrink:0;"></div>
           </div>
-          <div style="width:22px;height:22px;background:#ffa027;border-radius:2px;display:flex;align-items:center;justify-content:center;">
-            <span style="color:#1a1a1a;font-size:12px;font-weight:700;">M</span>
+          <div id="bbg-ribbon-market-meter" title="Market" class="bbg-ohlc-cell" style="width:22px;height:22px;margin-right:14px;flex-shrink:0;border-radius:2px;line-height:0;border:none;box-sizing:border-box;background:#F9D74C;display:flex;align-items:center;justify-content:center;">
+            <img src="meter-icon.svg" alt="" aria-hidden="true" style="width:20px;height:20px;display:block;object-fit:contain;image-rendering:auto;transform:translateY(-0.4px);"/>
           </div>
-          <span style="color:#808080;font-size:18px;font-weight:400;">At <span id="bbg-time" style="color:#e8e0cc;font-weight:700;">—:—</span> <span style="color:#ffa027;">d</span></span>
-          <span style="color:#808080;font-size:18px;font-weight:400;">Vol</span>
-          <span id="bbg-volume" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
-          <span style="color:#ffa027;font-size:18px;font-weight:400;margin-left:2px;">O</span>
-          <span id="bbg-start" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
-          <span style="color:#ffa027;font-size:18px;font-weight:400;margin-left:2px;">H</span>
-          <span id="bbg-high" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
-          <span style="color:#ffa027;font-size:18px;font-weight:400;margin-left:2px;">L</span>
-          <span id="bbg-low" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
-          <span style="color:#808080;font-size:18px;font-weight:400;">Val</span>
-          <span id="bbg-close" style="color:#c0c0c0;font-size:18px;font-weight:400;">—</span>
+          <span class="bbg-ohlc-cell" style="font-size:23px;font-weight:300;margin-right:20px;"><span style="color:#ffa027;font-size:23px;font-weight:300;">At</span> <span id="bbg-time" style="color:#6B6B6A;font-size:23px;font-weight:400;">—:—</span> <span style="color:#6B6B6A;font-size:23px;font-weight:400;">d</span></span>
+          <span class="bbg-ohlc-lbl bbg-ohlc-cell" style="color:#ffa027;font-size:23px;font-weight:300;margin-right:8px;">Vol</span>
+          <span class="bbg-ohlc-val bbg-ohlc-cell" id="bbg-volume" style="color:#B7B2AF;font-size:23px;font-weight:400;margin-right:22px;">—</span>
+          <span class="bbg-ohlc-lbl bbg-ohlc-cell bbg-ohlc-open-lbl" style="color:#ffa027;font-size:23px;font-weight:300;margin-right:8px;">0</span>
+          <span class="bbg-ohlc-val-wrap bbg-ohlc-cell" style="margin-right:22px;"><span class="bbg-ohlc-val" id="bbg-start">—</span><span class="bbg-ohlc-sfx" style="display:none;">L</span></span>
+          <span class="bbg-ohlc-lbl bbg-ohlc-cell" style="color:#ffa027;font-size:23px;font-weight:300;margin-right:8px;">H</span>
+          <span class="bbg-ohlc-val-wrap bbg-ohlc-cell" style="margin-right:22px;"><span class="bbg-ohlc-val" id="bbg-high">—</span><span class="bbg-ohlc-sfx" style="display:none;">L</span></span>
+          <span class="bbg-ohlc-lbl bbg-ohlc-cell" style="color:#ffa027;font-size:23px;font-weight:300;margin-right:8px;">L</span>
+          <span class="bbg-ohlc-val-wrap bbg-ohlc-cell" style="margin-right:22px;"><span class="bbg-ohlc-val" id="bbg-low">—</span><span class="bbg-ohlc-sfx" style="display:none;">L</span></span>
+          <span class="bbg-ohlc-lbl bbg-ohlc-cell" style="color:#ffa027;font-size:23px;font-weight:300;margin-right:8px;">Val</span>
+          <span class="bbg-ohlc-val bbg-ohlc-cell" id="bbg-value-traded" style="color:#B7B2AF;font-size:23px;font-weight:400;">—</span>
+          <span id="bbg-close" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);" aria-hidden="true">—</span>
         </div>
 
         <!-- Row 3: Red Toolbar -->
         <div class="bbg-ribbon-red-toolbar" style="background:#87101E;display:flex;padding:0;height:36px;align-items:stretch;font-family:'Segoe UI','Roboto','Helvetica Neue',Arial,sans-serif;font-size:20px;font-weight:400;color:#ffffff;justify-content:space-between;box-sizing:border-box;">
-          <div style="display:flex;align-items:stretch;height:100%;">
+          <div class="bbg-tb-left-cluster" style="display:flex;align-items:stretch;height:100%;position:relative;z-index:12;">
             <div id="bbg-toolbar-title" style="display:inline-flex;align-items:stretch;align-self:stretch;position:relative;z-index:1;box-sizing:border-box;cursor:default;">
               <div style="display:flex;align-items:stretch;background:#ffa027;color:#1a1a1a;padding:0 14px 0 8px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:20px;font-weight:400;border:1px solid #000;box-sizing:border-box;line-height:34px;max-width:min(480px,42vw);width:max-content;">
                 <span id="bbg-toolbar-title-text" data-symbol="BTC" style="line-height:34px;font-weight:400;">Bitcoin crypto</span>
               </div>
             </div>
-            <div style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#ffffff;border-right:1px solid #000;margin-left:4px;">
-              <span><span class="bbg-tb-cmd-prefix">94)</span> Suggested Charts</span>
-              <span style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
+            <div class="bbg-tb-dd" data-bbg-tb="suggested" style="position:relative;align-self:stretch;display:flex;">
+              <button type="button" class="bbg-tb-dd-trigger" id="bbg-tb-suggested-trigger" aria-expanded="false" aria-haspopup="true" aria-controls="bbg-tb-menu-suggested"
+                style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#ffffff;border:none;border-right:1px solid #000;background:transparent;margin:0;font-family:inherit;">
+                <span><span class="bbg-tb-cmd-prefix">94)</span> Suggested Charts</span>
+                <span class="bbg-tb-chevron" style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
+              </button>
+              <div class="bbg-tb-menu" id="bbg-tb-menu-suggested" role="menu" hidden aria-labelledby="bbg-tb-suggested-trigger">
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-suggest="risk-premium">Risk Premium</div>
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-suggest="pe-est">P/E Estimates</div>
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-suggest="eps">EPS Actuals/Estimates</div>
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-suggest="trail-fwd">Trail vs Fwd Valuations</div>
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-suggest="net-debt">Net Debt to EBITDA Rel</div>
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-suggest="pe-rel">P/E Estimate Relative</div>
+              </div>
             </div>
-            <div id="bbg-chart-actions-btn" onclick="window._toggleChartIndicators(this)" style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#ffffff;border-right:1px solid #000;">
-              <span><span class="bbg-tb-cmd-prefix">96)</span> Actions</span>
-              <span style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
+            <div class="bbg-tb-dd" data-bbg-tb="actions" style="position:relative;align-self:stretch;display:flex;">
+              <button type="button" id="bbg-chart-actions-btn" onclick="event.stopPropagation();window._toggleChartIndicators(this)" aria-expanded="false" aria-haspopup="true"
+                style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#ffffff;border:none;border-right:1px solid #000;background:transparent;margin:0;font-family:inherit;">
+                <span><span class="bbg-tb-cmd-prefix">96)</span> Actions</span>
+                <span style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
+              </button>
             </div>
-            <div style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#ffffff;border-right:1px solid #000;">
-              <span><span class="bbg-tb-cmd-prefix">97)</span> Edit</span>
-              <span style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
+            <div class="bbg-tb-dd" data-bbg-tb="edit" style="position:relative;align-self:stretch;display:flex;">
+              <button type="button" class="bbg-tb-dd-trigger" id="bbg-tb-edit-trigger" aria-expanded="false" aria-haspopup="true" aria-controls="bbg-tb-menu-edit"
+                style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#ffffff;border:none;border-right:1px solid #000;background:transparent;margin:0;font-family:inherit;">
+                <span><span class="bbg-tb-cmd-prefix">97)</span> Edit</span>
+                <span class="bbg-tb-chevron" style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
+              </button>
+              <div class="bbg-tb-menu bbg-tb-menu--edit" id="bbg-tb-menu-edit" role="menu" hidden aria-labelledby="bbg-tb-edit-trigger">
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="securities">Securities &amp; Data...</div>
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="norm">Normalization...</div>
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="colors">Chart Colors/Styles...</div>
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="daterange">Date Range...</div>
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="legend">Legend Options...</div>
+                <div class="bbg-tb-menu-sep" aria-hidden="true"></div>
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="copy-data">Copy Data to Clipboard</div>
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="copy-img">Copy Image to Clipboard</div>
+                <div class="bbg-tb-menu-sep" aria-hidden="true"></div>
+                <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="cf-settings">Chart Functions Settings...</div>
+                <div class="bbg-tb-menu-item bbg-tb-menu-item--sub" role="menuitem" tabindex="-1" aria-haspopup="true">
+                  <span>Data Settings</span>
+                  <span class="bbg-tb-submenu-arr" aria-hidden="true">&#8250;</span>
+                  <div class="bbg-tb-submenu" role="menu">
+                    <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="data-refresh">Streaming / refresh...</div>
+                    <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="data-holidays">Holiday calendar...</div>
+                    <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="data-fields">Field display...</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <div style="display:flex;align-items:center;padding-right:16px;color:#ffffff;font-size:18px;font-weight:400;">
@@ -5570,21 +6504,22 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="bbg-tf-black-gap" aria-hidden="true"></div>
             <div class="bbg-tf-icon-caret" title="Více">&#9660;</div>
             <div class="bbg-tf-black-gap" aria-hidden="true"></div>
-            <!-- Table -->
-            <div class="bbg-tf-table-btn bbg-cwei-dd" title="Table" style="cursor:pointer;display:flex;align-items:center;gap:6px;color:#e8e8e8;font-size:15px;padding:0 12px;height:100%;flex-shrink:0;background:#221f23;align-self:stretch;box-sizing:border-box;border:1px solid #000;border-top:1px solid #252526;">
-              <svg width="16" height="13" viewBox="0 0 16 13" xmlns="http://www.w3.org/2000/svg">
-                <rect x="0.5" y="0.5" width="15" height="12" fill="none" stroke="#e8e8e8" stroke-width="1"/>
-                <line x1="0.5" y1="4.5" x2="15.5" y2="4.5" stroke="#e8e8e8" stroke-width="1"/>
-                <line x1="0.5" y1="8.5" x2="15.5" y2="8.5" stroke="#e8e8e8" stroke-width="1"/>
-                <line x1="5.5" y1="0.5" x2="5.5" y2="12.5" stroke="#e8e8e8" stroke-width="1"/>
-                <line x1="10.5" y1="0.5" x2="10.5" y2="12.5" stroke="#e8e8e8" stroke-width="1"/>
-              </svg>
-              <span>Table</span>
+            <!-- Table: klik přepíná mřížku grafu (malé tlačítko je skryté, zůstává jen kvůli stavu v kódu) -->
+            <div class="bbg-tf-table-btn" style="cursor:pointer;display:flex;align-items:stretch;height:100%;flex-shrink:0;background:#221f23;align-self:stretch;box-sizing:border-box;border:1px solid #000;border-top:1px solid #252526;padding:0;">
+              <div class="bbg-tf-table-main" id="bbg-tf-table-main" role="button" tabindex="0" title="Table — mřížka zapnutá (klik = vypnout)">
+                <svg width="16" height="13" viewBox="0 0 16 13" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="0.5" y="0.5" width="15" height="12" fill="none" stroke="#e8e8e8" stroke-width="1"/>
+                  <line x1="0.5" y1="4.5" x2="15.5" y2="4.5" stroke="#e8e8e8" stroke-width="1"/>
+                  <line x1="0.5" y1="8.5" x2="15.5" y2="8.5" stroke="#e8e8e8" stroke-width="1"/>
+                  <line x1="5.5" y1="0.5" x2="5.5" y2="12.5" stroke="#e8e8e8" stroke-width="1"/>
+                  <line x1="10.5" y1="0.5" x2="10.5" y2="12.5" stroke="#e8e8e8" stroke-width="1"/>
+                </svg>
+                <span>Table</span>
+              </div>
+              <button type="button" id="bbg-lwc-grid-toggle" class="bbg-tf-grid-toggle" aria-hidden="true" tabindex="-1" aria-pressed="true" title="Mřížka (řízeno přes Table)">
+                <svg width="15" height="15" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 3h4.5v4.5H3V3zm6.75 0H21v4.5H9.75V3zM3 9.75h4.5V21H3V9.75zm6.75 0H21V21H9.75V9.75z" fill="none" stroke="#e8e8e8" stroke-width="1.25"/></svg>
+              </button>
             </div>
-            <div class="bbg-tf-black-gap" aria-hidden="true"></div>
-            <button type="button" id="bbg-lwc-grid-toggle" class="bbg-tf-grid-toggle" aria-pressed="true" title="Mřížka grafu — zapnuto (klik = vypnout)" onclick="event.stopPropagation();window._bbgLwcToggleGrid&&window._bbgLwcToggleGrid();return false;">
-              <svg width="15" height="15" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 3h4.5v4.5H3V3zm6.75 0H21v4.5H9.75V3zM3 9.75h4.5V21H3V9.75zm6.75 0H21V21H9.75V9.75z" fill="none" stroke="#e8e8e8" stroke-width="1.25"/></svg>
-            </button>
           </div>
           <!-- Right side controls — Add Data kompaktní šířka; zbytek lišty prázdný; černé mezery mezi bloky -->
           <div class="wei-right-controls bbg-tf-right-actions" style="display:flex;flex-wrap:nowrap;align-items:stretch;margin-left:auto;flex:0 0 auto;gap:0;padding-left:4px;">
@@ -27536,6 +28471,10 @@ if(typeof fetchMacroCalendar==='function'){
   window.fetchMacroCalendar = async function(force){
     const r = await _origMacro(force);
     setTimeout(renderEcalSidebar, 500);
+    try{
+      if(typeof window._bbgRefreshRibbonMacroEventVolumeSync === 'function')
+        window._bbgRefreshRibbonMacroEventVolumeSync();
+    }catch(_){}
     return r;
   };
 }
@@ -29905,7 +30844,14 @@ window._updateBbgHeader = function(currentPriceRaw, intervalLabel) {
     if(bbgChangeValOv) { bbgChangeValOv.innerText = `${sign}${chg.toFixed(2)} (${sign}${pct.toFixed(2)}%)`; bbgChangeValOv.style.color = col; }
     
     // Update Header Ribbon (Op/Hi/Lo/Close)
-    const setHdrTxt = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = fmtPrice(val); };
+    const setHdrTxt = (id, val) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const t = fmtPrice(val);
+      if ((id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low') && typeof window._bbgRibbonOhlcSetVal === 'function') {
+        window._bbgRibbonOhlcSetVal(id, t);
+      } else el.innerText = t;
+    };
     setHdrTxt('bbg-start', _liveOpen);
     setHdrTxt('bbg-high',  _liveHigh);
     setHdrTxt('bbg-low',   _liveLow);
@@ -30299,6 +31245,9 @@ window._setChartInterval = async function(interval) {
     })();
     if (_bbgSiCall === window._bbgSiSeq) {
       window._updateTVChart(tvSym, tvInterval);
+      try {
+        if (typeof window._bbgRefreshRibbon2DaySpark === 'function') window._bbgRefreshRibbon2DaySpark();
+      } catch (_rsp) {}
     }
     console.log("[BBG-SMART-DATA] Routing:", { symbol: rawSym, resolved, tv: tvSym, interval: tvInterval });
 
@@ -30325,6 +31274,10 @@ window._setChartInterval = async function(interval) {
     };
     const setEl = (id,val) => { 
         try {
+            if ((id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low') && typeof window._bbgRibbonOhlcSetVal === 'function') {
+                window._bbgRibbonOhlcSetVal(id, val);
+                return;
+            }
             const e = document.getElementById(id); 
             if(e) e.innerText = val; 
         } catch(e){}
@@ -30363,6 +31316,7 @@ window._setChartInterval = async function(interval) {
             const col = up ? '#00cc44' : '#ff3333';
             const now = new Date();
             const currentSym = (window._bbgActiveSym || 'BTC').toUpperCase().replace('/','');
+            const _symNormNow = currentSym.replace(/USDT$|USDC$|USD$/i, '');
             var _to = tickOpts || {};
             /* Na HYPERLIQUID grafu nepřepisovat Vol z Binance/Bybit/MMT quote volume — jen dayNtlVlm z HL metaAndAssetCtxs. */
             var _hlChartRt = window.BBG_HL_BTC_CHART_ONLY || (window._bbgLwcRoute && window._bbgLwcRoute.ex === 'HYPERLIQUID');
@@ -30377,6 +31331,17 @@ window._setChartInterval = async function(interval) {
             if(vol>0 && _ribbonVolOk) {
               setEl('bbg-volume', fmtV(vol));
               window._cvol = vol;
+              /* BTC-only HL režim: Val = BTC market cap (price * circulating supply). */
+              var _btcSupply = (window._bbgBtcCirculatingSupply > 0 ? window._bbgBtcCirculatingSupply : 19700000);
+              var _valFromMcap = (_hlChartRt && _symNormNow === 'BTC') ? (price * _btcSupply) : 0;
+              /* Mimo BTC-HL: Val = notional volume (quote), jinak base*px. */
+              var _notional24h = _valFromMcap > 0
+                ? _valFromMcap
+                : ((_to.hlDayNtlVlm === true || _to.volIsQuote === true) ? vol : (vol * price));
+              if (_notional24h > 0 && typeof window._bbgFmtRibbonValueTraded === 'function') {
+                setEl('bbg-value-traded', window._bbgFmtRibbonValueTraded(_notional24h));
+                window._bbgLastRibbonNotional24h = _notional24h;
+              }
             }
             if(openPx>0) {
                 setEl('bbg-start', fmtP(openPx));
@@ -30671,18 +31636,26 @@ window._setChartInterval = async function(interval) {
                     const mid = parseFloat(ctx.midPx || 0);
                     const px = mk > 0 ? mk : mid;
                     const prev = parseFloat(ctx.prevDayPx || ctx.oraclePx || px);
-                    const hi = parseFloat(ctx.dayHigh || 0);
-                    const lo = parseFloat(ctx.dayLow || 0);
+                    var hi = parseFloat(ctx.dayHigh || 0);
+                    var lo = parseFloat(ctx.dayLow || 0);
                     const vol = parseFloat(ctx.dayNtlVlm || 0);
                     const chg = prev > 0 ? ((px - prev) / prev * 100) : 0;
+                    var _dayOpenHl = 0;
+                    if (!(hi > 0 && lo > 0) && typeof window._bbgHlFetchRibbonUtcDayHiLo === 'function') {
+                      var _rgBr = await window._bbgHlFetchRibbonUtcDayHiLo(_hlCoinBr, px);
+                      if (_rgBr.hi > 0) hi = _rgBr.hi;
+                      if (_rgBr.lo > 0) lo = _rgBr.lo;
+                      if (_rgBr.open > 0) _dayOpenHl = _rgBr.open;
+                    }
                     try {
                       if (window._bnFutMark && px > 0) window._bnFutMark[_hlCoinBr] = px;
                     } catch (_bm) {}
-                    _applyTick(px, chg, hi, lo, vol, prev, { hlDayNtlVlm: true });
-                    setEl('bbg-start', fmtP(prev));
+                    /* Bloomberg „0“ = Open dne (UTC); % změna stále z prevDayPx vs mark — jako na HL. */
+                    _applyTick(px, chg, hi, lo, vol, _dayOpenHl > 0 ? _dayOpenHl : 0, { hlDayNtlVlm: true });
                     setEl('bbg-high', fmtP(hi));
                     setEl('bbg-low', fmtP(lo));
                     if (typeof window._bbgCacheHlOracleMisPx === 'function') window._bbgCacheHlOracleMisPx(ctx, px);
+                    if (typeof window._bbgHlPaintRibbonBidAsk === 'function') window._bbgHlPaintRibbonBidAsk(_hlCoinBr, fmtP);
                 } catch (e) {}
             };
             fetchHlRibbonCtx();
@@ -30702,8 +31675,17 @@ window._setChartInterval = async function(interval) {
                 const idx = meta.findIndex(a => a.name === rawSym);
                 if (idx !== -1) {
                     const ctx = ctxs[idx];
-                    const px = parseFloat(ctx.midPrice || ctx.markPrice);
-                    _applyTick(px, 0, parseFloat(ctx.dayHigh || 0), parseFloat(ctx.dayLow || 0), 0, px);
+                    var _pxHl = parseFloat(ctx.markPx || 0) || parseFloat(ctx.midPx || 0);
+                    var _hiHl = parseFloat(ctx.dayHigh || 0);
+                    var _loHl = parseFloat(ctx.dayLow || 0);
+                    var _opHlFb = 0;
+                    if (!( _hiHl > 0 && _loHl > 0) && typeof window._bbgHlFetchRibbonUtcDayHiLo === 'function') {
+                      var _rgFb = await window._bbgHlFetchRibbonUtcDayHiLo(rawSym, _pxHl);
+                      if (_rgFb.hi > 0) _hiHl = _rgFb.hi;
+                      if (_rgFb.lo > 0) _loHl = _rgFb.lo;
+                      if (_rgFb.open > 0) _opHlFb = _rgFb.open;
+                    }
+                    _applyTick(_pxHl, 0, _hiHl, _loHl, 0, _opHlFb > 0 ? _opHlFb : 0);
                 }
             } catch(e) {}
         }
@@ -30870,7 +31852,8 @@ window._setChartInterval = async function(interval) {
                         cache: 'no-store',
                         priority: 'high'
                     }).then(function (r) { return r.json(); }).then(function (dhl) {
-                        try {
+                        (async function () {
+                          try {
                             var meta = dhl[0].universe;
                             var ctxs = dhl[1];
                             var idx = meta.findIndex(function (a) { return a.name === hc; });
@@ -30883,15 +31866,24 @@ window._setChartInterval = async function(interval) {
                             var prev = parseFloat(ctx.prevDayPx || ctx.oraclePx || window._firstBbgPrice || px);
                             var hi = parseFloat(ctx.dayHigh || 0);
                             var lo = parseFloat(ctx.dayLow || 0);
+                            var _dayOpenPl = 0;
+                            if (!(hi > 0 && lo > 0) && typeof window._bbgHlFetchRibbonUtcDayHiLo === 'function') {
+                              var _rgPl = await window._bbgHlFetchRibbonUtcDayHiLo(hc, px);
+                              if (_rgPl.hi > 0) hi = _rgPl.hi;
+                              if (_rgPl.lo > 0) lo = _rgPl.lo;
+                              if (_rgPl.open > 0) _dayOpenPl = _rgPl.open;
+                            }
                             var vol = parseFloat(ctx.dayNtlVlm || 0);
                             var chg = prev > 0 ? ((px - prev) / prev * 100) : 0;
                             try {
                               if (window._bnFutMark && hc && px > 0) window._bnFutMark[hc] = px;
                             } catch (_bm2) {}
-                            _applyTick(px, chg, hi, lo, vol, prev, { hlDayNtlVlm: true });
+                            _applyTick(px, chg, hi, lo, vol, _dayOpenPl > 0 ? _dayOpenPl : 0, { hlDayNtlVlm: true });
                             if (typeof window._bbgCacheHlOracleMisPx === 'function') window._bbgCacheHlOracleMisPx(ctx, px);
                             if (typeof window._bbgFetchHlCweiSpotOnly === 'function') window._bbgFetchHlCweiSpotOnly();
-                        } catch (e) {}
+                            if (typeof window._bbgHlPaintRibbonBidAsk === 'function') window._bbgHlPaintRibbonBidAsk(hc, fmtP);
+                          } catch (e) {}
+                        })();
                     }).catch(function () {});
                 };
                 var _hlPollMs = window.BBG_HL_BTC_CHART_ONLY ? 1200 : 3000;
@@ -30902,7 +31894,7 @@ window._setChartInterval = async function(interval) {
                 wsUrl = 'wss://stream.binance.com:9443/ws/' + s + '@ticker';
                 onMsg = d => {
                     const price = parseFloat(d.c);
-                    if(price) _applyTick(price, parseFloat(d.P), parseFloat(d.h), parseFloat(d.l), parseFloat(d.q), parseFloat(d.o));
+                    if(price) _applyTick(price, parseFloat(d.P), parseFloat(d.h), parseFloat(d.l), parseFloat(d.q), parseFloat(d.o), { volIsQuote: true });
                 };
             } else if (!_dataLocal && (resolved.provider === 'BYBIT' || (!resolved.provider && tvEx === 'BYBIT'))) {
                 const s = resolved.ticker || symBybit;
@@ -31157,9 +32149,9 @@ window._setChartInterval = async function(interval) {
                 setEl('bbg-low',    fmtP(low));
                 setEl('bbg-close',  fmtP(prevClose));
                 setEl('bbg-volume', fmtV(vol));
+                if (vol > 0 && price > 0 && typeof window._bbgFmtRibbonValueTraded === 'function')
+                  setEl('bbg-value-traded', window._bbgFmtRibbonValueTraded(vol * price));
                 setEl('bbg-time',   String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'));
-                
-                // Detailed Terminal sync
                 setEl('ov-start', fmtP(price));
                 setEl('ov-open',  fmtP(open));
                 setEl('ov-high',  fmtP(high));
@@ -31891,7 +32883,11 @@ window._updateTVChart = function(sym, interval) {
     crosshairMarkerBackgroundColor: '#ffffff'
   };
   var chartStyleMode = 'area';
-  try { window._bbgLwcChartStyle = 'area'; } catch (_styInit) {}
+  try {
+    var _persistedStyle = window._bbgLwcChartStyle;
+    if (_persistedStyle === 'candlestick' || _persistedStyle === 'area') chartStyleMode = _persistedStyle;
+  } catch (_rSty) {}
+  try { window._bbgLwcChartStyle = chartStyleMode; } catch (_wSty) {}
 
   /** Pryč s low/high = 0 z feedů (jinak knot na 0 / celá výška grafu). */
   function _bbgSafeOhlcBar(b) {
@@ -31922,7 +32918,33 @@ window._updateTVChart = function(sym, interval) {
     return bars.map(function (b) { return { time: b.time, value: b.close }; });
   }
 
-  var series = chart.addAreaSeries(_bbgLwcAreaSeriesOpts);
+  var series;
+  if (chartStyleMode === 'candlestick') {
+    series = chart.addCandlestickSeries({
+      upColor: BBG_HL_CANDLE_UP,
+      downColor: BBG_HL_CANDLE_DOWN,
+      borderUpColor: BBG_HL_CANDLE_UP,
+      borderDownColor: BBG_HL_CANDLE_DOWN,
+      wickUpColor: BBG_HL_CANDLE_UP,
+      wickDownColor: BBG_HL_CANDLE_DOWN,
+      wickVisible: true,
+      borderVisible: true,
+      priceLineVisible: false,
+      priceLineWidth: 1,
+      priceLineColor: TV_LAST_PRICE_LINE,
+      priceLineStyle: LC.LineStyle.Dotted,
+      lastValueVisible: false,
+      lastPriceAnimation: _lpAnimInit,
+      crosshairMarkerVisible: false,
+      pointMarkersVisible: false,
+      crosshairMarkerRadius: 6,
+      crosshairMarkerBorderWidth: 3,
+      crosshairMarkerBorderColor: 'rgba(255,255,255,0.48)',
+      crosshairMarkerBackgroundColor: '#ffffff'
+    });
+  } else {
+    series = chart.addAreaSeries(_bbgLwcAreaSeriesOpts);
+  }
 
   window._bbgChart = chart;
   window._currentBbgSeries = series;
@@ -31935,6 +32957,9 @@ window._updateTVChart = function(sym, interval) {
   try {
     if (typeof window._bbgSyncGridToggleUi === 'function') window._bbgSyncGridToggleUi(_bbgShowInitGrid);
   } catch (_gsu0) {}
+  try {
+    if (typeof window._bbgBindTableGridToggle === 'function') window._bbgBindTableGridToggle();
+  } catch (_gb) {}
 
   try {
     window._bbgLivePriceLine = series.createPriceLine({
@@ -32416,18 +33441,14 @@ window._updateTVChart = function(sym, interval) {
   })();
 };
 
-window._bbgTfChartStyleClick = function (mode, el) {
-  if (typeof window._bbgApplyLwcChartStyle !== 'function') return;
-  try {
-    window._bbgApplyLwcChartStyle(mode);
-  } catch (_e) {}
-};
-
 window._bbgApplyLwcGridVisibility = function (show) {
   var ch = window._bbgChart;
-  var LCref = window.LightweightCharts;
-  if (!ch || typeof ch.applyOptions !== 'function' || !LCref) return;
-  var st = LCref.LineStyle != null ? LCref.LineStyle.Solid : 0;
+  if (!ch || typeof ch.applyOptions !== 'function') return;
+  var st = 0;
+  try {
+    var LCref = window.LightweightCharts;
+    if (LCref && LCref.LineStyle != null) st = LCref.LineStyle.Solid;
+  } catch (_st) {}
   var vCol = show ? 'rgba(72, 74, 82, 0.38)' : 'rgba(0,0,0,0)';
   var hCol = show ? 'rgba(72, 74, 82, 0.22)' : 'rgba(0,0,0,0)';
   var gopts = {
@@ -32460,10 +33481,20 @@ window._bbgApplyLwcGridVisibility = function (show) {
 
 window._bbgSyncGridToggleUi = function (on) {
   var btn = document.getElementById('bbg-lwc-grid-toggle');
-  if (!btn) return;
-  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-  btn.title = on ? 'Mřížka grafu — zapnuto (klik = vypnout)' : 'Mřížka grafu — vypnuto (klik = zapnout)';
-  btn.classList.toggle('bbg-lwc-grid-toggle-off', !on);
+  var wrap = document.querySelector('#bbg-tf-btns .bbg-tf-table-btn');
+  var main = document.getElementById('bbg-tf-table-main');
+  if (btn) {
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.classList.toggle('bbg-lwc-grid-toggle-off', !on);
+  }
+  if (wrap) wrap.classList.toggle('bbg-lwc-grid-toggle-off', !on);
+  var mainTitle = on
+    ? 'Table — mřížka zapnutá (klik = vypnout)'
+    : 'Table — mřížka vypnutá (klik = zapnout)';
+  if (main) {
+    main.title = mainTitle;
+    main.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
 };
 
 window._bbgLwcToggleGrid = function () {
@@ -32475,10 +33506,51 @@ window._bbgLwcToggleGrid = function () {
   var next = !cur;
   try { localStorage.setItem('bbg_lwc_grid_on', next ? '1' : '0'); } catch (_ls2) {}
   window._bbgSyncGridToggleUi(next);
-  if (!window._bbgChart || typeof window._bbgChart.applyOptions !== 'function') {
-    return;
-  }
+  if (!window._bbgChart || typeof window._bbgChart.applyOptions !== 'function') return;
   window._bbgApplyLwcGridVisibility(next);
+};
+
+window._bbgBindTableGridToggle = function () {
+  var m = document.getElementById('bbg-tf-table-main');
+  if (!m || m._bbgTableGridBound) return;
+  m._bbgTableGridBound = true;
+  function fire(e) {
+    try {
+      e.stopPropagation();
+      e.preventDefault();
+    } catch (_e) {}
+    if (typeof window._bbgLwcToggleGrid === 'function') window._bbgLwcToggleGrid();
+  }
+  m.addEventListener('click', fire, true);
+  m.addEventListener(
+    'keydown',
+    function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      fire(e);
+    },
+    true
+  );
+};
+window._bbgBindLwcGridToggleBtn = window._bbgBindTableGridToggle;
+
+(function _bbgInitGridToggleBinding() {
+  function go() {
+    try {
+      window._bbgBindTableGridToggle();
+    } catch (_g) {}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go);
+  else go();
+  window.addEventListener('load', go);
+  setTimeout(go, 0);
+  setTimeout(go, 300);
+})();
+
+window._bbgTfChartStyleClick = function (mode, el) {
+  if (typeof window._bbgApplyLwcChartStyle !== 'function') return;
+  try {
+    window._bbgApplyLwcChartStyle(mode);
+  } catch (_e) {}
 };
 
 window._bbgFmtDeltaAbs = function(d) {
@@ -32659,7 +33731,13 @@ window._initBbg = function() {
       if (!v || isNaN(v)) return '—';
       return v >= 1e9 ? (v/1e9).toFixed(2)+'B' : v >= 1e6 ? (v/1e6).toFixed(2)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'K' : v.toFixed(2);
     };
-    var setEl = function(id, val) { var el = document.getElementById(id); if (el) el.innerText = val; };
+    var setEl = function(id, val) {
+      if ((id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low') && typeof window._bbgRibbonOhlcSetVal === 'function') {
+        window._bbgRibbonOhlcSetVal(id, val);
+        return;
+      }
+      var el = document.getElementById(id); if (el) el.innerText = val;
+    };
 
     // Fetch initial 1D candle for Op/Hi/Lo
     var refreshDailyOHLC = function() {
@@ -32678,7 +33756,8 @@ window._initBbg = function() {
           setEl('bbg-high',  fmtP(window._bbgRibbonHigh));
           setEl('bbg-low',   fmtP(window._bbgRibbonLow));
           setEl('bbg-volume',fmtV(window._bbgRibbonVol));
-          // ── ov-left-panel update (same IDs as v5-7) ──
+          var _qv = parseFloat(tk[7]);
+          setEl('bbg-value-traded', typeof window._bbgFmtRibbonValueTraded === 'function' ? window._bbgFmtRibbonValueTraded(_qv) : '—');
           var setOv = function(id,v){var e=document.getElementById(id);if(e)e.innerText=v;};
           setOv('ov-open',  fmtP(window._bbgRibbonOpen));
           setOv('ov-high',  fmtP(window._bbgRibbonHigh));
@@ -32752,7 +33831,10 @@ window._initBbg = function() {
           // Hi / Lo / Vol vždy ze Spot (TV graf je v jiném timeframe, nemá 24h OHLCV)
           if (parseFloat(d.h) > 0) { setEl('bbg-high', fmtP(parseFloat(d.h))); }
           if (parseFloat(d.l) > 0) { setEl('bbg-low',  fmtP(parseFloat(d.l))); }
-          if (parseFloat(d.q) > 0) { setEl('bbg-volume', fmtV(parseFloat(d.q))); }
+          if (parseFloat(d.v) > 0) { setEl('bbg-volume', fmtV(parseFloat(d.v))); }
+          if (parseFloat(d.q) > 0 && typeof window._bbgFmtRibbonValueTraded === 'function') {
+            setEl('bbg-value-traded', window._bbgFmtRibbonValueTraded(parseFloat(d.q)));
+          }
           var _sOv2 = function(id,v){var e=document.getElementById(id);if(e)e.innerText=v;};
           if (parseFloat(d.h) > 0) _sOv2('ov-high', fmtP(parseFloat(d.h)));
           if (parseFloat(d.l) > 0) _sOv2('ov-low',  fmtP(parseFloat(d.l)));
@@ -32862,12 +33944,18 @@ window._initBbg = function() {
         if (lp > 0) {
           var _fmtP = window._bbgFmtP || function(v){ return v >= 1000 ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : v >= 1 ? parseFloat(v.toFixed(4)).toString() : parseFloat(v.toPrecision(5)).toString(); };
           var _fmtV = window._bbgFmtV || function(v){ return v >= 1e9 ? (v/1e9).toFixed(2)+'B' : v >= 1e6 ? (v/1e6).toFixed(2)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'K' : v.toFixed(2); };
-          var _s = function(id,val){ var e=document.getElementById(id); if(e) e.innerText=val; };
+          var _s = function(id,val){
+            if ((id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low') && typeof window._bbgRibbonOhlcSetVal === 'function') {
+              window._bbgRibbonOhlcSetVal(id, val);
+              return;
+            }
+            var e=document.getElementById(id); if(e) e.innerText=val;
+          };
           var _rtQ = window._bbgLwcRoute || {};
           var _hlRibbonQuote = window.BBG_HL_BTC_CHART_ONLY || _rtQ.ex === 'HYPERLIQUID';
           _s('bbg-close',  _fmtP(lp));
-          if (hi > 0) _s('bbg-high', _fmtP(hi));
-          if (lo > 0) _s('bbg-low',  _fmtP(lo));
+          if (hi > 0 && !_hlRibbonQuote) _s('bbg-high', _fmtP(hi));
+          if (lo > 0 && !_hlRibbonQuote) _s('bbg-low',  _fmtP(lo));
           if (op > 0 && !_hlRibbonQuote) _s('bbg-start',_fmtP(op));
           /* HL ribbon Vol = dayNtlVlm z metaAndAssetCtxs (_applyTick), ne z TV quote. */
           if (vol > 0 && !_hlRibbonQuote) _s('bbg-volume', _fmtV(vol));
@@ -32952,7 +34040,10 @@ window._bbgInstantFill = function(sym) {
   if (_skipRibbonInstant) {
     ['bbg-close', 'bbg-high', 'bbg-low', 'bbg-volume', 'bbg-start'].forEach(function (id) {
       var e = document.getElementById(id);
-      if (e) e.innerText = '—';
+      if (!e) return;
+      if ((id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low') && typeof window._bbgRibbonOhlcSetVal === 'function') {
+        window._bbgRibbonOhlcSetVal(id, '\u2014');
+      } else e.innerText = '\u2014';
     });
     var _pxI = document.getElementById('bbg-current-price');
     if (_pxI) _pxI.innerText = '—';
@@ -32961,6 +34052,10 @@ window._bbgInstantFill = function(sym) {
       _chgI.innerText = '—';
       _chgI.style.color = '#ffffff';
     }
+    var _baI = document.getElementById('bbg-ticker-bidask');
+    if (_baI) _baI.textContent = 'L\u2014 / \u2014L';
+    var _tszI = document.getElementById('bbg-ticker-size');
+    if (_tszI) _tszI.textContent = '\u2014 \u00d7 \u2014';
     return;
   }
 
@@ -32974,11 +34069,22 @@ window._bbgInstantFill = function(sym) {
     if (!v || isNaN(v) || v <= 0) return null;
     return v >= 1e9 ? (v/1e9).toFixed(2)+'B' : v >= 1e6 ? (v/1e6).toFixed(2)+'M' : v >= 1e3 ? (v/1e3).toFixed(1)+'K' : v.toFixed(2);
   };
-  var s = function(id, val) { if (!val) return; var e = document.getElementById(id); if (e) e.innerText = val; };
+  var s = function(id, val) {
+    if (!val) return;
+    if ((id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low') && typeof window._bbgRibbonOhlcSetVal === 'function') {
+      window._bbgRibbonOhlcSetVal(id, val);
+      return;
+    }
+    var e = document.getElementById(id);
+    if (e) e.innerText = val;
+  };
 
   // Reset to loading indicator
   ['bbg-close','bbg-high','bbg-low','bbg-volume','bbg-start'].forEach(function(id){
-    var e = document.getElementById(id); if (e) e.innerText = '—';
+    var e = document.getElementById(id); if(!e) return;
+    if ((id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low') && typeof window._bbgRibbonOhlcSetVal === 'function') {
+      window._bbgRibbonOhlcSetVal(id, '\u2014');
+    } else e.innerText = '\u2014';
   });
 
   // 1) Try CRYPTO array (live Binance WS prices — fastest, most accurate)
@@ -33188,7 +34294,14 @@ window._bbgSyncActivePanelQuote = function(force){
 
   var fmtP = window._bbgFmtP;
   var fmtV = window._bbgFmtV;
-  var setEl = function(id, val){ if(val == null) return; var el = document.getElementById(id); if(el) el.innerText = val; };
+  var setEl = function(id, val){
+    if(val == null) return;
+    if ((id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low') && typeof window._bbgRibbonOhlcSetVal === 'function') {
+      window._bbgRibbonOhlcSetVal(id, val);
+      return;
+    }
+    var el = document.getElementById(id); if(el) el.innerText = val;
+  };
   var samePx = window._bbgLastSyncedPx === quote.px;
   if(!force && samePx) {
     var tOnly = document.getElementById('bbg-time');
@@ -33220,6 +34333,15 @@ window._bbgSyncActivePanelQuote = function(force){
   if(quote.hi > 0) setEl('bbg-high', fmtP(quote.hi));
   if(quote.lo > 0) setEl('bbg-low', fmtP(quote.lo));
   if(quote.vol > 0) setEl('bbg-volume', fmtV(quote.vol));
+  if(quote.vol > 0 && typeof window._bbgFmtRibbonValueTraded === 'function'){
+    var _hlSync = window.BBG_HL_BTC_CHART_ONLY || (window._bbgLwcRoute && window._bbgLwcRoute.ex === 'HYPERLIQUID');
+    var _qSym = String(sym || '').toUpperCase().replace(/[^A-Z]/g,'').replace(/USDT$|USDC$|USD$/,'');
+    var _btcSupplySync = (window._bbgBtcCirculatingSupply > 0 ? window._bbgBtcCirculatingSupply : 19700000);
+    var _quoteNotional = (_hlSync && _qSym === 'BTC')
+      ? (quote.px > 0 ? quote.px * _btcSupplySync : 0)
+      : (_hlSync ? quote.vol : (quote.px > 0 ? quote.vol * quote.px : 0));
+    if (_quoteNotional > 0) setEl('bbg-value-traded', window._bbgFmtRibbonValueTraded(_quoteNotional));
+  }
   if(!isNaN(quote.chg)){
     var chgEl = document.getElementById('bbg-price-change');
     if(chgEl){ chgEl.innerText = (quote.chg >= 0 ? '+' : '') + quote.chg.toFixed(2) + '%'; chgEl.style.color = col; }
@@ -33521,6 +34643,9 @@ window._openChartForSymbol = function(sym) {
     }
     // _setChartInterval řídí vše: TV iframe + ribbon data (Binance WS / Yahoo)
     if (window._setChartInterval) window._setChartInterval('1d');
+    try {
+      if (typeof window._bbgScheduleRibbon2DaySpark === 'function') window._bbgScheduleRibbon2DaySpark();
+    } catch (_rbs) {}
 
 };
 
@@ -44880,6 +46005,274 @@ window._OF = _OF;
 
 
 <script>
+// ── Bloomberg ribbon: 94) / 97) dropdowns + notify + clipboard helpers ──
+(function () {
+  'use strict';
+  function _notify(msg) {
+    try {
+      var n = document.createElement('div');
+      n.setAttribute('role', 'status');
+      n.style.cssText =
+        'position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:100060;' +
+        'background:#1a1a1a;color:#e8e8e8;border:1px solid #444;padding:9px 20px;font:14px Arial,Helvetica,sans-serif;' +
+        'box-shadow:0 6px 24px rgba(0,0,0,.55);pointer-events:none;max-width:min(520px,92vw);text-align:center;';
+      n.textContent = msg;
+      document.body.appendChild(n);
+      setTimeout(function () {
+        n.style.opacity = '0';
+        n.style.transition = 'opacity .35s ease';
+        setTimeout(function () {
+          try {
+            n.remove();
+          } catch (_e) {}
+        }, 360);
+      }, 2600);
+    } catch (_e2) {}
+  }
+  window._bbgChartRibbonNotify = _notify;
+
+  function closeStaticMenus() {
+    document.querySelectorAll('.bbg-tb-menu.bbg-tb-menu--open').forEach(function (m) {
+      m.classList.remove('bbg-tb-menu--open');
+      m.style.display = 'none';
+      m.setAttribute('hidden', 'hidden');
+      m.style.position = '';
+      m.style.left = '';
+      m.style.top = '';
+      m.style.right = '';
+      m.style.bottom = '';
+      m.style.zIndex = '';
+    });
+    document.querySelectorAll('.bbg-tb-dd-trigger[aria-expanded="true"]').forEach(function (b) {
+      b.setAttribute('aria-expanded', 'false');
+    });
+  }
+  window._bbgTbCloseStaticMenus = closeStaticMenus;
+
+  /** Dropdowns must escape #bbg-chart-ribbon overflow (overflow-x:auto forces vertical clipping in browsers). */
+  function placeTbMenuUnderTrigger(menuEl, triggerEl) {
+    var r = triggerEl.getBoundingClientRect();
+    var vw = window.innerWidth || 0;
+    var margin = 8;
+    var minW = 280;
+    menuEl.style.position = 'fixed';
+    menuEl.style.top = r.bottom + 'px';
+    menuEl.style.right = 'auto';
+    menuEl.style.bottom = 'auto';
+    menuEl.style.zIndex = '100070';
+    var left = r.left;
+    if (vw && left + minW > vw - margin) left = Math.max(margin, vw - minW - margin);
+    if (left < margin) left = margin;
+    menuEl.style.left = left + 'px';
+  }
+
+  function toggleMenu(menuEl, triggerEl, open) {
+    if (!menuEl || !triggerEl) return;
+    if (open) {
+      menuEl.removeAttribute('hidden');
+      menuEl.style.display = 'block';
+      menuEl.classList.add('bbg-tb-menu--open');
+      triggerEl.setAttribute('aria-expanded', 'true');
+      placeTbMenuUnderTrigger(menuEl, triggerEl);
+    } else {
+      menuEl.classList.remove('bbg-tb-menu--open');
+      menuEl.style.display = 'none';
+      menuEl.setAttribute('hidden', 'hidden');
+      triggerEl.setAttribute('aria-expanded', 'false');
+      menuEl.style.position = '';
+      menuEl.style.left = '';
+      menuEl.style.top = '';
+      menuEl.style.right = '';
+      menuEl.style.bottom = '';
+      menuEl.style.zIndex = '';
+    }
+  }
+
+  function wireTrigger(triggerId, menuId) {
+    var tr = document.getElementById(triggerId);
+    var me = document.getElementById(menuId);
+    if (!tr || !me) return;
+    tr.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var im = document.getElementById('bbg-indicators-menu');
+      if (im) im.remove();
+      var willOpen = !me.classList.contains('bbg-tb-menu--open');
+      closeStaticMenus();
+      if (willOpen) toggleMenu(me, tr, true);
+    });
+  }
+
+  function copyRibbonSnapshot() {
+    var ids = [
+      'bbg-toolbar-title-text',
+      'bbg-ticker-symbol',
+      'bbg-current-price',
+      'bbg-price-change',
+      'bbg-time',
+      'bbg-volume',
+      'bbg-start',
+      'bbg-high',
+      'bbg-low',
+      'bbg-value-traded',
+      'bbg-ticker-bidask'
+    ];
+    var lines = [];
+    ids.forEach(function (id) {
+      var e = document.getElementById(id);
+      if (e && e.textContent) lines.push(e.textContent.trim().replace(/\s+/g, ' '));
+    });
+    var t = lines.filter(Boolean).join('\n');
+    if (!t) {
+      _notify('No ribbon text to copy');
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).then(
+        function () {
+          _notify('Copied chart ribbon data to clipboard');
+        },
+        function () {
+          _notify('Clipboard blocked — copy manually from ribbon');
+        }
+      );
+    } else {
+      _notify('Clipboard API not available in this context');
+    }
+  }
+
+  function scrollToDateRange() {
+    var bar = document.querySelector('#bbg-chart-panel .bbg-ribbon-config-bar');
+    if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    var df = document.querySelector('[data-bbg-cwei="date-from"] .bbg-cwei-pill');
+    if (df) {
+      try {
+        df.focus({ preventScroll: true });
+      } catch (_f) {}
+    }
+    _notify('Date range — use calendar pills in the bar below');
+  }
+
+  function onEditItem(row) {
+    var k = row.getAttribute('data-bbg-edit');
+    closeStaticMenus();
+    switch (k) {
+      case 'securities':
+        _notify('Securities & Data — wire your security list / symbology here (stub)');
+        break;
+      case 'norm':
+        _notify('Normalization — price rebasing / indexation (stub)');
+        break;
+      case 'colors':
+        _notify('Chart colors / styles — match TV theme & CWEI prefs (stub)');
+        break;
+      case 'daterange':
+        scrollToDateRange();
+        break;
+      case 'legend':
+        _notify('Legend options — show/hide studies & comparison keys (stub)');
+        break;
+      case 'copy-data':
+        copyRibbonSnapshot();
+        break;
+      case 'copy-img':
+        _notify('Image copy: use system screenshot or chart export — browser cannot read canvas without extra permission');
+        break;
+      case 'cf-settings':
+        _notify('Chart functions settings — studies defaults (stub)');
+        break;
+      case 'data-refresh':
+        _notify('Data refresh / streaming interval (stub)');
+        break;
+      case 'data-holidays':
+        _notify('Holiday calendar — exchange schedule (stub)');
+        break;
+      case 'data-fields':
+        _notify('Field display — OHLC column layout (stub)');
+        break;
+      default:
+        _notify(row.textContent.trim());
+    }
+  }
+
+  function init() {
+    wireTrigger('bbg-tb-suggested-trigger', 'bbg-tb-menu-suggested');
+    wireTrigger('bbg-tb-edit-trigger', 'bbg-tb-menu-edit');
+
+    var sug = document.getElementById('bbg-tb-menu-suggested');
+    if (sug) {
+      sug.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+      sug.querySelectorAll('.bbg-tb-menu-item').forEach(function (row) {
+        row.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          closeStaticMenus();
+          _notify('Suggested chart: ' + row.textContent.trim());
+        });
+      });
+    }
+
+    var ed = document.getElementById('bbg-tb-menu-edit');
+    if (ed) {
+      ed.addEventListener('click', function (e) {
+        e.stopPropagation();
+      });
+      ed.querySelectorAll('.bbg-tb-menu-item[role="menuitem"]').forEach(function (row) {
+        if (row.classList.contains('bbg-tb-menu-item--sub')) return;
+        row.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          onEditItem(row);
+        });
+      });
+      ed.querySelectorAll('.bbg-tb-submenu .bbg-tb-menu-item').forEach(function (row) {
+        row.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          onEditItem(row);
+        });
+      });
+    }
+
+    document.addEventListener(
+      'click',
+      function (e) {
+        if (e.target.closest('.bbg-tb-menu')) return;
+        if (e.target.closest('.bbg-tb-dd-trigger')) return;
+        if (e.target.closest('#bbg-chart-actions-btn')) return;
+        closeStaticMenus();
+      },
+      false
+    );
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeStaticMenus();
+    });
+
+    window.addEventListener(
+      'resize',
+      function () {
+        closeStaticMenus();
+      },
+      false
+    );
+    var rb = document.getElementById('bbg-chart-ribbon');
+    if (rb) {
+      rb.addEventListener(
+        'scroll',
+        function () {
+          closeStaticMenus();
+        },
+        false
+      );
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+
+
+<script>
 // ── Chart Indicators Menu (Actions dropdown) ──
 (function(){
   var _activeStudies = {};
@@ -44892,36 +46285,37 @@ window._OF = _OF;
   window._toggleChartIndicators = function(el) {
     var existing = document.getElementById('bbg-indicators-menu');
     if (existing) { existing.remove(); return; }
+    if (window._bbgTbCloseStaticMenus) window._bbgTbCloseStaticMenus();
 
     var d = document.createElement('div');
     d.id = 'bbg-indicators-menu';
-    d.style.cssText = 'position:fixed;background:#1e1e1e;border:1px solid #3a3a3a;z-index:999999;min-width:260px;max-height:480px;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.9);font-family:system-ui,-apple-system,sans-serif;border-radius:4px;padding:4px 0;';
+    d.style.cssText = 'position:fixed;background:#661414;border:1px solid #200808;z-index:999999;min-width:280px;max-height:480px;overflow-y:auto;box-shadow:0 10px 32px rgba(0,0,0,.65);font-family:Arial,Helvetica,"Segoe UI",sans-serif;border-radius:0;padding:5px 0 6px;';
     var r = el.getBoundingClientRect();
     d.style.left = r.left + 'px';
     d.style.top = (r.bottom + 2) + 'px';
 
     // Header
     var hdr = document.createElement('div');
-    hdr.style.cssText = 'padding:8px 14px 6px;font-size:10px;color:#888;letter-spacing:1px;font-weight:600;border-bottom:1px solid #333;margin-bottom:2px;';
+    hdr.style.cssText = 'padding:10px 18px 8px;font-size:12px;color:#ffffff;letter-spacing:.06em;font-weight:600;border-bottom:1px solid #120505;margin-bottom:0;';
     hdr.textContent = 'INDICATORS';
     d.appendChild(hdr);
 
     INDICATORS.forEach(function(ind) {
       if (ind.cat === 'SEP') {
         var sep = document.createElement('div');
-        sep.style.cssText = 'height:1px;background:#333;margin:4px 0;';
+        sep.style.cssText = 'height:1px;background:#120505;margin:6px 8px;';
         d.appendChild(sep);
         return;
       }
       var row = document.createElement('div');
       var isActive = !!_activeStudies[ind.id];
-      row.style.cssText = 'padding:7px 14px 7px 36px;font-size:12px;color:#d3d3d3;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:space-between;transition:background .1s;';
-      row.onmouseover = function(){ this.style.background = 'rgba(255,255,255,.08)'; };
+      row.style.cssText = 'padding:11px 18px 11px 38px;font-size:17px;color:#ffffff;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:space-between;transition:background .08s;line-height:1.42;';
+      row.onmouseover = function(){ this.style.background = '#A32626'; };
       row.onmouseout = function(){ this.style.background = ''; };
 
       // Checkmark
       var check = document.createElement('span');
-      check.style.cssText = 'position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:#d3d3d3;font-weight:400;';
+      check.style.cssText = 'position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;color:#ffffff;font-weight:400;';
       check.textContent = isActive ? '✓' : '';
       check.id = 'ind-check-' + ind.id;
       row.appendChild(check);
@@ -44929,14 +46323,14 @@ window._OF = _OF;
       // Name
       var nameEl = document.createElement('span');
       nameEl.textContent = ind.name;
-      nameEl.style.cssText = isActive ? 'color:#fff;font-weight:500;' : '';
+      nameEl.style.cssText = isActive ? 'color:#ffffff;font-weight:500;' : 'color:#ffffff;font-weight:400;';
       nameEl.id = 'ind-name-' + ind.id;
       row.appendChild(nameEl);
 
       // Category badge
       var badge = document.createElement('span');
       badge.textContent = ind.cat;
-      badge.style.cssText = 'font-size:8px;color:#666;letter-spacing:.5px;margin-left:12px;';
+      badge.style.cssText = 'font-size:9px;color:#e8d0d0;letter-spacing:.04em;margin-left:12px;';
       row.appendChild(badge);
 
       row.onclick = (function(indicator) {
@@ -44964,7 +46358,7 @@ window._OF = _OF;
           var ck = document.getElementById('ind-check-' + indicator.id);
           var nm = document.getElementById('ind-name-' + indicator.id);
           if (ck) ck.textContent = _activeStudies[indicator.id] ? '✓' : '';
-          if (nm) nm.style.cssText = _activeStudies[indicator.id] ? 'color:#fff;font-weight:500;' : '';
+          if (nm) nm.style.cssText = _activeStudies[indicator.id] ? 'color:#ffffff;font-weight:500;' : 'color:#ffffff;font-weight:400;';
         };
       })(ind);
 
@@ -44973,9 +46367,9 @@ window._OF = _OF;
 
     // Remove all button
     var remAll = document.createElement('div');
-    remAll.style.cssText = 'padding:8px 14px;font-size:11px;color:#ff5555;cursor:pointer;border-top:1px solid #333;margin-top:4px;text-align:center;';
+    remAll.style.cssText = 'padding:11px 18px;font-size:15px;color:#ffd0d0;cursor:pointer;border-top:1px solid #120505;margin-top:2px;text-align:center;line-height:1.42;';
     remAll.textContent = 'Remove All Indicators';
-    remAll.onmouseover = function(){ this.style.background = 'rgba(255,0,0,.08)'; };
+    remAll.onmouseover = function(){ this.style.background = '#A32626'; };
     remAll.onmouseout = function(){ this.style.background = ''; };
     remAll.onclick = function() {
       var iframe = document.getElementById('bbg-tv-iframe');
@@ -48376,6 +49770,42 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
   margin:0 !important;
   border:0 !important;
 }
+/* OHLC ribbon typography — popisky lehčí (300); hodnoty #B7B2AF; čas + „d“ #6B6B6A; Open značka „0“ */
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row > span,
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row > span span,
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row #bbg-time,
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row #bbg-volume,
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row #bbg-start,
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row #bbg-high,
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row #bbg-low,
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row #bbg-value-traded,
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row .bbg-ohlc-val-wrap .bbg-ohlc-val{
+  font-size:23px !important;
+  line-height:1 !important;
+}
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row .bbg-ohlc-lbl,
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row > span:first-of-type > span:first-child{
+  font-weight:300 !important;
+  color:#ffa027 !important;
+}
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row .bbg-ohlc-val{
+  font-weight:400 !important;
+  color:#B7B2AF !important;
+}
+/* čas + „d“ — šedá jako na referenci (ne oranžová) */
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row > span:first-of-type #bbg-time,
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row > span:first-of-type > span:last-child{
+  font-weight:400 !important;
+  color:#6B6B6A !important;
+}
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row > span:nth-of-type(2),
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row > span:nth-of-type(4),
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row > span:nth-of-type(6),
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row > span:nth-of-type(8),
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row > span:nth-of-type(10){
+  color:#ffa027 !important;
+  font-weight:300 !important;
+}
 #bbg-chart-ribbon .bbg-ribbon-cwei-cmd-slot .wei-blue-strip{
   align-self:stretch !important;
   min-height:26px !important;
@@ -48399,6 +49829,10 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 }
 body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   min-height:0 !important;
+}
+body.bbg-chart-active #TOPBAR .cmd-icons .cmd-icon:nth-child(2),
+body.bbg-chart-active #TOPBAR .cmd-icons .cmd-icon:nth-child(4){
+  display:none !important;
 }
 
 /* Config bar — bez mezery nad TF řádkem; oranžové boxy zarovnané nahoru */
@@ -48588,6 +50022,169 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   font-size:20px !important;
 }
 
+/* Bloomberg-style dropdowns — 94) Suggested Charts, 97) Edit */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-left-cluster > .bbg-tb-dd button,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar #bbg-chart-actions-btn{
+  font-size:20px !important;
+  line-height:34px !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu{
+  display:none;
+  position:absolute;
+  top:100%;
+  left:0;
+  margin-top:0;
+  z-index:100050;
+  min-width:min(360px,92vw);
+  background:#661414;
+  border:1px solid #200808;
+  box-shadow:0 10px 32px rgba(0,0,0,.65);
+  padding:5px 0 6px;
+  font-family:Arial,Helvetica,'Segoe UI',sans-serif !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu.bbg-tb-menu--open{
+  display:block !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu-item{
+  padding:11px 18px;
+  font-size:18px !important;
+  font-weight:400 !important;
+  color:#ffffff !important;
+  cursor:pointer;
+  white-space:nowrap;
+  line-height:1.42;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu-item:hover,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu-item:focus{
+  background:#A32626 !important;
+  outline:none !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu-sep{
+  height:1px;
+  background:#120505;
+  margin:7px 8px;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-dd-trigger[aria-expanded="true"]{
+  box-shadow:inset 0 0 0 1px #ffffff !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu-item--sub{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-submenu-arr{
+  color:#ffffff;
+  font-size:15px;
+  flex-shrink:0;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-submenu{
+  display:none;
+  position:absolute;
+  left:100%;
+  top:-2px;
+  margin-left:2px;
+  min-width:230px;
+  background:#661414;
+  border:1px solid #200808;
+  box-shadow:6px 10px 28px rgba(0,0,0,.6);
+  padding:5px 0 6px;
+  z-index:2;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu-item--sub:hover .bbg-tb-submenu,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu-item--sub:focus-within .bbg-tb-submenu{
+  display:block;
+}
+
+/* Suggested Functions — stejné jako CWEI .wei-foot (#1A1A1A, oranžový label, sloupce) */
+#bbg-chart-panel .bwei-footbar{
+  --bbg-foot-orange:#e8922a;
+  background:#1a1a1a !important;
+  color:#d6d6d6 !important;
+  display:grid !important;
+  grid-template-columns:minmax(120px,360px) 1fr 1fr !important;
+  align-items:stretch !important;
+  min-height:72px !important;
+  height:72px !important;
+  padding:0 !important;
+  margin:0 !important;
+  flex-shrink:0 !important;
+  font-family:Arial,Helvetica,sans-serif !important;
+  border-top:1px solid #111 !important;
+  border-bottom:none !important;
+  border-left:none !important;
+  border-right:none !important;
+  box-sizing:border-box !important;
+}
+#bbg-chart-panel .bwei-footbar .fb-sf{
+  color:var(--bbg-foot-orange) !important;
+  font-weight:700 !important;
+  font-size:27px !important;
+  line-height:1.1 !important;
+  padding:0 22px !important;
+  margin:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  min-height:72px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  border:none !important;
+}
+#bbg-chart-panel .bwei-footbar .fb-center{
+  flex:unset !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:0 22px !important;
+  min-height:72px !important;
+  border:none !important;
+  border-left:1px solid #000 !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+}
+#bbg-chart-panel .bwei-footbar .fb-right{
+  flex:unset !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  padding:0 22px !important;
+  min-height:72px !important;
+  border:none !important;
+  border-left:1px solid #000 !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+  gap:12px !important;
+}
+#bbg-chart-panel .bwei-footbar .fb-item{
+  display:flex !important;
+  align-items:center !important;
+  gap:0 !important;
+  min-width:0 !important;
+}
+#bbg-chart-panel .bwei-footbar .fb-key{
+  color:#fff !important;
+  font-weight:900 !important;
+  font-size:27px !important;
+  line-height:1.1 !important;
+  margin:0 14px 0 0 !important;
+  padding:0 !important;
+  letter-spacing:0 !important;
+  flex-shrink:0 !important;
+}
+#bbg-chart-panel .bwei-footbar .fb-desc{
+  color:#d7d7d7 !important;
+  font-weight:400 !important;
+  font-size:27px !important;
+  line-height:1.1 !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+
 /* Černá mezera mezi config barem a TF řádkem (tenký „groove“ jako na terminálu) */
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-sep{
   height:2px !important;
@@ -48733,16 +50330,17 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
 #bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-daily-dd.bbg-cwei-dd:hover .bbg-cwei-arr{
   background:#2d2a2e !important;
 }
-/* Table — #221F23 + horní linka (stejně jako Edit Chart) */
-#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn.bbg-cwei-dd{
+/* Table + mřížka — jeden blok */
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn{
   display:flex !important;
-  align-items:center !important;
+  flex-direction:row !important;
+  align-items:stretch !important;
   align-self:stretch !important;
   height:auto !important;
   min-height:0 !important;
   margin:0 !important;
-  padding:0 12px !important;
-  gap:6px !important;
+  padding:0 !important;
+  gap:0 !important;
   background:#221f23 !important;
   color:#e8e8e8 !important;
   border:1px solid #000 !important;
@@ -48757,47 +50355,39 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   z-index:20000 !important;
   pointer-events:auto !important;
 }
-#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn.bbg-cwei-dd svg,
-#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn.bbg-cwei-dd svg * {
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn .bbg-tf-table-main{
+  display:flex !important;
+  align-items:center !important;
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  gap:6px !important;
+  padding:0 10px 0 12px !important;
+  font-size:15px !important;
+  color:#e8e8e8 !important;
+  cursor:pointer !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn .bbg-tf-table-main svg,
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn .bbg-tf-table-main svg * {
   stroke:#e8e8e8 !important;
 }
-#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn.bbg-cwei-dd:hover{
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn:hover{
   background:#2d2a2e !important;
   color:#f0f0f0 !important;
 }
-/* Mřížka grafu — vedle Table */
-#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-grid-toggle{
-  cursor:pointer !important;
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  align-self:stretch !important;
-  width:30px !important;
-  min-height:30px !important;
-  height:auto !important;
-  margin:0 !important;
-  padding:0 !important;
-  background:#221f23 !important;
-  border:1px solid #000 !important;
-  border-top:1px solid #252526 !important;
-  border-radius:0 !important;
-  box-sizing:border-box !important;
-  flex-shrink:0 !important;
-  position:relative !important;
-  z-index:1000040 !important;
-  pointer-events:auto !important;
-  -webkit-appearance:none !important;
-  appearance:none !important;
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn:hover .bbg-tf-table-main{
+  color:#f0f0f0 !important;
 }
-#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-grid-toggle svg{
-  display:block !important;
+/* Skryté legacy tlačítko mřížky — stav se řídí přes Table */
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns #bbg-lwc-grid-toggle{
+  display:none !important;
 }
-#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-grid-toggle:hover{
-  background:#2d2a2e !important;
-}
-#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-grid-toggle.bbg-lwc-grid-toggle-off svg path{
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn.bbg-lwc-grid-toggle-off .bbg-tf-table-main svg,
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn.bbg-lwc-grid-toggle-off .bbg-tf-table-main svg * {
   stroke:#7a7d85 !important;
   opacity:0.85 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon #bbg-tf-btns .bbg-tf-table-btn.bbg-lwc-grid-toggle-off .bbg-tf-table-main span{
+  color:#b8b8bc !important;
 }
 
 /* Skupina ikonek (line/bar) + caret — STANDARD BOX vzor: 1px solid #000 obrys, ikonky tmavé,
@@ -49076,6 +50666,13 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   color:#ffa027 !important;
   font-size:9px !important;
 }
+/* OHLC ribbon — přebít výše: stejná oranžová jako Period řádek, ale 23px (ne 9px) */
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row span[style*="color:#ffa027"],
+#bbg-chart-ribbon .bbg-ribbon-ohlc-row span[style*="color: #ffa027"]{
+  font-size:23px !important;
+  font-weight:400 !important;
+  line-height:1 !important;
+}
 
 /* TradingView/Chart hlavička */
 .chart-header{
@@ -49095,6 +50692,49 @@ body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   font-size:9px !important;
   font-weight:bold !important;
   box-shadow:none !important;
+}
+
+/* OHLC řádek — třídy: přebít globální #bbg-chart-ribbon span[color:#ffa027]{font-size:9px} i bez shody v atributu style */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-ohlc-row .bbg-ohlc-lbl{
+  font-size:23px !important;
+  font-weight:300 !important;
+  line-height:1 !important;
+  color:#ffa027 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-ohlc-row .bbg-ohlc-val{
+  font-size:23px !important;
+  font-weight:400 !important;
+  line-height:1 !important;
+  color:#B7B2AF !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-ohlc-row > span:first-of-type #bbg-time,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-ohlc-row > span:first-of-type > span:last-child{
+  color:#6B6B6A !important;
+}
+/* Měna v tickeru — stejná šedá jako „d“ u času */
+#bbg-chart-panel #bbg-chart-ribbon #bbg-ticker-ccy{
+  color:#6B6B6A !important;
+}
+/* Čísla OHLC podle ID — přebít jakékoli JS přepnutí barvy */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-ohlc-row #bbg-volume,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-ohlc-row #bbg-start,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-ohlc-row #bbg-high,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-ohlc-row #bbg-low,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-ohlc-row #bbg-value-traded,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-ohlc-row .bbg-ohlc-val-wrap .bbg-ohlc-val{
+  color:#B7B2AF !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-ohlc-row .bbg-ohlc-val-wrap{
+  display:inline-flex !important;
+  align-items:baseline !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-ohlc-row .bbg-ohlc-sfx{
+  font-size:23px !important;
+  font-weight:400 !important;
+  line-height:1 !important;
+  color:#6B6B6A !important;
+  margin:0 !important;
+  padding:0 !important;
 }
 
 </style>
@@ -51424,6 +53064,7 @@ console.log('[TV-PANEL-SYNC v18] Price-driven sync: DOM updates ONLY when TV pri
 var _ribbonCache = {};
 var _RIBBON_IDS = [
   'bbg-volume', 'bbg-high', 'bbg-low', 'bbg-close', 'bbg-start',
+  'bbg-value-traded',
   'bbg-open',
   // NOTE: bbg-current-price, bbg-price-arrow, bbg-price-change, bbg-time
   // are intentionally EXCLUDED — live-tick elements must never be cached/throttled
@@ -51437,6 +53078,7 @@ var _RIBBON_THROTTLE = {
   'bbg-high':   900,
   'bbg-low':    900,
   'bbg-close':  400,
+  'bbg-value-traded': 5000,
   'bbg-open':   4000,
   'bbg-start':  1200,
   // bbg-current-price / bbg-price-change / bbg-price-arrow: vyřazeny z _RIBBON_IDS
@@ -51456,6 +53098,7 @@ var _RIBBON_HYSTERESIS = {
   'ov-volume':  3,
   'bbg-high':   0.5,
   'bbg-low':    0.5,
+  'bbg-value-traded': 2,
   'ov-high':    0.5,
   'ov-low':     0.5
 };
@@ -51518,6 +53161,13 @@ function _installPatch(){
         set: function(v){
           if(_shouldWrite(id, String(v))){
             origInnerText.set.call(this, v);
+            if(id === 'bbg-volume' || id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low' || id === 'bbg-value-traded'){
+              try { el.style.setProperty('color', '#B7B2AF', 'important'); } catch(_ribbonCol){}
+            }
+            if(id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low'){
+              var sfx = el.parentElement && el.parentElement.querySelector && el.parentElement.querySelector('.bbg-ohlc-sfx');
+              if(sfx) sfx.style.display = (String(v) === '\u2014' || String(v) === '—' || String(v) === '') ? 'none' : 'inline';
+            }
           }
         }
       });
@@ -51529,6 +53179,9 @@ function _installPatch(){
         set: function(v){
           if(_shouldWrite(id, String(v))){
             origInnerHTML.set.call(this, v);
+            if(id === 'bbg-volume' || id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low' || id === 'bbg-value-traded'){
+              try { el.style.setProperty('color', '#B7B2AF', 'important'); } catch(_ribbonColH){}
+            }
           }
         }
       });
@@ -51540,6 +53193,13 @@ function _installPatch(){
         set: function(v){
           if(_shouldWrite(id, String(v))){
             origTextContent.set.call(this, v);
+            if(id === 'bbg-volume' || id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low' || id === 'bbg-value-traded'){
+              try { el.style.setProperty('color', '#B7B2AF', 'important'); } catch(_ribbonCol2){}
+            }
+            if(id === 'bbg-start' || id === 'bbg-high' || id === 'bbg-low'){
+              var sfxT = el.parentElement && el.parentElement.querySelector && el.parentElement.querySelector('.bbg-ohlc-sfx');
+              if(sfxT) sfxT.style.display = (String(v) === '\u2014' || String(v) === '—' || String(v) === '') ? 'none' : 'inline';
+            }
           }
         }
       });
@@ -51588,6 +53248,7 @@ try {
 // Když existující kód udělá `chgEl.style.color = '#4caf50'`, projde přes proxy a pokud je
 // barva stejná jako poslední, neudělá nic. Browser tak nedostane signál na repaint.
 function _wrapStyleColor(){
+  var _ohlcValIds = { 'bbg-volume':1, 'bbg-start':1, 'bbg-high':1, 'bbg-low':1, 'bbg-value-traded':1 };
   _RIBBON_IDS.forEach(function(id){
     var el = document.getElementById(id);
     if(!el || el._styleColorWrapped) return;
@@ -51595,13 +53256,48 @@ function _wrapStyleColor(){
     try {
       var _origStyle = el.style;
       var _colorState = { color: '', background: '', backgroundColor: '' };
+      if(_ohlcValIds[id]){
+        try { _origStyle.setProperty('color', '#B7B2AF', 'important'); } catch(__){}
+      }
       // Vytvoříme proxy nad el.style, který cache color/background
       var _proxy = new Proxy(_origStyle, {
         get: function(target, prop){
+          if(prop === 'setProperty'){
+            return function(name, val, prio){
+              if(String(name).toLowerCase() === 'color' && _ohlcValIds[id]) val = '#B7B2AF';
+              return target.setProperty.call(target, name, val, prio);
+            };
+          }
+          if(prop === 'removeProperty'){
+            return function(name){
+              if(String(name).toLowerCase() === 'color' && _ohlcValIds[id]) return;
+              return target.removeProperty.call(target, name);
+            };
+          }
           var v = target[prop];
           return typeof v === 'function' ? v.bind(target) : v;
         },
         set: function(target, prop, value){
+          if(_ohlcValIds[id]){
+            if(prop === 'cssText'){
+              var s = String(value == null ? '' : value).trim();
+              s = s.replace(/\bcolor\s*:\s*[^;]+(?:\s*!important)?\s*;?/gi, '');
+              s = s.replace(/\s*;+\s*/g, ';').replace(/^;|;$/g, '').trim();
+              var next = s ? (s + '; color:#B7B2AF !important') : 'color:#B7B2AF !important';
+              target.cssText = next;
+              _colorState.color = '#B7B2AF';
+              return true;
+            }
+            if(prop === 'color'){
+              try {
+                target.setProperty('color', '#B7B2AF', 'important');
+              } catch(__){
+                target.color = '#B7B2AF';
+              }
+              _colorState.color = '#B7B2AF';
+              return true;
+            }
+          }
           if(prop === 'color' || prop === 'background' || prop === 'backgroundColor'){
             if(_colorState[prop] === value) return true;
             _colorState[prop] = value;
@@ -51622,6 +53318,22 @@ setTimeout(_wrapStyleColor, 500);
 setTimeout(_wrapStyleColor, 1500);
 setTimeout(_wrapStyleColor, 3000);
 setInterval(_wrapStyleColor, 5000);
+
+// OHLC hodnoty — občas někdo přepíše barvu přes cssText / neobalený style; držet #B7B2AF
+function _bbgForceOhlcRibbonValColors(){
+  var ids = ['bbg-volume','bbg-start','bbg-high','bbg-low','bbg-value-traded'];
+  for(var i = 0; i < ids.length; i++){
+    var el = document.getElementById(ids[i]);
+    if(!el) continue;
+    try {
+      el.style.setProperty('color', '#B7B2AF', 'important');
+    } catch(_){}
+    var sfx = el.parentElement && el.parentElement.querySelector && el.parentElement.querySelector('.bbg-ohlc-sfx');
+    if(sfx) try { sfx.style.setProperty('color', '#6B6B6A', 'important'); } catch(__){}
+  }
+}
+_bbgForceOhlcRibbonValColors();
+setInterval(_bbgForceOhlcRibbonValColors, 1000);
 
 console.log('[RIBBON-LOCK] Anti-flicker patch loaded for bbg-* elements');
 })();
@@ -55136,6 +56848,7 @@ function buildCWEI(){
   try {
     setTimeout(function () {
       if (typeof window._bbgScheduleCweiHlSparks === 'function') window._bbgScheduleCweiHlSparks();
+      if (typeof window._bbgScheduleRibbon2DaySpark === 'function') window._bbgScheduleRibbon2DaySpark();
       if (typeof window._bbgFetchHlCweiSpotOnly === 'function') window._bbgFetchHlCweiSpotOnly(true);
     }, 0);
   } catch (_sp) {}
