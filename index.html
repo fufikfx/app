@@ -84,6 +84,11 @@
         var mk = parseFloat(ctx.markPx || 0);
         var mid = parseFloat(ctx.midPx || 0);
         var px = mk > 0 ? mk : mid;
+        var _prevPF = parseFloat(ctx.prevDayPx || ctx.oraclePx || px);
+        if (_prevPF > 0 && px > 0 && isFinite(px)) {
+          window._bbgHlRibbonPctChg = ((px - _prevPF) / _prevPF) * 100;
+          if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
+        }
         if (typeof window._bbgCacheHlOracleMisPx === 'function') window._bbgCacheHlOracleMisPx(ctx, px);
       })
       .catch(function () {});
@@ -321,6 +326,78 @@
       }
     });
   };
+  /** % změny ribbonu z Hyperliquid (metaAndAssetCtxs: mark/mid vs prevDayPx) — nezávislé na CWEI DOM. */
+  window._bbgHlRibbonPctChg = null;
+  /** Symbol pro #cwei-pct-{SYM} u aktivního grafu (HL / HYPERLIQUID: / BTC-only). */
+  window._bbgRibbonPctChgSym = function () {
+    var r = window._bbgLwcRoute || {};
+    var tk = r.tk ? String(r.tk).toUpperCase().replace(/USDT$|USDC$|USD$/i, '') : '';
+    if (r.ex === 'HYPERLIQUID' && tk) return tk;
+    if (window.BBG_HL_BTC_CHART_ONLY) return 'BTC';
+    var tv = String(window._tvActiveSym || '');
+    if (tv.indexOf('HYPERLIQUID:') === 0) {
+      return tv.slice(12).replace(/[^A-Za-z0-9]/g, '').toUpperCase() || '';
+    }
+    return tk || '';
+  };
+  /** Ribbon %: u HL jen Hyperliquid cache; jinak kopie #cwei-pct-{SYMBOL}. */
+  window._bbgPaintRibbonPctFromCwei = function () {
+    var el = document.getElementById('bbg-price-change');
+    if (!el) return;
+    var hlRibbon =
+      window.BBG_HL_BTC_CHART_ONLY || (window._bbgLwcRoute && window._bbgLwcRoute.ex === 'HYPERLIQUID');
+    if (hlRibbon) {
+      var h = window._bbgHlRibbonPctChg;
+      if (typeof h === 'number' && isFinite(h)) {
+        el.textContent = (h >= 0 ? '+' : '') + h.toFixed(2) + '%';
+        el.style.color = h >= 0 ? '#00cc44' : '#ff3333';
+        el.title =
+          'Hyperliquid perp · %Δ (mark vs prevDayPx z metaAndAssetCtxs), ne Binance/TV.';
+        return;
+      }
+      el.textContent = '\u2014';
+      el.style.color = '#6B6B6A';
+      el.title = 'Čekám na Hyperliquid metaAndAssetCtxs…';
+      return;
+    }
+    var S = window._bbgRibbonPctChgSym();
+    if (!S) {
+      el.textContent = '\u2014';
+      el.style.color = '#6B6B6A';
+      el.title = '';
+      return;
+    }
+    var pct = document.getElementById('cwei-pct-' + S);
+    if (pct && pct.textContent) {
+      var t = String(pct.textContent).trim();
+      if (t && t !== '\u2014') {
+        el.textContent = t;
+        el.style.color = pct.classList.contains('red') ? '#ff3333' : '#00cc44';
+        el.title = 'Stejné jako CWEI %Chg (#' + pct.id + ')';
+        return;
+      }
+    }
+    el.textContent = '\u2014';
+    el.style.color = '#6B6B6A';
+    el.title = '';
+  };
+  /** Číselné %: u HL z _bbgHlRibbonPctChg; jinak parse #cwei-pct-*. */
+  window._bbgChgNumFromCweiPctSpan = function (sym) {
+    var hlRibbon =
+      window.BBG_HL_BTC_CHART_ONLY || (window._bbgLwcRoute && window._bbgLwcRoute.ex === 'HYPERLIQUID');
+    if (hlRibbon) {
+      var hc = window._bbgHlRibbonPctChg;
+      return typeof hc === 'number' && isFinite(hc) ? hc : NaN;
+    }
+    var S = sym || (window._bbgRibbonPctChgSym && window._bbgRibbonPctChgSym());
+    if (!S) return NaN;
+    var pct = document.getElementById('cwei-pct-' + S);
+    if (!pct || !pct.textContent) return NaN;
+    var raw = String(pct.textContent).trim();
+    if (!raw || raw === '\u2014') return NaN;
+    var m = raw.replace(/%/g, '').replace(',', '.').match(/-?\d+(?:\.\d+)?/);
+    return m ? parseFloat(m[0]) : NaN;
+  };
   window._bbgBuildHlCweiSparkSvg = function (leftCloses, rightCloses, gMin, gMax) {
     if (!leftCloses || !rightCloses || leftCloses.length < 2 || rightCloses.length < 2) return '';
     var lo = gMin;
@@ -441,6 +518,9 @@
    */
   window._bbgRibbonSparkGen = 0;
   window._bbgRibbonSparkInterval = null;
+  /** Poslední úspěšný split svíček pro ribbon spark (živý konec z _tvSyncPx mezi fetchi). */
+  window._bbgRibbonSparkCache = null;
+  window._bbgSparkLiveRt = 0;
   /** Hodnota obratu (Val) — stejná škála jako u Bloomberg terminálu (M / B / …). */
   window._bbgFmtRibbonValueTraded = function (v) {
     if (v == null || isNaN(v) || v <= 0) return '—';
@@ -680,7 +760,9 @@
       g.appendChild(pl);
     }
     function phP(yy) {
-      var p = (27 - yy) / 24;
+      var yLoPH = 6;
+      var yHiPH = 24;
+      var p = (yHiPH - yy) / (yHiPH - yLoPH);
       return p < 0 ? 0 : p > 1 ? 1 : p;
     }
     function phSplitT(p0, p1) {
@@ -728,29 +810,49 @@
     }
     clearG(gl);
     clearG(gr);
-    poly(gl, [[0, 15], [23, 13], [46, 18], [58, 26], [70, 26]], 'rgba(255,255,255,0.94)', 'url(#bbg-spark-glow-white)');
-    phEdge(gr, 70, 15, 93, 12);
-    phEdge(gr, 93, 12, 116, 19);
-    phEdge(gr, 116, 19, 140, 14);
+    poly(gl, [[0, 17], [23, 15], [46, 19], [58, 23], [70, 23]], 'rgba(255,255,255,0.94)', 'url(#bbg-spark-glow-white)');
+    phEdge(gr, 70, 17, 93, 14);
+    phEdge(gr, 93, 14, 116, 20);
+    phEdge(gr, 116, 20, 140, 15);
   };
-  window._bbgPaintRibbonHl2DaySpark = function (leftCloses, rightCloses, gMin, gMax, swingRangeHigh, swingRangeLow) {
+  /** Překreslení sparku z cache + poslední cena z grafu (stejný zdroj jako TV sync). */
+  window._bbgTickerSparkLiveRepaint = function () {
+    var c = window._bbgRibbonSparkCache;
+    if (!c || !c.left || !c.right || c.left.length < 2 || c.right.length < 2) return;
+    window._bbgPaintRibbonHl2DaySpark(c.left, c.right, c.gMin, c.gMax, c.swingRangeHigh, c.swingRangeLow, { useTvSync: true });
+  };
+  window._bbgThrottleTickerSparkLiveRepaint = function () {
+    var t = Date.now();
+    if (!window._bbgSparkLiveRt) window._bbgSparkLiveRt = 0;
+    if (t - window._bbgSparkLiveRt < 380) return;
+    window._bbgSparkLiveRt = t;
+    if (typeof window._bbgTickerSparkLiveRepaint === 'function') window._bbgTickerSparkLiveRepaint();
+  };
+  window._bbgPaintRibbonHl2DaySpark = function (leftCloses, rightCloses, gMin, gMax, swingRangeHigh, swingRangeLow, opts) {
     if (!leftCloses || !rightCloses || leftCloses.length < 2 || rightCloses.length < 2) return;
     var gl = document.getElementById('bbg-spark-left-segs');
     var gr = document.getElementById('bbg-spark-right-segs');
     if (!gl || !gr) return;
-    var lo = gMin;
-    var hi = gMax;
-    if (lo == null || hi == null || !isFinite(lo) || !isFinite(hi)) {
-      var merged = leftCloses.concat(rightCloses);
-      lo = Math.min.apply(null, merged);
-      hi = Math.max.apply(null, merged);
+    opts = opts || {};
+    var left = leftCloses.slice();
+    var right = rightCloses.slice();
+    var tvPx = opts.livePx;
+    if ((tvPx == null || !(tvPx > 0)) && opts.useTvSync) {
+      var _tsSp = window._tvSyncTs || 0;
+      if (window._tvSyncPx > 0 && Date.now() - _tsSp < 120000) tvPx = window._tvSyncPx;
     }
+    if (tvPx > 0 && right.length) right[right.length - 1] = tvPx;
+    var mergedRange = left.length > 1 ? left.slice(0, -1).concat(right) : left.concat(right);
+    var lo = Math.min.apply(null, mergedRange);
+    var hi = Math.max.apply(null, mergedRange);
+    var yPadMin = 6;
+    var yPadMax = 24;
     function normY(c) {
-      if (!isFinite(lo) || !isFinite(hi) || hi <= lo) return 15;
+      if (!isFinite(lo) || !isFinite(hi) || hi <= lo) return (yPadMin + yPadMax) * 0.5;
       var t = (c - lo) / (hi - lo);
-      var yy = 27 - t * 24;
-      if (yy < 3) yy = 3;
-      if (yy > 27) yy = 27;
+      var yy = yPadMax - t * (yPadMax - yPadMin);
+      if (yy < yPadMin) yy = yPadMin;
+      if (yy > yPadMax) yy = yPadMax;
       return yy;
     }
     function downsample(closes, n) {
@@ -763,8 +865,8 @@
       return out;
     }
     var npt = 18;
-    var lS = downsample(leftCloses, npt);
-    var rS = downsample(rightCloses, npt);
+    var lS = downsample(left, npt);
+    var rS = downsample(right, npt);
     var xDiv = 70;
     var xEnd = 140;
     var xsL = [];
@@ -985,16 +1087,19 @@
     } else if (coinHl) {
       p = window._bbgFetchHlRibbon2DaySparkSplit(coinHl);
     } else {
+      window._bbgRibbonSparkCache = null;
       window._bbgPaintRibbon2DayPlaceholder();
       return;
     }
     Promise.resolve(p).then(function (split) {
       if (gen !== window._bbgRibbonSparkGen) return;
       if (!split) {
+        window._bbgRibbonSparkCache = null;
         window._bbgPaintRibbon2DayPlaceholder();
         return;
       }
-      window._bbgPaintRibbonHl2DaySpark(split.left, split.right, split.gMin, split.gMax, split.swingRangeHigh, split.swingRangeLow);
+      window._bbgRibbonSparkCache = split;
+      window._bbgPaintRibbonHl2DaySpark(split.left, split.right, split.gMin, split.gMax, split.swingRangeHigh, split.swingRangeLow, { useTvSync: true });
     });
   };
   window._bbgScheduleRibbon2DaySpark = function () {
@@ -1005,7 +1110,7 @@
       try {
         window._bbgRefreshRibbon2DaySpark();
       } catch (_e) {}
-    }, 120000);
+    }, 30000);
   };
   (function _bbgRibbonRiskFromNewsPoll() {
     function kick() {
@@ -1468,8 +1573,7 @@
         };
         setR('bbg-current-price', fmtP(px));
         setR('bbg-close', fmtP(px));
-        var chgEl = document.getElementById('bbg-price-change');
-        if(chgEl && !isNaN(chg)){ chgEl.innerText = (up ? '+' : '') + chg.toFixed(2) + '%'; chgEl.style.color = col; }
+        if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
         var arr = document.getElementById('bbg-price-arrow');
         if(arr){ arr.innerText = up ? '↑' : '↓'; arr.style.color = col; }
         var ctn = document.getElementById('bbg-current-price-container');
@@ -2002,12 +2106,19 @@ body.sat-active .m-wrap{opacity:1!important;}
 #bbg-chart-panel #bbg-chart-ribbon{
   position: relative;
   z-index: 1000030;
+  pointer-events: auto !important;
   /* Černý „gutter“ od okrajů panelu (prosvítí background #bbg-chart-panel) */
   padding-left: 11px !important;
   padding-right: 11px !important;
   box-sizing: border-box !important;
   overflow-x: auto !important;
   overflow-y: visible !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-left-cluster,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-dd,
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-dd-trigger{
+  pointer-events: auto !important;
 }
 
 /* Oranžový titulek — šířka pod textem; kap na velmi dlouhé tickery */
@@ -2672,6 +2783,10 @@ body{text-rendering:optimizeLegibility;}
   border-radius:0 !important;
   box-shadow:0 18px 40px rgba(0,0,0,.55) !important;
 }
+/* Nad #CWEI_TOPBAR (1000002) a nad .panel.maximized (1000000 !important) — jinak ribbon „nekliká“ */
+#bbg-chart-panel.panel.maximized{
+  z-index:1010100 !important;
+}
 #bbg-chart-panel .panel-hd {
   background:#000000 !important;
   border-bottom:1px solid rgba(255,255,255,0.1) !important;
@@ -2689,6 +2804,8 @@ body{text-rendering:optimizeLegibility;}
 #bbg-chart-container {
   border:none !important;
   outline:none !important;
+  position: relative;
+  z-index: 1 !important;
 }
 /* Pravý „hnědý“ kraj často dělá globální scrollbar-thumb #2a1800 — u grafu neutrální */
 #bbg-chart-panel,
@@ -3344,9 +3461,9 @@ body > .bwei-optbar.wei-portal { display: none !important; }
         }
       }catch(_){}
       var _ba = document.getElementById('bbg-ticker-bidask');
-      if(_ba) _ba.textContent = 'L\u2014 / \u2014L';
+      if(_ba){ _ba.textContent = 'L\u2014 / \u2014L'; _ba.title = ''; }
       var _tsz = document.getElementById('bbg-ticker-size');
-      if(_tsz) _tsz.textContent = '\u2014 \u00d7 \u2014';
+      if(_tsz){ _tsz.textContent = '\u2014 \u00d7 \u2014'; _tsz.title = ''; }
       var chg = document.getElementById('bbg-price-change');
       if(chg) chg.style.color = '#555';
       var arr = document.getElementById('bbg-price-arrow');
@@ -6221,7 +6338,11 @@ document.addEventListener('DOMContentLoaded', function() {
       <span class="cmd-arr">▾</span>
     </div>
     <div class="cmd-icon">
-      <svg viewBox="0 0 24 24"><path d="M3 3h9v2H5v9H3z" fill="currentColor"/><path fill="#00cc44" d="M15 15v3l6-6-6-6v3h-5v6z"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="cmd-bracket-open-arrow-glyph">
+        <path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"
+          d="M5.5 4.25 L5.5 17.7 M5.5 4.25 L16.9 4.25 M16.9 4.25 L16.9 11.05 M5.5 17.7 L8.4 17.7"/>
+        <path fill="#00cc44" transform="translate(15 11.4) scale(0.88 0.86) translate(-15 -11.4)" d="M15 15v3l6-6-6-6v3h-5v6z"/>
+      </svg>
       <span class="cmd-arr">▾</span>
     </div>
     <div class="cmd-icon">
@@ -6290,7 +6411,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <span id="bbg-current-price" style="color:#4CAF50;font-size:28px;font-weight:600;letter-spacing:-0.3px;">—</span>
             <span id="bbg-price-change" style="color:#4CAF50;font-size:24px;font-weight:400;">—</span>
             <!-- Sparkline -->
-            <svg id="bbg-ticker-spark" width="200" height="43" viewBox="0 0 140 30" preserveAspectRatio="none" style="margin:0 8px;flex:0 0 auto;background:#000;">
+            <svg id="bbg-ticker-spark" width="200" height="43" viewBox="0 -2 140 34" preserveAspectRatio="none" overflow="visible" style="margin:0 8px;flex:0 0 auto;background:#000;overflow:visible;">
               <defs>
                 <filter id="bbg-spark-glow-white" x="-55%" y="-55%" width="210%" height="210%" color-interpolation-filters="sRGB">
                   <feGaussianBlur in="SourceGraphic" stdDeviation="0.85" result="b"/>
@@ -6315,11 +6436,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 </filter>
               </defs>
               <g id="bbg-spark-left-segs" fill="none"></g>
-              <line id="bbg-spark-divider" x1="70" y1="2.5" x2="70" y2="27.5" stroke="rgba(255,255,255,0.32)" stroke-width="0.65" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+              <line id="bbg-spark-divider" x1="70" y1="5" x2="70" y2="25" stroke="rgba(255,255,255,0.32)" stroke-width="0.65" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
               <g id="bbg-spark-right-segs" fill="none"></g>
             </svg>
-            <span id="bbg-ticker-bidask" style="color:#B7B2AF;font-size:20px;font-weight:400;margin-left:6px;">L— / —L</span>
-            <span id="bbg-ticker-size" style="color:#808080;font-size:20px;font-weight:400;margin-left:6px;">— × —</span>
+            <span id="bbg-ticker-bidask" style="color:#B7B2AF;font-size:20px;font-weight:400;margin-left:6px;" title="">L— / —L</span>
+            <span id="bbg-ticker-size" style="color:#B7B2AF;font-size:20px;font-weight:400;margin-left:28px;" title="">— × —</span>
           </div>
         </div>
 
@@ -6364,6 +6485,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="bbg-tb-chevron" style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
               </button>
               <div class="bbg-tb-menu" id="bbg-tb-menu-suggested" role="menu" hidden aria-labelledby="bbg-tb-suggested-trigger">
+                <div class="bbg-tb-menu-hdr"><span class="bbg-tb-menu-hdr-prefix">94)</span><span> Suggested Charts</span><span class="bbg-tb-menu-hdr-chev" aria-hidden="true">&#9662;</span></div>
                 <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-suggest="risk-premium">Risk Premium</div>
                 <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-suggest="pe-est">P/E Estimates</div>
                 <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-suggest="eps">EPS Actuals/Estimates</div>
@@ -6373,7 +6495,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
             </div>
             <div class="bbg-tb-dd" data-bbg-tb="actions" style="position:relative;align-self:stretch;display:flex;">
-              <button type="button" id="bbg-chart-actions-btn" onclick="event.stopPropagation();window._toggleChartIndicators(this)" aria-expanded="false" aria-haspopup="true"
+              <button type="button" class="bbg-tb-dd-trigger" id="bbg-chart-actions-btn" aria-expanded="false" aria-haspopup="true"
                 style="display:flex;align-items:center;padding:0 12px;height:100%;gap:6px;cursor:pointer;white-space:nowrap;font-size:18px;font-weight:400;color:#ffffff;border:none;border-right:1px solid #000;background:transparent;margin:0;font-family:inherit;">
                 <span><span class="bbg-tb-cmd-prefix">96)</span> Actions</span>
                 <span style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
@@ -6386,6 +6508,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="bbg-tb-chevron" style="opacity:.9;font-size:13px;margin-left:3px;color:#F0D0D5;">&#9662;</span>
               </button>
               <div class="bbg-tb-menu bbg-tb-menu--edit" id="bbg-tb-menu-edit" role="menu" hidden aria-labelledby="bbg-tb-edit-trigger">
+                <div class="bbg-tb-menu-hdr"><span class="bbg-tb-menu-hdr-prefix">97)</span><span> Edit</span><span class="bbg-tb-menu-hdr-chev" aria-hidden="true">&#9662;</span></div>
                 <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="securities">Securities &amp; Data...</div>
                 <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="norm">Normalization...</div>
                 <div class="bbg-tb-menu-item" role="menuitem" tabindex="-1" data-bbg-edit="colors">Chart Colors/Styles...</div>
@@ -30745,7 +30868,6 @@ window._updateBbgHeader = function(currentPriceRaw, intervalLabel) {
     const pxEl = document.getElementById('bbg-current-price');
     const pxContainerEl = document.getElementById('bbg-current-price-container');
     const arrowEl = document.getElementById('bbg-price-arrow');
-    const chgEl = document.getElementById('bbg-price-change');
     
     if(pxEl) {
         const _fmtP = window._bbgFmtP || function(v){ return v >= 1000 ? v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : v >= 1 ? parseFloat(v.toFixed(4)).toString() : parseFloat(v.toPrecision(5)).toString(); };
@@ -30784,7 +30906,7 @@ window._updateBbgHeader = function(currentPriceRaw, intervalLabel) {
     
     if(pxContainerEl) pxContainerEl.style.color = lastTickCol;
     if(arrowEl) { arrowEl.innerText = arrowTxt; arrowEl.style.color = arrowCol; }
-    if(chgEl) { chgEl.innerText = sign + chg.toFixed(2); chgEl.style.color = col; }
+    if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
     
     const setElTxt = (id, txt, c) => { const el = document.getElementById(id); if(el) { el.innerText = txt; if(c) el.style.color = c; } };
     
@@ -31236,6 +31358,9 @@ window._setChartInterval = async function(interval) {
       }
       window._bbgLwcRoute = _r;
       try {
+        if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
+      } catch (_pctR) {}
+      try {
         var _vlb = document.getElementById('bbg-volume-label');
         if (_vlb) {
           _vlb.textContent = 'Vol';
@@ -31293,10 +31418,9 @@ window._setChartInterval = async function(interval) {
         const _cp = _cPreload;
         setEl('bbg-current-price', fmtP(_cp.px));
         setEl('bbg-close', fmtP(_cp.px));
+        if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
         const _cup = (_cp.chg || 0) >= 0;
         const _ccol = _cup ? '#00cc44' : '#ff3333';
-        const chgEl = document.getElementById('bbg-price-change');
-        if (chgEl) { chgEl.innerText = (_cup?'+':'') + (_cp.chg||0).toFixed(2) + '%'; chgEl.style.color = _ccol; }
         const arrEl = document.getElementById('bbg-price-arrow');
         if (arrEl) { arrEl.innerText = _cup ? '↑' : '↓'; arrEl.style.color = _ccol; }
         const ctnr = document.getElementById('bbg-current-price-container');
@@ -31321,6 +31445,10 @@ window._setChartInterval = async function(interval) {
             /* Na HYPERLIQUID grafu nepřepisovat Vol z Binance/Bybit/MMT quote volume — jen dayNtlVlm z HL metaAndAssetCtxs. */
             var _hlChartRt = window.BBG_HL_BTC_CHART_ONLY || (window._bbgLwcRoute && window._bbgLwcRoute.ex === 'HYPERLIQUID');
             var _ribbonVolOk = !_hlChartRt || _to.hlDayNtlVlm === true;
+            if (_hlChartRt && typeof chgPct === 'number' && !isNaN(chgPct)) {
+              window._bbgHlRibbonPctChg = chgPct;
+              if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
+            }
             
             // Update Ribbon elements
             setEl('bbg-current-price', fmtP(price));
@@ -31349,12 +31477,6 @@ window._setChartInterval = async function(interval) {
                 setEl('ov-open', fmtP(_nyOpen));
                 if(!window._firstBbgPrice || window._firstBbgPrice <= 0) window._firstBbgPrice = _nyOpen;
             }
-            const chgEl = document.getElementById('bbg-price-change');
-            if(chgEl){chgEl.innerText=(up?'+':'')+chgPct.toFixed(2)+'%';chgEl.style.color=col;}
-            const arrEl = document.getElementById('bbg-price-arrow');
-            if(arrEl){arrEl.innerText=up?'↑':'↓';arrEl.style.color=col;}
-            const ctnr = document.getElementById('bbg-current-price-container');
-            if(ctnr) ctnr.style.color=col;
             setEl('ov-start', fmtP(price));
             setEl('ov-close', fmtP(price));
             if(hi>0) setEl('ov-high', fmtP(hi));
@@ -31368,6 +31490,7 @@ window._setChartInterval = async function(interval) {
             // cenu jako aktivní TV graf — bez ohledu na Binance Spot WS lag.
             // ══════════════════════════════════════════════════════════════════════
             const _tvSymNorm = currentSym.replace(/USDT$|USDC$|USD$/i, '');
+            var _effChgForSync = chgPct;
 
             // 1. Okamžitý zápis do _tvSyncPx (prioritní cache pro _bbgResolveLiveQuote)
             window._tvSyncSym    = _tvSymNorm;
@@ -31384,7 +31507,11 @@ window._setChartInterval = async function(interval) {
                 );
                 if (_tvCoinDirect) {
                     _tvCoinDirect.px     = price;
-                    _tvCoinDirect.chg    = chgPct;
+                    if (_hlChartRt) {
+                      if (!isNaN(_effChgForSync)) _tvCoinDirect.chg = _effChgForSync;
+                    } else {
+                      _tvCoinDirect.chg = chgPct;
+                    }
                     _tvCoinDirect._pxSrc = 'tv_sync';
                     if (openPx > 0) _tvCoinDirect.open = openPx;
                     if (hi  > 0) _tvCoinDirect.hi  = hi;
@@ -31396,7 +31523,9 @@ window._setChartInterval = async function(interval) {
             // 3. updateCoin přes HL_MAP (sidebar render)
             const coinId = (typeof HL_MAP !== 'undefined') ? HL_MAP[currentSym] : null;
             if (coinId && typeof updateCoin === 'function') {
-                var _uc = { px: price, chg: chgPct, hi: hi, lo: lo };
+                var _uc = { px: price, hi: hi, lo: lo };
+                if (_hlChartRt) { if (!isNaN(_effChgForSync)) _uc.chg = _effChgForSync; }
+                else _uc.chg = chgPct;
                 if (vol > 0 && _ribbonVolOk) _uc.vol = vol;
                 updateCoin(coinId, _uc, 'tv_sync', 0);
                 if(typeof renderSidebar === 'function') renderSidebar();
@@ -31404,7 +31533,11 @@ window._setChartInterval = async function(interval) {
 
             // 4. Sync do MKT a _l1Data (equities, indices, BTC/ETH)
             if (typeof MKT !== 'undefined') {
-                if (MKT[_tvSymNorm])              { MKT[_tvSymNorm].px = price; if(!isNaN(chgPct)) MKT[_tvSymNorm].chg = chgPct; }
+                if (MKT[_tvSymNorm]) {
+                  MKT[_tvSymNorm].px = price;
+                  if (_hlChartRt) { if (!isNaN(_effChgForSync)) MKT[_tvSymNorm].chg = _effChgForSync; }
+                  else if (!isNaN(chgPct)) MKT[_tvSymNorm].chg = chgPct;
+                }
                 if (MKT[_tvSymNorm + ' Index'])   { MKT[_tvSymNorm + ' Index'].px = price; }
                 if (MKT[_tvSymNorm + ' Equity'])  { MKT[_tvSymNorm + ' Equity'].px = price; }
             }
@@ -31414,6 +31547,28 @@ window._setChartInterval = async function(interval) {
                 if (_tvSymNorm === 'SPX')  window._l1Data.sp  = price.toFixed(2);
                 if (_tvSymNorm === 'NDX')  window._l1Data.ndx = price.toFixed(2);
                 if (_tvSymNorm === 'INDU') window._l1Data.dji = price.toFixed(2);
+            }
+
+            if (_hlChartRt) {
+              if (typeof window._updateCWEIFromLiveCrypto === 'function') {
+                try { window._updateCWEIFromLiveCrypto(); } catch (_cwU) {}
+              }
+            } else if (typeof window._bbgPaintRibbonPctFromCwei === 'function') {
+              window._bbgPaintRibbonPctFromCwei();
+            }
+            var arrEl = document.getElementById('bbg-price-arrow');
+            var ctnr = document.getElementById('bbg-current-price-container');
+            if (_hlChartRt) {
+              var _hp = window._bbgHlRibbonPctChg;
+              if (arrEl && ctnr && typeof _hp === 'number' && isFinite(_hp)) {
+                var _upT = _hp >= 0;
+                arrEl.innerText = _upT ? '↑' : '↓';
+                arrEl.style.color = _upT ? '#00cc44' : '#ff3333';
+                ctnr.style.color = _upT ? '#00cc44' : '#ff3333';
+              }
+            } else {
+              if (arrEl) { arrEl.innerText = up ? '↑' : '↓'; arrEl.style.color = col; }
+              if (ctnr) ctnr.style.color = col;
             }
 
             // ═══ TV→BWEI SYNC: _tvSyncPx setter triggeruje TV-PANEL-SYNC (throttled 1500ms) ═══
@@ -31433,11 +31588,15 @@ window._setChartInterval = async function(interval) {
 
             var _refForDelta = (window._firstBbgPrice > 0 ? window._firstBbgPrice : (openPx > 0 ? openPx : 0));
             if (typeof window._bbgUpdateDeltaFloat === 'function') {
-              window._bbgUpdateDeltaFloat(price, chgPct, _refForDelta);
+              window._bbgUpdateDeltaFloat(price, _hlChartRt ? _effChgForSync : chgPct, _refForDelta);
             }
 
             if (typeof window._bbgLwcPushLive === 'function') {
               window._bbgLwcPushLive(price, hi, lo);
+            }
+
+            if (_hlChartRt && typeof window._bbgThrottleTickerSparkLiveRepaint === 'function') {
+              window._bbgThrottleTickerSparkLiveRepaint();
             }
 
         } catch(e){ console.error("ApplyTick Failure:", e); }
@@ -31631,6 +31790,12 @@ window._setChartInterval = async function(interval) {
                     const idx = meta.findIndex(function (a) { return a.name === _hlCoinBr; });
                     if (idx === -1) return;
                     const ctx = ctxs[idx];
+                    try {
+                      var _dbvA = parseFloat(ctx.dayBaseVlm || 0);
+                      window._bbgHlLastDayBaseVlm = isFinite(_dbvA) && _dbvA > 0 ? _dbvA : null;
+                    } catch (_db0) {
+                      window._bbgHlLastDayBaseVlm = null;
+                    }
                     /* Perp „futures“ cena = mark (shodně s CWEI sloupcem Future); mid jen záloha. */
                     const mk = parseFloat(ctx.markPx || 0);
                     const mid = parseFloat(ctx.midPx || 0);
@@ -31685,7 +31850,9 @@ window._setChartInterval = async function(interval) {
                       if (_rgFb.lo > 0) _loHl = _rgFb.lo;
                       if (_rgFb.open > 0) _opHlFb = _rgFb.open;
                     }
-                    _applyTick(_pxHl, 0, _hiHl, _loHl, 0, _opHlFb > 0 ? _opHlFb : 0);
+                    var _prevFb = parseFloat(ctx.prevDayPx || ctx.oraclePx || _pxHl);
+                    var _chgFb = _prevFb > 0 ? ((_pxHl - _prevFb) / _prevFb * 100) : 0;
+                    _applyTick(_pxHl, _chgFb, _hiHl, _loHl, 0, _opHlFb > 0 ? _opHlFb : 0);
                 }
             } catch(e) {}
         }
@@ -31859,6 +32026,12 @@ window._setChartInterval = async function(interval) {
                             var idx = meta.findIndex(function (a) { return a.name === hc; });
                             if (idx === -1) return;
                             var ctx = ctxs[idx];
+                            try {
+                              var _dbvB = parseFloat(ctx.dayBaseVlm || 0);
+                              window._bbgHlLastDayBaseVlm = isFinite(_dbvB) && _dbvB > 0 ? _dbvB : null;
+                            } catch (_db1) {
+                              window._bbgHlLastDayBaseVlm = null;
+                            }
                             var mk = parseFloat(ctx.markPx || 0);
                             var mid = parseFloat(ctx.midPx || 0);
                             var px = mk > 0 ? mk : mid;
@@ -31968,8 +32141,7 @@ window._setChartInterval = async function(interval) {
             setEl('ov-high',    _sp.hi ? fmtP(_sp.hi) : '—');
             setEl('ov-low',     _sp.lo ? fmtP(_sp.lo) : '—');
             setEl('ov-close',   fmtP(_prc));
-            const chgEl = document.getElementById('bbg-price-change');
-            if (chgEl) { chgEl.innerText = (_up?'+':'') + _pct.toFixed(2) + '%'; chgEl.style.color = _col; }
+            if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
             const arrEl = document.getElementById('bbg-price-arrow');
             if (arrEl) { arrEl.innerText = _up ? '↑' : '↓'; arrEl.style.color = _col; }
             const ctnr = document.getElementById('bbg-current-price-container');
@@ -32177,6 +32349,17 @@ window._setChartInterval = async function(interval) {
     }
 };
 
+window._bbgLwcIsVolumePanelOn = window._bbgLwcIsVolumePanelOn || function () {
+  try { return localStorage.getItem('bbg_lwc_vol_panel') !== '0'; } catch (_e) { return true; }
+};
+window._bbgLwcHlVolumeActive = window._bbgLwcHlVolumeActive || false;
+if (typeof window._bbgLwcRebuildVolumePane !== 'function') {
+  window._bbgLwcRebuildVolumePane = function () {};
+}
+if (typeof window._bbgLwcReflowChartsSize !== 'function') {
+  window._bbgLwcReflowChartsSize = function () {};
+}
+
 window._updateTVChart = function(sym, interval) {
   if((window.BBG_DATA_MODE || '') === 'none'){
     if(typeof window._bbgClearPriceDom === 'function') window._bbgClearPriceDom();
@@ -32186,6 +32369,77 @@ window._updateTVChart = function(sym, interval) {
   if (!LC || !LC.createChart) { console.warn('[BBG-LWC] LightweightCharts missing'); return; }
   var container = document.getElementById('bbg-chart-container');
   if (!container) { console.warn('[BBG-LWC] no container'); return; }
+
+  function _bbgMigrateLwcStackToVolSplit() {
+    var stack = document.getElementById('bbg-lwc-stack');
+    if (!stack) return;
+    var wrap0 = document.getElementById('bbg-lwc-wrap');
+    if (!wrap0) return;
+    if (!document.getElementById('bbg-lwc-main-col')) {
+      var mainCol = document.createElement('div');
+      mainCol.id = 'bbg-lwc-main-col';
+      mainCol.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;min-width:0;';
+      if (wrap0.parentNode === stack) {
+        stack.insertBefore(mainCol, wrap0);
+        mainCol.appendChild(wrap0);
+      } else return;
+    }
+    var mc = document.getElementById('bbg-lwc-main-col');
+    if (!mc || document.getElementById('bbg-lwc-vol-split')) return;
+    var res = document.createElement('div');
+    res.id = 'bbg-lwc-vol-resizer';
+    res.style.cssText = 'flex:0 0 6px;min-height:6px;background:#2f2f33;cursor:row-resize;display:none;align-items:center;justify-content:center;position:relative;z-index:10051;box-sizing:border-box;border-top:2px solid #1a1a1c;border-bottom:1px solid #0d0d10;';
+    res.innerHTML = '<span class="bbg-lwc-vol-grip" style="display:flex;flex-direction:column;gap:3px;pointer-events:none;opacity:.92;"><span style="display:block;width:24px;height:2px;background:#e4e4ea;border-radius:2px;"></span><span style="display:block;width:24px;height:2px;background:#e4e4ea;border-radius:2px;"></span></span>';
+    res.title = 'Tahem měnit výšku panelu Volume';
+    var volSplit = document.createElement('div');
+    volSplit.id = 'bbg-lwc-vol-split';
+    volSplit.style.cssText = 'display:none;flex-direction:column;flex:0 0 auto;height:118px;min-height:56px;max-height:min(52vh,520px);background:#000;min-width:0;';
+    var chrome = document.createElement('div');
+    chrome.id = 'bbg-lwc-vol-chrome';
+    chrome.style.cssText = 'flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:3px 10px 5px 6px;font:600 12px -apple-system,BlinkMacSystemFont,\"Segoe UI\",Arial,sans-serif;color:#f0f0f0;border-bottom:1px solid #232323;background:#050506;';
+    chrome.innerHTML = '<button type="button" id="bbg-lwc-vol-collapse" aria-label="Skr\u00fdt Volume" style="width:15px;height:15px;padding:0;margin:0;border:1px solid #4a4a50;background:#1c1c20;color:#ddd;font-size:11px;line-height:1;cursor:pointer;border-radius:2px;flex-shrink:0;">\u2212</button><span style="display:inline-block;width:11px;height:11px;background:#6d8dae;border-radius:1px;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35);"></span><span>Volume <span id="bbg-lwc-vol-legend-val" style="color:#9eb5cb;font-weight:700;">\u2014</span></span>';
+    var volHost = document.createElement('div');
+    volHost.id = 'bbg-lwc-vol-host';
+    volHost.style.cssText = 'flex:1;min-height:0;position:relative;width:100%;background:#000;overflow:hidden;';
+    volSplit.appendChild(chrome);
+    volSplit.appendChild(volHost);
+    mc.appendChild(res);
+    mc.appendChild(volSplit);
+    var cbtn = document.getElementById('bbg-lwc-vol-collapse');
+    if (cbtn) {
+      cbtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        try { localStorage.setItem('bbg_lwc_vol_panel', '0'); } catch (_le) {}
+        if (typeof window._bbgLwcRebuildVolumePane === 'function') window._bbgLwcRebuildVolumePane();
+      });
+    }
+    if (!res._bbgVolResWired) {
+      res._bbgVolResWired = true;
+      res.addEventListener('mousedown', function (e) {
+        var sp = document.getElementById('bbg-lwc-vol-split');
+        if (!sp || sp.style.display === 'none') return;
+        e.preventDefault();
+        var startY = e.clientY;
+        var startH = sp.getBoundingClientRect().height;
+        function move(ev) {
+          var dy = startY - ev.clientY;
+          var nh = Math.max(56, Math.min(520, startH + dy));
+          sp.style.flex = '0 0 ' + nh + 'px';
+          sp.style.height = nh + 'px';
+          try { localStorage.setItem('bbg_lwc_vol_h', String(Math.round(nh))); } catch (_lh) {}
+          if (typeof window._bbgLwcReflowChartsSize === 'function') window._bbgLwcReflowChartsSize();
+        }
+        function up() {
+          document.removeEventListener('mousemove', move);
+          document.removeEventListener('mouseup', up);
+        }
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', up);
+      });
+    }
+  }
+
   var stack = document.getElementById('bbg-lwc-stack');
   var host = document.getElementById('bbg-lwc-host');
   if (!stack) {
@@ -32228,6 +32482,8 @@ window._updateTVChart = function(sym, interval) {
     else stack.insertBefore(host, stack.firstChild);
   }
 
+  _bbgMigrateLwcStackToVolSplit();
+
   window._bbgLwcGen = (window._bbgLwcGen || 0) + 1;
   var myGen = window._bbgLwcGen;
   if (window._bbgLwcUiCleanup) {
@@ -32248,10 +32504,15 @@ window._updateTVChart = function(sym, interval) {
   })();
 
   var route = window._bbgLwcRoute || {};
+  /** Histogram objemu pod grafem — jen Hyperliquid snapshot (`rowsHyperliquid` má `v`). */
+  var _bbgLwcWantHlVolume = (route.ex === 'HYPERLIQUID' && !!route.tk) || !!window.BBG_HL_BTC_CHART_ONLY;
+  try { window._bbgLwcHlVolumeActive = _bbgLwcWantHlVolume; } catch (_wh) {}
   var tvIv = interval;
   window._bbgLwcTvIv = tvIv;
   window._bbgLwcBars = [];
   window._bbgLwcPushLive = null;
+  window._bbgLwcVolumeSeries = null;
+  window._bbgLwcVolHistSeries = null;
 
   // Bar countdown removed
 
@@ -32786,10 +33047,17 @@ window._updateTVChart = function(sym, interval) {
   if (window._bbgChart) {
     try {
       if (window._bbgLwcRangeUnsub) { try { window._bbgLwcRangeUnsub(); } catch (eU) {} window._bbgLwcRangeUnsub = null; }
+      if (window._bbgLwcVolRangeUnsub) { try { window._bbgLwcVolRangeUnsub(); } catch (eVu) {} window._bbgLwcVolRangeUnsub = null; }
       window._bbgChart.remove();
     } catch (eR) {}
     window._bbgChart = null;
     window._currentBbgSeries = null;
+    window._bbgLwcVolumeSeries = null;
+  }
+  if (window._bbgLwcVolumeChart) {
+    try { window._bbgLwcVolumeChart.remove(); } catch (eVc) {}
+    window._bbgLwcVolumeChart = null;
+    window._bbgLwcVolHistSeries = null;
   }
   window._bbgLwcPrevTickPx = null;
 
@@ -32812,8 +33080,8 @@ window._updateTVChart = function(sym, interval) {
       fontSize: 13
     },
     grid: {
-      vertLines: { visible: _bbgShowInitGrid, color: 'rgba(72, 74, 82, 0.38)', style: LC.LineStyle.Solid },
-      horzLines: { visible: _bbgShowInitGrid, color: 'rgba(72, 74, 82, 0.22)', style: LC.LineStyle.Solid }
+      vertLines: { visible: _bbgShowInitGrid, color: 'rgba(195, 196, 200, 0.38)', style: LC.LineStyle.Dotted },
+      horzLines: { visible: _bbgShowInitGrid, color: 'rgba(195, 196, 200, 0.26)', style: LC.LineStyle.Dotted }
     },
     crosshair: {
       mode: LC.CrosshairMode.Normal,
@@ -33160,6 +33428,225 @@ window._updateTVChart = function(sym, interval) {
   var loadState = { exhausted: false, loadingLeft: false };
   var allBars = [];
 
+  function _bbgLwcFormatVolCompact(x) {
+    if (x == null || isNaN(Number(x))) return '\u2014';
+    var n = Number(x);
+    var a = Math.abs(n);
+    if (a >= 1e9) return (n / 1e9).toFixed(3).replace(/\.?0+$/, '') + 'B';
+    if (a >= 1e6) return (n / 1e6).toFixed(3).replace(/\.?0+$/, '') + 'M';
+    if (a >= 1e3) return (n / 1e3).toFixed(3).replace(/\.?0+$/, '') + 'K';
+    return String(Math.round(n));
+  }
+  function _bbgLwcUpdateVolLegend(bars) {
+    var el = document.getElementById('bbg-lwc-vol-legend-val');
+    if (!el) return;
+    if (!bars || !bars.length) {
+      el.textContent = '\u2014';
+      return;
+    }
+    var b = bars[bars.length - 1];
+    var v = b && b.vol != null ? Number(b.vol) : NaN;
+    if (isNaN(v)) {
+      el.textContent = '\u2014';
+      return;
+    }
+    el.textContent = _bbgLwcFormatVolCompact(v);
+  }
+
+  function _bbgMapBarsToVolumeHist(bars) {
+    if (!bars || !bars.length) return [];
+    var col = 'rgba(109, 141, 174, 0.92)';
+    var out = [];
+    var i;
+    for (i = 0; i < bars.length; i++) {
+      var b = bars[i];
+      if (!b || b.time == null) continue;
+      var v = b.vol != null && !isNaN(b.vol) ? Number(b.vol) : 0;
+      out.push({ time: b.time, value: v, color: col });
+    }
+    return out;
+  }
+
+  function _bbgLwcTeardownVolPaneChart() {
+    if (window._bbgLwcVolRangeUnsub) {
+      try { window._bbgLwcVolRangeUnsub(); } catch (_eU) {}
+      window._bbgLwcVolRangeUnsub = null;
+    }
+    if (window._bbgLwcVolumeChart) {
+      try { window._bbgLwcVolumeChart.remove(); } catch (_eRm) {}
+      window._bbgLwcVolumeChart = null;
+      window._bbgLwcVolHistSeries = null;
+    }
+  }
+
+  function _bbgLwcEnsureVolumePaneChart() {
+    var main = window._bbgChart;
+    if (!main || !window._bbgLwcHlVolumeActive || !window._bbgLwcIsVolumePanelOn()) {
+      _bbgLwcTeardownVolPaneChart();
+      return;
+    }
+    var vh = document.getElementById('bbg-lwc-vol-host');
+    if (!vh) return;
+    if (window._bbgLwcVolumeChart) return;
+    var vw0 = Math.floor(vh.clientWidth || vh.getBoundingClientRect().width || 0);
+    var vh0 = Math.floor(vh.clientHeight || vh.getBoundingClientRect().height || 0);
+    if (vw0 < 8 || vh0 < 8) return;
+    var _gv = true;
+    try {
+      var _gl = localStorage.getItem('bbg_lwc_grid_on');
+      _gv = _gl === null || _gl !== '0';
+    } catch (_gls) {}
+    var vChart = LC.createChart(vh, {
+      width: vw0,
+      height: vh0,
+      layout: {
+        background: { type: LC.ColorType.Solid, color: '#000000' },
+        textColor: '#ffffff',
+        fontSize: 12
+      },
+      grid: {
+        vertLines: { visible: _gv, color: _gv ? 'rgba(195, 196, 200, 0.38)' : 'rgba(0,0,0,0)', style: LC.LineStyle.Dotted },
+        horzLines: { visible: _gv, color: _gv ? 'rgba(195, 196, 200, 0.26)' : 'rgba(0,0,0,0)', style: LC.LineStyle.Dotted }
+      },
+      crosshair: {
+        mode: LC.CrosshairMode.Normal,
+        vertLine: { color: '#9598a1', width: 1, style: LC.LineStyle.Dashed, labelBackgroundColor: '#363a45' },
+        horzLine: { color: '#9598a1', width: 1, style: LC.LineStyle.Dashed, labelBackgroundColor: '#363a45' }
+      },
+      leftPriceScale: { visible: false },
+      rightPriceScale: {
+        visible: true,
+        borderVisible: true,
+        borderColor: '#787b86',
+        ticksVisible: true,
+        scaleMargins: { top: 0.12, bottom: 0.08 },
+        textColor: '#ffffff',
+        entireTextOnly: false,
+        minimumWidth: 56
+      },
+      timeScale: {
+        visible: false,
+        borderVisible: false,
+        rightOffset: 20,
+        fixLeftEdge: false,
+        fixRightEdge: false
+      },
+      localization: { locale: 'en-US' }
+    });
+    var hist = vChart.addHistogramSeries({
+      priceFormat: { type: 'volume' },
+      priceScaleId: '',
+      priceLineVisible: false,
+      lastValueVisible: true,
+      color: '#6d8dae'
+    });
+    window._bbgLwcVolumeChart = vChart;
+    window._bbgLwcVolHistSeries = hist;
+    var _rngLock = false;
+    function _volFromMain(range) {
+      if (_rngLock || !range || range.from == null) return;
+      _rngLock = true;
+      try { vChart.timeScale().setVisibleLogicalRange(range); } catch (_eR) {}
+      _rngLock = false;
+    }
+    function _mainFromVol(range) {
+      if (_rngLock || !range || range.from == null) return;
+      _rngLock = true;
+      try { main.timeScale().setVisibleLogicalRange(range); } catch (_eR2) {}
+      _rngLock = false;
+    }
+    main.timeScale().subscribeVisibleLogicalRangeChange(_volFromMain);
+    vChart.timeScale().subscribeVisibleLogicalRangeChange(_mainFromVol);
+    var _volResizeObs = null;
+    try {
+      if (typeof ResizeObserver !== 'undefined') {
+        _volResizeObs = new ResizeObserver(function () {
+          if (!window._bbgLwcVolumeChart || window._bbgLwcVolumeChart !== vChart) return;
+          var r = vh.getBoundingClientRect();
+          if (r.width > 2 && r.height > 2) {
+            var lrV = null;
+            try { lrV = vChart.timeScale().getVisibleLogicalRange(); } catch (_gV) {}
+            vChart.applyOptions({ width: Math.floor(r.width), height: Math.floor(r.height) });
+            if (lrV && lrV.from != null) try { vChart.timeScale().setVisibleLogicalRange(lrV); } catch (_sV) {}
+          }
+        });
+        _volResizeObs.observe(vh);
+      }
+    } catch (__vro) {}
+    window._bbgLwcVolRangeUnsub = function () {
+      try { main.timeScale().unsubscribeVisibleLogicalRangeChange(_volFromMain); } catch (_e1) {}
+      try { vChart.timeScale().unsubscribeVisibleLogicalRangeChange(_mainFromVol); } catch (_e2) {}
+      try { if (_volResizeObs) _volResizeObs.disconnect(); } catch (_e3) {}
+    };
+    try {
+      var lrI = main.timeScale().getVisibleLogicalRange();
+      if (lrI && lrI.from != null) vChart.timeScale().setVisibleLogicalRange(lrI);
+    } catch (_eI) {}
+  }
+
+  window._bbgLwcReflowChartsSize = function () {
+    var wrap = document.getElementById('bbg-lwc-wrap');
+    var mch = window._bbgChart;
+    if (wrap && mch && typeof mch.applyOptions === 'function') {
+      var r = wrap.getBoundingClientRect();
+      if (r.width > 2 && r.height > 2) {
+        var lrM = null;
+        try { lrM = mch.timeScale().getVisibleLogicalRange(); } catch (_eM) {}
+        mch.applyOptions({ width: Math.floor(r.width), height: Math.floor(r.height) });
+        if (lrM && lrM.from != null) try { mch.timeScale().setVisibleLogicalRange(lrM); } catch (_eMs) {}
+      }
+    }
+    var vhost = document.getElementById('bbg-lwc-vol-host');
+    var vch = window._bbgLwcVolumeChart;
+    if (vhost && vch && typeof vch.applyOptions === 'function') {
+      var r2 = vhost.getBoundingClientRect();
+      if (r2.width > 2 && r2.height > 2) {
+        var lrV2 = null;
+        try { lrV2 = vch.timeScale().getVisibleLogicalRange(); } catch (_eV) {}
+        vch.applyOptions({ width: Math.floor(r2.width), height: Math.floor(r2.height) });
+        if (lrV2 && lrV2.from != null) try { vch.timeScale().setVisibleLogicalRange(lrV2); } catch (_eVs) {}
+      }
+    }
+    try {
+      if (typeof window._bbgLwcRepaintTimeAxis === 'function') window._bbgLwcRepaintTimeAxis();
+    } catch (_eP) {}
+  };
+
+  window._bbgLwcRebuildVolumePane = function () {
+    var sp = document.getElementById('bbg-lwc-vol-split');
+    var res = document.getElementById('bbg-lwc-vol-resizer');
+    if (!sp || !res) return;
+    if (!window._bbgLwcHlVolumeActive || !window._bbgLwcIsVolumePanelOn()) {
+      res.style.display = 'none';
+      sp.style.display = 'none';
+      _bbgLwcTeardownVolPaneChart();
+      window._bbgLwcReflowChartsSize();
+      try { _bbgLwcUpdateVolLegend(window._bbgLwcBars || []); } catch (_el) {}
+      return;
+    }
+    res.style.display = 'flex';
+    sp.style.display = 'flex';
+    var h = 118;
+    try {
+      var sh = localStorage.getItem('bbg_lwc_vol_h');
+      if (sh) h = Math.max(56, Math.min(520, parseInt(sh, 10) || 118));
+    } catch (_lh) {}
+    sp.style.flex = '0 0 ' + h + 'px';
+    sp.style.height = h + 'px';
+    window._bbgLwcReflowChartsSize();
+    _bbgLwcEnsureVolumePaneChart();
+    window._bbgLwcReflowChartsSize();
+    try {
+      var _barsV = window._bbgLwcBars || allBars;
+      if (_barsV && _barsV.length && window._bbgLwcVolHistSeries && typeof window._bbgLwcVolHistSeries.setData === 'function') {
+        window._bbgLwcVolHistSeries.setData(_bbgMapBarsToVolumeHist(_barsV));
+      }
+    } catch (_vsd) {}
+    try { _bbgLwcUpdateVolLegend(window._bbgLwcBars || allBars || []); } catch (_el2) {}
+  };
+
+  try { window._bbgLwcRebuildVolumePane(); } catch (_rIni) {}
+
   function _bbgRefreshLwcSeriesData() {
     var ser = window._currentBbgSeries;
     if (!ser || typeof ser.setData !== 'function' || !allBars.length) return;
@@ -33174,6 +33661,11 @@ window._updateTVChart = function(sym, interval) {
       try { window._bbgLwcBars = allBars; } catch (_wbr) {}
     }
     ser.setData(_bbgMapBarsToLwcData(allBars));
+    var _vserH = window._bbgLwcVolHistSeries;
+    if (_vserH && typeof _vserH.setData === 'function') {
+      try { _vserH.setData(_bbgMapBarsToVolumeHist(allBars)); } catch (_vsdh) {}
+    }
+    try { _bbgLwcUpdateVolLegend(allBars); } catch (_vleg) {}
   }
 
   function _bbgSyncTfStyleButtons() {
@@ -33271,6 +33763,7 @@ window._updateTVChart = function(sym, interval) {
     chart.timeScale().fitContent();
     _lwcScheduleTimeAxis();
     _bbgSyncTfStyleButtons();
+    try { window._bbgLwcRebuildVolumePane(); } catch (_rvFit) {}
 
     try {
       var older = null;
@@ -33347,6 +33840,18 @@ window._updateTVChart = function(sym, interval) {
         }
         syncTvLastMarker(ser, allBars, dotOv, true);
         window._bbgLwcPrevTickPx = Number(px);
+        var _vPush = window._bbgLwcVolHistSeries;
+        if (_vPush && typeof _vPush.update === 'function' && allBars.length) {
+          var _bl = allBars[allBars.length - 1];
+          try {
+            _vPush.update({
+              time: _bl.time,
+              value: _bl.vol != null && !isNaN(_bl.vol) ? Number(_bl.vol) : 0,
+              color: 'rgba(109, 141, 174, 0.92)'
+            });
+          } catch (_vpu) {}
+        }
+        try { _bbgLwcUpdateVolLegend(allBars); } catch (_vlg) {}
         if (window._bbgLivePriceLine && typeof window._bbgLivePriceLine.applyOptions === 'function') {
           try { window._bbgLivePriceLine.applyOptions({ price: Number(px) }); } catch(_lpl) {}
         }
@@ -33419,15 +33924,24 @@ window._updateTVChart = function(sym, interval) {
       if (rwObs && typeof ResizeObserver !== 'undefined') {
         _lwcResizeObs = new ResizeObserver(function () {
           if (myGen !== window._bbgLwcGen || !window._bbgChart) return;
-          var rr2 = rwObs.getBoundingClientRect();
-          if (rr2.width > 0 && rr2.height > 0) {
-            var _lr0 = null;
-            try { _lr0 = chart.timeScale().getVisibleLogicalRange(); } catch (_g) {}
-            chart.applyOptions({ width: Math.floor(rr2.width), height: Math.floor(rr2.height) });
-            if (_lr0 && _lr0.from != null && _lr0.to != null) {
-              try { chart.timeScale().setVisibleLogicalRange(_lr0); } catch (_s0) {}
+          if (typeof window._bbgLwcReflowChartsSize === 'function') window._bbgLwcReflowChartsSize();
+          else {
+            var rr2 = rwObs.getBoundingClientRect();
+            if (rr2.width > 0 && rr2.height > 0) {
+              var _lr0 = null;
+              try { _lr0 = chart.timeScale().getVisibleLogicalRange(); } catch (_g) {}
+              chart.applyOptions({ width: Math.floor(rr2.width), height: Math.floor(rr2.height) });
+              if (_lr0 && _lr0.from != null && _lr0.to != null) {
+                try { chart.timeScale().setVisibleLogicalRange(_lr0); } catch (_s0) {}
+              }
             }
           }
+          try {
+            if (window._bbgLwcHlVolumeActive && window._bbgLwcIsVolumePanelOn && window._bbgLwcIsVolumePanelOn() && !window._bbgLwcVolumeChart) {
+              var _vph = document.getElementById('bbg-lwc-vol-host');
+              if (_vph && _vph.clientHeight >= 8 && typeof window._bbgLwcRebuildVolumePane === 'function') window._bbgLwcRebuildVolumePane();
+            }
+          } catch (_vre) {}
           _lwcScheduleTimeAxis();
         });
         _lwcResizeObs.observe(rwObs);
@@ -33443,23 +33957,30 @@ window._updateTVChart = function(sym, interval) {
 
 window._bbgApplyLwcGridVisibility = function (show) {
   var ch = window._bbgChart;
-  if (!ch || typeof ch.applyOptions !== 'function') return;
+  var vch = window._bbgLwcVolumeChart;
   var st = 0;
   try {
     var LCref = window.LightweightCharts;
-    if (LCref && LCref.LineStyle != null) st = LCref.LineStyle.Solid;
+    if (LCref && LCref.LineStyle != null) st = LCref.LineStyle.Dotted;
   } catch (_st) {}
-  var vCol = show ? 'rgba(72, 74, 82, 0.38)' : 'rgba(0,0,0,0)';
-  var hCol = show ? 'rgba(72, 74, 82, 0.22)' : 'rgba(0,0,0,0)';
+  var vCol = show ? 'rgba(195, 196, 200, 0.38)' : 'rgba(0,0,0,0)';
+  var hCol = show ? 'rgba(195, 196, 200, 0.26)' : 'rgba(0,0,0,0)';
   var gopts = {
     grid: {
       vertLines: { visible: !!show, color: vCol, style: st },
       horzLines: { visible: !!show, color: hCol, style: st }
     }
   };
-  try {
-    ch.applyOptions(gopts);
-  } catch (_g) {}
+  if (ch && typeof ch.applyOptions === 'function') {
+    try {
+      ch.applyOptions(gopts);
+    } catch (_g) {}
+  }
+  if (vch && typeof vch.applyOptions === 'function') {
+    try {
+      vch.applyOptions(gopts);
+    } catch (_gv) {}
+  }
   try {
     var w = document.getElementById('bbg-lwc-wrap');
     if (w && ch) {
@@ -33470,10 +33991,17 @@ window._bbgApplyLwcGridVisibility = function (show) {
     }
   } catch (_r) {}
   try {
+    var vh0 = document.getElementById('bbg-lwc-vol-host');
+    if (vh0 && vch && typeof vch.applyOptions === 'function') {
+      var r2 = vh0.getBoundingClientRect();
+      if (r2.width > 2 && r2.height > 2) vch.applyOptions({ width: Math.floor(r2.width), height: Math.floor(r2.height) });
+    }
+  } catch (_rv) {}
+  try {
     requestAnimationFrame(function () {
       try {
-        if (!window._bbgChart || window._bbgChart !== ch) return;
-        ch.applyOptions(gopts);
+        if (ch && window._bbgChart === ch) ch.applyOptions(gopts);
+        if (vch && window._bbgLwcVolumeChart === vch) vch.applyOptions(gopts);
       } catch (_g2) {}
     });
   } catch (_raf) {}
@@ -33821,9 +34349,7 @@ window._initBbg = function() {
               }
             }
             window._bbgLastRibbonPrice = price;
-            var chgEl = document.getElementById('bbg-price-change');
-            if (chgEl) { chgEl.innerText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
-                         chgEl.style.color = chg >= 0 ? '#00cc44' : '#ff3333'; }
+            if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
             var _sOv = function(id,v){var e=document.getElementById(id);if(e)e.innerText=v;};
             _sOv('ov-start', fmtP(price));
           }
@@ -33962,12 +34488,9 @@ window._initBbg = function() {
           // Update large current-price display
           var px = document.getElementById('bbg-current-price');
           if (px) px.innerText = _fmtP(lp);
-          /* Na HL grafu nebrat % z TV quote (často neodpovídá perp/24h z HL API). Jen od ref. ceny z metaAndAssetCtxs. */
-          var chgEl = document.getElementById('bbg-price-change');
+          /* % + šipka u HL — jen Hyperliquid cache (_bbgHlRibbonPctChg), ne TV chg ani CWEI DOM. */
           var arrQ = document.getElementById('bbg-price-arrow');
           var ctnrQ = document.getElementById('bbg-current-price-container');
-          var _refHL = window._firstBbgPrice > 0 ? window._firstBbgPrice : 0;
-          var _chgHl = _refHL > 0 ? ((lp - _refHL) / _refHL * 100) : NaN;
           if (_hlRibbonQuote) {
             try {
               var _tkQ = _rtQ.tk ? String(_rtQ.tk).toUpperCase().replace(/USDT$|USDC$|USD$/i, '') : '';
@@ -33978,33 +34501,51 @@ window._initBbg = function() {
                 window._tvSyncTs = Date.now();
               }
             } catch (_eTv) {}
-            if (!isNaN(_chgHl) && chgEl) {
-              var _upH = _chgHl >= 0;
-              var _colH = _upH ? '#00cc44' : '#ff3333';
-              chgEl.innerText = (_upH ? '+' : '') + _chgHl.toFixed(2) + '%';
-              chgEl.style.color = _colH;
-              if (arrQ) { arrQ.innerText = _upH ? '↑' : '↓'; arrQ.style.color = _colH; }
-              if (ctnrQ) ctnrQ.style.color = _colH;
+            if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
+            var _hpT = window._bbgHlRibbonPctChg;
+            if (arrQ && ctnrQ && typeof _hpT === 'number' && isFinite(_hpT)) {
+              var _upQ = _hpT >= 0;
+              arrQ.innerText = _upQ ? '↑' : '↓';
+              arrQ.style.color = _upQ ? '#00cc44' : '#ff3333';
+              ctnrQ.style.color = _upQ ? '#00cc44' : '#ff3333';
             }
-          } else if (chgEl && chg !== 0) {
-            chgEl.innerText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
-            chgEl.style.color = chg >= 0 ? '#00cc44' : '#ff3333';
-            var _qCol = chg >= 0 ? '#00cc44' : '#ff3333';
-            if (arrQ) { arrQ.innerText = chg >= 0 ? '↑' : '↓'; arrQ.style.color = _qCol; }
-            if (ctnrQ) ctnrQ.style.color = _qCol;
+          } else {
+            if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
+            var _S2 = window._bbgRibbonPctChgSym && window._bbgRibbonPctChgSym();
+            var _p2 = _S2 ? document.getElementById('cwei-pct-' + _S2) : null;
+            if (arrQ && ctnrQ && _p2 && _p2.textContent && String(_p2.textContent).trim() && _p2.textContent !== '\u2014') {
+              var _up3 = !_p2.classList.contains('red');
+              arrQ.innerText = _up3 ? '↑' : '↓';
+              arrQ.style.color = _up3 ? '#00cc44' : '#ff3333';
+              ctnrQ.style.color = _up3 ? '#00cc44' : '#ff3333';
+            }
+          }
+          if (_hlRibbonQuote && typeof window._bbgThrottleTickerSparkLiveRepaint === 'function') {
+            window._bbgThrottleTickerSparkLiveRepaint();
           }
           // ── Sync TV price back into MKT / ticker tape / _l1Data ──────────
           // so the ticker ribbon & sidebar always show the SAME price as the chart
           var activeSym = window._bbgActiveSym || window._bbgCurrentSym || '';
+          var _cweiChgNum = NaN;
+          if (_hlRibbonQuote && typeof window._bbgChgNumFromCweiPctSpan === 'function') {
+            _cweiChgNum = window._bbgChgNumFromCweiPctSpan();
+          }
           var _chgPush = chg;
-          if (_hlRibbonQuote && !isNaN(_chgHl)) _chgPush = _chgHl;
           if (activeSym && typeof MKT !== 'undefined') {
-            // Update MKT entry for this symbol
             var mktKey = activeSym;
+            if (_hlRibbonQuote) {
+              if (!isNaN(_cweiChgNum)) _chgPush = _cweiChgNum;
+              else if (MKT[mktKey] && typeof MKT[mktKey].chg === 'number') _chgPush = MKT[mktKey].chg;
+              else _chgPush = 0;
+            }
+            // Update MKT entry for this symbol
             if (MKT[mktKey]) {
               MKT[mktKey].px = lp;
-              if (_hlRibbonQuote && !isNaN(_chgHl)) MKT[mktKey].chg = _chgHl;
-              else if (chg) MKT[mktKey].chg = chg;
+              if (_hlRibbonQuote) {
+                if (!isNaN(_cweiChgNum)) MKT[mktKey].chg = _cweiChgNum;
+              } else if (chg) {
+                MKT[mktKey].chg = chg;
+              }
             }
             // Also update the "Index" variant (e.g. "SPX Index")
             if (MKT[mktKey + ' Index']) { MKT[mktKey + ' Index'].px = lp; }
@@ -34047,11 +34588,7 @@ window._bbgInstantFill = function(sym) {
     });
     var _pxI = document.getElementById('bbg-current-price');
     if (_pxI) _pxI.innerText = '—';
-    var _chgI = document.getElementById('bbg-price-change');
-    if (_chgI) {
-      _chgI.innerText = '—';
-      _chgI.style.color = '#ffffff';
-    }
+    if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
     var _baI = document.getElementById('bbg-ticker-bidask');
     if (_baI) _baI.textContent = 'L\u2014 / \u2014L';
     var _tszI = document.getElementById('bbg-ticker-size');
@@ -34100,12 +34637,7 @@ window._bbgInstantFill = function(sym) {
     if (crypto.vol > 0) s('bbg-volume', fmtV(crypto.vol));
     var px = document.getElementById('bbg-current-price');
     if (px) px.innerText = fmtP(crypto.px);
-    var chgEl = document.getElementById('bbg-price-change');
-    if (chgEl && crypto.chg != null) {
-      var chg = parseFloat(crypto.chg);
-      chgEl.innerText = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
-      chgEl.style.color = chg >= 0 ? '#00cc44' : '#ff3333';
-    }
+    if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
     return; // Fast path done
   }
 
@@ -34128,12 +34660,7 @@ window._bbgInstantFill = function(sym) {
       if (mktEntry.open > 0) s('bbg-start', fmtP(mktEntry.open));
       var px2 = document.getElementById('bbg-current-price');
       if (px2) px2.innerText = fmtP(mktEntry.px);
-      var chgEl2 = document.getElementById('bbg-price-change');
-      if (chgEl2 && mktEntry.chg != null) {
-        var chg2 = parseFloat(mktEntry.chg);
-        chgEl2.innerText = (chg2 >= 0 ? '+' : '') + chg2.toFixed(2) + '%';
-        chgEl2.style.color = chg2 >= 0 ? '#4caf50' : '#f44336';
-      }
+      if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
       return;
     }
   }
@@ -34323,8 +34850,6 @@ window._bbgSyncActivePanelQuote = function(force){
   // ─────────────────────────────────────────────────────────────────────
 
   window._bbgLastSyncedPx = quote.px;
-  var up = (isNaN(quote.chg) ? 0 : quote.chg) >= 0;
-  var col = up ? '#00cc44' : '#ff3333';
   var now = new Date();
   setEl('bbg-time', String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0'));
   setEl('bbg-current-price', fmtP(quote.px));
@@ -34342,13 +34867,26 @@ window._bbgSyncActivePanelQuote = function(force){
       : (_hlSync ? quote.vol : (quote.px > 0 ? quote.vol * quote.px : 0));
     if (_quoteNotional > 0) setEl('bbg-value-traded', window._bbgFmtRibbonValueTraded(_quoteNotional));
   }
-  if(!isNaN(quote.chg)){
-    var chgEl = document.getElementById('bbg-price-change');
-    if(chgEl){ chgEl.innerText = (quote.chg >= 0 ? '+' : '') + quote.chg.toFixed(2) + '%'; chgEl.style.color = col; }
-    var arrow = document.getElementById('bbg-price-arrow');
-    if(arrow){ arrow.innerText = up ? '↑' : '↓'; arrow.style.color = col; }
-    var ctnr = document.getElementById('bbg-current-price-container');
-    if(ctnr) ctnr.style.color = col;
+  if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
+  var _hlLiveQ = window.BBG_HL_BTC_CHART_ONLY || (window._bbgLwcRoute && window._bbgLwcRoute.ex === 'HYPERLIQUID');
+  var arrow = document.getElementById('bbg-price-arrow');
+  var ctnr = document.getElementById('bbg-current-price-container');
+  if (_hlLiveQ) {
+    var _hq = window._bbgHlRibbonPctChg;
+    if (arrow && ctnr && typeof _hq === 'number' && isFinite(_hq)) {
+      var _upQ = _hq >= 0;
+      arrow.innerText = _upQ ? '↑' : '↓';
+      arrow.style.color = _upQ ? '#00cc44' : '#ff3333';
+      ctnr.style.color = _upQ ? '#00cc44' : '#ff3333';
+    }
+  } else {
+    var _pSym = window._bbgRibbonPctChgSym && window._bbgRibbonPctChgSym();
+    var _pEl = _pSym ? document.getElementById('cwei-pct-' + _pSym) : null;
+    if (_pEl && _pEl.textContent && String(_pEl.textContent).trim() && _pEl.textContent !== '\u2014') {
+      var _upQ2 = !_pEl.classList.contains('red');
+      if (arrow) { arrow.innerText = _upQ2 ? '↑' : '↓'; arrow.style.color = _upQ2 ? '#00cc44' : '#ff3333'; }
+      if (ctnr) ctnr.style.color = _upQ2 ? '#00cc44' : '#ff3333';
+    }
   }
   if(quote.open > 0) setEl('ov-open', fmtP(quote.open));
   setEl('ov-start', fmtP(quote.px));
@@ -34378,7 +34916,18 @@ window._bbgMountCweiCmdToRibbon = function(){
     var ctb = document.getElementById('CWEI_TOPBAR');
     if(!slot || !ctb) return;
     var cmd = ctb.querySelector('.wei-cmd-input');
-    if(!cmd || cmd.parentElement === slot) return;
+    if(!cmd) {
+      if(slot.querySelector('.wei-cmd-input')) {
+        document.body.classList.add('bbg-chart-active');
+        slot.setAttribute('data-bbg-mounted','1');
+      }
+      return;
+    }
+    if(cmd.parentElement === slot) {
+      document.body.classList.add('bbg-chart-active');
+      slot.setAttribute('data-bbg-mounted','1');
+      return;
+    }
     slot.appendChild(cmd);
     document.body.classList.add('bbg-chart-active');
     slot.setAttribute('data-bbg-mounted','1');
@@ -34442,9 +34991,15 @@ window._openChartForSymbol = function(sym) {
 
     // 0) Zobraz panel co nejdřív (rychlejší pocit načítání) + instant fill z cache
     panel.style.display = 'flex';
-    panel.style.zIndex = '1000000';
+    try {
+      document.body.classList.add('bbg-chart-active');
+    } catch (_bc) {}
+    panel.style.setProperty('z-index', '1010100', 'important');
     panel.classList.add('maximized');
     if(window._bbgMountCweiCmdToRibbon) { try{ window._bbgMountCweiCmdToRibbon(); }catch(_){} }
+    if (typeof window._bbgTbEnsureRibbonMenus === 'function') {
+      try { window._bbgTbEnsureRibbonMenus(); } catch (_em) {}
+    }
 
     // Jen vytvoř prázdný iframe kontejner — NESMÍ se tu volat _setChartInterval před nastavením _bbgActiveSym
     // (dřív tu běželo 2× _setChartInterval('1d') paralelně se ŠPATNÝM symbolem → vzájemně mazaly iframe → prázdný graf).
@@ -46031,17 +46586,56 @@ window._OF = _OF;
   }
   window._bbgChartRibbonNotify = _notify;
 
+  function _bbgTbDetachMenuToBody(menuEl) {
+    if (!menuEl) return;
+    if (menuEl.parentNode === document.body) {
+      menuEl.classList.add('bbg-tb-menu--portal');
+      return;
+    }
+    if (!menuEl._bbgMenuPh) {
+      menuEl._bbgMenuPh = document.createComment('bbg-tb-menu-ph');
+      menuEl.parentNode.insertBefore(menuEl._bbgMenuPh, menuEl);
+    }
+    document.body.appendChild(menuEl);
+    menuEl.classList.add('bbg-tb-menu--portal');
+  }
+
+  function _bbgTbRestoreMenuSlot(menuEl) {
+    if (!menuEl) return;
+    menuEl.classList.remove('bbg-tb-menu--portal');
+    if (menuEl._bbgMenuPh && menuEl._bbgMenuPh.parentNode) {
+      menuEl._bbgMenuPh.parentNode.insertBefore(menuEl, menuEl._bbgMenuPh);
+    }
+  }
+
+  function _bbgTbMenuClosedStyle(menuEl) {
+    if (!menuEl) return;
+    menuEl.classList.remove('bbg-tb-menu--open');
+    menuEl.classList.remove('bbg-tb-menu--portal');
+    menuEl.style.display = '';
+    menuEl.style.removeProperty('display');
+    menuEl.style.removeProperty('visibility');
+    menuEl.style.removeProperty('opacity');
+    menuEl.setAttribute('hidden', 'hidden');
+    menuEl.style.position = '';
+    menuEl.style.left = '';
+    menuEl.style.top = '';
+    menuEl.style.right = '';
+    menuEl.style.bottom = '';
+    menuEl.style.zIndex = '';
+    menuEl.style.minWidth = '';
+    menuEl.style.maxHeight = '';
+    menuEl.style.overflowY = '';
+    _bbgTbRestoreMenuSlot(menuEl);
+  }
+
   function closeStaticMenus() {
+    try {
+      var _ind = document.getElementById('bbg-indicators-menu');
+      if (_ind) _ind.remove();
+    } catch (_ix) {}
     document.querySelectorAll('.bbg-tb-menu.bbg-tb-menu--open').forEach(function (m) {
-      m.classList.remove('bbg-tb-menu--open');
-      m.style.display = 'none';
-      m.setAttribute('hidden', 'hidden');
-      m.style.position = '';
-      m.style.left = '';
-      m.style.top = '';
-      m.style.right = '';
-      m.style.bottom = '';
-      m.style.zIndex = '';
+      _bbgTbMenuClosedStyle(m);
     });
     document.querySelectorAll('.bbg-tb-dd-trigger[aria-expanded="true"]').forEach(function (b) {
       b.setAttribute('aria-expanded', 'false');
@@ -46059,7 +46653,10 @@ window._OF = _OF;
     menuEl.style.top = r.bottom + 'px';
     menuEl.style.right = 'auto';
     menuEl.style.bottom = 'auto';
-    menuEl.style.zIndex = '100070';
+    menuEl.style.zIndex = '2147483000';
+    menuEl.style.setProperty('z-index', '2147483000', 'important');
+    menuEl.style.maxHeight = 'min(480px, calc(100vh - 24px))';
+    menuEl.style.overflowY = 'auto';
     var left = r.left;
     if (vw && left + minW > vw - margin) left = Math.max(margin, vw - minW - margin);
     if (left < margin) left = margin;
@@ -46069,38 +46666,80 @@ window._OF = _OF;
   function toggleMenu(menuEl, triggerEl, open) {
     if (!menuEl || !triggerEl) return;
     if (open) {
+      _bbgTbDetachMenuToBody(menuEl);
       menuEl.removeAttribute('hidden');
-      menuEl.style.display = 'block';
+      menuEl.style.setProperty('display', 'block', 'important');
+      menuEl.style.setProperty('visibility', 'visible', 'important');
+      menuEl.style.setProperty('opacity', '1', 'important');
+      menuEl.style.setProperty('box-sizing', 'border-box', 'important');
       menuEl.classList.add('bbg-tb-menu--open');
       triggerEl.setAttribute('aria-expanded', 'true');
       placeTbMenuUnderTrigger(menuEl, triggerEl);
+      try {
+        var tw = triggerEl.getBoundingClientRect().width;
+        if (tw > 40) menuEl.style.minWidth = Math.ceil(tw) + 'px';
+      } catch (_mw) {}
+      try {
+        requestAnimationFrame(function () {
+          try {
+            if (menuEl.classList.contains('bbg-tb-menu--open')) placeTbMenuUnderTrigger(menuEl, triggerEl);
+          } catch (_r) {}
+        });
+      } catch (_raf) {}
     } else {
-      menuEl.classList.remove('bbg-tb-menu--open');
-      menuEl.style.display = 'none';
-      menuEl.setAttribute('hidden', 'hidden');
       triggerEl.setAttribute('aria-expanded', 'false');
-      menuEl.style.position = '';
-      menuEl.style.left = '';
-      menuEl.style.top = '';
-      menuEl.style.right = '';
-      menuEl.style.bottom = '';
-      menuEl.style.zIndex = '';
+      _bbgTbMenuClosedStyle(menuEl);
     }
   }
 
-  function wireTrigger(triggerId, menuId) {
-    var tr = document.getElementById(triggerId);
-    var me = document.getElementById(menuId);
-    if (!tr || !me) return;
-    tr.addEventListener('click', function (e) {
+  /** Jednotný capture listener na panelu — spolehlivější než jednotlivé listenry na tlačítkách (vrstvy / WebKit). */
+  function attachRibbonPanelCapture() {
+    var panel = document.getElementById('bbg-chart-panel');
+    if (!panel) return;
+    ['bbg-tb-suggested-trigger', 'bbg-tb-edit-trigger', 'bbg-chart-actions-btn'].forEach(function (bid) {
+      var tr = document.getElementById(bid);
+      if (!tr) return;
+      if (tr._bbgTbDropdownClick) {
+        tr.removeEventListener('click', tr._bbgTbDropdownClick, true);
+        tr.removeEventListener('click', tr._bbgTbDropdownClick, false);
+        tr._bbgTbDropdownClick = null;
+      }
+      if (tr._bbgTbActionsClick) {
+        tr.removeEventListener('click', tr._bbgTbActionsClick, true);
+        tr.removeEventListener('click', tr._bbgTbActionsClick, false);
+        tr._bbgTbActionsClick = null;
+      }
+    });
+    if (panel._bbgTbRibbonPanelCapture) {
+      panel.removeEventListener('click', panel._bbgTbRibbonPanelCapture, true);
+    }
+    panel._bbgTbRibbonPanelCapture = function (e) {
+      if (!e.target || !e.target.closest) return;
+      var trig = e.target.closest('.bbg-tb-dd-trigger');
+      if (!trig || !panel.contains(trig)) return;
       e.preventDefault();
       e.stopPropagation();
+      if (trig.id === 'bbg-chart-actions-btn') {
+        var imA = document.getElementById('bbg-indicators-menu');
+        if (imA) {
+          imA.remove();
+          return;
+        }
+        if (typeof window._toggleChartIndicators !== 'function') return;
+        if (window._bbgTbCloseStaticMenus) window._bbgTbCloseStaticMenus();
+        window._toggleChartIndicators(trig);
+        return;
+      }
+      var menuId = trig.getAttribute('aria-controls');
+      var me = menuId ? document.getElementById(menuId) : null;
+      if (!me) return;
       var im = document.getElementById('bbg-indicators-menu');
       if (im) im.remove();
       var willOpen = !me.classList.contains('bbg-tb-menu--open');
       closeStaticMenus();
-      if (willOpen) toggleMenu(me, tr, true);
-    });
+      if (willOpen) toggleMenu(me, trig, true);
+    };
+    panel.addEventListener('click', panel._bbgTbRibbonPanelCapture, true);
   }
 
   function copyRibbonSnapshot() {
@@ -46196,67 +46835,114 @@ window._OF = _OF;
   }
 
   function init() {
-    wireTrigger('bbg-tb-suggested-trigger', 'bbg-tb-menu-suggested');
-    wireTrigger('bbg-tb-edit-trigger', 'bbg-tb-menu-edit');
+    attachRibbonPanelCapture();
+
+    var _tfCaret = document.querySelector('#bbg-tf-btns .bbg-tf-icon-caret');
+    var _sugTr = document.getElementById('bbg-tb-suggested-trigger');
+    var _sugMe = document.getElementById('bbg-tb-menu-suggested');
+    if (_tfCaret && _sugTr && _sugMe) {
+      if (_tfCaret._bbgTbCaretClick) {
+        _tfCaret.removeEventListener('click', _tfCaret._bbgTbCaretClick, true);
+        _tfCaret.removeEventListener('click', _tfCaret._bbgTbCaretClick, false);
+      }
+      if (_tfCaret._bbgTbCaretKeydown) {
+        _tfCaret.removeEventListener('keydown', _tfCaret._bbgTbCaretKeydown);
+      }
+      _tfCaret.style.cursor = 'pointer';
+      if (!_tfCaret.getAttribute('role')) _tfCaret.setAttribute('role', 'button');
+      if (!_tfCaret.getAttribute('tabindex')) _tfCaret.setAttribute('tabindex', '0');
+      _tfCaret.setAttribute('title', 'Suggested Charts — stejné menu jako 94)');
+      _tfCaret._bbgTbCaretClick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var im = document.getElementById('bbg-indicators-menu');
+        if (im) im.remove();
+        var willOpen = !_sugMe.classList.contains('bbg-tb-menu--open');
+        closeStaticMenus();
+        if (willOpen) {
+          toggleMenu(_sugMe, _sugTr, true);
+          placeTbMenuUnderTrigger(_sugMe, _tfCaret);
+        }
+      };
+      _tfCaret.addEventListener('click', _tfCaret._bbgTbCaretClick, true);
+      _tfCaret._bbgTbCaretKeydown = function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          _tfCaret.click();
+        }
+      };
+      _tfCaret.addEventListener('keydown', _tfCaret._bbgTbCaretKeydown);
+    }
 
     var sug = document.getElementById('bbg-tb-menu-suggested');
     if (sug) {
-      sug.addEventListener('click', function (e) {
+      if (sug._bbgTbSugDelegatedClick) {
+        sug.removeEventListener('click', sug._bbgTbSugDelegatedClick, true);
+        sug.removeEventListener('click', sug._bbgTbSugDelegatedClick, false);
+      }
+      sug._bbgTbSugDelegatedClick = function (e) {
         e.stopPropagation();
-      });
-      sug.querySelectorAll('.bbg-tb-menu-item').forEach(function (row) {
-        row.addEventListener('click', function (ev) {
-          ev.stopPropagation();
-          closeStaticMenus();
-          _notify('Suggested chart: ' + row.textContent.trim());
-        });
-      });
+        var row = e.target.closest && e.target.closest('.bbg-tb-menu-item');
+        if (!row || !sug.contains(row)) return;
+        e.preventDefault();
+        closeStaticMenus();
+        _notify('Suggested chart: ' + row.textContent.trim());
+      };
+      sug.addEventListener('click', sug._bbgTbSugDelegatedClick, true);
     }
 
     var ed = document.getElementById('bbg-tb-menu-edit');
     if (ed) {
-      ed.addEventListener('click', function (e) {
+      if (ed._bbgTbEditDelegatedClick) {
+        ed.removeEventListener('click', ed._bbgTbEditDelegatedClick, true);
+        ed.removeEventListener('click', ed._bbgTbEditDelegatedClick, false);
+      }
+      ed._bbgTbEditDelegatedClick = function (e) {
         e.stopPropagation();
-      });
-      ed.querySelectorAll('.bbg-tb-menu-item[role="menuitem"]').forEach(function (row) {
+        var row = e.target.closest && e.target.closest('.bbg-tb-menu-item[role="menuitem"]');
+        if (!row || !ed.contains(row)) return;
         if (row.classList.contains('bbg-tb-menu-item--sub')) return;
-        row.addEventListener('click', function (ev) {
-          ev.stopPropagation();
-          onEditItem(row);
-        });
-      });
-      ed.querySelectorAll('.bbg-tb-submenu .bbg-tb-menu-item').forEach(function (row) {
-        row.addEventListener('click', function (ev) {
-          ev.stopPropagation();
-          onEditItem(row);
-        });
+        e.preventDefault();
+        onEditItem(row);
+      };
+      ed.addEventListener('click', ed._bbgTbEditDelegatedClick, true);
+    }
+
+    if (!window._bbgTbOutsideMenuClickBound) {
+      window._bbgTbOutsideMenuClickBound = true;
+      document.addEventListener(
+        'click',
+        function (e) {
+          if (e.target.closest && e.target.closest('.bbg-tb-menu')) return;
+          if (e.target.closest && e.target.closest('.bbg-tb-dd-trigger')) return;
+          if (e.target.closest && e.target.closest('.bbg-tf-icon-caret')) return;
+          if (e.target.closest && e.target.closest('#bbg-indicators-menu')) return;
+          closeStaticMenus();
+        },
+        false
+      );
+    }
+
+    if (!window._bbgTbRibbonKeydownBound) {
+      window._bbgTbRibbonKeydownBound = true;
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeStaticMenus();
       });
     }
 
-    document.addEventListener(
-      'click',
-      function (e) {
-        if (e.target.closest('.bbg-tb-menu')) return;
-        if (e.target.closest('.bbg-tb-dd-trigger')) return;
-        if (e.target.closest('#bbg-chart-actions-btn')) return;
-        closeStaticMenus();
-      },
-      false
-    );
-
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeStaticMenus();
-    });
-
-    window.addEventListener(
-      'resize',
-      function () {
-        closeStaticMenus();
-      },
-      false
-    );
+    if (!window._bbgTbRibbonResizeBound) {
+      window._bbgTbRibbonResizeBound = true;
+      window.addEventListener(
+        'resize',
+        function () {
+          closeStaticMenus();
+        },
+        false
+      );
+    }
     var rb = document.getElementById('bbg-chart-ribbon');
-    if (rb) {
+    if (rb && !rb._bbgTbRibbonScrollBound) {
+      rb._bbgTbRibbonScrollBound = true;
       rb.addEventListener(
         'scroll',
         function () {
@@ -46266,6 +46952,9 @@ window._OF = _OF;
       );
     }
   }
+
+  window._bbgTbEnsureRibbonMenus = init;
+  window._bbgTbAttachRibbonPanelCapture = attachRibbonPanelCapture;
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
@@ -46289,15 +46978,22 @@ window._OF = _OF;
 
     var d = document.createElement('div');
     d.id = 'bbg-indicators-menu';
-    d.style.cssText = 'position:fixed;background:#661414;border:1px solid #200808;z-index:999999;min-width:280px;max-height:480px;overflow-y:auto;box-shadow:0 10px 32px rgba(0,0,0,.65);font-family:Arial,Helvetica,"Segoe UI",sans-serif;border-radius:0;padding:5px 0 6px;';
+    d.className = 'bbg-chart-indicators-menu';
+    d.style.cssText = 'position:fixed;background:#801515;border:1px solid #1a0505;z-index:2147483000;min-width:280px;max-width:min(420px,92vw);max-height:480px;overflow-y:auto;overflow-x:hidden;box-shadow:0 10px 32px rgba(0,0,0,.72);font-family:Arial,Helvetica,sans-serif;border-radius:0;padding:0;';
     var r = el.getBoundingClientRect();
-    d.style.left = r.left + 'px';
-    d.style.top = (r.bottom + 2) + 'px';
+    var vw = window.innerWidth || 0;
+    var margin = 8;
+    var left = r.left;
+    var top = r.bottom + 2;
+    if (vw && left + 280 > vw - margin) left = Math.max(margin, vw - 280 - margin);
+    if (left < margin) left = margin;
+    d.style.left = left + 'px';
+    d.style.top = top + 'px';
 
     // Header
     var hdr = document.createElement('div');
-    hdr.style.cssText = 'padding:10px 18px 8px;font-size:12px;color:#ffffff;letter-spacing:.06em;font-weight:600;border-bottom:1px solid #120505;margin-bottom:0;';
-    hdr.textContent = 'INDICATORS';
+    hdr.className = 'bbg-tb-menu-hdr';
+    hdr.innerHTML = '<span class="bbg-tb-menu-hdr-prefix">96)</span><span> INDICATORS</span><span class="bbg-tb-menu-hdr-chev" aria-hidden="true">&#9662;</span>';
     d.appendChild(hdr);
 
     INDICATORS.forEach(function(ind) {
@@ -46309,8 +47005,11 @@ window._OF = _OF;
       }
       var row = document.createElement('div');
       var isActive = !!_activeStudies[ind.id];
-      row.style.cssText = 'padding:11px 18px 11px 38px;font-size:17px;color:#ffffff;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:space-between;transition:background .08s;line-height:1.42;';
-      row.onmouseover = function(){ this.style.background = '#A32626'; };
+      if (ind.id === 'Volume' && window._bbgLwcHlVolumeActive) {
+        isActive = window._bbgLwcIsVolumePanelOn();
+      }
+      row.style.cssText = 'padding:11px 18px 11px 38px;font-size:16px;color:#ffffff;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:space-between;transition:background .08s;line-height:1.42;';
+      row.onmouseover = function(){ this.style.background = '#A02020'; };
       row.onmouseout = function(){ this.style.background = ''; };
 
       // Checkmark
@@ -46335,6 +47034,17 @@ window._OF = _OF;
 
       row.onclick = (function(indicator) {
         return function() {
+          if (indicator.id === 'Volume' && window._bbgLwcHlVolumeActive && window._bbgChart) {
+            var wasOn = window._bbgLwcIsVolumePanelOn();
+            try { localStorage.setItem('bbg_lwc_vol_panel', wasOn ? '0' : '1'); } catch (e) {}
+            if (typeof window._bbgLwcRebuildVolumePane === 'function') window._bbgLwcRebuildVolumePane();
+            var nowOn = window._bbgLwcIsVolumePanelOn();
+            var ck = document.getElementById('ind-check-' + indicator.id);
+            var nm = document.getElementById('ind-name-' + indicator.id);
+            if (ck) ck.textContent = nowOn ? '✓' : '';
+            if (nm) nm.style.cssText = nowOn ? 'color:#ffffff;font-weight:500;' : 'color:#ffffff;font-weight:400;';
+            return;
+          }
           var iframe = document.getElementById('bbg-tv-iframe');
           if (!iframe) return;
           var isOn = !!_activeStudies[indicator.id];
@@ -46367,10 +47077,10 @@ window._OF = _OF;
 
     // Remove all button
     var remAll = document.createElement('div');
-    remAll.style.cssText = 'padding:11px 18px;font-size:15px;color:#ffd0d0;cursor:pointer;border-top:1px solid #120505;margin-top:2px;text-align:center;line-height:1.42;';
+    remAll.style.cssText = 'padding:11px 18px;font-size:15px;color:#ffd0d0;cursor:pointer;border-top:1px solid #120505;margin:0;text-align:center;line-height:1.42;background:#801515;';
     remAll.textContent = 'Remove All Indicators';
-    remAll.onmouseover = function(){ this.style.background = '#A32626'; };
-    remAll.onmouseout = function(){ this.style.background = ''; };
+    remAll.onmouseover = function(){ this.style.background = '#A02020'; };
+    remAll.onmouseout = function(){ this.style.background = '#801515'; };
     remAll.onclick = function() {
       var iframe = document.getElementById('bbg-tv-iframe');
       Object.keys(_activeStudies).forEach(function(id) {
@@ -49830,6 +50540,18 @@ window.BWEI = { buildBWEI, BWEI_CATEGORIES, renderSparkline };
 body.bbg-chart-active #CWEI_TOPBAR .wei-original{
   min-height:0 !important;
 }
+/* Graf bez wei-home-mode: stejně schovat host CWEI_TOPBAR */
+body.bbg-chart-active #CWEI_TOPBAR{
+  display:none!important;
+  height:0!important;
+  min-height:0!important;
+  max-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
 body.bbg-chart-active #TOPBAR .cmd-icons .cmd-icon:nth-child(2),
 body.bbg-chart-active #TOPBAR .cmd-icons .cmd-icon:nth-child(4){
   display:none !important;
@@ -49957,6 +50679,10 @@ body.bbg-chart-active #TOPBAR .cmd-icons .cmd-icon:nth-child(4){
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar > div:first-child > div{
   flex-shrink:0 !important;
 }
+/* Dropdowny s position:fixed — rodič nesmí ořezávat (jinak „prázdné“ menu). */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-dd{
+  overflow:visible !important;
+}
 /* Toolbar title — jednotná oranžová #ffa027 */
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-toolbar-title-dd.bbg-cwei-dd{
   display:inline-flex !important;
@@ -50034,20 +50760,168 @@ body.bbg-chart-active #TOPBAR .cmd-icons .cmd-icon:nth-child(4){
   top:100%;
   left:0;
   margin-top:0;
-  z-index:100050;
+  z-index:2147483000;
   min-width:min(360px,92vw);
-  background:#661414;
-  border:1px solid #200808;
-  box-shadow:0 10px 32px rgba(0,0,0,.65);
-  padding:5px 0 6px;
+  background:#801515;
+  border:1px solid #1a0505;
+  box-shadow:0 10px 32px rgba(0,0,0,.72);
+  padding:0;
   font-family:Arial,Helvetica,'Segoe UI',sans-serif !important;
+  border-radius:0;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu.bbg-tb-menu--open{
   display:block !important;
 }
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu .bbg-tb-menu-hdr{
+  padding:8px 14px 7px;
+  font-size:12px !important;
+  font-weight:600 !important;
+  color:#ffffff !important;
+  letter-spacing:.07em !important;
+  background:#801515 !important;
+  border:1px solid #ffffff !important;
+  border-bottom:1px solid #120505 !important;
+  box-sizing:border-box !important;
+  margin:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  cursor:default !important;
+  user-select:none !important;
+  line-height:1.35 !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu .bbg-tb-menu-hdr-prefix{
+  color:#f4dede !important;
+  font-weight:700 !important;
+  margin-right:2px !important;
+}
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu .bbg-tb-menu-hdr-chev{
+  font-size:11px !important;
+  opacity:.95 !important;
+  color:#ffffff !important;
+}
+.bbg-tb-menu.bbg-tb-menu--portal{
+  display:none !important;
+  position:fixed !important;
+  z-index:2147483000 !important;
+  min-width:min(360px,92vw) !important;
+  max-width:min(420px,92vw) !important;
+  background:#801515 !important;
+  border:1px solid #1a0505 !important;
+  box-shadow:0 10px 32px rgba(0,0,0,.72) !important;
+  padding:0 !important;
+  font-family:Arial,Helvetica,'Segoe UI',sans-serif !important;
+  border-radius:0 !important;
+}
+.bbg-tb-menu.bbg-tb-menu--portal.bbg-tb-menu--open{
+  display:block !important;
+}
+.bbg-tb-menu.bbg-tb-menu--portal .bbg-tb-menu-hdr{
+  padding:8px 14px 7px !important;
+  font-size:12px !important;
+  font-weight:600 !important;
+  color:#ffffff !important;
+  letter-spacing:.07em !important;
+  background:#801515 !important;
+  border:1px solid #ffffff !important;
+  border-bottom:1px solid #120505 !important;
+  box-sizing:border-box !important;
+  margin:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  cursor:default !important;
+  user-select:none !important;
+  line-height:1.35 !important;
+}
+.bbg-tb-menu.bbg-tb-menu--portal .bbg-tb-menu-hdr-prefix{
+  color:#f4dede !important;
+  font-weight:700 !important;
+}
+.bbg-tb-menu.bbg-tb-menu--portal .bbg-tb-menu-item{
+  padding:11px 18px !important;
+  font-size:16px !important;
+  font-weight:400 !important;
+  color:#ffffff !important;
+  cursor:pointer !important;
+  white-space:nowrap !important;
+  line-height:1.42 !important;
+}
+.bbg-tb-menu.bbg-tb-menu--portal .bbg-tb-menu-item:hover,
+.bbg-tb-menu.bbg-tb-menu--portal .bbg-tb-menu-item:focus{
+  background:#A02020 !important;
+  outline:none !important;
+}
+.bbg-tb-menu.bbg-tb-menu--portal .bbg-tb-menu-sep{
+  height:1px !important;
+  background:#120505 !important;
+  margin:7px 8px !important;
+}
+/* Podmenu u 97) Edit — na <body> neplatí selektory #bbg-chart-panel … musí být pod .bbg-tb-menu--portal */
+.bbg-tb-menu.bbg-tb-menu--portal .bbg-tb-menu-item--sub{
+  position:relative !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:10px !important;
+}
+.bbg-tb-menu.bbg-tb-menu--portal .bbg-tb-submenu-arr{
+  color:#ffffff !important;
+  font-size:15px !important;
+  flex-shrink:0 !important;
+}
+.bbg-tb-menu.bbg-tb-menu--portal .bbg-tb-submenu{
+  display:none !important;
+  position:absolute !important;
+  left:100% !important;
+  top:-2px !important;
+  margin-left:2px !important;
+  min-width:230px !important;
+  background:#801515 !important;
+  border:1px solid #1a0505 !important;
+  box-shadow:6px 10px 28px rgba(0,0,0,.65) !important;
+  padding:5px 0 6px !important;
+  z-index:2147483600 !important;
+}
+.bbg-tb-menu.bbg-tb-menu--portal .bbg-tb-menu-item--sub:hover .bbg-tb-submenu,
+.bbg-tb-menu.bbg-tb-menu--portal .bbg-tb-menu-item--sub:focus-within .bbg-tb-submenu{
+  display:block !important;
+}
+/* Actions → INDICATORS (generované menu na body) */
+.bbg-chart-indicators-menu{
+  box-sizing:border-box !important;
+}
+.bbg-chart-indicators-menu .bbg-tb-menu-hdr{
+  padding:8px 14px 7px !important;
+  font-size:12px !important;
+  font-weight:600 !important;
+  color:#ffffff !important;
+  letter-spacing:.07em !important;
+  background:#801515 !important;
+  border:1px solid #ffffff !important;
+  border-bottom:1px solid #120505 !important;
+  box-sizing:border-box !important;
+  margin:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  cursor:default !important;
+  user-select:none !important;
+  line-height:1.35 !important;
+}
+.bbg-chart-indicators-menu .bbg-tb-menu-hdr-prefix{
+  color:#f4dede !important;
+  font-weight:700 !important;
+  margin-right:2px !important;
+}
+.bbg-chart-indicators-menu .bbg-tb-menu-hdr-chev{
+  font-size:11px !important;
+  opacity:.95 !important;
+  color:#ffffff !important;
+}
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu-item{
   padding:11px 18px;
-  font-size:18px !important;
+  font-size:16px !important;
   font-weight:400 !important;
   color:#ffffff !important;
   cursor:pointer;
@@ -50056,7 +50930,7 @@ body.bbg-chart-active #TOPBAR .cmd-icons .cmd-icon:nth-child(4){
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu-item:hover,
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu-item:focus{
-  background:#A32626 !important;
+  background:#A02020 !important;
   outline:none !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-red-toolbar .bbg-tb-menu-sep{
@@ -50086,9 +50960,9 @@ body.bbg-chart-active #TOPBAR .cmd-icons .cmd-icon:nth-child(4){
   top:-2px;
   margin-left:2px;
   min-width:230px;
-  background:#661414;
-  border:1px solid #200808;
-  box-shadow:6px 10px 28px rgba(0,0,0,.6);
+  background:#801515;
+  border:1px solid #1a0505;
+  box-shadow:6px 10px 28px rgba(0,0,0,.65);
   padding:5px 0 6px;
   z-index:2;
 }
@@ -50612,6 +51486,10 @@ body.bbg-chart-active #TOPBAR .cmd-icons .cmd-icon:nth-child(4){
   border:1px solid #000 !important;
   border-top:1px solid #252526 !important;
   box-sizing:border-box !important;
+}
+/* Jen Related Data — kousek vlevo, ostatní tlačítka beze změny */
+#bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-tf-right-actions #bbg-related-data-btn{
+  margin-left:-20px !important;
 }
 #bbg-chart-panel #bbg-chart-ribbon .bbg-ribbon-tf-bar .bbg-tf-right-actions .bbg-tf-edit-chart-btn svg{
   stroke:#e8e8e8 !important;
@@ -55565,6 +56443,18 @@ body.wei-original-active.wei-home-mode #CWEI_TOPBAR{
   width:min(var(--term-w),100vw)!important;
   z-index:1000002!important;
 }
+/* Otevřený graf: prázdný řádek #CWEI_TOPBAR schovat (vstup je v ribbonu); ostatní obrazovky beze změny */
+body.wei-original-active.wei-home-mode.bbg-chart-active #CWEI_TOPBAR{
+  display:none!important;
+  height:0!important;
+  min-height:0!important;
+  max-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
 
 /* MAIN — STEJNĚ jako u WEI (margin-top:0, dědí z wei-original-active) */
 /* Žádný override potřeba */
@@ -55589,6 +56479,10 @@ body.wei-original-active.wei-home-mode .panel.maximized:not([data-fn="WEI"]):not
   background:#000!important;
   margin:0!important;
   border:0!important;
+}
+/* Graf otevřený: CWEI řádek je schovaný — neponechávat druhých 36px v těle panelu */
+body.wei-original-active.wei-home-mode.bbg-chart-active .panel.maximized:not([data-fn="WEI"]):not([data-fn="CWEI"]){
+  padding-top:var(--topbar-h,36px)!important;
 }
 
 /* Panel header/tabs — schovat pro všechny panely (stejně jako u WEI/CWEI) */
@@ -56785,6 +57679,18 @@ function buildCWEI(){
     var futMarkPx = _hlCweiRow
       ? (futPx != null && !isNaN(futPx) && futPx > 0 ? futPx : px)
       : px;
+    var _hlSymRow = typeof window._bbgRibbonPctChgSym === 'function' ? window._bbgRibbonPctChgSym() : '';
+    if (
+      _hlCweiRow &&
+      _hlSymRow &&
+      S === _hlSymRow &&
+      typeof window._bbgHlRibbonPctChg === 'number' &&
+      isFinite(window._bbgHlRibbonPctChg)
+    ) {
+      effChg = window._bbgHlRibbonPctChg;
+      var _mkHL = futMarkPx != null && !isNaN(futMarkPx) ? futMarkPx : px;
+      if (_mkHL != null && !isNaN(_mkHL)) chgPts = (_mkHL * effChg) / 100;
+    }
     var pxTxt = (futMarkPx != null && !isNaN(futMarkPx)) ? fmtPx(futMarkPx) + sfx('d') : '—';
     var valPx = _hlCweiRow ? _spotRow : futPx;
     var futTxt =
@@ -56860,12 +57766,17 @@ function _updateCWEIFromLiveCrypto(){
   try{
     var map = {};
     (window.CRYPTO||[]).forEach(function(c){
-      if(c && c.s) map[String(c.s).toUpperCase()] = c;
+      if(c && c.s) {
+        var k = String(c.s).toUpperCase();
+        map[k] = c;
+        var base = k.replace(/USDT$|USDC$|USD$/i,'');
+        if (base && base !== k && !map[base]) map[base] = c;
+      }
     });
     CWEI_CATEGORIES.forEach(function(cat){
       cat.tickers.forEach(function(tk){
         var S = String(tk).toUpperCase();
-        var it = map[S];
+        var it = map[S] || map[S + 'USDT'] || map[S + 'USD'];
         if(!it) return;
         var px = it.px, chg = it.chg, open = it.open, fut = it.fut;
         var refOpen = (open!=null && !isNaN(open) && open>0) ? open : null;
@@ -56911,6 +57822,18 @@ function _updateCWEIFromLiveCrypto(){
         }
         var _hlCweiRow = window.BBG_HL_BTC_CHART_ONLY || (_hlRtCw.ex === 'HYPERLIQUID');
         var futMark = _hlCweiRow && fut != null && !isNaN(fut) && fut > 0 ? fut : px;
+        var _hlSymCw = typeof window._bbgRibbonPctChgSym === 'function' ? window._bbgRibbonPctChgSym() : '';
+        if (
+          _hlCweiRow &&
+          _hlSymCw &&
+          S === _hlSymCw &&
+          typeof window._bbgHlRibbonPctChg === 'number' &&
+          isFinite(window._bbgHlRibbonPctChg)
+        ) {
+          effChg = window._bbgHlRibbonPctChg;
+          var _mkCw = futMark != null && !isNaN(futMark) ? futMark : px;
+          if (_mkCw != null && !isNaN(_mkCw)) chgPts = (_mkCw * effChg) / 100;
+        }
         var futColHtml = pxHtml(futMark);
         var valHtml =
           _hlCweiRow && _hlCweiSpotPx != null
@@ -56953,6 +57876,7 @@ function _updateCWEIFromLiveCrypto(){
         if(ytdEl){ ytdEl.textContent = fmtPct(ytd); ytdEl.className = (ytd||0)>=0?'green':'red'; }
       });
     });
+    if (typeof window._bbgPaintRibbonPctFromCwei === 'function') window._bbgPaintRibbonPctFromCwei();
   }catch(_){}
 }
 
