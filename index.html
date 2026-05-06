@@ -2841,6 +2841,11 @@ body{text-rendering:optimizeLegibility;}
   flex-shrink: 0;
   pointer-events: none;
 }
+/* Volume collapse: bez šedého okraje; focus nech výchozí obrys (:focus-visible) */
+#bbg-lwc-vol-collapse {
+  border: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
 #bbg-lwc-host .tv-lightweight-charts,
 #bbg-lwc-host .tv-lightweight-charts table {
   border: none !important;
@@ -2848,6 +2853,18 @@ body{text-rendering:optimizeLegibility;}
 }
 #bbg-lwc-host .tv-lightweight-charts table td,
 #bbg-lwc-host .tv-lightweight-charts table th {
+  border: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  box-shadow: none !important;
+}
+#bbg-lwc-vol-host .tv-lightweight-charts,
+#bbg-lwc-vol-host .tv-lightweight-charts table {
+  border: none !important;
+  outline: none !important;
+}
+#bbg-lwc-vol-host .tv-lightweight-charts table td,
+#bbg-lwc-vol-host .tv-lightweight-charts table th {
   border: none !important;
   border-left: none !important;
   border-right: none !important;
@@ -4099,6 +4116,13 @@ try{
                 try { window._bbgChart.timeScale().setVisibleLogicalRange(_lrVis); } catch(_s){}
               }
               if(typeof window._bbgLwcRepaintTimeAxis === 'function') window._bbgLwcRepaintTimeAxis();
+              try {
+                requestAnimationFrame(function () {
+                  try {
+                    if (typeof window._bbgLwcUpdateMainScaleStitchLine === 'function') window._bbgLwcUpdateMainScaleStitchLine();
+                  } catch (_stVis) {}
+                });
+              } catch (_stVis2) {}
             }
           }
         }
@@ -32378,7 +32402,7 @@ window._updateTVChart = function(sym, interval) {
     if (!document.getElementById('bbg-lwc-main-col')) {
       var mainCol = document.createElement('div');
       mainCol.id = 'bbg-lwc-main-col';
-      mainCol.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;min-width:0;';
+      mainCol.style.cssText = 'position:relative;flex:1;min-height:0;display:flex;flex-direction:column;min-width:0;';
       if (wrap0.parentNode === stack) {
         stack.insertBefore(mainCol, wrap0);
         mainCol.appendChild(wrap0);
@@ -32388,16 +32412,16 @@ window._updateTVChart = function(sym, interval) {
     if (!mc || document.getElementById('bbg-lwc-vol-split')) return;
     var res = document.createElement('div');
     res.id = 'bbg-lwc-vol-resizer';
-    res.style.cssText = 'flex:0 0 6px;min-height:6px;background:#2f2f33;cursor:row-resize;display:none;align-items:center;justify-content:center;position:relative;z-index:10051;box-sizing:border-box;border-top:2px solid #1a1a1c;border-bottom:1px solid #0d0d10;';
-    res.innerHTML = '<span class="bbg-lwc-vol-grip" style="display:flex;flex-direction:column;gap:3px;pointer-events:none;opacity:.92;"><span style="display:block;width:24px;height:2px;background:#e4e4ea;border-radius:2px;"></span><span style="display:block;width:24px;height:2px;background:#e4e4ea;border-radius:2px;"></span></span>';
+    res.style.cssText = 'flex:0 0 8px;min-height:8px;background:#484848;cursor:row-resize;display:none;align-items:center;justify-content:center;position:relative;z-index:10051;box-sizing:border-box;border-top:1px solid #3d3d3d;border-bottom:1px solid #3d3d3d;overflow:visible;';
+    res.innerHTML = '<span class="bbg-lwc-vol-grip" style="position:relative;z-index:2;display:flex;flex-direction:column;gap:2px;pointer-events:none;align-items:center;opacity:.95;"><span style="display:block;width:22px;height:2px;background:#929992;border-radius:1px;"></span><span style="display:block;width:22px;height:2px;background:#929992;border-radius:1px;"></span></span>';
     res.title = 'Tahem měnit výšku panelu Volume';
     var volSplit = document.createElement('div');
     volSplit.id = 'bbg-lwc-vol-split';
     volSplit.style.cssText = 'display:none;flex-direction:column;flex:0 0 auto;height:118px;min-height:56px;max-height:min(52vh,520px);background:#000;min-width:0;';
     var chrome = document.createElement('div');
     chrome.id = 'bbg-lwc-vol-chrome';
-    chrome.style.cssText = 'flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:3px 10px 5px 6px;font:600 12px -apple-system,BlinkMacSystemFont,\"Segoe UI\",Arial,sans-serif;color:#f0f0f0;border-bottom:1px solid #232323;background:#050506;';
-    chrome.innerHTML = '<button type="button" id="bbg-lwc-vol-collapse" aria-label="Skr\u00fdt Volume" style="width:15px;height:15px;padding:0;margin:0;border:1px solid #4a4a50;background:#1c1c20;color:#ddd;font-size:11px;line-height:1;cursor:pointer;border-radius:2px;flex-shrink:0;">\u2212</button><span style="display:inline-block;width:11px;height:11px;background:#6d8dae;border-radius:1px;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35);"></span><span>Volume <span id="bbg-lwc-vol-legend-val" style="color:#9eb5cb;font-weight:700;">\u2014</span></span>';
+    chrome.style.cssText = 'flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:3px 10px 5px 6px;font:600 12px -apple-system,BlinkMacSystemFont,\"Segoe UI\",Arial,sans-serif;color:#f0f0f0;border-bottom:1px solid #000000;background:#050506;';
+    chrome.innerHTML = '<button type="button" id="bbg-lwc-vol-collapse" aria-label="Skr\u00fdt Volume" style="width:15px;height:15px;padding:0;margin:0;border:none;background:#1c1c20;color:#ddd;font-size:11px;line-height:1;cursor:pointer;border-radius:2px;flex-shrink:0;">\u2212</button><span style="display:inline-block;width:11px;height:11px;background:#6d8dae;border-radius:1px;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35);"></span><span>Volume <span id="bbg-lwc-vol-legend-val" style="color:#9eb5cb;font-weight:700;">\u2014</span></span>';
     var volHost = document.createElement('div');
     volHost.id = 'bbg-lwc-vol-host';
     volHost.style.cssText = 'flex:1;min-height:0;position:relative;width:100%;background:#000;overflow:hidden;';
@@ -33035,7 +33059,7 @@ window._updateTVChart = function(sym, interval) {
         if (chart && typeof chart.priceScale === 'function') {
           var _rpsM = chart.priceScale('right');
           if (_rpsM && typeof _rpsM.applyOptions === 'function') {
-            _rpsM.applyOptions({ ticksVisible: false, borderVisible: true });
+            _rpsM.applyOptions({ ticksVisible: true, borderVisible: true, borderColor: '#DFDFDD' });
           }
         }
       } catch (_rpsMk) {}
@@ -33085,8 +33109,8 @@ window._updateTVChart = function(sym, interval) {
     },
     crosshair: {
       mode: LC.CrosshairMode.Normal,
-      vertLine: { color: '#9598a1', width: 1, style: LC.LineStyle.Dashed, labelBackgroundColor: '#363a45' },
-      horzLine: { color: '#9598a1', width: 1, style: LC.LineStyle.Dashed, labelBackgroundColor: '#363a45' }
+      vertLine: { color: 'rgba(255, 255, 255, 0.52)', width: 1, style: LC.LineStyle.Dotted, labelBackgroundColor: '#1e222d' },
+      horzLine: { color: 'rgba(255, 255, 255, 0.52)', width: 1, style: LC.LineStyle.Dotted, labelBackgroundColor: '#1e222d' }
     },
     leftPriceScale: {
       visible: false
@@ -33094,9 +33118,10 @@ window._updateTVChart = function(sym, interval) {
     rightPriceScale: {
       visible: true,
       borderVisible: true,
-      borderColor: '#787b86',
-      /* Vypnuto — výchozí ticky přetínají svislou osu a vypadají jako na snímku. */
-      ticksVisible: false,
+      borderColor: '#DFDFDD',
+      ticksVisible: true,
+      ensureEdgeTickMarksVisible: true,
+      tickMarkDensity: 2,
       scaleMargins: { top: 0.08, bottom: 0.08 },
       textColor: '#ffffff',
       entireTextOnly: false,
@@ -33243,9 +33268,19 @@ window._updateTVChart = function(sym, interval) {
   try {
     var _rps0 = chart.priceScale('right');
     if (_rps0 && typeof _rps0.applyOptions === 'function') {
-      _rps0.applyOptions({ ticksVisible: false, borderVisible: true });
+      _rps0.applyOptions({ ticksVisible: true, borderVisible: true, borderColor: '#DFDFDD' });
     }
   } catch (_rpsE) {}
+
+  try {
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        try {
+          if (typeof window._bbgLwcUpdateMainScaleStitchLine === 'function') window._bbgLwcUpdateMainScaleStitchLine();
+        } catch (_stl0) {}
+      });
+    });
+  } catch (_stl1) {}
 
   var axisCanvas = document.getElementById('bbg-lwc-timeaxis-canvas');
   var _lwcAxisRaf = null;
@@ -33303,7 +33338,7 @@ window._updateTVChart = function(sym, interval) {
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cw, ch);
-    ctx.strokeStyle = '#6d717a';
+    ctx.strokeStyle = '#DFDFDD';
     ctx.lineWidth = 1;
     var plotW = cw;
     try {
@@ -33382,7 +33417,7 @@ window._updateTVChart = function(sym, interval) {
       var b = items[im + 1];
       var mx = (a.x + b.x) / 2;
       if (mx < -14 || mx > cw + 14) continue;
-      ctx.strokeStyle = '#8f949e';
+      ctx.strokeStyle = '#DFDFDD';
       ctx.beginPath();
       ctx.moveTo(mx + 0.5, 0);
       ctx.lineTo(mx + 0.5, tickMidH);
@@ -33397,14 +33432,14 @@ window._updateTVChart = function(sym, interval) {
         yrStr = String(b.y);
       }
       if (showYr) {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#DFDFDD';
         ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
         ctx.fillText(yrStr, mx, rowYear);
       }
     }
-    ctx.strokeStyle = '#c4c7d0';
+    ctx.strokeStyle = '#DFDFDD';
     /* Hlavní tik: měsíc zůstává přímo pod hlavní čárou u tiku. */
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#DFDFDD';
     for (var ii = 0; ii < items.length; ii++) {
       var it = items[ii];
       if (it.x < -40 || it.x > cw + 40) continue;
@@ -33467,6 +33502,69 @@ window._updateTVChart = function(sym, interval) {
     return out;
   }
 
+  /** Svislé „sešití“ pravého price scale přes celý sloupec (wrap + resize pruh i volume panel). */
+  window._bbgLwcUpdateMainScaleStitchLine = function () {
+    var mc = document.getElementById('bbg-lwc-main-col');
+    var host = document.getElementById('bbg-lwc-host');
+    var ch = window._bbgChart;
+    if (!mc || !host || !ch || typeof ch.priceScale !== 'function') {
+      try {
+        var line0 = document.getElementById('bbg-lwc-main-scale-vline');
+        if (line0) line0.style.display = 'none';
+      } catch (_eH) {}
+      return;
+    }
+    try { mc.style.position = 'relative'; } catch (_eP) {}
+    var line = document.getElementById('bbg-lwc-main-scale-vline');
+    if (!line) {
+      line = document.createElement('div');
+      line.id = 'bbg-lwc-main-scale-vline';
+      line.setAttribute('aria-hidden', 'true');
+      line.style.cssText = 'display:block;position:absolute;top:0;bottom:0;left:0;width:1px;pointer-events:none;z-index:10053;background:#DFDFDD;box-sizing:border-box;';
+      mc.appendChild(line);
+    }
+    line.style.display = 'block';
+    try {
+      var ps = ch.priceScale('right');
+      if (!ps || typeof ps.width !== 'function') return;
+      var sw = ps.width();
+      if (!(sw > 0)) return;
+      var iw = Math.floor(host.clientWidth || 0);
+      if (!(iw > 0)) return;
+      var x = Math.max(0, Math.round(iw - sw));
+      line.style.left = x + 'px';
+    } catch (_eW) {}
+  };
+
+  /** Shodná šířka pravého price scale = svislá osa Volume pod hlavním grafem (LW počítá šířku podle textu). */
+  window._bbgLwcSyncVolPriceScaleWidth = function () {
+    try {
+      var mn = window._bbgChart;
+      var vw = window._bbgLwcVolumeChart;
+      var vhp = document.getElementById('bbg-lwc-vol-host');
+      if (mn && vw && vhp) {
+        var prM = mn.priceScale('right');
+        var prV = vw.priceScale('right');
+        if (prM && prV && typeof prM.width === 'function') {
+          var wTar = Math.max(48, Math.ceil(prM.width()));
+          if (wTar > 0) {
+            if (typeof prV.applyOptions === 'function') prV.applyOptions({ minimumWidth: wTar });
+            var lrV = null;
+            try { lrV = vw.timeScale().getVisibleLogicalRange(); } catch (_g) {}
+            var r = vhp.getBoundingClientRect();
+            if (r.width > 2 && r.height > 2 && typeof vw.applyOptions === 'function') {
+              vw.applyOptions({ width: Math.floor(r.width), height: Math.floor(r.height) });
+              if (lrV && lrV.from != null) try { vw.timeScale().setVisibleLogicalRange(lrV); } catch (_s) {}
+            }
+          }
+        }
+      }
+    } catch (_sync) {}
+    try {
+      if (typeof window._bbgLwcUpdateMainScaleStitchLine === 'function') window._bbgLwcUpdateMainScaleStitchLine();
+    } catch (_st) {}
+  };
+
   function _bbgLwcTeardownVolPaneChart() {
     if (window._bbgLwcVolRangeUnsub) {
       try { window._bbgLwcVolRangeUnsub(); } catch (_eU) {}
@@ -33477,6 +33575,10 @@ window._updateTVChart = function(sym, interval) {
       window._bbgLwcVolumeChart = null;
       window._bbgLwcVolHistSeries = null;
     }
+    try {
+      var _pillRm = document.getElementById('bbg-lwc-vol-last-pill');
+      if (_pillRm && _pillRm.parentNode) _pillRm.parentNode.removeChild(_pillRm);
+    } catch (_ePl) {}
   }
 
   function _bbgLwcEnsureVolumePaneChart() {
@@ -33502,7 +33604,7 @@ window._updateTVChart = function(sym, interval) {
       layout: {
         background: { type: LC.ColorType.Solid, color: '#000000' },
         textColor: '#ffffff',
-        fontSize: 12
+        fontSize: 13
       },
       grid: {
         vertLines: { visible: _gv, color: _gv ? 'rgba(195, 196, 200, 0.38)' : 'rgba(0,0,0,0)', style: LC.LineStyle.Dotted },
@@ -33510,19 +33612,21 @@ window._updateTVChart = function(sym, interval) {
       },
       crosshair: {
         mode: LC.CrosshairMode.Normal,
-        vertLine: { color: '#9598a1', width: 1, style: LC.LineStyle.Dashed, labelBackgroundColor: '#363a45' },
-        horzLine: { color: '#9598a1', width: 1, style: LC.LineStyle.Dashed, labelBackgroundColor: '#363a45' }
+        vertLine: { color: 'rgba(255, 255, 255, 0.52)', width: 1, style: LC.LineStyle.Dotted, labelBackgroundColor: '#1e222d' },
+        horzLine: { color: 'rgba(255, 255, 255, 0.52)', width: 1, style: LC.LineStyle.Dotted, labelBackgroundColor: '#1e222d' }
       },
       leftPriceScale: { visible: false },
       rightPriceScale: {
         visible: true,
         borderVisible: true,
-        borderColor: '#787b86',
+        borderColor: '#DFDFDD',
         ticksVisible: true,
-        scaleMargins: { top: 0.12, bottom: 0.08 },
+        ensureEdgeTickMarksVisible: true,
+        tickMarkDensity: 2,
+        scaleMargins: { top: 0.08, bottom: 0.08 },
         textColor: '#ffffff',
         entireTextOnly: false,
-        minimumWidth: 56
+        minimumWidth: 64
       },
       timeScale: {
         visible: false,
@@ -33535,7 +33639,7 @@ window._updateTVChart = function(sym, interval) {
     });
     var hist = vChart.addHistogramSeries({
       priceFormat: { type: 'volume' },
-      priceScaleId: '',
+      priceScaleId: 'right',
       priceLineVisible: false,
       lastValueVisible: true,
       color: '#6d8dae'
@@ -33568,6 +33672,9 @@ window._updateTVChart = function(sym, interval) {
             try { lrV = vChart.timeScale().getVisibleLogicalRange(); } catch (_gV) {}
             vChart.applyOptions({ width: Math.floor(r.width), height: Math.floor(r.height) });
             if (lrV && lrV.from != null) try { vChart.timeScale().setVisibleLogicalRange(lrV); } catch (_sV) {}
+            requestAnimationFrame(function () {
+              try { if (typeof window._bbgLwcSyncVolPriceScaleWidth === 'function') window._bbgLwcSyncVolPriceScaleWidth(); } catch (_zs) {}
+            });
           }
         });
         _volResizeObs.observe(vh);
@@ -33582,6 +33689,13 @@ window._updateTVChart = function(sym, interval) {
       var lrI = main.timeScale().getVisibleLogicalRange();
       if (lrI && lrI.from != null) vChart.timeScale().setVisibleLogicalRange(lrI);
     } catch (_eI) {}
+    try {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          try { if (typeof window._bbgLwcSyncVolPriceScaleWidth === 'function') window._bbgLwcSyncVolPriceScaleWidth(); } catch (_z0) {}
+        });
+      });
+    } catch (_z1) {}
   }
 
   window._bbgLwcReflowChartsSize = function () {
@@ -33607,6 +33721,11 @@ window._updateTVChart = function(sym, interval) {
         if (lrV2 && lrV2.from != null) try { vch.timeScale().setVisibleLogicalRange(lrV2); } catch (_eVs) {}
       }
     }
+    try {
+      requestAnimationFrame(function () {
+        try { if (typeof window._bbgLwcSyncVolPriceScaleWidth === 'function') window._bbgLwcSyncVolPriceScaleWidth(); } catch (_zR) {}
+      });
+    } catch (_zR2) {}
     try {
       if (typeof window._bbgLwcRepaintTimeAxis === 'function') window._bbgLwcRepaintTimeAxis();
     } catch (_eP) {}
@@ -33666,6 +33785,11 @@ window._updateTVChart = function(sym, interval) {
       try { _vserH.setData(_bbgMapBarsToVolumeHist(allBars)); } catch (_vsdh) {}
     }
     try { _bbgLwcUpdateVolLegend(allBars); } catch (_vleg) {}
+    try {
+      requestAnimationFrame(function () {
+        try { if (typeof window._bbgLwcSyncVolPriceScaleWidth === 'function') window._bbgLwcSyncVolPriceScaleWidth(); } catch (_zRf) {}
+      });
+    } catch (_zRf2) {}
   }
 
   function _bbgSyncTfStyleButtons() {
@@ -33729,7 +33853,7 @@ window._updateTVChart = function(sym, interval) {
     try {
       var _rpsSw = chart.priceScale('right');
       if (_rpsSw && typeof _rpsSw.applyOptions === 'function') {
-        _rpsSw.applyOptions({ ticksVisible: false, borderVisible: true });
+        _rpsSw.applyOptions({ ticksVisible: true, borderVisible: true, borderColor: '#DFDFDD' });
       }
     } catch (_rpsSwE) {}
     _bbgRefreshLwcSeriesData();
@@ -33915,6 +34039,7 @@ window._updateTVChart = function(sym, interval) {
       if (!range || range.from == null) return;
       if (range.from < 35) loadOlder();
       _lwcScheduleTimeAxis();
+      try { requestAnimationFrame(function () { if (typeof window._bbgLwcSyncVolPriceScaleWidth === 'function') window._bbgLwcSyncVolPriceScaleWidth(); }); } catch (_zL) {}
     };
     chart.timeScale().subscribeVisibleTimeRangeChange(_lwcOnTimeRange);
     chart.timeScale().subscribeVisibleLogicalRangeChange(_lwcOnLogical);
@@ -33943,6 +34068,7 @@ window._updateTVChart = function(sym, interval) {
             }
           } catch (_vre) {}
           _lwcScheduleTimeAxis();
+          try { requestAnimationFrame(function () { if (typeof window._bbgLwcSyncVolPriceScaleWidth === 'function') window._bbgLwcSyncVolPriceScaleWidth(); }); } catch (_zW) {}
         });
         _lwcResizeObs.observe(rwObs);
       }
@@ -34003,6 +34129,9 @@ window._bbgApplyLwcGridVisibility = function (show) {
         if (ch && window._bbgChart === ch) ch.applyOptions(gopts);
         if (vch && window._bbgLwcVolumeChart === vch) vch.applyOptions(gopts);
       } catch (_g2) {}
+      try {
+        if (typeof window._bbgLwcUpdateMainScaleStitchLine === 'function') window._bbgLwcUpdateMainScaleStitchLine();
+      } catch (_g3) {}
     });
   } catch (_raf) {}
 };
@@ -40334,6 +40463,10 @@ a[href*="tradingview.com"],
   overflow: hidden;
   clip-path: inset(0 0 1px 0);
 }
+#bbg-lwc-vol-host {
+  overflow: hidden;
+  clip-path: inset(0 0 1px 0);
+}
 /* OHLC tree + datetime + scale arrows must sit above LWC canvas */
 #bbg-chart-container #ov-left-panel,
 #bbg-chart-container #ov-datetime,
@@ -41489,7 +41622,7 @@ G._nvIntelRun = async function(){
 
     // Always draw OPEN line
     var opv = parseFloat(window._bbgRibbonOpen||window._firstBbgPrice||0);
-    if(opv>0) drawLine('OPEN', opv, '#787b86');
+    if(opv>0) drawLine('OPEN', opv, '#DFDFDD');
   };
 
   // Repaint every 2s
