@@ -1739,9 +1739,20 @@ body.panel-open #QUICKBAR { display: none !important; }
   min-height:var(--quickbar-h) !important;
   max-height:var(--quickbar-h) !important;
 }
-/* CWEI pinned header must sit under TOPBAR */
+/* CWEI druhý řádek z index-2 vynechán (#cwei-global-qb). Žluté „?“ je v #TOPBAR (.cmd-icon-help). */
 #CWEI_TOPBAR{
-  top:var(--topbar-h) !important;
+  display:none !important;
+  visibility:hidden !important;
+  height:0 !important;
+  min-height:0 !important;
+  max-height:0 !important;
+  overflow:hidden !important;
+  pointer-events:none !important;
+  position:fixed !important;
+  top:0 !important;
+  left:0 !important;
+  right:0 !important;
+  z-index:-1 !important;
 }
 #logo{display:none!important;}
 
@@ -2035,6 +2046,78 @@ body.sat-active .m-wrap{opacity:1!important;}
   min-height: 0 !important;
   height: auto !important;
 }
+/* HOME: SMNR pod fixním #HOME_CMD_PIN (modrá + QB přilepená k #TOPBAR) */
+.panel[data-fn="HOME"] .panel-body{
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+}
+.panel[data-fn="HOME"] .home-smnr-root{
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  width: min(var(--term-w), 100%) !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+  background: #000 !important;
+}
+
+#HOME_CMD_PIN{
+  display: none !important;
+  position: fixed !important;
+  top: var(--topbar-h) !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 36px !important;
+  z-index: 2990 !important;
+  background: #000 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  border-bottom: 1px solid #141414 !important;
+  pointer-events: none !important;
+}
+body.home-cmd-row-active #HOME_CMD_PIN{
+  display: flex !important;
+  pointer-events: auto !important;
+}
+.home-cmd-pin-inner{
+  width: min(var(--term-w), 100%) !important;
+  max-width: 100% !important;
+  padding: 0 8px !important;
+  box-sizing: border-box !important;
+}
+#HOME_CMD_PIN .wei-home-pin-command{
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 0 0 36px !important;
+  background: transparent !important;
+}
+#HOME_CMD_PIN .wei-cmd-input{
+  width: 100% !important;
+  align-items: stretch !important;
+}
+#HOME_CMD_PIN .wei-cmd-input:focus-within{
+  animation: cwei-qb-flash 0.55s ease-out 1;
+}
+#HOME_CMD_PIN .wei-cmd-input:focus-within .wei-blue-strip{
+  animation: cwei-blue-flash 0.55s ease-out 1;
+}
+#HOME_CMD_PIN .wei-cmd-input:focus-within .wei-input-box{
+  animation: cwei-box-flash 0.55s ease-out 1;
+}
+
+body.home-cmd-row-active .panel.maximized[data-fn="HOME"]{
+  top: calc(var(--topbar-h) + 36px) !important;
+  height: calc(100% - var(--topbar-h) - 36px) !important;
+}
+
 /* Odstranění horní černé mezery v maximalized CRYPTO/WEI/CRYPTOMK panelech — schovat tabs */
 .panel.maximized[data-fn="CRYPTO"] .panel-tabs,
 .panel.maximized[data-fn="CRYPTOMK"] .panel-tabs,
@@ -4985,7 +5068,7 @@ window._bbgCleanupLegacyOverlays = function(){
 
     // Generic safety net: remove any fixed element with very high z-index
     // (except the main panel system and the dropdown / IMAP overlay).
-    var keepIds = {'bbg-ac':1,'imap-overlay':1,'bbg-chart-panel':1,'bbg-debug-panel':1,'api-key-banner':1,'CWEI_TOPBAR':1,'WEI_TOPBAR':1,'TOPBAR':1};
+    var keepIds = {'bbg-ac':1,'imap-overlay':1,'bbg-chart-panel':1,'bbg-debug-panel':1,'api-key-banner':1,'CWEI_TOPBAR':1,'WEI_TOPBAR':1,'TOPBAR':1,'HOME_CMD_PIN':1};
     var nodes = Array.prototype.slice.call(document.body ? document.body.children : []);
     nodes.forEach(function(el){
       try{
@@ -6373,33 +6456,26 @@ document.addEventListener('DOMContentLoaded', function() {
       <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
       <span class="cmd-arr">▾</span>
     </div>
-    <div class="cmd-icon cmd-icon-help">
+    <div class="cmd-icon cmd-icon-help" title="Help">
       <span class="cmd-icon-lbl" style="font-weight:900;font-family:Arial,sans-serif;font-size:13px;color:#000;">?</span>
       <span class="cmd-arr" style="color:#000;font-size:7px;margin-left:1px;">▾</span>
     </div>
   </div>
 </div>
 
-<!-- Pinned header (CWEI style): modrý pruh + vstup — při otevřeném grafu se přesune do #bbg-ribbon-cmd-slot -->
-<div id="CWEI_TOPBAR" style="position:fixed;top:26px;left:0;right:0;z-index:1000002;">
-  <div class="wei-original" style="width:100%;min-width:0;position:relative;left:0;top:0;transform:none;">
-    <div class="wei-top-grey" aria-hidden="true">
-      <div style="display:flex;align-items:center;gap:18px;">
-        <div style="display:flex;align-items:center;gap:6px;color:#cfcfcf;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;">
-          <span style="opacity:.9">Message</span><span style="font-size:10px;opacity:.6">▾</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:center;width:22px;height:18px;background:#f2c200;color:#000;font-family:Arial,Helvetica,sans-serif;font-weight:900;font-size:13px;border:1px solid rgba(0,0,0,.35);">
-          ?
-        </div>
+<!-- HOME: QB + modrý pruh přilepený pod #TOPBAR (body.home-cmd-row-active) -->
+<div id="HOME_CMD_PIN" class="home-cmd-pin" aria-hidden="true">
+  <div class="home-cmd-pin-inner">
+    <div class="wei-command wei-home-pin-command">
+      <div class="wei-cmd-input">
+        <div class="wei-blue-strip" aria-hidden="true"></div>
+        <input id="home-wei-qb" class="wei-input-box wei-qb" type="text" spellcheck="false" autocomplete="off" autocapitalize="off"
+          placeholder="LLP"
+          onfocus="try{window._bbgShowAcForEl&&window._bbgShowAcForEl(this);}catch(e){}"
+          oninput="try{window._bbgShowAC&&window._bbgShowAC(this.value.trim());}catch(e){}"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();try{window._bbgSelectSec&&window._bbgSelectSec((this.value||'').trim());}catch(e){}}else if(event.key==='Escape'){try{window._bbgHideAC&&window._bbgHideAC(true);}catch(e){}}"
+        />
       </div>
-    </div>
-    <div class="wei-cmd-input">
-      <div class="wei-blue-strip"></div>
-      <input id="cwei-global-qb" class="wei-input-box wei-qb" type="text" spellcheck="false" autocomplete="off" autocapitalize="off"
-        onfocus="try{window._bbgShowAcForEl&&window._bbgShowAcForEl(this);}catch(e){}"
-        oninput="try{window._bbgShowAC&&window._bbgShowAC(this.value.trim());}catch(e){}"
-        onkeydown="if(event.key==='Enter'){event.preventDefault(); try{window._bbgSelectSec&&window._bbgSelectSec((this.value||'').trim());}catch(e){}} else if(event.key==='Escape'){try{window._bbgHideAC&&window._bbgHideAC(true);}catch(e){}}"
-      />
     </div>
   </div>
 </div>
@@ -6417,7 +6493,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div id="map-overlay">
   
     <!-- BLOOMBERG EXACT CHART PANEL -->
-    <div class="panel" id="bbg-chart-panel" style="position:fixed; top:26px; left:0px; width:900px; height:600px; display:none; flex-direction:column; z-index:9999; background:#000; border:none !important; box-shadow:none;">
+    <div class="panel" id="bbg-chart-panel" style="position:fixed; top:var(--topbar-h); left:0px; width:900px; height:600px; display:none; flex-direction:column; z-index:9999; background:#000; border:none !important; box-shadow:none;">
 
       <div id="bbg-chart-ribbon" style="flex-shrink:0;">
 
@@ -9440,6 +9516,20 @@ function getPanelTitle(fn){
   return t[fn]||fn;
 }
 
+window._syncHomeCmdPin = function(){
+  try{
+    var on = false;
+    var R = window.PANEL_REGISTRY;
+    if(R){
+      for(var k in R){
+        if(!Object.prototype.hasOwnProperty.call(R,k)) continue;
+        var rr = R[k];
+        if(rr && rr.fn === 'HOME'){ on = true; break; }
+      }
+    }
+    document.body.classList.toggle('home-cmd-row-active', !!on);
+  }catch(_){}
+};
 function openPanel(fn,posX,posY){
   // Normalize aliases: CRYPTOMKT/CWIB always render as CWEI
   try{
@@ -9588,6 +9678,7 @@ function openPanel(fn,posX,posY){
   // Hide status bar whenever any panel is open
   document.body.classList.add('panel-open');
   { const s=document.getElementById('STAT'); if(s) s.style.display='none'; }
+  try{ if(typeof window._syncHomeCmdPin === 'function') window._syncHomeCmdPin(); }catch(_){ }
 }
 
 function closePanel(id){
@@ -9611,6 +9702,7 @@ function closePanel(id){
     if(el) el.remove();
   }
   delete PANEL_REGISTRY[id];
+  try{ if(typeof window._syncHomeCmdPin === 'function') window._syncHomeCmdPin(); }catch(_){ }
   updatePanelCount();
   // Show status bar only when no panels are open
   const hasNoPanels = Object.keys(PANEL_REGISTRY).length === 0;
@@ -13114,6 +13206,7 @@ function buildMAP(){
 
 function buildMAP_SPLASH(){
   return `
+    <div class="home-smnr-root">
     <div class="smnr-wrap" aria-label="Bloomberg home">
       <div class="smnr-hero">
         <div class="smnr-brand">
@@ -13160,6 +13253,7 @@ function buildMAP_SPLASH(){
         <div class="smnr-sitem smnr-line"></div>
         <div class="smnr-sitem smnr-line"></div>
       </div>
+    </div>
     </div>
   `;
 }
@@ -35308,6 +35402,11 @@ window._openChartForSymbol = function(sym) {
     if (cweiQb) {
       cweiQb.value = displayPair;
       try { if (cweiQb.dataset) delete cweiQb.dataset.userEdited; } catch(_){}
+    }
+    var homeQb = document.getElementById('home-wei-qb');
+    if (homeQb) {
+      homeQb.value = displayPair;
+      try { if (homeQb.dataset) delete homeQb.dataset.userEdited; } catch(_){}
     }
 
     // Register state
